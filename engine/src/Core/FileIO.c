@@ -6,6 +6,7 @@
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
+    #include <direct.h>
 #else
     #include <dirent.h>
     #include <sys/stat.h>
@@ -101,5 +102,49 @@ b8 file_list_directory(const char* directory, file_visit_fn visit, void* user_da
 
     closedir(dir);
     return true;
+#endif
+}
+
+b8 file_write_string(const char* path, const char* text)
+{
+    FILE* file = fopen(path, "wb");
+    if (!file)
+    {
+        LOG_ERROR("Could not open file for writing: %s\n", path);
+        return false;
+    }
+
+    size_t length  = strlen(text);
+    size_t written = fwrite(text, 1, length, file);
+    b8     ok      = fclose(file) == 0 && written == length;
+
+    if (!ok)
+        LOG_ERROR("Could not write file: %s\n", path);
+    return ok;
+}
+
+b8 file_make_directory(const char* path)
+{
+#ifdef _WIN32
+    if (_mkdir(path) == 0)
+        return true;
+    DWORD attributes = GetFileAttributesA(path);
+    return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
+#else
+    if (mkdir(path, 0755) == 0)
+        return true;
+    struct stat info;
+    return stat(path, &info) == 0 && S_ISDIR(info.st_mode);
+#endif
+}
+
+b8 file_exists(const char* path)
+{
+#ifdef _WIN32
+    DWORD attributes = GetFileAttributesA(path);
+    return attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
+#else
+    struct stat info;
+    return stat(path, &info) == 0 && S_ISREG(info.st_mode);
 #endif
 }

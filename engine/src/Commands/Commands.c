@@ -5,6 +5,9 @@
 #include "../World/Reflect.h"
 #include "../World/Serialize.h"
 
+#include <ctype.h>
+#include <float.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,14 +17,6 @@
 #define MAX_NAMES_IN_ERROR 20
 
 // --- Command table types -------------------------------------------------------
-
-typedef struct cmd_arg
-{
-    const char* name;
-    const char* type;       // "string", "entity", "component", "object", "boolean"
-    b8          required;
-    const char* doc;
-} cmd_arg;
 
 typedef struct cmd_output
 {
@@ -34,12 +29,13 @@ typedef b8 (*cmd_handler)(command_context* ctx, const cJSON* args, cmd_output* o
 
 typedef struct cmd_def
 {
-    const char*    name;
-    const char*    doc;
-    const cmd_arg* args;
-    uint32         arg_count;
-    b8             mutates;   // world_update() after success
-    cmd_handler    handler;
+    const char*             name;
+    const char*             doc;
+    const cmd_arg*          args;
+    uint32                  arg_count;
+    b8                      mutates;   // snapshots, changes, undo step, world_update()
+    cmd_handler             handler;   // built-in commands
+    const cmd_host_command* host;      // application commands (handler == NULL)
 } cmd_def;
 
 static b8
@@ -794,6 +790,598 @@ cmd_history_list(command_context* ctx, const cJSON* args, cmd_output* out)
     return true;
 }
 
+// --- Placement --------------------------------------------------------------------
+// LLMs are bad at 3D arithmetic, so placement is by intent -- "on the
+// ground", "on top of the table", "left of the sofa" -- and the numbers are
+// worked out here from bounding boxes. World space, Y up, ground at y = 0;
+// "front" is +Z (towards the default camera), "left" is -X.
+
+typedef struct aabb
+{
+    vec3 min;
+    vec3 max;
+} aabb;
+
+static const char* const SIDE_NAMES[] = { "on_top", "left", "right", "front", "behind" };
+#define SIDE_COUNT 5
+
+// Model bounds after `transform`'s rotation and scale (not its position):
+// the box relative to the entity's origin once placed.
+static void
+oriented_bounds(const model* m, const c_transform* transform, aabb* out)
+{
+    c_transform no_position = *transform;
+    glm_vec3_zero(no_position.position);
+
+    mat4 matrix;
+    glm_translate_make(matrix, no_position.position);
+    glm_rotate_y(matrix, glm_rad(no_position.rotation_deg[1]), matrix);
+    glm_rotate_x(matrix, glm_rad(no_position.rotation_deg[0]), matrix);
+    glm_rotate_z(matrix, glm_rad(no_position.rotation_deg[2]), matrix);
+    glm_scale(matrix, no_position.scale);
+
+    for (int corner = 0; corner < 8; ++corner)
+    {
+        vec3 p = {
+            (corner & 1) ? m->bounds_max[0] : m->bounds_min[0],
+            (corner & 2) ? m->bounds_max[1] : m->bounds_min[1],
+            (corner & 4) ? m->bounds_max[2] : m->bounds_min[2],
+        };
+        vec3 q;
+        glm_mat4_mulv3(matrix, p, 1.0f, q);
+
+        if (corner == 0)
+        {
+            glm_vec3_copy(q, out->min);
+            glm_vec3_copy(q, out->max);
+        }
+        else
+        {
+            glm_vec3_minv(out->min, q, out->min);
+            glm_vec3_maxv(out->max, q, out->max);
+        }
+    }
+}
+
+// An entity's own box relative to its origin: its model's oriented bounds,
+// or a point if it has no model.
+static void
+entity_own_bounds(const world* w, entity_id e, aabb* out)
+{
+    const c_mesh_renderer* mr = world_mesh_renderer(w, e);
+    const model*           m  = mr ? assets_model(w->assets, mr->model) : NULL;
+
+    if (m)
+        oriented_bounds(m, world_transform(w, e), out);
+    else
+        memset(out, 0, sizeof(*out));
+}
+
+// Where another entity is: its world bounds, or its position as a point.
+static void
+target_bounds(const world* w, entity_id e, aabb* out)
+{
+    if (world_bounds(w, e, out->min, out->max))
+        return;
+
+    const vec4* m = world_matrix(w, e);
+    vec3 p = { m[3][0], m[3][1], m[3][2] };
+    glm_vec3_copy(p, out->min);
+    glm_vec3_copy(p, out->max);
+}
+
+static b8
+parse_vec3(const cJSON* item, vec3 out)
+{
+    if (!cJSON_IsArray(item) || cJSON_GetArraySize(item) != 3)
+        return false;
+    for (int i = 0; i < 3; ++i)
+    {
+        const cJSON* n = cJSON_GetArrayItem(item, i);
+        if (!cJSON_IsNumber(n))
+            return false;
+        out[i] = (f32)n->valuedouble;
+    }
+    return true;
+}
+
+// Turns the placement arguments ("position", "on_ground", "relative_to")
+// into the world position an object with box `own` should have. `current`
+// is used for whatever the arguments leave open; with no placement
+// arguments at all, `default_on_ground` decides between "rest on the ground
+// at current x/z" and "stay at current".
+static b8
+resolve_placement(const world* w, entity_id self, const cJSON* args, const aabb* own,
+                  const vec3 current, b8 default_on_ground, vec3 out_position, cmd_output* out)
+{
+    const cJSON* position_item = arg(args, "position");
+    const cJSON* relative_item = arg(args, "relative_to");
+
+    b8 on_ground;
+    if (!arg_bool(args, "on_ground", false, &on_ground, out))
+        return false;
+
+    b8 has_position = position_item && !cJSON_IsNull(position_item);
+    b8 has_relative = relative_item && !cJSON_IsNull(relative_item);
+
+    if (has_relative && (has_position || on_ground))
+        return fail(out, CMD_ERROR_INVALID_ARGS, "use either \"relative_to\" or \"position\"/\"on_ground\", not both");
+
+    glm_vec3_copy((f32*)current, out_position);
+
+    if (has_position && !parse_vec3(position_item, out_position))
+        return fail(out, CMD_ERROR_INVALID_ARGS, "argument \"position\" must be [x, y, z] in meters");
+
+    if (!has_position && !has_relative && !on_ground)
+        on_ground = default_on_ground;
+
+    if (on_ground)
+    {
+        out_position[1] = -own->min[1];   // lowest point at y = 0; x/z from "position" or as they were
+        return true;
+    }
+
+    if (!has_relative)
+        return true;
+
+    // --- relative_to: { "entity", "side", "gap" } ---
+    if (!cJSON_IsObject(relative_item))
+        return fail(out, CMD_ERROR_INVALID_ARGS, "argument \"relative_to\" must be {\"entity\": ..., \"side\": ..., \"gap\": meters}");
+
+    entity_id target;
+    if (!arg_entity(w, relative_item, "entity", true, &target, out))
+        return false;
+    if (target == self)
+        return fail(out, CMD_ERROR_INVALID_ARGS, "an entity can't be placed relative to itself");
+
+    const char* side_name;
+    if (!arg_string(relative_item, "side", true, &side_name, out))
+        return false;
+
+    int side = -1;
+    for (int s = 0; s < SIDE_COUNT; ++s)
+    {
+        if (strcmp(side_name, SIDE_NAMES[s]) == 0)
+            side = s;
+    }
+    if (side < 0)
+        return fail(out, CMD_ERROR_INVALID_ARGS, "relative_to.side \"%s\" is not one of \"on_top\", \"left\" (-X), "
+                    "\"right\" (+X), \"front\" (+Z) or \"behind\" (-Z)", side_name);
+
+    const cJSON* gap_item = arg(relative_item, "gap");
+    f32 gap = side == 0 ? 0.0f : 0.05f;
+    if (gap_item && !cJSON_IsNull(gap_item))
+    {
+        if (!cJSON_IsNumber(gap_item) || gap_item->valuedouble < 0.0)
+            return fail(out, CMD_ERROR_INVALID_ARGS, "relative_to.gap must be a distance in meters, 0 or more");
+        gap = (f32)gap_item->valuedouble;
+    }
+
+    aabb t;
+    target_bounds(w, target, &t);
+
+    // Centred on the target and standing on the same floor, then pushed out
+    // to the requested side.
+    vec3 target_center, own_center;
+    glm_vec3_center(t.min, t.max, target_center);
+    glm_vec3_center((f32*)own->min, (f32*)own->max, own_center);
+
+    out_position[0] = target_center[0] - own_center[0];
+    out_position[1] = t.min[1] - own->min[1];
+    out_position[2] = target_center[2] - own_center[2];
+
+    switch (side)
+    {
+        case 0: out_position[1] = t.max[1] + gap - own->min[1]; break;   // on_top
+        case 1: out_position[0] = t.min[0] - gap - own->max[0]; break;   // left (-X)
+        case 2: out_position[0] = t.max[0] + gap - own->min[0]; break;   // right (+X)
+        case 3: out_position[2] = t.max[2] + gap - own->min[2]; break;   // front (+Z)
+        case 4: out_position[2] = t.min[2] - gap - own->max[2]; break;   // behind (-Z)
+    }
+    return true;
+}
+
+// The entity's JSON plus its world-space box, so the caller can place the
+// next thing relative to it without asking again.
+static cJSON*
+entity_with_bounds(const world* w, entity_id e)
+{
+    cJSON* json = serialize_entity(w, e);
+    vec3   bmin, bmax;
+    if (world_bounds(w, e, bmin, bmax))
+    {
+        cJSON* bounds = cJSON_AddObjectToObject(json, "bounds");
+        for (int k = 0; k < 2; ++k)
+        {
+            const f32* v = k ? bmax : bmin;
+            char buffer[3][32];
+            cJSON* array = cJSON_AddArrayToObject(bounds, k ? "max" : "min");
+            for (int i = 0; i < 3; ++i)
+            {
+                snprintf(buffer[i], sizeof(buffer[i]), "%.4g", (double)v[i]);
+                cJSON_AddItemToArray(array, cJSON_CreateNumber(strtod(buffer[i], NULL)));
+            }
+        }
+    }
+    return json;
+}
+
+// "models/Desk Lamp.glb" -> "desk_lamp"; "builtin:cube" -> "cube".
+static void
+default_name_from_key(const char* key, char* out, size_t size)
+{
+    const char* base = key;
+    const char* colon = strrchr(base, ':');
+    if (colon) base = colon + 1;
+    const char* slash = strrchr(base, '/');
+    if (slash) base = slash + 1;
+
+    size_t n = 0;
+    for (const char* c = base; *c && *c != '.' && n + 1 < size; ++c)
+        out[n++] = (*c == ' ' || *c == '-') ? '_' : (char)tolower((unsigned char)*c);
+    out[n] = '\0';
+
+    if (n == 0)
+        snprintf(out, size, "model");
+}
+
+static b8
+cmd_place_model(command_context* ctx, const cJSON* args, cmd_output* out)
+{
+    world* w = ctx->w;
+
+    const char* key;
+    const char* name;
+    if (!arg_string(args, "model", true, &key, out) || !arg_string(args, "name", false, &name, out))
+        return false;
+
+    asset_id asset = assets_resolve(w->assets, key);
+    const model* m = assets_model(w->assets, asset);
+    if (!m)
+    {
+        if (assets_is_builtin_key(key))
+            return fail(out, CMD_ERROR_INVALID_VALUE, "unknown built-in \"%s\"; built-ins are \"builtin:cube\", "
+                        "\"builtin:sphere\" and \"builtin:plane\"", key);
+        return fail(out, CMD_ERROR_INVALID_VALUE, "could not load the model \"%s\"; assets.list shows what exists", key);
+    }
+
+    c_transform transform;
+    glm_vec3_zero(transform.position);
+    glm_vec3_zero(transform.rotation_deg);
+    glm_vec3_one(transform.scale);
+
+    // --- size / scale ---
+    const cJSON* size_item  = arg(args, "size");
+    const cJSON* scale_item = arg(args, "scale");
+    b8 has_size  = size_item  && !cJSON_IsNull(size_item);
+    b8 has_scale = scale_item && !cJSON_IsNull(scale_item);
+    if (has_size && has_scale)
+        return fail(out, CMD_ERROR_INVALID_ARGS, "use either \"size\" or \"scale\", not both");
+
+    if (has_size)
+    {
+        if (!cJSON_IsNumber(size_item) || size_item->valuedouble <= 0.0)
+            return fail(out, CMD_ERROR_INVALID_ARGS, "argument \"size\" must be a length in meters, more than 0");
+
+        vec3 extent;
+        glm_vec3_sub((f32*)m->bounds_max, (f32*)m->bounds_min, extent);
+        f32 largest = glm_vec3_max(extent);
+        glm_vec3_fill(transform.scale, largest > 1e-8f ? (f32)size_item->valuedouble / largest : 1.0f);
+    }
+    else if (has_scale)
+    {
+        if (cJSON_IsNumber(scale_item))
+            glm_vec3_fill(transform.scale, (f32)scale_item->valuedouble);
+        else if (!parse_vec3(scale_item, transform.scale))
+            return fail(out, CMD_ERROR_INVALID_ARGS, "argument \"scale\" must be a number or [x, y, z]");
+
+        if (transform.scale[0] <= 0.0f || transform.scale[1] <= 0.0f || transform.scale[2] <= 0.0f)
+            return fail(out, CMD_ERROR_INVALID_ARGS, "argument \"scale\" must be more than 0 on every axis");
+    }
+
+    const cJSON* rotation_item = arg(args, "rotation_deg");
+    if (rotation_item && !cJSON_IsNull(rotation_item))
+    {
+        if (cJSON_IsNumber(rotation_item))
+            transform.rotation_deg[1] = (f32)rotation_item->valuedouble;   // a lone number is a yaw
+        else if (!parse_vec3(rotation_item, transform.rotation_deg))
+            return fail(out, CMD_ERROR_INVALID_ARGS, "argument \"rotation_deg\" must be a yaw in degrees or [pitch, yaw, roll]");
+    }
+
+    // --- material: {"base_color": ..., "roughness": ...} -> "material.*" fields ---
+    const cJSON* material_item = arg(args, "material");
+    cJSON*       material_fields = NULL;
+    if (material_item && !cJSON_IsNull(material_item))
+    {
+        if (!cJSON_IsObject(material_item))
+            return fail(out, CMD_ERROR_INVALID_ARGS, "argument \"material\" must be an object like "
+                        "{\"base_color\": [0.8, 0.1, 0.1], \"roughness\": 0.4}");
+
+        material_fields = cJSON_CreateObject();
+        const cJSON* field;
+        cJSON_ArrayForEach(field, material_item)
+        {
+            char prefixed[64];
+            snprintf(prefixed, sizeof(prefixed), "%s%s", strncmp(field->string, "material.", 9) == 0 ? "" : "material.",
+                     field->string);
+            cJSON_AddItemToObject(material_fields, prefixed, cJSON_Duplicate(field, true));
+        }
+    }
+
+    // --- where ---
+    aabb own;
+    oriented_bounds(m, &transform, &own);
+
+    vec3 origin = { 0.0f, 0.0f, 0.0f };
+    if (!resolve_placement(w, ENTITY_NULL, args, &own, origin, true, transform.position, out))
+    {
+        cJSON_Delete(material_fields);
+        return false;
+    }
+
+    // --- create (the dispatcher undoes all of it if anything below fails) ---
+    char default_name[ENTITY_NAME_MAX];
+    default_name_from_key(key, default_name, sizeof(default_name));
+
+    entity_id e = world_create(w, name ? name : default_name);
+    *world_transform(w, e) = transform;
+    world_add_mesh_renderer(w, e, asset);
+
+    if (material_fields)
+    {
+        char error[512];
+        b8   ok = deserialize_component(w, e, COMPONENT_MESH_RENDERER, material_fields, error, sizeof(error));
+        cJSON_Delete(material_fields);
+        if (!ok)
+            return fail(out, CMD_ERROR_INVALID_VALUE, "material: %s", error);
+    }
+
+    world_update(w);
+    out->result = entity_with_bounds(w, e);
+    return true;
+}
+
+static b8
+cmd_entity_place(command_context* ctx, const cJSON* args, cmd_output* out)
+{
+    world* w = ctx->w;
+
+    entity_id e;
+    if (!arg_entity(w, args, "entity", true, &e, out))
+        return false;
+
+    if (world_parent(w, e) != ENTITY_NULL)
+        return fail(out, CMD_ERROR_CONFLICT, "\"%s\" is parented to \"%s\" and placement works in world space; "
+                    "set its Transform directly, or entity.update it to parent null first",
+                    world_name(w, e), world_name(w, world_parent(w, e)));
+
+    if (!arg(args, "position") && !arg(args, "on_ground") && !arg(args, "relative_to"))
+        return fail(out, CMD_ERROR_INVALID_ARGS, "say where: \"position\", \"on_ground\" and/or \"relative_to\"");
+
+    aabb own;
+    entity_own_bounds(w, e, &own);
+
+    c_transform* t = world_transform(w, e);
+    vec3 position;
+    if (!resolve_placement(w, e, args, &own, t->position, false, position, out))
+        return false;
+
+    glm_vec3_copy(position, t->position);
+    world_update(w);
+    out->result = entity_with_bounds(w, e);
+    return true;
+}
+
+// --- Scene files ------------------------------------------------------------------
+
+#define SCENE_FORMAT  "pbr-scene"
+#define SCENE_VERSION 1
+
+// The scenes folder, created if needed. Caller frees.
+static char*
+scenes_directory(const command_context* ctx)
+{
+    char* dir;
+    if (ctx->scenes_dir)
+    {
+        size_t length = strlen(ctx->scenes_dir) + 1;
+        dir = malloc(length);
+        if (!dir)
+            FATAL("commands: out of memory");
+        memcpy(dir, ctx->scenes_dir, length);
+    }
+    else
+    {
+        dir = asset_path("scenes");
+    }
+
+    file_make_directory(dir);
+    return dir;
+}
+
+// Scene names are plain file names -- letters, digits, '_' and '-' -- so a
+// request can never reach outside the scenes folder.
+static b8
+scene_path(const command_context* ctx, const char* name, char* out_path, size_t size, cmd_output* out)
+{
+    size_t length = strlen(name);
+    if (length == 0 || length > 64)
+        return fail(out, CMD_ERROR_INVALID_ARGS, "scene name must be 1 to 64 characters");
+
+    for (const char* c = name; *c; ++c)
+    {
+        if (!isalnum((unsigned char)*c) && *c != '_' && *c != '-')
+            return fail(out, CMD_ERROR_INVALID_ARGS, "scene name \"%s\" may only contain letters, digits, '_' and '-'", name);
+    }
+
+    char* dir = scenes_directory(ctx);
+    snprintf(out_path, size, "%s/%s.json", dir, name);
+    free(dir);
+    return true;
+}
+
+static b8
+cmd_scene_save(command_context* ctx, const cJSON* args, cmd_output* out)
+{
+    const char* name;
+    char        path[1024];
+    if (!arg_string(args, "name", true, &name, out) || !scene_path(ctx, name, path, sizeof(path), out))
+        return false;
+
+    cJSON* scene = serialize_world(ctx->w);
+    cJSON_AddStringToObject(scene, "format", SCENE_FORMAT);
+    cJSON_AddNumberToObject(scene, "version", SCENE_VERSION);
+
+    char* text = cJSON_Print(scene);
+    b8    ok   = file_write_string(path, text);
+    cJSON_free(text);
+    cJSON_Delete(scene);
+
+    if (!ok)
+        return fail(out, CMD_ERROR_UNAVAILABLE, "could not write %s", path);
+
+    out->result = cJSON_CreateObject();
+    cJSON_AddStringToObject(out->result, "name", name);
+    cJSON_AddNumberToObject(out->result, "entities", world_count(ctx->w));
+    return true;
+}
+
+static void
+visit_scene_entry(const char* name, b8 is_directory, void* user_data)
+{
+    size_t length = strlen(name);
+    if (is_directory || length < 6 || strcmp(name + length - 5, ".json") != 0)
+        return;
+
+    char stem[128];
+    snprintf(stem, sizeof(stem), "%.*s", (int)(length - 5), name);
+    cJSON_AddItemToArray((cJSON*)user_data, cJSON_CreateString(stem));
+}
+
+static b8
+cmd_scene_list(command_context* ctx, const cJSON* args, cmd_output* out)
+{
+    (void)args;
+    out->result = cJSON_CreateObject();
+    cJSON* names = cJSON_AddArrayToObject(out->result, "scenes");
+
+    char* dir = scenes_directory(ctx);
+    file_list_directory(dir, visit_scene_entry, names);
+    free(dir);
+    return true;
+}
+
+static b8
+cmd_scene_load(command_context* ctx, const cJSON* args, cmd_output* out)
+{
+    world* w = ctx->w;
+
+    const char* name;
+    char        path[1024];
+    b8          replace;
+    if (!arg_string(args, "name", true, &name, out) || !scene_path(ctx, name, path, sizeof(path), out)
+        || !arg_bool(args, "replace", true, &replace, out))
+        return false;
+
+    char* text = file_exists(path) ? file_read_to_string(path) : NULL;
+    if (!text)
+        return fail(out, CMD_ERROR_NOT_FOUND, "no saved scene \"%s\"; scene.list shows the saved ones", name);
+
+    cJSON* scene = cJSON_Parse(text);
+    free(text);
+
+    const cJSON* format   = cJSON_GetObjectItem(scene, "format");
+    const cJSON* entities = cJSON_GetObjectItem(scene, "entities");
+    if (!scene || !cJSON_IsString(format) || strcmp(format->valuestring, SCENE_FORMAT) != 0 || !cJSON_IsArray(entities))
+    {
+        cJSON_Delete(scene);
+        return fail(out, CMD_ERROR_INVALID_VALUE, "\"%s\" is not a scene file", name);
+    }
+
+    if (replace)
+        world_clear(w);
+
+    // Names in the file -> the entities made for them (names may change
+    // when merging into a scene that already uses them).
+    uint32     count     = (uint32)cJSON_GetArraySize(entities);
+    entity_id* created   = calloc(count ? count : 1, sizeof(*created));
+    if (!created)
+        FATAL("commands: out of memory");
+
+    out->result = cJSON_CreateObject();
+    cJSON* names = cJSON_AddArrayToObject(out->result, "entities");
+
+    b8     ok    = true;
+    uint32 index = 0;
+    const cJSON* entity;
+    cJSON_ArrayForEach(entity, entities)
+    {
+        const char* entity_name = cJSON_GetStringValue(cJSON_GetObjectItem(entity, "name"));
+        entity_id   e           = world_create(w, entity_name);
+        created[index] = e;
+
+        // Parents come earlier in the file (serialize_world()'s order).
+        const char* parent_name = cJSON_GetStringValue(cJSON_GetObjectItem(entity, "parent"));
+        if (parent_name)
+        {
+            entity_id parent = ENTITY_NULL;
+            uint32    i      = 0;
+            const cJSON* earlier;
+            cJSON_ArrayForEach(earlier, entities)
+            {
+                if (i >= index)
+                    break;
+                const char* earlier_name = cJSON_GetStringValue(cJSON_GetObjectItem(earlier, "name"));
+                if (earlier_name && strcmp(earlier_name, parent_name) == 0)
+                    parent = created[i];
+                ++i;
+            }
+            if (parent == ENTITY_NULL)
+            {
+                ok = fail(out, CMD_ERROR_INVALID_VALUE, "entity \"%s\": parent \"%s\" isn't defined before it",
+                          entity_name ? entity_name : "?", parent_name);
+                break;
+            }
+            world_set_parent(w, e, parent);
+        }
+
+        const cJSON* component;
+        cJSON_ArrayForEach(component, cJSON_GetObjectItem(entity, "components"))
+        {
+            component_type type;
+            char error[512];
+            if (!parse_component_name(component->string, &type, out))
+            {
+                ok = false;
+                break;
+            }
+            if (!deserialize_component(w, e, type, component, error, sizeof(error)))
+            {
+                ok = fail(out, CMD_ERROR_INVALID_VALUE, "entity \"%s\": %s", world_name(w, e), error);
+                break;
+            }
+        }
+        if (!ok)
+            break;
+
+        cJSON_AddItemToArray(names, cJSON_CreateString(world_name(w, e)));
+        ++index;
+    }
+
+    free(created);
+    cJSON_Delete(scene);
+
+    if (!ok)
+    {
+        cJSON_Delete(out->result);
+        out->result = NULL;
+        return false;   // the dispatcher restores the world as it was
+    }
+
+    cJSON_AddNumberToObject(out->result, "loaded", index);
+    return true;
+}
+
 // --- The table ------------------------------------------------------------------------
 
 static const cmd_arg ARGS_NONE[1] = { { 0 } };
@@ -831,6 +1419,39 @@ static const cmd_arg ARGS_COMPONENT_REMOVE[] = {
     { "component", "component", true, "MeshRenderer, Light or Camera" },
 };
 
+#define PLACEMENT_ARGS \
+    { "position",    "vec3",    false, "[x, y, z] in meters (Y up). With on_ground, only x and z are used" }, \
+    { "on_ground",   "boolean", false, "true = rest its lowest point on the ground (y = 0)" }, \
+    { "relative_to", "object",  false, "{\"entity\": name, \"side\": \"on_top\" | \"left\" | \"right\" | \"front\" | \"behind\", " \
+                                       "\"gap\": meters}: next to or on top of another entity, without overlapping it. " \
+                                       "left = -X, right = +X, front = +Z (towards the default camera), behind = -Z" }
+
+static const cmd_arg ARGS_PLACE_MODEL[] = {
+    { "model",        "string", true,  "Asset key from assets.list, e.g. \"builtin:cube\" or \"models/Avocado.glb\"" },
+    { "name",         "string", false, "Unique name; defaults to the model's file name" },
+    { "size",         "number", false, "Length in meters of its longest side -- the easy way to get real-world size, "
+                                       "since model files come in arbitrary units" },
+    { "scale",        "vec3",   false, "Scale factor (a number or [x, y, z]) instead of size" },
+    { "rotation_deg", "vec3",   false, "Yaw in degrees (a number), or [pitch, yaw, roll]" },
+    PLACEMENT_ARGS,
+    { "material",     "object", false, "Overrides of the model's own material: base_color [r, g, b] (linear 0-1), "
+                                       "metallic 0-1, roughness 0-1, emissive [r, g, b]" },
+};
+
+static const cmd_arg ARGS_ENTITY_PLACE[] = {
+    { "entity", "entity", true, "Name or id of an unparented entity to move" },
+    PLACEMENT_ARGS,
+};
+
+static const cmd_arg ARGS_SCENE_NAME[] = {
+    { "name", "string", true, "Scene file name: letters, digits, '_' and '-'" },
+};
+
+static const cmd_arg ARGS_SCENE_LOAD[] = {
+    { "name",    "string",  true,  "Scene file name, as scene.list shows it" },
+    { "replace", "boolean", false, "true (default) = clear the current scene first; false = add to it" },
+};
+
 static const cmd_arg ARGS_HISTORY_BEGIN[] = {
     { "label", "string", false, "What the grouped change does, shown in history.list and when undone, "
                                 "e.g. \"add a reading lamp\"" },
@@ -856,6 +1477,13 @@ static const cmd_def COMMANDS[] = {
     { "component.set",    "Sets fields of a component, adding the component if missing",    ARGS(ARGS_COMPONENT_SET),    true,  cmd_component_set },
     { "component.remove", "Removes a component from an entity",                              ARGS(ARGS_COMPONENT_REMOVE), true,  cmd_component_remove },
     { "assets.list",      "Models that can be used in a MeshRenderer's \"model\" field",     NO_ARGS,                     false, cmd_assets_list },
+    { "place_model",      "Adds a model sized in meters and placed by intent: on the ground, on top of or beside another entity",
+                                                                                              ARGS(ARGS_PLACE_MODEL),      true,  cmd_place_model },
+    { "entity.place",     "Moves an entity: onto the ground, on top of or beside another entity, or to a position",
+                                                                                              ARGS(ARGS_ENTITY_PLACE),     true,  cmd_entity_place },
+    { "scene.save",       "Saves every entity to a named scene file",                       ARGS(ARGS_SCENE_NAME),       false, cmd_scene_save },
+    { "scene.load",       "Loads a saved scene, replacing or adding to the current one",    ARGS(ARGS_SCENE_LOAD),       true,  cmd_scene_load },
+    { "scene.list",       "Names of the saved scenes",                                       NO_ARGS,                     false, cmd_scene_list },
     { "batch",            "Runs several commands as one all-or-nothing, single-undo change", ARGS(ARGS_BATCH),            false, cmd_batch },
     { "history.undo",     "Undoes the last change (or the last committed transaction)",     NO_ARGS,                     false, cmd_history_undo },
     { "history.redo",     "Redoes the last undone change",                                   NO_ARGS,                     false, cmd_history_redo },
@@ -870,27 +1498,40 @@ static const cmd_def COMMANDS[] = {
 static b8
 cmd_commands_list(command_context* ctx, const cJSON* args, cmd_output* out)
 {
-    (void)ctx;
     (void)args;
 
     out->result = cJSON_CreateObject();
     cJSON* list = cJSON_AddArrayToObject(out->result, "commands");
 
-    for (uint32 i = 0; i < COMMAND_COUNT; ++i)
+    uint32 total = (uint32)COMMAND_COUNT + ctx->host_command_count;
+    for (uint32 i = 0; i < total; ++i)
     {
-        const cmd_def* def = &COMMANDS[i];
+        const char*    name;
+        const char*    doc;
+        const cmd_arg* def_args;
+        uint32         arg_count;
+        if (i < COMMAND_COUNT)
+        {
+            name = COMMANDS[i].name; doc = COMMANDS[i].doc; def_args = COMMANDS[i].args; arg_count = COMMANDS[i].arg_count;
+        }
+        else
+        {
+            const cmd_host_command* h = &ctx->host_commands[i - COMMAND_COUNT];
+            name = h->name; doc = h->doc; def_args = h->args; arg_count = h->arg_count;
+        }
+
         cJSON* entry = cJSON_CreateObject();
-        cJSON_AddStringToObject(entry, "name", def->name);
-        cJSON_AddStringToObject(entry, "description", def->doc);
+        cJSON_AddStringToObject(entry, "name", name);
+        cJSON_AddStringToObject(entry, "description", doc);
 
         cJSON* arg_list = cJSON_AddArrayToObject(entry, "args");
-        for (uint32 a = 0; a < def->arg_count; ++a)
+        for (uint32 a = 0; a < arg_count; ++a)
         {
             cJSON* a_json = cJSON_CreateObject();
-            cJSON_AddStringToObject(a_json, "name", def->args[a].name);
-            cJSON_AddStringToObject(a_json, "type", def->args[a].type);
-            cJSON_AddBoolToObject(a_json, "required", def->args[a].required);
-            cJSON_AddStringToObject(a_json, "description", def->args[a].doc);
+            cJSON_AddStringToObject(a_json, "name", def_args[a].name);
+            cJSON_AddStringToObject(a_json, "type", def_args[a].type);
+            cJSON_AddBoolToObject(a_json, "required", def_args[a].required);
+            cJSON_AddStringToObject(a_json, "description", def_args[a].doc);
             cJSON_AddItemToArray(arg_list, a_json);
         }
         cJSON_AddItemToArray(list, entry);
@@ -911,15 +1552,29 @@ error_response(const char* code, const char* message)
     return response;
 }
 
-static const cmd_def*
-find_command(const char* name)
+// Built-in commands first, then the application's. Fills `out` (a view
+// for host commands) and returns false if `name` is neither.
+static b8
+find_command(const command_context* ctx, const char* name, cmd_def* out)
 {
     for (uint32 i = 0; i < COMMAND_COUNT; ++i)
     {
         if (strcmp(COMMANDS[i].name, name) == 0)
-            return &COMMANDS[i];
+        {
+            *out = COMMANDS[i];
+            return true;
+        }
     }
-    return NULL;
+    for (uint32 i = 0; i < ctx->host_command_count; ++i)
+    {
+        const cmd_host_command* h = &ctx->host_commands[i];
+        if (strcmp(h->name, name) == 0)
+        {
+            *out = (cmd_def){ h->name, h->doc, h->args, h->arg_count, h->mutates_world, NULL, h };
+            return true;
+        }
+    }
+    return false;
 }
 
 // Rejects arguments the command doesn't take -- a typo like "entitiy"
@@ -960,15 +1615,20 @@ cmd_execute(command_context* ctx, const cJSON* request)
     if (args && !cJSON_IsObject(args) && !cJSON_IsNull(args))
         return error_response(CMD_ERROR_BAD_REQUEST, "\"args\" must be an object");
 
-    const cmd_def* def = find_command(cmd->valuestring);
-    if (!def)
+    cmd_def found;
+    if (!find_command(ctx, cmd->valuestring, &found))
     {
-        char message[1024];
-        int  used = snprintf(message, sizeof(message), "unknown command \"%s\"; commands are: ", cmd->valuestring);
-        for (uint32 i = 0; i < COMMAND_COUNT && used < (int)sizeof(message); ++i)
-            used += snprintf(message + used, sizeof(message) - (size_t)used, "%s%s", i ? ", " : "", COMMANDS[i].name);
+        char   message[2048];
+        size_t used  = (size_t)snprintf(message, sizeof(message), "unknown command \"%s\"; commands are: ", cmd->valuestring);
+        uint32 total = (uint32)COMMAND_COUNT + ctx->host_command_count;
+        for (uint32 i = 0; i < total && used < sizeof(message); ++i)
+        {
+            const char* name = i < COMMAND_COUNT ? COMMANDS[i].name : ctx->host_commands[i - COMMAND_COUNT].name;
+            used += (size_t)snprintf(message + used, sizeof(message) - used, "%s%s", i ? ", " : "", name);
+        }
         return error_response(CMD_ERROR_UNKNOWN_COMMAND, message);
     }
+    const cmd_def* def = &found;
 
     // A missing "args" is the same as {}.
     cJSON* empty = NULL;
@@ -989,7 +1649,16 @@ cmd_execute(command_context* ctx, const cJSON* request)
     if (def->mutates)
         history_capture(ctx->w, &before, &before_count);
 
-    b8 ok = def->handler(ctx, args, &out);
+    b8 ok;
+    if (def->handler)
+    {
+        ok = def->handler(ctx, args, &out);
+    }
+    else
+    {
+        out.error_code = CMD_ERROR_INVALID_VALUE;
+        ok = def->host->fn(ctx->host_user, args, &out.result, out.error, sizeof(out.error));
+    }
 
     history_change* changes = NULL;
     uint32          change_count = 0;

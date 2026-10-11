@@ -184,6 +184,18 @@ assets_builtin(asset_cache* cache, builtin_shape shape)
     return insert(cache, BUILTIN_KEYS[shape], m);
 }
 
+asset_id
+assets_add_model(asset_cache* cache, const char* key, model m)
+{
+    asset_id existing = find_key(cache, key);
+    if (existing != ASSET_NONE)
+    {
+        model_destroy(&m);
+        return existing;
+    }
+    return insert(cache, key, m);
+}
+
 b8
 assets_is_builtin_key(const char* key)
 {

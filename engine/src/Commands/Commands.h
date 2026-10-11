@@ -37,6 +37,31 @@
 // (including undo, redo and rollbacks). `event` is only valid during the call.
 typedef void (*cmd_change_fn)(void* user_data, const cJSON* event);
 
+// One argument of a command, as commands.list reports it.
+typedef struct cmd_arg
+{
+    const char* name;
+    const char* type;       // "string", "number", "boolean", "entity", "component", "object", "array", "vec3"
+    b8          required;
+    const char* doc;
+} cmd_arg;
+
+// A command the application adds for state the World doesn't hold -- the
+// camera, the HDRI environment, rendering settings. It is listed, argument-
+// checked and reported exactly like a built-in command. Return false and
+// fill `error` to fail; on success *out_result may stay NULL ({} is sent).
+typedef b8 (*cmd_host_fn)(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size);
+
+typedef struct cmd_host_command
+{
+    const char*    name;           // e.g. "environment.set"
+    const char*    doc;
+    const cmd_arg* args;
+    uint32         arg_count;
+    b8             mutates_world;  // true only if it changes World entities (snapshots + undo apply)
+    cmd_host_fn    fn;
+} cmd_host_command;
+
 typedef struct command_context
 {
     world*           w;
@@ -44,6 +69,12 @@ typedef struct command_context
     uint64           revision;         // bumped once per change to the world
     cmd_change_fn    on_change;        // optional
     void*            on_change_user;
+
+    const cmd_host_command* host_commands;   // optional application commands
+    uint32                  host_command_count;
+    void*                   host_user;
+
+    const char* scenes_dir;            // where scene.save/load/list work; NULL = assets/scenes
 
     uint32           batch_depth;      // internal: > 0 while a batch runs its commands
 } command_context;

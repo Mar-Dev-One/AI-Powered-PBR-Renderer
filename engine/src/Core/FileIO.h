@@ -10,6 +10,17 @@
 // Caller owns the returned buffer and must free() it.
 char* file_read_to_string(const char* path);
 
+// True if `path` exists and is a regular file. Quiet: for checks where a
+// missing file is an expected answer rather than an error.
+b8 file_exists(const char* path);
+
+// Writes `text` to `path`, replacing the file. False (and logged) on failure.
+b8 file_write_string(const char* path, const char* text);
+
+// Creates `path` if it doesn't exist (parent must exist). True if it exists
+// afterwards.
+b8 file_make_directory(const char* path);
+
 // Called once per entry of a directory listing ("." and ".." skipped).
 // `name` is just the entry name, not a full path.
 typedef void (*file_visit_fn)(const char* name, b8 is_directory, void* user_data);

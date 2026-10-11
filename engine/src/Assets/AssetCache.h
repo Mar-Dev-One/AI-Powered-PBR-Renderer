@@ -56,6 +56,12 @@ asset_id assets_load_model(asset_cache* cache, const char* relative_path);
 // A built-in primitive, created on first request.
 asset_id assets_builtin(asset_cache* cache, builtin_shape shape);
 
+// Registers an already-built model under `key` (taking ownership of it), or
+// returns the existing ID if `key` is taken (and destroys `m`). For models
+// made in code -- and for tests, which register bounds-only models without a
+// GPU.
+asset_id assets_add_model(asset_cache* cache, const char* key, model m);
+
 // Either of the above by key: "builtin:cube" / "builtin:sphere" /
 // "builtin:plane", or a path under assets/. ASSET_NONE for an unknown
 // built-in name or a model that fails to load.
