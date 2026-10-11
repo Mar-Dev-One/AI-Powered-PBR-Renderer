@@ -12,10 +12,8 @@
 #include "Core/Paths.h"
 #include "RHI/RHI.h"
 #include "Renderer/IBL.h"
-#include "Renderer/Lighting.h"
-#include "Renderer/PostProcess.h"
 #include "Renderer/Renderer.h"
-#include "Renderer/Shadow.h"
+#include "Renderer/SceneRenderer.h"
 #include "Scene/Camera.h"
 #include "Scene/Model.h"
 #include "Scene/Scene.h"
@@ -119,7 +117,6 @@ typedef struct demo_state
     int        selected_model;     // index into MODEL_PATHS/MODEL_NAMES, driven by the GUI combo box
     int        loaded_model;       // which entry scene_model was last loaded from (-1 = not yet); the load may have failed, see submesh_count
     mat4       model_fit;          // centres + scales scene_model to a fixed on-screen size
-    rhi_shader pbr_shader;
     b8         spin;
     vec3       light_dir;          // direction the light travels toward the surface; normalized before use
     vec3       light_color;
@@ -152,19 +149,13 @@ typedef struct demo_state
     f32   fill_light_intensity;
     f32   fill_light_range;
 
-    // --- Shadow mapping ----------------------------------------------------
-    // Cascaded shadow maps (Renderer/Shadow.h) for the key directional
-    // light, re-fit and re-rendered every frame -- both the camera (orbit
-    // controls) and light_dir (live via the GUI) can change frame to
-    // frame, so the cascades can't be baked once at load time.
-    csm_state csm;
-    b8        debug_show_cascades;
-
-    // --- HDR + tone mapping ---------------------------------------------
-    // The lit modes render linear HDR into post's scene target, then
-    // post_end_scene() tone-maps it to the screen with `exposure`. The
-    // textured cube is plain LDR and draws straight to the screen.
-    post_process post;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
+    // --- Lit rendering ---------------------------------------------------------
+    // Renderer/SceneRenderer.h runs the whole lit frame (cascaded shadows,
+    // HDR target, skybox, PBR uniforms, tone mapping) for both lit modes;
+    // build_render_settings() turns the GUI state below into its settings.
+    // The textured cube is plain LDR and draws straight to the screen.
+    scene_renderer renderer;
+    b8             debug_show_cascades;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
 
     // --- Image-based lighting -----------------------------------------------
     // Baked from an HDRI (Renderer/IBL.h) and read by pbr.frag for ambient
@@ -452,30 +443,9 @@ on_init(App* app)
     rhi_shader_set_int(state->shader, "u_texture", 0);
 
     // --- Model viewer setup ---------------------------------------------
-    char* pbr_vertex_path   = asset_path("shaders/pbr.vert");
-    char* pbr_fragment_path = asset_path("shaders/pbr.frag");
-
-    state->pbr_shader = rhi_shader_create_from_files(pbr_vertex_path, pbr_fragment_path);
-
-    free(pbr_vertex_path);
-    free(pbr_fragment_path);
-
-    if (!state->pbr_shader)
-        FATAL("demo: failed to load PBR shader");
-
-    if (!csm_create(&state->csm, CASCADE_COUNT, SHADOW_MAP_SIZE))
-        FATAL("demo: failed to create cascaded shadow maps");
-
-    if (!post_create(&state->post, framebuffer_size.width, framebuffer_size.height))
-        FATAL("demo: failed to create the HDR post-process pass");
-
-    // Cascade texture units (CSM_SLOT_FIRST..+CSM_MAX_CASCADES-1) sit right
-    // after Material.h's five material slots (MATERIAL_SLOT_COUNT) so
-    // material_bind() never binds over them -- csm_bind() rebinds the
-    // actual textures every frame (shadow map contents change), but the
-    // sampler-to-unit assignment itself is also just set there each frame
-    // since it's cheap and keeps all of csm_bind()'s uniform-setting in one
-    // place rather than splitting setup between on_init() and on_frame().
+    if (!scene_renderer_create(&state->renderer, framebuffer_size.width, framebuffer_size.height,
+                               CASCADE_COUNT, SHADOW_MAP_SIZE))
+        FATAL("demo: failed to create the scene renderer");
 
     state->grid_albedo[0] = state->grid_albedo[1] = state->grid_albedo[2] = 0.9f;
 
@@ -590,7 +560,7 @@ static void on_resize(App* app, uint16 width, uint16 height)
         return;
 
     camera_set_aspect(&state->cam, (f32)width / (f32)height);
-    post_resize(&state->post, width, height);
+    scene_renderer_resize(&state->renderer, width, height);
 }
 
 static void on_key(App* app, int key, int action, int mods)
@@ -690,7 +660,7 @@ frame_material_grid(demo_state* state)
 // out to a soft glow as roughness rises, and diffuse-only dielectrics (bottom
 // row) that pick up the sky and ground colors from the irradiance map.
 static void
-draw_material_grid(demo_state* state, const mat4 view_projection)
+draw_material_grid(demo_state* state, rhi_shader shader)
 {
     if (!state->grid_load_attempted)
     {
@@ -704,35 +674,6 @@ draw_material_grid(demo_state* state, const mat4 view_projection)
     model* sphere = &state->grid_model;
     if (sphere->submesh_count == 0)
         return;
-
-    if (state->ibl_enabled && state->show_skybox)
-    {
-        mat4 view, projection;
-        camera_get_view(&state->cam, view);
-        camera_get_projection(&state->cam, projection);
-
-        ibl_draw_skybox(&state->ibl, view, projection, state->sky_blur);
-    }
-
-    sync_scene_lights(state);
-
-    rhi_shader shader = state->pbr_shader;
-
-    rhi_shader_bind(shader);
-    rhi_shader_set_mat4(shader, "u_view_projection", (const f32*)view_projection);
-    lighting_bind(shader, &state->demo_scene);
-    rhi_shader_set_vec3(shader, "u_view_pos",
-                         state->cam.position[0], state->cam.position[1], state->cam.position[2]);
-    rhi_shader_set_float(shader, "u_ambient_strength", state->ambient_strength);
-
-    // The demo is about ambient light: rather than fit and render cascades
-    // for it, just tell the shader nothing casts a shadow (see pbr.frag's
-    // pick_cascade()) -- cheaper than the single-shadow-map version's
-    // old trick of rendering an empty shadow map with an identity light
-    // matrix, and needs no framebuffer bound at all.
-    rhi_shader_set_int(shader, "u_cascade_count", 0);
-
-    ibl_bind(state->ibl_enabled ? &state->ibl : NULL, shader);
 
     // sphere.obj has no material of its own, so every submesh uses
     // default_material: rewrite it between draws. The picker shows sRGB,
@@ -769,10 +710,26 @@ draw_material_grid(demo_state* state, const mat4 view_projection)
     }
 }
 
-// Background where nothing (not even the skybox) is drawn: App.c's screen
-// clear color, (0.4, 0.1, 0.12) in sRGB, converted to linear so it comes
-// out of tone mapping looking about the same.
-#define SCENE_CLEAR_LINEAR 0.133f, 0.0063f, 0.0094f
+// This frame's SceneRenderer settings from the GUI state.
+static scene_render_settings
+build_render_settings(const demo_state* state)
+{
+    scene_render_settings settings = scene_render_settings_default();
+
+    settings.ibl                 = state->ibl_enabled ? &state->ibl : NULL;
+    settings.show_skybox         = state->show_skybox;
+    settings.sky_blur            = state->sky_blur;
+    settings.ambient_strength    = state->ambient_strength;
+    settings.exposure            = state->exposure;
+    settings.debug_show_cascades = state->debug_show_cascades;
+
+    // Where nothing (not even the skybox) is drawn: App.c's screen clear
+    // color, (0.4, 0.1, 0.12) in sRGB, converted to linear so it comes out
+    // of tone mapping looking about the same.
+    glm_vec3_copy((vec3){ 0.133f, 0.0063f, 0.0094f }, settings.clear_color);
+
+    return settings;
+}
 
 static void on_frame(App* app, f32 dt)
 {
@@ -786,13 +743,16 @@ static void on_frame(App* app, f32 dt)
     // state) which App.c already guarantees by calling it before on_frame.
     orbit_camera_update(state, wind);
 
-    f32 time = (f32)window_get_time();
+    // Picks up edits to pbr.vert/pbr.frag saved while the app runs.
+    scene_renderer_poll_hot_reload(&state->renderer);
 
-    mat4 view_projection;
-    camera_get_view_projection(&state->cam, view_projection);
+    f32 time = (f32)window_get_time();
 
     if (state->mode == RENDER_MODE_TEXTURED_CUBE)
     {
+        mat4 view_projection;
+        camera_get_view_projection(&state->cam, view_projection);
+
         mat4 model;
         glm_mat4_identity(model);
         glm_rotate(model, time, (vec3){ 0.3f, 1.0f, 0.2f });
@@ -812,9 +772,15 @@ static void on_frame(App* app, f32 dt)
         if (state->selected_hdri != state->loaded_hdri)
             load_selected_hdri(state, state->selected_hdri);
 
-        post_begin_scene(&state->post, SCENE_CLEAR_LINEAR);
-        draw_material_grid(state, view_projection);
-        post_end_scene(&state->post, state->exposure);
+        sync_scene_lights(state);
+
+        // The demo is about ambient light, so no shadow pass.
+        scene_render_settings settings = build_render_settings(state);
+        settings.shadows = false;
+
+        rhi_shader shader = scene_renderer_begin(&state->renderer, &state->demo_scene, &state->cam, &settings);
+        draw_material_grid(state, shader);
+        scene_renderer_end(&state->renderer, &settings);
     }
     else // RENDER_MODE_LIT_MODEL
     {
@@ -854,75 +820,20 @@ static void on_frame(App* app, f32 dt)
             glm_mat4_copy(world, state->demo_scene.entities[state->model_entity].local_transform);
             sync_scene_lights(state);
 
-            // The key light is the scene's first light and its only
-            // directional one, which is the light lighting_bind() marks as
-            // shadowed -- so fit the cascades to its world-space direction.
-            light gathered_lights[1];
-            scene_gather_lights(&state->demo_scene, gathered_lights, NULL, 1);
-            f32* light_dir_normalized = gathered_lights[0].direction;   // normalized by scene_gather_lights()
+            scene_render_settings settings = build_render_settings(state);
 
-            // --- Shadow pass -----------------------------------------------
-            // Re-fit every cascade to this frame's camera + light_dir, then
-            // render each one's depth pass. See Renderer/Shadow.h for how
-            // the fit itself works; unlike the old single fixed-radius-2
-            // ortho box, this tracks the camera instead of the model, so it
-            // scales to whatever the camera can see rather than whatever
-            // model_get_fit_transform() happened to fit into a 2-unit cube.
-            csm_update(&state->csm, &state->cam, light_dir_normalized, 0.5f);
-            csm_render(&state->csm, &state->demo_scene);
+            // Shadows for the key light, skybox, and every per-frame PBR
+            // uniform; what's left for the draws below is u_model,
+            // u_normal_matrix and the material.
+            rhi_shader shader = scene_renderer_begin(&state->renderer, &state->demo_scene, &state->cam, &settings);
 
-            // csm_render() leaves the default framebuffer bound -- switch
-            // to the HDR target only now, for everything that's shaded.
-            post_begin_scene(&state->post, SCENE_CLEAR_LINEAR);
-
-            // Background first: it writes no depth, and blended materials drawn
-            // below need the sky already behind them.
-            if (state->ibl_enabled && state->show_skybox)
-            {
-                mat4 view, projection;
-                camera_get_view(&state->cam, view);
-                camera_get_projection(&state->cam, projection);
-
-                ibl_draw_skybox(&state->ibl, view, projection, state->sky_blur);
-            }
-
-            rhi_shader shader = state->pbr_shader;
-
-            mat4 view_only;
-            camera_get_view(&state->cam, view_only);
-
-            rhi_shader_bind(shader);
-            rhi_shader_set_mat4(shader, "u_view_projection", (const f32*)view_projection);
-            rhi_shader_set_mat4(shader, "u_view", (const f32*)view_only);   // pbr.vert: v_view_depth, for cascade selection
-            rhi_shader_set_int(shader, "u_debug_show_cascades", state->debug_show_cascades);
-            lighting_bind(shader, &state->demo_scene);
-            rhi_shader_set_vec3(shader, "u_view_pos",
-                                 state->cam.position[0], state->cam.position[1], state->cam.position[2]);
-            rhi_shader_set_float(shader, "u_ambient_strength", state->ambient_strength);
-
-            // Ambient light: baked IBL when enabled, else the shader's
-            // hemisphere fallback. Uses IBL_SLOT_* texture units, clear of
-            // the material slots and the shadow cascades.
-            ibl_bind(state->ibl_enabled ? &state->ibl : NULL, shader);
-
-            // Binds every cascade's depth texture to its fixed unit
-            // (CSM_SLOT_FIRST..+CSM_MAX_CASCADES-1, clear of the material
-            // slots -- material_bind() inside model_draw() below never
-            // touches them) and sets the matching u_shadow_maps[]/
-            // u_light_view_projection[]/u_cascade_splits[]/u_cascade_count
-            // uniforms.
-            csm_bind(&state->csm, shader);
-
-            // u_model / u_normal_matrix and every material uniform + texture
-            // binding are set per submesh inside model_draw() (called once
-            // per ENTITY_MODEL by scene_draw_models() -- just the one
-            // model_entity today, but N from here on costs nothing extra).
-            scene_draw_models(&state->demo_scene, shader);
-
+            // Opaque ground first, so the model's blended materials (drawn
+            // last by model_draw()) end up in front of it rather than under.
             if (state->show_ground)
             {
                 // Not part of `world` (Spin * Fit) -- the ground shouldn't
-                // spin with the model, just sit under it at ground_y.
+                // spin with the model, just sit under it at ground_y. Not a
+                // scene entity either, so it receives shadows but casts none.
                 mat4 ground_world;
                 glm_mat4_identity(ground_world);
                 glm_translate(ground_world, (vec3){ 0.0f, state->ground_y, 0.0f });
@@ -934,16 +845,15 @@ static void on_frame(App* app, f32 dt)
                 rhi_shader_set_mat4(shader, "u_model", (const f32*)ground_world);
                 rhi_shader_set_mat4(shader, "u_normal_matrix", (const f32*)ground_normal_matrix);
 
-                // The cascades are already bound to their fixed units from
-                // csm_bind() above and material_bind() never touches them,
-                // so they're still in place here -- no rebind needed.
                 material_bind(&state->ground_material, shader, false);
                 mesh_draw(&state->ground_mesh);
 
                 rhi_set_render_state(rhi_render_state_default());
             }
 
-            post_end_scene(&state->post, state->exposure);
+            scene_draw_models(&state->demo_scene, shader);
+
+            scene_renderer_end(&state->renderer, &settings);
         }
     }
 
@@ -1028,9 +938,7 @@ static void on_shutdown(App* app)
     material_destroy(&state->ground_material);
     model_destroy(&state->grid_model);
     ibl_destroy(&state->ibl);
-    csm_destroy(&state->csm);
-    post_destroy(&state->post);
-    rhi_shader_destroy(state->pbr_shader);
+    scene_renderer_destroy(&state->renderer);
 
     rhi_shader_destroy(state->shader);
     rhi_buffer_destroy(state->index_buffer);

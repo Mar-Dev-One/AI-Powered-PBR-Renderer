@@ -13,9 +13,22 @@ struct rhi_buffer
     GLuint vao;      // only set for vertex buffers, 0 for index buffers
 };
 
+// One cached glGetUniformLocation() result; name == NULL marks an empty slot.
+typedef struct gl_uniform_slot
+{
+    char*  name;       // owned copy
+    uint32 hash;
+    GLint  location;   // -1 cached too, so missing names aren't re-queried
+} gl_uniform_slot;
+
 struct rhi_shader
 {
     GLuint program;
+
+    // Open-addressing hash table, power-of-two capacity (see RHI_GL_Shader.c).
+    gl_uniform_slot* uniforms;
+    uint32           uniform_capacity;
+    uint32           uniform_count;
 };
 
 struct rhi_texture

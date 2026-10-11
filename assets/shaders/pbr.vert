@@ -1,10 +1,11 @@
 #version 460 core
 
-// Cascade count must match Renderer/Shadow.h's CSM_MAX_CASCADES -- no
-// shared header between C and GLSL here, so the two are defined separately
-// and must be edited together (same reasoning as Lighting.h's
-// LIGHTING_MAX_LIGHTS note).
-#define CSM_MAX_CASCADES 4
+// CSM_MAX_CASCADES and friends are injected at compile time from the C
+// headers (see scene_renderer_shader_defines() in Renderer/SceneRenderer.c),
+// so the C and GLSL values can't drift apart.
+#ifndef CSM_MAX_CASCADES
+#error "pbr.vert must be compiled with SceneRenderer's defines"
+#endif
 
 // Vertex layout is Scene/Mesh.h's mesh_vertex.
 layout(location = 0) in vec3 in_pos;

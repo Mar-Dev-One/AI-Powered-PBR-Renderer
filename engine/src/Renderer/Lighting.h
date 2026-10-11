@@ -8,10 +8,9 @@
 // uniforms -- the multi-light equivalent of Renderer/IBL.h's ibl_bind(),
 // just for direct light instead of indirect.
 
-// Upper bound on lights pbr.frag's u_lights[] array holds. Keep this in
-// sync with pbr.frag's own MAX_LIGHTS -- there is no shared header between
-// C and GLSL here, so the two are defined separately and must be edited
-// together.
+// Upper bound on lights pbr.frag's u_lights[] array holds. Reaches GLSL as
+// MAX_LIGHTS through scene_renderer_shader_defines() (SceneRenderer.h), so
+// this is the only place to change it.
 #define LIGHTING_MAX_LIGHTS 8
 
 // Gathers every ENTITY_LIGHT in `s` (scene_gather_lights(), Scene.h) and

@@ -39,6 +39,9 @@ typedef struct rhi_shader_desc
 {
     const char* vertex_src;
     const char* fragment_src;
+    const char* defines;   // optional (NULL = none): source text, e.g. "#define N 4\n", inserted into
+                           // both stages right after their #version line -- how C-side constants
+                           // reach GLSL without being written out twice
 } rhi_shader_desc;
 
 #define RHI_MAX_COLOR_ATTACHMENTS 4
@@ -150,12 +153,19 @@ rhi_shader rhi_shader_create(rhi_shader_desc desc);
 // fails (see rhi_shader_create()).
 rhi_shader rhi_shader_create_from_files(const char* vertex_path, const char* fragment_path);
 
+// Same, with rhi_shader_desc::defines set to `defines` (may be NULL).
+rhi_shader rhi_shader_create_from_files_with_defines(const char* vertex_path, const char* fragment_path,
+                                                     const char* defines);
+
 void       rhi_shader_bind(rhi_shader shader);
 void       rhi_shader_destroy(rhi_shader shader);
 
 // --- Shader uniforms -----------------------------------------------------
 // Uses GL's Direct State Access (glProgramUniform*, core since GL 4.1) —
-// the shader does NOT need to be bound first. `matrix` is 16 floats,
+// the shader does NOT need to be bound first. Each shader caches
+// name -> location lookups, so setting a uniform by name every frame only
+// queries the driver the first time that name is used. Names that don't
+// exist (or were optimized out) are silently ignored. `matrix` is 16 floats,
 // column-major (the layout cglm's mat4 already uses, so callers can just
 // pass `(const f32*)&some_mat4[0][0]`).
 void rhi_shader_set_mat4(rhi_shader shader, const char* name, const f32* matrix);

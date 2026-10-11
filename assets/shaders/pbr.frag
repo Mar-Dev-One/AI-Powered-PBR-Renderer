@@ -9,17 +9,14 @@
 // Output is linear HDR radiance for Renderer/PostProcess.h's RGBA16F scene
 // target; exposure, tone mapping and gamma happen there (tonemap.frag).
 
-// Must match pbr.vert's #define of the same name (and Renderer/Shadow.h's
-// CSM_MAX_CASCADES on the C side) -- see pbr.vert's comment.
-#define CSM_MAX_CASCADES 4
-
-// Must match Renderer/Lighting.h's LIGHTING_MAX_LIGHTS -- see its comment.
-#define MAX_LIGHTS 8
-
-// Values of Scene/Light.h's light_type enum.
-#define LIGHT_DIRECTIONAL 0
-#define LIGHT_POINT       1
-#define LIGHT_SPOT        2
+// Injected at compile time from the C side (scene_renderer_shader_defines(),
+// Renderer/SceneRenderer.c), never written out here:
+//   CSM_MAX_CASCADES                            Renderer/Shadow.h
+//   MAX_LIGHTS                                  Renderer/Lighting.h's LIGHTING_MAX_LIGHTS
+//   LIGHT_DIRECTIONAL / LIGHT_POINT / LIGHT_SPOT  Scene/Light.h's light_type values
+#if !defined(CSM_MAX_CASCADES) || !defined(MAX_LIGHTS) || !defined(LIGHT_SPOT)
+#error "pbr.frag must be compiled with SceneRenderer's defines"
+#endif
 
 in vec3 v_world_pos;
 in vec3 v_normal;

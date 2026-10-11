@@ -70,6 +70,12 @@ rhi_shader rhi_shader_create(rhi_shader_desc desc)
 
 rhi_shader rhi_shader_create_from_files(const char* vertex_path, const char* fragment_path)
 {
+    return rhi_shader_create_from_files_with_defines(vertex_path, fragment_path, NULL);
+}
+
+rhi_shader rhi_shader_create_from_files_with_defines(const char* vertex_path, const char* fragment_path,
+                                                     const char* defines)
+{
     char* vertex_src = file_read_to_string(vertex_path);
     char* fragment_src = file_read_to_string(fragment_path);
 
@@ -79,7 +85,8 @@ rhi_shader rhi_shader_create_from_files(const char* vertex_path, const char* fra
     {
         rhi_shader_desc desc = {
             .vertex_src = vertex_src,
-            .fragment_src = fragment_src
+            .fragment_src = fragment_src,
+            .defines = defines
         };
 
         shader = rhi_shader_create(desc);

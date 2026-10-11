@@ -7,6 +7,7 @@ add_library(PBR_Engine STATIC
     src/Renderer/IBL.c
     src/Renderer/Lighting.c
     src/Renderer/PostProcess.c
+    src/Renderer/SceneRenderer.c
     src/Renderer/Shadow.c
     src/RHI/RHI.c
     src/RHI/OpenGL/RHI_GL.c
