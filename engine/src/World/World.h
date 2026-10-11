@@ -1,0 +1,146 @@
+#pragma once
+
+#include "../Core/Defines.h"
+#include "../Assets/AssetCache.h"
+#include "../Scene/Camera.h"
+#include "Components.h"
+
+#include <cglm/cglm.h>
+
+// A set of entities, each an ID with a name, a transform and any of the
+// optional components in Components.h. Replaces the old Scene/Scene.h,
+// whose entities were exactly one of model / light / camera, were never
+// removed, and were addressed by raw array index.
+//
+// IDs: an entity_id packs a slot index with that slot's generation. Destroying
+// an entity bumps the generation, so an ID kept past its entity's lifetime
+// is recognised as stale -- every function below checks, and fails safely
+// (NULL / false / no-op), instead of touching whatever reused the slot. That
+// is what makes it safe to hand IDs to tools and to an LLM across turns.
+//
+// Storage: one array per component type plus a presence bitmask per slot.
+// Component pointers returned below stay valid until the next
+// world_create() (which may grow the arrays); don't keep them across it.
+//
+// Every entity always has COMPONENT_NAME and COMPONENT_TRANSFORM. Names are
+// unique: world_create() makes a requested name unique by appending _2,
+// _3, ... rather than failing.
+//
+// Rendering is not done here -- Renderer/SceneRenderer.h walks the World's
+// MeshRenderer and Light entities.
+
+typedef struct world
+{
+    uint32  capacity;
+    uint32* generations;
+    uint32* masks;           // COMPONENT_BIT()s, plus WORLD_ALIVE_BIT for live slots
+    uint32* free_list;
+    uint32  free_count;
+    uint32  alive_count;
+
+    c_name*          names;
+    c_transform*     transforms;
+    c_parent*        parents;
+    c_mesh_renderer* mesh_renderers;
+    c_light*         lights;
+    c_camera*        cameras;
+
+    // Derived by world_update().
+    mat4*   world_matrices;
+    vec3*   bounds_min;      // world-space AABB; only meaningful for MeshRenderer entities with a loaded model
+    vec3*   bounds_max;
+    uint32* update_stamps;   // which world_update() last resolved each slot
+    uint32  current_stamp;
+
+    asset_cache* assets;     // borrowed; must outlive the World
+} world;
+
+void world_init(world* w, asset_cache* assets);
+
+// Destroys every entity (releasing their assets) and frees the storage.
+void world_shutdown(world* w);
+
+// --- Entities ---------------------------------------------------------------
+
+// New entity with a Name and an identity Transform (scale 1). `name` may be
+// NULL ("entity"); a name already in use gets a _2, _3, ... suffix.
+entity_id world_create(world* w, const char* name);
+
+// Destroys `e` and, recursively, every entity parented to it. Releases
+// MeshRenderer assets. No-op for a stale ID.
+void world_destroy(world* w, entity_id e);
+
+void   world_clear(world* w);   // destroys every entity
+b8     world_is_alive(const world* w, entity_id e);
+uint32 world_count(const world* w);
+
+const char* world_name(const world* w, entity_id e);   // NULL if stale
+entity_id   world_find(const world* w, const char* name);   // ENTITY_NULL if none
+
+// False (and no change) if `name` is empty, too long or used by another entity.
+b8 world_rename(world* w, entity_id e, const char* name);
+
+// --- Components -------------------------------------------------------------
+
+b8 world_has(const world* w, entity_id e, component_type type);
+
+// Removes an optional component. Name and Transform can't be removed.
+// Removing MeshRenderer releases its asset; removing Parent moves the entity
+// to the root.
+void world_remove(world* w, entity_id e, component_type type);
+
+// Typed access. Each returns NULL if `e` is stale or lacks the component.
+// They take a const world (like strchr) so read-only code -- renderers --
+// can use them too; writing through the result from such code is a bug.
+c_transform*     world_transform(const world* w, entity_id e);
+c_mesh_renderer* world_mesh_renderer(const world* w, entity_id e);
+c_light*         world_light(const world* w, entity_id e);
+c_camera*        world_camera(const world* w, entity_id e);
+entity_id        world_parent(const world* w, entity_id e);   // ENTITY_NULL if unparented or stale
+
+// Add (or replace) a component and return it, NULL if `e` is stale.
+// world_add_mesh_renderer() retains `model` (ASSET_NONE is allowed: it
+// draws nothing); visible and cast_shadows default to true.
+c_mesh_renderer* world_add_mesh_renderer(world* w, entity_id e, asset_id model);
+c_light*         world_add_light(world* w, entity_id e, light l);
+c_camera*        world_add_camera(world* w, entity_id e, f32 fov_degrees, f32 near_plane, f32 far_plane);
+
+// Swaps a MeshRenderer's model, keeping reference counts right. False if
+// `e` is stale or has no MeshRenderer.
+b8 world_set_model(world* w, entity_id e, asset_id model);
+
+// Parents `child` to `parent` (ENTITY_NULL = move to the root). False, and
+// no change, if either is stale or `parent` is `child` or one of its
+// descendants. The child keeps its local transform, so it moves with the
+// new parent from the next world_update().
+b8 world_set_parent(world* w, entity_id child, entity_id parent);
+
+// --- Derived state ---------------------------------------------------------
+
+// Recomputes every entity's world matrix (parent chains included) and every
+// MeshRenderer's world-space bounds. Call once per frame after changing
+// transforms and before rendering or gathering lights.
+void world_update(world* w);
+
+// World matrix as of the last world_update(); NULL if stale.
+const vec4* world_matrix(const world* w, entity_id e);
+
+// World-space AABB as of the last world_update(). False if `e` has no
+// MeshRenderer with a loaded model.
+b8 world_bounds(const world* w, entity_id e, vec3 out_min, vec3 out_max);
+
+// Every Light entity's light, with `direction` rotated into world space
+// (normalized) and, if out_positions is non-NULL, its world position.
+// Storage order, up to `max`. Returns how many were written.
+uint32 world_gather_lights(const world* w, light* out_lights, vec3* out_positions, uint32 max);
+
+// Fills `out` from a Camera entity's world transform and settings. False
+// if `e` is stale or has no Camera.
+b8 world_camera_view(const world* w, entity_id e, f32 aspect, camera* out);
+
+// --- Iteration --------------------------------------------------------------
+
+// Next live entity after `previous` (ENTITY_NULL = start) having every
+// component in `required_mask` (0 = any). ENTITY_NULL when done:
+//   for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+entity_id world_next(const world* w, entity_id previous, uint32 required_mask);

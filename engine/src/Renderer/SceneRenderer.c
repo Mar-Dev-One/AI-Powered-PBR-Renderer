@@ -114,13 +114,13 @@ scene_renderer_resize(scene_renderer* r, uint16 width, uint16 height)
     post_resize(&r->post, width, height);
 }
 
-// World-space direction of the first LIGHT_DIRECTIONAL in scene order --
+// World-space direction of the first LIGHT_DIRECTIONAL in world order --
 // the light lighting_bind() marks as shadowed. False if there is none.
 static b8
-find_shadow_light(const scene* s, vec3 out_direction)
+find_shadow_light(const world* w, vec3 out_direction)
 {
     light  lights[LIGHTING_MAX_LIGHTS];
-    uint32 count = scene_gather_lights(s, lights, NULL, LIGHTING_MAX_LIGHTS);
+    uint32 count = world_gather_lights(w, lights, NULL, LIGHTING_MAX_LIGHTS);
 
     for (uint32 i = 0; i < count; ++i)
     {
@@ -135,19 +135,19 @@ find_shadow_light(const scene* s, vec3 out_direction)
 }
 
 rhi_shader
-scene_renderer_begin(scene_renderer* r, const scene* s, const camera* cam,
+scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
                      const scene_render_settings* settings)
 {
     // --- Shadow pass ---------------------------------------------------------
     // Before the HDR target is bound: csm_render() binds its own
     // framebuffers and leaves the default one bound when it's done.
     vec3 shadow_dir;
-    b8   shadowed = settings->shadows && find_shadow_light(s, shadow_dir);
+    b8   shadowed = settings->shadows && find_shadow_light(w, shadow_dir);
 
     if (shadowed)
     {
         csm_update(&r->csm, cam, shadow_dir, settings->cascade_split_lambda);
-        csm_render(&r->csm, s);
+        csm_render(&r->csm, w);
     }
 
     // --- Scene target + background ----------------------------------------------
@@ -171,7 +171,7 @@ scene_renderer_begin(scene_renderer* r, const scene* s, const camera* cam,
     rhi_shader_set_float(shader, "u_ambient_strength", settings->ambient_strength);
     rhi_shader_set_int(shader, "u_debug_show_cascades", settings->debug_show_cascades);
 
-    lighting_bind(shader, s);
+    lighting_bind(shader, w);
     ibl_bind(settings->ibl, shader);
 
     // Always bound, even unshadowed: it points u_shadow_maps[] at their own
@@ -192,11 +192,31 @@ scene_renderer_end(scene_renderer* r, const scene_render_settings* settings)
 }
 
 void
-scene_renderer_draw(scene_renderer* r, const scene* s, const camera* cam,
+scene_renderer_draw_world(const world* w, rhi_shader shader)
+{
+    const uint32          mask      = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
+    const model_draw_pass passes[2] = { MODEL_PASS_OPAQUE, MODEL_PASS_BLEND };
+
+    for (int p = 0; p < 2; ++p)
+    {
+        for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+        {
+            const c_mesh_renderer* mr = world_mesh_renderer(w, e);
+            const model*           m  = assets_model(w->assets, mr->model);
+            if (!m || !mr->visible)
+                continue;
+
+            model_draw_ex(m, shader, world_matrix(w, e), &mr->material, passes[p]);
+        }
+    }
+}
+
+void
+scene_renderer_draw(scene_renderer* r, const world* w, const camera* cam,
                     const scene_render_settings* settings)
 {
-    rhi_shader shader = scene_renderer_begin(r, s, cam, settings);
-    scene_draw_models(s, shader);
+    rhi_shader shader = scene_renderer_begin(r, w, cam, settings);
+    scene_renderer_draw_world(w, shader);
     scene_renderer_end(r, settings);
 }
 

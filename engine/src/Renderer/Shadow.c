@@ -225,7 +225,7 @@ csm_update(csm_state* csm, const camera* cam, const vec3 light_dir, f32 lambda)
 }
 
 void
-csm_render(csm_state* csm, const scene* s)
+csm_render(csm_state* csm, const world* w)
 {
     rhi_shader_bind(csm->depth_shader);
 
@@ -234,7 +234,16 @@ csm_render(csm_state* csm, const scene* s)
         rhi_framebuffer_bind(csm->cascades[i].map);
         rhi_clear(0.0f, 0.0f, 0.0f, 1.0f);   // color ignored (no color attachment); also clears depth to 1.0
 
-        scene_draw_models_depth(s, csm->depth_shader, csm->cascades[i].view_projection);
+        const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
+        for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+        {
+            const c_mesh_renderer* mr = world_mesh_renderer(w, e);
+            const model*           m  = assets_model(w->assets, mr->model);
+            if (!m || !mr->visible || !mr->cast_shadows)
+                continue;
+
+            model_draw_depth(m, csm->depth_shader, world_matrix(w, e), csm->cascades[i].view_projection);
+        }
     }
 
     rhi_framebuffer_bind_default();

@@ -109,6 +109,90 @@ mesh mesh_create_uv_sphere(uint32 segments, uint32 rings)
     return m;
 }
 
+// One flat quad per face: `normal` faces out, `u_axis` is the direction of
+// increasing u (the tangent), and v runs along cross(normal, u_axis) so the
+// tangent handedness is always +1. Corners go (-u,-v) (+u,-v) (+u,+v)
+// (-u,+v), counter-clockwise seen from outside since u x v = normal.
+typedef struct face_desc
+{
+    vec3 normal;
+    vec3 u_axis;
+} face_desc;
+
+static mesh
+mesh_create_faces(const face_desc* faces, uint32 face_count)
+{
+    mesh_vertex vertices[6 * 4];
+    uint32      indices[6 * 6];
+
+    static const f32 CORNERS[4][2] = { { -0.5f, -0.5f }, { 0.5f, -0.5f }, { 0.5f, 0.5f }, { -0.5f, 0.5f } };
+
+    for (uint32 f = 0; f < face_count; ++f)
+    {
+        vec3 n, u, v;
+        glm_vec3_copy((f32*)faces[f].normal, n);
+        glm_vec3_copy((f32*)faces[f].u_axis, u);
+        glm_vec3_cross(n, u, v);
+
+        for (uint32 c = 0; c < 4; ++c)
+        {
+            mesh_vertex* vert = &vertices[f * 4 + c];
+
+            // Face centre sits half a unit out along the normal.
+            for (int k = 0; k < 3; ++k)
+                vert->position[k] = n[k] * 0.5f + u[k] * CORNERS[c][0] + v[k] * CORNERS[c][1];
+
+            glm_vec3_copy(n, vert->normal);
+            vert->uv[0] = CORNERS[c][0] + 0.5f;
+            vert->uv[1] = CORNERS[c][1] + 0.5f;
+            vert->tangent[0] = u[0];
+            vert->tangent[1] = u[1];
+            vert->tangent[2] = u[2];
+            vert->tangent[3] = 1.0f;
+        }
+
+        uint32 base = f * 4;
+        uint32* idx = &indices[f * 6];
+        idx[0] = base; idx[1] = base + 1; idx[2] = base + 2;
+        idx[3] = base; idx[4] = base + 2; idx[5] = base + 3;
+    }
+
+    return mesh_create(vertices, face_count * 4, indices, face_count * 6);
+}
+
+mesh mesh_create_cube(void)
+{
+    static const face_desc FACES[6] = {
+        { {  1.0f,  0.0f,  0.0f }, {  0.0f, 0.0f, -1.0f } },
+        { { -1.0f,  0.0f,  0.0f }, {  0.0f, 0.0f,  1.0f } },
+        { {  0.0f,  1.0f,  0.0f }, {  1.0f, 0.0f,  0.0f } },
+        { {  0.0f, -1.0f,  0.0f }, {  1.0f, 0.0f,  0.0f } },
+        { {  0.0f,  0.0f,  1.0f }, {  1.0f, 0.0f,  0.0f } },
+        { {  0.0f,  0.0f, -1.0f }, { -1.0f, 0.0f,  0.0f } },
+    };
+
+    return mesh_create_faces(FACES, 6);
+}
+
+mesh mesh_create_plane(void)
+{
+    mesh_vertex vertices[4];
+    static const f32 CORNERS[4][2] = { { -0.5f, 0.5f }, { 0.5f, 0.5f }, { 0.5f, -0.5f }, { -0.5f, -0.5f } };
+    for (uint32 c = 0; c < 4; ++c)
+    {
+        vertices[c] = (mesh_vertex){
+            .position = { CORNERS[c][0], 0.0f, CORNERS[c][1] },
+            .normal   = { 0.0f, 1.0f, 0.0f },
+            .uv       = { CORNERS[c][0] + 0.5f, 0.5f - CORNERS[c][1] },
+            .tangent  = { 1.0f, 0.0f, 0.0f, 1.0f }
+        };
+    }
+
+    // (-x,+z) (+x,+z) (+x,-z) (-x,-z): counter-clockwise seen from above.
+    const uint32 indices[6] = { 0, 1, 2, 0, 2, 3 };
+    return mesh_create(vertices, 4, indices, 6);
+}
+
 void mesh_compute_smooth_normals(mesh_vertex* vertices, uint32 vertex_count,
                                   const uint32* indices, uint32 index_count)
 {

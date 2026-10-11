@@ -2,9 +2,9 @@
 
 #include "../Core/Defines.h"
 #include "../RHI/RHI.h"
-#include "../Scene/Scene.h"
+#include "../World/World.h"
 
-// Bridges Scene.h's light entities to pbr.frag's u_lights[]/u_light_count
+// Bridges World.h's Light entities to pbr.frag's u_lights[]/u_light_count
 // uniforms -- the multi-light equivalent of Renderer/IBL.h's ibl_bind(),
 // just for direct light instead of indirect.
 
@@ -13,18 +13,16 @@
 // this is the only place to change it.
 #define LIGHTING_MAX_LIGHTS 8
 
-// Gathers every ENTITY_LIGHT in `s` (scene_gather_lights(), Scene.h) and
+// Gathers every Light entity in `w` (world_gather_lights(), World.h) and
 // uploads them to `shader`'s u_lights[] array plus u_light_count, in the
 // layout pbr.frag's scene_light struct expects. Lights beyond
-// LIGHTING_MAX_LIGHTS are silently dropped (the same cap
-// scene_gather_lights() enforces). Requires scene_update_world_transforms()
-// to have been called on `s` this frame -- same requirement as
-// scene_gather_lights() itself.
+// LIGHTING_MAX_LIGHTS are silently dropped. Requires world_update() on `w`
+// this frame.
 //
 // Shadowing: pbr.frag only shadow-tests against the cascades Renderer/
 // Shadow.h builds for one directional light (see csm_update()). This sets
-// u_shadow_light_index to the first LIGHT_DIRECTIONAL in scene storage
-// order (Scene.h), so pass that same light's direction to csm_update(); -1
+// u_shadow_light_index to the first LIGHT_DIRECTIONAL in world storage
+// order (World.h), so pass that same light's direction to csm_update(); -1
 // (no directional light) leaves every light unshadowed. Point and spot
 // lights cast no shadows until per-light shadow maps exist.
-void lighting_bind(rhi_shader shader, const scene* s);
+void lighting_bind(rhi_shader shader, const world* w);

@@ -59,6 +59,13 @@ mesh mesh_create(const mesh_vertex* vertices, uint32 vertex_count,
 // interesting thing on screen.
 mesh mesh_create_uv_sphere(uint32 segments, uint32 rings);
 
+// Unit cube (1 x 1 x 1) centred on the origin: 24 vertices so every face
+// has its own flat normal, tangent and full 0..1 UV square.
+mesh mesh_create_cube(void);
+
+// Unit square (1 x 1) on the XZ plane, centred on the origin, facing +Y.
+mesh mesh_create_plane(void);
+
 // --- CPU-side vertex helpers (run before mesh_create) --------------------
 
 // Fills in every vertex's `normal` as the area-weighted average of the

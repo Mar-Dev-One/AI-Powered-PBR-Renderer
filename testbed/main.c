@@ -16,8 +16,10 @@
 #include "Renderer/SceneRenderer.h"
 #include "Scene/Camera.h"
 #include "Scene/Model.h"
-#include "Scene/Scene.h"
+#include "Assets/AssetCache.h"
+#include "World/World.h"
 #include "Platform/Window.h"
+#include "UI/EntityPanel.h"
 #include "UI/ImGuiLayer.h"
 #include "cimgui.h"
 
@@ -90,13 +92,33 @@ static const char* HDRI_NAMES[] = {
 #define SHADOW_MAP_SIZE 2048
 #define CASCADE_COUNT   4
 
+// Material grid (RENDER_MODE_MATERIAL_GRID) layout.
+#define GRID_COLUMNS        7       // roughness: 0.05 (left) .. 1.0 (right)
+#define GRID_ROWS           5       // metallic:  1.0 (top)   .. 0.0 (bottom)
+#define GRID_SPACING        0.62f   // centre to centre, in world units
+#define GRID_SPHERE_RADIUS  0.27f
+
+// The grid sits right of the origin because the "Scene" panel covers the left
+// third of the default 800x600 window, and the leftmost column (the mirror-
+// smooth spheres) is the one worth seeing.
+#define GRID_CENTER_X       1.5f
+
+// The three demo lights, created identically in both lit worlds so the
+// same GUI sliders drive both (see sync_demo_lights()).
+typedef struct demo_lights
+{
+    entity_id key;    // directional, shadowed: the first Light entity in its world
+    entity_id fill;   // point
+    entity_id spot;   // spot, aimed at the origin
+} demo_lights;
+
 // Which of the two demo scenes on_frame draws this frame -- both share the
 // same camera/orbit controls, only the geometry/shader/GUI panel differ.
 typedef enum render_mode
 {
     RENDER_MODE_TEXTURED_CUBE,
     RENDER_MODE_LIT_MODEL,
-    RENDER_MODE_MATERIAL_GRID   // IBL demo: a metallic x roughness sphere grid, see draw_material_grid()
+    RENDER_MODE_MATERIAL_GRID   // IBL demo: a metallic x roughness sphere grid, see create_grid_world()
 } render_mode;
 
 typedef struct demo_state
@@ -110,13 +132,13 @@ typedef struct demo_state
     camera      cam;
 
     // --- Model viewer (RENDER_MODE_LIT_MODEL) ----------------------------
-    // A loaded model (Scene/Model.h) drawn through the PBR shader with one
-    // directional light. Everything below is exposed through ImGui so the
-    // shading math is easy to see change live.
-    model      scene_model;
+    // A loaded model on a ground plane under three lights, drawn through the
+    // PBR shader. Everything below is exposed through ImGui so the shading
+    // math is easy to see change live; the GUI edits these plain fields and
+    // sync_lit_world() / sync_grid_world() push them into the Worlds below
+    // every frame.
     int        selected_model;     // index into MODEL_PATHS/MODEL_NAMES, driven by the GUI combo box
-    int        loaded_model;       // which entry scene_model was last loaded from (-1 = not yet); the load may have failed, see submesh_count
-    mat4       model_fit;          // centres + scales scene_model to a fixed on-screen size
+    int        loaded_model;       // which entry was last requested (-1 = not yet); the load may have failed
     b8         spin;
     vec3       light_dir;          // direction the light travels toward the surface; normalized before use
     vec3       light_color;
@@ -124,25 +146,26 @@ typedef struct demo_state
     f32        ambient_strength;
     f32        exposure;
 
-    // --- Scene ---------------------------------------------------------------
-    // scene_model/light_dir above are still the values ImGui edits directly
-    // (sliders bind straight to them, same as before); demo_scene just holds
-    // an ENTITY_MODEL and an ENTITY_LIGHT that mirror them each frame, so
-    // on_frame can draw/gather through Scene.h instead of the single model
-    // and single light uniform set it used to reach for directly. as_model
-    // points at scene_model above, which never moves (same demo_state
-    // address for the app's lifetime), so it's wired up once in on_init().
-    scene demo_scene;
-    int32 model_entity;
-    int32 light_entity;
+    // --- Worlds (World/World.h) ----------------------------------------------
+    // Both lit modes are Worlds sharing one asset cache:
+    //   lit_world:  model_pivot (spins about Y) -> model (fit to ~2 units),
+    //               ground (built-in plane), key/fill/spot lights
+    //   grid_world: one sphere entity per grid cell, each with its own
+    //               metallic/roughness override, plus the same three lights
+    asset_cache assets;
+    world       lit_world;
+    world       grid_world;
+    entity_id   model_pivot;
+    entity_id   model_entity;
+    entity_id   ground_entity;
+    demo_lights lit_lights;
+    demo_lights grid_lights;
+    entity_id   grid_spheres[GRID_ROWS * GRID_COLUMNS];
 
     // --- Fill light (point) -------------------------------------------------
-    // A second scene light, demonstrating multi-light support end to end:
-    // position/color/intensity/range are all live-editable via ImGui, same
-    // as the key (directional) light above. Disabled by zeroing intensity
-    // (see sync_scene_lights()) rather than removed -- Scene.h has no
-    // entity-removal call yet (see its ownership note). Casts no shadow.
-    int32 fill_light_entity;
+    // Position/color/intensity/range are all live-editable via ImGui, same as
+    // the key (directional) light above. "Disabled" zeroes its intensity, so
+    // the entity (and the GUI's values) survive toggling. Casts no shadow.
     b8    fill_light_enabled;
     vec3  fill_light_pos;
     vec3  fill_light_color;
@@ -150,10 +173,9 @@ typedef struct demo_state
     f32   fill_light_range;
 
     // --- Spot light ------------------------------------------------------------
-    // A third light, off by default: a warm cone always aimed at the origin
-    // (where model_fit centres the model), so moving it never loses the
-    // target. Exercises pbr.frag's LIGHT_SPOT path. Casts no shadow.
-    int32 spot_light_entity;
+    // Off by default: a warm cone always aimed at the origin (where the model
+    // is centred), so moving it never loses the target. Exercises pbr.frag's
+    // LIGHT_SPOT path. Casts no shadow.
     b8    spot_light_enabled;
     vec3  spot_light_pos;
     vec3  spot_light_color;
@@ -164,22 +186,21 @@ typedef struct demo_state
 
     // --- Lit rendering ---------------------------------------------------------
     // Renderer/SceneRenderer.h runs the whole lit frame (cascaded shadows,
-    // HDR target, skybox, PBR uniforms, tone mapping) for both lit modes;
-    // build_render_settings() turns the GUI state below into its settings.
-    // The textured cube is plain LDR and draws straight to the screen.
+    // HDR target, skybox, PBR uniforms, every MeshRenderer, tone mapping) for
+    // both lit modes; build_render_settings() turns the GUI state below into
+    // its settings. The textured cube is plain LDR and draws straight to the
+    // screen.
     scene_renderer renderer;
     b8             debug_show_cascades;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
+
+    // --- Material grid (RENDER_MODE_MATERIAL_GRID) ----------------------------
+    // The classic IBL test pattern: the same sphere 7 x 5 times, roughness
+    // sweeping left to right and metallic top to bottom.
+    vec3 grid_albedo;   // sRGB, like default_albedo; converted to linear when applied
 
     // --- Image-based lighting -----------------------------------------------
     // Baked from an HDRI (Renderer/IBL.h) and read by pbr.frag for ambient
     // diffuse + specular. All zeroes when no HDRI could be loaded.
-    // --- Material grid (RENDER_MODE_MATERIAL_GRID) ----------------------------
-    // The classic IBL test pattern: the same sphere drawn 7 x 5 times, roughness
-    // sweeping left to right and metallic top to bottom. Loaded on first use.
-    model           grid_model;
-    b8              grid_load_attempted;
-    vec3            grid_albedo;         // sRGB, like default_albedo; converted to linear when drawn
-
     ibl_environment ibl;
     int             selected_hdri;   // index into HDRI_PATHS/HDRI_NAMES, driven by the GUI combo box
     int             loaded_hdri;     // which entry `ibl` was last baked from (-1 = not yet); the load may have failed
@@ -187,15 +208,7 @@ typedef struct demo_state
     b8              show_skybox;     // draw the HDRI as the background
     f32             sky_blur;        // 0..1, how blurry the background is
 
-    // --- Ground plane --------------------------------------------------------
-    // A big flat quad the shadow actually lands on -- built once in on_init()
-    // like CUBE_VERTICES above rather than wrapped in a model, since
-    // Scene/ModelInternal.h's model_add_*() helpers are private to the
-    // Scene/Model*.c loaders and this is just one hand-built quad.
-    mesh     ground_mesh;
-    material ground_material;
-    f32      ground_y;       // world-space height it sits at; set per loaded model, see load_selected_model()
-    b8       show_ground;
+    b8 show_ground;
 
     // Overrides for meshes the file gave no material (a bare .obj). Kept
     // here rather than on the model so they survive switching models.
@@ -347,41 +360,177 @@ on_scroll(App* app, f64 dx, f64 dy)
     orbit_camera_apply(state);
 }
 
-// (Re)loads the model at MODEL_PATHS[index] into state->scene_model, freeing
-// whatever was there. Runs on the render thread with the GL context current,
-// which is all model_load() needs.
+// sRGB color-picker value -> linear, as material colors are stored.
+static void
+srgb_to_linear(const vec3 srgb, f32 out[3])
+{
+    out[0] = powf(srgb[0], 2.2f);
+    out[1] = powf(srgb[1], 2.2f);
+    out[2] = powf(srgb[2], 2.2f);
+}
+
+// Adds the key/fill/spot light entities to `w` from the GUI's current
+// values. Called once per world; sync_demo_lights() keeps them current.
+static void
+create_demo_lights(demo_state* state, world* w, demo_lights* out)
+{
+    light key, fill, spot;
+    light_init_directional(&key, state->light_dir, state->light_color, state->light_intensity);
+    light_init_point(&fill, state->fill_light_color, state->fill_light_intensity, state->fill_light_range);
+
+    // Direction is re-aimed every frame by sync_demo_lights(); any non-zero
+    // vector does here.
+    light_init_spot(&spot, (vec3){ 0.0f, -1.0f, 0.0f }, state->spot_light_color, state->spot_light_intensity,
+                    state->spot_light_range, state->spot_light_inner_degrees, state->spot_light_outer_degrees);
+
+    // Key first: it's the first directional light, so it's the one shadowed.
+    out->key  = world_create(w, "key_light");
+    out->fill = world_create(w, "fill_light");
+    out->spot = world_create(w, "spot_light");
+
+    world_add_light(w, out->key, key);
+    world_add_light(w, out->fill, fill);
+    world_add_light(w, out->spot, spot);
+}
+
+// Pushes this frame's GUI light values into one world's light entities.
+// They're unparented, so their local transform/direction is world space.
+static void
+sync_demo_lights(demo_state* state, world* w, const demo_lights* lights)
+{
+    c_light* key = world_light(w, lights->key);
+    glm_vec3_normalize_to(state->light_dir, key->direction);
+    glm_vec3_copy(state->light_color, key->color);
+    key->intensity = state->light_intensity;
+
+    glm_vec3_copy(state->fill_light_pos, world_transform(w, lights->fill)->position);
+    c_light* fill = world_light(w, lights->fill);
+    glm_vec3_copy(state->fill_light_color, fill->color);
+    fill->intensity = state->fill_light_enabled ? state->fill_light_intensity : 0.0f;
+    fill->range     = state->fill_light_range;
+
+    glm_vec3_copy(state->spot_light_pos, world_transform(w, lights->spot)->position);
+    c_light* spot = world_light(w, lights->spot);
+
+    // Aim at the origin.
+    vec3 to_origin;
+    glm_vec3_negate_to(state->spot_light_pos, to_origin);
+    if (glm_vec3_norm2(to_origin) > 1e-8f)
+        glm_vec3_normalize_to(to_origin, spot->direction);
+
+    // The outer cone can't be narrower than the inner one.
+    if (state->spot_light_outer_degrees < state->spot_light_inner_degrees)
+        state->spot_light_outer_degrees = state->spot_light_inner_degrees;
+
+    glm_vec3_copy(state->spot_light_color, spot->color);
+    spot->intensity          = state->spot_light_enabled ? state->spot_light_intensity : 0.0f;
+    spot->range              = state->spot_light_range;
+    spot->inner_cone_degrees = state->spot_light_inner_degrees;
+    spot->outer_cone_degrees = state->spot_light_outer_degrees;
+}
+
+// Builds lit_world: the (still empty) model under a spinning pivot, the
+// ground plane and the lights. load_selected_model() fills the model in.
+static void
+create_lit_world(demo_state* state)
+{
+    world* w = &state->lit_world;
+
+    state->model_pivot  = world_create(w, "model_pivot");
+    state->model_entity = world_create(w, "model");
+    world_set_parent(w, state->model_entity, state->model_pivot);
+    world_add_mesh_renderer(w, state->model_entity, ASSET_NONE);
+
+    // An 8 x 8 plane the model's shadow lands on; its height follows the
+    // loaded model (load_selected_model()).
+    state->ground_entity = world_create(w, "ground");
+    glm_vec3_copy((vec3){ 8.0f, 1.0f, 8.0f }, world_transform(w, state->ground_entity)->scale);
+
+    c_mesh_renderer* ground = world_add_mesh_renderer(w, state->ground_entity,
+                                                      assets_builtin(&state->assets, BUILTIN_PLANE));
+    ground->cast_shadows = false;   // flat and facing up: there's nothing above it for it to shadow
+
+    // Dim, non-metal concrete-ish grey: dark enough that the shadow reads
+    // clearly against it without crushing to black.
+    ground->material.fields = MATERIAL_OVERRIDE_BASE_COLOR | MATERIAL_OVERRIDE_METALLIC | MATERIAL_OVERRIDE_ROUGHNESS;
+    ground->material.base_color[0] = ground->material.base_color[1] = ground->material.base_color[2] = 0.18f;
+    ground->material.metallic  = 0.0f;
+    ground->material.roughness = 0.9f;
+
+    create_demo_lights(state, w, &state->lit_lights);
+}
+
+// Builds grid_world: one built-in sphere per (roughness, metallic) cell.
+static void
+create_grid_world(demo_state* state)
+{
+    world*   w      = &state->grid_world;
+    asset_id sphere = assets_builtin(&state->assets, BUILTIN_SPHERE);
+
+    for (int row = 0; row < GRID_ROWS; ++row)
+    {
+        for (int col = 0; col < GRID_COLUMNS; ++col)
+        {
+            char name[32];
+            snprintf(name, sizeof(name), "sphere_r%d_c%d", row, col);
+
+            entity_id e = world_create(w, name);
+            state->grid_spheres[row * GRID_COLUMNS + col] = e;
+
+            c_transform* t = world_transform(w, e);
+            t->position[0] = GRID_CENTER_X + ((f32)col - 0.5f * (GRID_COLUMNS - 1)) * GRID_SPACING;
+            t->position[1] = (0.5f * (GRID_ROWS - 1) - (f32)row) * GRID_SPACING;
+            t->position[2] = 0.0f;
+            glm_vec3_fill(t->scale, 2.0f * GRID_SPHERE_RADIUS);   // the built-in sphere is 1 unit across
+
+            c_mesh_renderer* mr = world_add_mesh_renderer(w, e, sphere);
+            mr->material.fields    = MATERIAL_OVERRIDE_BASE_COLOR | MATERIAL_OVERRIDE_METALLIC | MATERIAL_OVERRIDE_ROUGHNESS;
+            mr->material.metallic  = 1.0f - (f32)row / (f32)(GRID_ROWS - 1);
+            mr->material.roughness = 0.05f + 0.95f * (f32)col / (f32)(GRID_COLUMNS - 1);
+        }
+    }
+
+    create_demo_lights(state, w, &state->grid_lights);
+}
+
+// Points lit_world's model entity at MODEL_PATHS[index], fits it into a ~2
+// unit box at the origin, and sits the ground under it.
 static void
 load_selected_model(demo_state* state, int index)
 {
-    model_destroy(&state->scene_model);
+    world* w = &state->lit_world;
 
-    char* path = asset_path(MODEL_PATHS[index]);
-    state->scene_model = model_load(path);
-    free(path);
-
-    // Recorded even when the load failed, so on_frame doesn't retry (and
-    // re-log the error) every single frame; the draw path checks
-    // submesh_count instead.
+    // Recorded even when the load fails, so on_frame doesn't retry (and
+    // re-log the error) every single frame.
     state->loaded_model = index;
 
-    if (state->scene_model.submesh_count == 0)
-    {
-        LOG_ERROR("demo: failed to load model '%s'\n", MODEL_PATHS[index]);
-        return;
-    }
+    asset_id id = assets_load_model(&state->assets, MODEL_PATHS[index]);
+    world_set_model(w, state->model_entity, id);
+
+    // Free the model this one replaced, rather than keeping every model
+    // ever picked resident on the GPU.
+    assets_collect_unused(&state->assets);
+
+    const model* m = assets_model(&state->assets, id);
+    if (!m)
+        return;   // assets_load_model() logged why; the model entity just draws nothing
 
     // Assets come in wildly different units; fit everything into a ~2 unit
     // box at the origin so the orbit camera framing works for all of them.
-    model_get_fit_transform(&state->scene_model, 2.0f, state->model_fit);
+    // The fit is a uniform scale plus a translation, so it maps straight
+    // onto the entity's transform.
+    mat4 fit;
+    model_get_fit_transform(m, 2.0f, fit);
 
-    // Sit the ground plane at the fitted model's lowest point, so it reads
-    // as something the model stands on instead of floating through it.
-    // on_frame's world = Spin * Fit only ever rotates around Y through the
-    // origin, which doesn't change Y, so this Y stays correct at every
-    // spin angle, not just the one at load time.
+    c_transform* t = world_transform(w, state->model_entity);
+    glm_vec3_fill(t->scale, fit[0][0]);
+    glm_vec3_copy(fit[3], t->position);
+
+    // Sit the ground at the fitted model's lowest point. The pivot only
+    // spins about Y, which doesn't change Y, so this holds at every angle.
     vec3 fitted_min;
-    glm_mat4_mulv3(state->model_fit, state->scene_model.bounds_min, 1.0f, fitted_min);
-    state->ground_y = fitted_min[1];
+    glm_mat4_mulv3(fit, (f32*)m->bounds_min, 1.0f, fitted_min);
+    world_transform(w, state->ground_entity)->position[1] = fitted_min[1];
 }
 
 // Bakes HDRI_PATHS[index] into state->ibl, replacing whatever was there. A
@@ -468,34 +617,7 @@ on_init(App* app)
     state->loaded_hdri   = -1;
     load_selected_hdri(state, state->selected_hdri);
 
-    // --- Ground plane ------------------------------------------------------
-    // A big flat quad on the XZ plane so the model's shadow has something
-    // to land on. Only its Y offset changes later (per model, in
-    // load_selected_model()); the geometry itself is built once here.
-    {
-        const f32 half_size = 4.0f;
-
-        mesh_vertex ground_vertices[4] = {
-            { .position = { -half_size, 0.0f, -half_size }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 0.0f, 0.0f }, .tangent = { 1.0f, 0.0f, 0.0f, 1.0f } },
-            { .position = {  half_size, 0.0f, -half_size }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 1.0f, 0.0f }, .tangent = { 1.0f, 0.0f, 0.0f, 1.0f } },
-            { .position = {  half_size, 0.0f,  half_size }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 1.0f, 1.0f }, .tangent = { 1.0f, 0.0f, 0.0f, 1.0f } },
-            { .position = { -half_size, 0.0f,  half_size }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 0.0f, 1.0f }, .tangent = { 1.0f, 0.0f, 0.0f, 1.0f } },
-        };
-
-        // Wound so the +Y-normal face is front-facing under the RHI's
-        // default CCW-front convention (rhi_render_state_default(), RHI.c).
-        uint32 ground_indices[6] = { 0, 2, 1,  0, 3, 2 };
-
-        state->ground_mesh = mesh_create(ground_vertices, 4, ground_indices, 6);
-
-        material_init_default(&state->ground_material);
-        state->ground_material.base_color[0] = 0.18f;   // dim, non-metal concrete-ish grey --
-        state->ground_material.base_color[1] = 0.18f;   // dark enough that the shadow reads clearly
-        state->ground_material.base_color[2] = 0.18f;   // against it without crushing to black
-        state->ground_material.roughness     = 0.9f;
-
-        state->show_ground = true;
-    }
+    state->show_ground = true;
 
     state->mode = RENDER_MODE_LIT_MODEL;
 
@@ -509,34 +631,11 @@ on_init(App* app)
     state->ambient_strength = 0.5f;
     state->exposure         = 1.0f;
 
-    state->selected_model = 0;
-    state->loaded_model   = -1;
-    load_selected_model(state, state->selected_model);
-
-    // --- Scene -------------------------------------------------------------
-    // &state->scene_model is stable for the app's lifetime (load_selected_model()
-    // reloads *into* it, never reallocates it), so the entity can borrow it
-    // once here; on_frame only ever touches local_transform/as_light after
-    // this, never re-adds anything.
-    scene_init(&state->demo_scene);
-
-    state->model_entity = scene_add_model(&state->demo_scene, &state->scene_model, NULL, ENTITY_NO_PARENT);
-
-    light initial_light;
-    light_init_directional(&initial_light, state->light_dir, state->light_color, state->light_intensity);
-    state->light_entity = scene_add_light(&state->demo_scene, initial_light, NULL, ENTITY_NO_PARENT);
-
-    // Added after the key light, so lighting_bind() keeps shadowing the key
-    // light (first directional in scene order).
     state->fill_light_enabled   = true;
     glm_vec3_copy((vec3){ 1.5f, 1.0f, 1.5f }, state->fill_light_pos);
     glm_vec3_copy((vec3){ 0.55f, 0.7f, 1.0f }, state->fill_light_color);
     state->fill_light_intensity = 3.0f;
     state->fill_light_range     = 8.0f;
-
-    light fill_light;
-    light_init_point(&fill_light, state->fill_light_color, state->fill_light_intensity, state->fill_light_range);
-    state->fill_light_entity = scene_add_light(&state->demo_scene, fill_light, NULL, ENTITY_NO_PARENT);
 
     state->spot_light_enabled       = false;
     glm_vec3_copy((vec3){ -1.5f, 2.5f, 1.0f }, state->spot_light_pos);
@@ -546,12 +645,17 @@ on_init(App* app)
     state->spot_light_inner_degrees = 12.0f;
     state->spot_light_outer_degrees = 22.0f;
 
-    // Direction is re-aimed every frame by sync_scene_lights(); any
-    // non-zero vector does here.
-    light spot_light;
-    light_init_spot(&spot_light, (vec3){ 0.0f, -1.0f, 0.0f }, state->spot_light_color, state->spot_light_intensity,
-                    state->spot_light_range, state->spot_light_inner_degrees, state->spot_light_outer_degrees);
-    state->spot_light_entity = scene_add_light(&state->demo_scene, spot_light, NULL, ENTITY_NO_PARENT);
+    // --- Worlds -------------------------------------------------------------
+    assets_init(&state->assets);
+    world_init(&state->lit_world, &state->assets);
+    world_init(&state->grid_world, &state->assets);
+
+    create_lit_world(state);
+    create_grid_world(state);
+
+    state->selected_model = 0;
+    state->loaded_model   = -1;
+    load_selected_model(state, state->selected_model);
 
     f32 aspect = (f32)framebuffer_size.width / (f32)framebuffer_size.height;
 
@@ -649,45 +753,56 @@ draw_lighting_controls(demo_state* state)
     igSeparator();
 }
 
-// Pushes this frame's GUI-driven light values into demo_scene's light
-// entities and refreshes world transforms, so lighting_bind() and
-// scene_gather_lights() see them. Both entities are unparented, so local ==
-// world transform. The fill light is disabled by zeroing its intensity --
-// Scene.h has no entity removal.
+// Pushes this frame's GUI state into lit_world and updates its transforms.
 static void
-sync_scene_lights(demo_state* state)
+sync_lit_world(demo_state* state, f32 time)
 {
-    light* key = &state->demo_scene.entities[state->light_entity].as_light;
-    glm_vec3_normalize_to(state->light_dir, key->direction);
-    glm_vec3_copy(state->light_color, key->color);
-    key->intensity = state->light_intensity;
+    world* w = &state->lit_world;
 
-    entity* fill_entity = &state->demo_scene.entities[state->fill_light_entity];
-    glm_translate_make(fill_entity->local_transform, state->fill_light_pos);
-    glm_vec3_copy(state->fill_light_color, fill_entity->as_light.color);
-    fill_entity->as_light.intensity = state->fill_light_enabled ? state->fill_light_intensity : 0.0f;
-    fill_entity->as_light.range     = state->fill_light_range;
+    // Spin about the model's own middle: the model is centred under the pivot.
+    world_transform(w, state->model_pivot)->rotation_deg[1] = state->spin ? glm_deg(time * 0.5f) : 0.0f;
 
-    entity* spot_entity = &state->demo_scene.entities[state->spot_light_entity];
-    glm_translate_make(spot_entity->local_transform, state->spot_light_pos);
+    // The GUI's default material only applies to models that brought no
+    // materials of their own (a bare .obj); glTF models keep theirs.
+    c_mesh_renderer* mr = world_mesh_renderer(w, state->model_entity);
+    const model*     m  = assets_model(&state->assets, mr->model);
+    if (m && m->material_count == 0)
+    {
+        mr->material.fields = MATERIAL_OVERRIDE_BASE_COLOR | MATERIAL_OVERRIDE_METALLIC | MATERIAL_OVERRIDE_ROUGHNESS;
+        srgb_to_linear(state->default_albedo, mr->material.base_color);
+        mr->material.metallic  = state->default_metallic;
+        mr->material.roughness = state->default_roughness;
+    }
+    else
+    {
+        mr->material.fields = 0;
+    }
 
-    // Aim at the origin. Unparented, so this local direction is already world space.
-    vec3 to_origin;
-    glm_vec3_negate_to(state->spot_light_pos, to_origin);
-    if (glm_vec3_norm2(to_origin) > 1e-8f)
-        glm_vec3_normalize_to(to_origin, spot_entity->as_light.direction);
+    world_mesh_renderer(w, state->ground_entity)->visible = state->show_ground;
 
-    // The outer cone can't be narrower than the inner one.
-    if (state->spot_light_outer_degrees < state->spot_light_inner_degrees)
-        state->spot_light_outer_degrees = state->spot_light_inner_degrees;
+    sync_demo_lights(state, w, &state->lit_lights);
+    world_update(w);
+}
 
-    glm_vec3_copy(state->spot_light_color, spot_entity->as_light.color);
-    spot_entity->as_light.intensity          = state->spot_light_enabled ? state->spot_light_intensity : 0.0f;
-    spot_entity->as_light.range              = state->spot_light_range;
-    spot_entity->as_light.inner_cone_degrees = state->spot_light_inner_degrees;
-    spot_entity->as_light.outer_cone_degrees = state->spot_light_outer_degrees;
+// Pushes this frame's GUI state into grid_world and updates its transforms.
+static void
+sync_grid_world(demo_state* state)
+{
+    world* w = &state->grid_world;
 
-    scene_update_world_transforms(&state->demo_scene);
+    f32 albedo[3];
+    srgb_to_linear(state->grid_albedo, albedo);
+
+    for (int i = 0; i < GRID_ROWS * GRID_COLUMNS; ++i)
+    {
+        c_mesh_renderer* mr = world_mesh_renderer(w, state->grid_spheres[i]);
+        mr->material.base_color[0] = albedo[0];
+        mr->material.base_color[1] = albedo[1];
+        mr->material.base_color[2] = albedo[2];
+    }
+
+    sync_demo_lights(state, w, &state->grid_lights);
+    world_update(w);
 }
 
 // Square the camera up to the grid -- the default viewpoint is a corner view
@@ -701,71 +816,6 @@ frame_material_grid(demo_state* state)
     orbit_camera_apply(state);
 }
 
-#define GRID_COLUMNS        7       // roughness: 0.05 (left) .. 1.0 (right)
-#define GRID_ROWS           5       // metallic:  1.0 (top)   .. 0.0 (bottom)
-#define GRID_SPACING        0.62f   // centre to centre, in world units
-#define GRID_SPHERE_RADIUS  0.27f
-
-// The grid sits right of the origin because the "Scene" panel covers the left
-// third of the default 800x600 window, and the leftmost column (the mirror-
-// smooth spheres) is the one worth seeing.
-#define GRID_CENTER_X       1.5f
-
-// Draws the IBL demo: one sphere per (roughness, metallic) pair, lit by the
-// baked environment. Shows what image-based lighting does to each kind of
-// surface: mirror-sharp reflections on the smooth metals (top left) that blur
-// out to a soft glow as roughness rises, and diffuse-only dielectrics (bottom
-// row) that pick up the sky and ground colors from the irradiance map.
-static void
-draw_material_grid(demo_state* state, rhi_shader shader)
-{
-    if (!state->grid_load_attempted)
-    {
-        state->grid_load_attempted = true;   // a failed load is logged once, not every frame
-
-        char* path = asset_path("models/sphere.obj");
-        state->grid_model = model_load(path);
-        free(path);
-    }
-
-    model* sphere = &state->grid_model;
-    if (sphere->submesh_count == 0)
-        return;
-
-    // sphere.obj has no material of its own, so every submesh uses
-    // default_material: rewrite it between draws. The picker shows sRGB,
-    // material colors are linear.
-    material* dm = &sphere->default_material;
-    dm->base_color[0] = powf(state->grid_albedo[0], 2.2f);
-    dm->base_color[1] = powf(state->grid_albedo[1], 2.2f);
-    dm->base_color[2] = powf(state->grid_albedo[2], 2.2f);
-
-    mat4 fit;
-    model_get_fit_transform(sphere, 2.0f, fit);   // radius 1, centred on the origin
-
-    for (int row = 0; row < GRID_ROWS; ++row)
-    {
-        for (int col = 0; col < GRID_COLUMNS; ++col)
-        {
-            dm->metallic  = 1.0f - (f32)row / (f32)(GRID_ROWS - 1);
-            dm->roughness = 0.05f + 0.95f * (f32)col / (f32)(GRID_COLUMNS - 1);
-
-            vec3 position = {
-                GRID_CENTER_X + ((f32)col - 0.5f * (GRID_COLUMNS - 1)) * GRID_SPACING,
-                (0.5f * (GRID_ROWS - 1) - (f32)row)    * GRID_SPACING,
-                0.0f
-            };
-
-            mat4 world;
-            glm_mat4_identity(world);
-            glm_translate(world, position);
-            glm_scale_uni(world, GRID_SPHERE_RADIUS);
-            glm_mat4_mul(world, fit, world);
-
-            model_draw(sphere, shader, world);
-        }
-    }
-}
 
 // This frame's SceneRenderer settings from the GUI state.
 static scene_render_settings
@@ -829,15 +879,13 @@ static void on_frame(App* app, f32 dt)
         if (state->selected_hdri != state->loaded_hdri)
             load_selected_hdri(state, state->selected_hdri);
 
-        sync_scene_lights(state);
+        sync_grid_world(state);
 
         // The demo is about ambient light, so no shadow pass.
         scene_render_settings settings = build_render_settings(state);
         settings.shadows = false;
 
-        rhi_shader shader = scene_renderer_begin(&state->renderer, &state->demo_scene, &state->cam, &settings);
-        draw_material_grid(state, shader);
-        scene_renderer_end(&state->renderer, &settings);
+        scene_renderer_draw(&state->renderer, &state->grid_world, &state->cam, &settings);
     }
     else // RENDER_MODE_LIT_MODEL
     {
@@ -848,70 +896,10 @@ static void on_frame(App* app, f32 dt)
         if (state->selected_hdri != state->loaded_hdri)
             load_selected_hdri(state, state->selected_hdri);
 
-        if (state->scene_model.submesh_count > 0)
-        {
-            // Push the GUI's default-material tweaks into the model; only
-            // meshes without their own material (bare .obj files) use it.
-            //
-            // The color picker shows (and the artist thinks in) sRGB, while
-            // material colors are linear -- convert, or the color comes out
-            // washed out.
-            material* dm = &state->scene_model.default_material;
-            dm->base_color[0] = powf(state->default_albedo[0], 2.2f);
-            dm->base_color[1] = powf(state->default_albedo[1], 2.2f);
-            dm->base_color[2] = powf(state->default_albedo[2], 2.2f);
-            dm->metallic      = state->default_metallic;
-            dm->roughness     = state->default_roughness;
+        sync_lit_world(state, time);
 
-            // world = Spin * Fit: centre and scale the model first, then rotate
-            // it about its own middle.
-            mat4 world;
-            glm_mat4_identity(world);
-            if (state->spin)
-                glm_rotate(world, time * 0.5f, (vec3){ 0.0f, 1.0f, 0.0f });
-            glm_mat4_mul(world, state->model_fit, world);
-
-            // Push this frame's GUI-driven values into the scene: the model
-            // entity's placement (unparented, so local == world), then the
-            // lights, which also refreshes world transforms.
-            glm_mat4_copy(world, state->demo_scene.entities[state->model_entity].local_transform);
-            sync_scene_lights(state);
-
-            scene_render_settings settings = build_render_settings(state);
-
-            // Shadows for the key light, skybox, and every per-frame PBR
-            // uniform; what's left for the draws below is u_model,
-            // u_normal_matrix and the material.
-            rhi_shader shader = scene_renderer_begin(&state->renderer, &state->demo_scene, &state->cam, &settings);
-
-            // Opaque ground first, so the model's blended materials (drawn
-            // last by model_draw()) end up in front of it rather than under.
-            if (state->show_ground)
-            {
-                // Not part of `world` (Spin * Fit) -- the ground shouldn't
-                // spin with the model, just sit under it at ground_y. Not a
-                // scene entity either, so it receives shadows but casts none.
-                mat4 ground_world;
-                glm_mat4_identity(ground_world);
-                glm_translate(ground_world, (vec3){ 0.0f, state->ground_y, 0.0f });
-
-                mat4 ground_normal_matrix;
-                glm_mat4_inv(ground_world, ground_normal_matrix);
-                glm_mat4_transpose(ground_normal_matrix);
-
-                rhi_shader_set_mat4(shader, "u_model", (const f32*)ground_world);
-                rhi_shader_set_mat4(shader, "u_normal_matrix", (const f32*)ground_normal_matrix);
-
-                material_bind(&state->ground_material, shader, false);
-                mesh_draw(&state->ground_mesh);
-
-                rhi_set_render_state(rhi_render_state_default());
-            }
-
-            scene_draw_models(&state->demo_scene, shader);
-
-            scene_renderer_end(&state->renderer, &settings);
-        }
+        scene_render_settings settings = build_render_settings(state);
+        scene_renderer_draw(&state->renderer, &state->lit_world, &state->cam, &settings);
     }
 
     // App/on_frame runs between imgui_layer_new_frame() and
@@ -953,9 +941,10 @@ static void on_frame(App* app, f32 dt)
     {
         igCombo_Str_arr("Model", &state->selected_model, MODEL_NAMES, (int)MODEL_COUNT, -1);
 
-        if (state->scene_model.submesh_count > 0)
+        const model* m = assets_model(&state->assets,
+                                      world_mesh_renderer(&state->lit_world, state->model_entity)->model);
+        if (m)
         {
-            const model* m = &state->scene_model;
 
             igText("%u submeshes, %u materials, %u textures", m->submesh_count, m->material_count, m->texture_count);
             igText("%u vertices, %u triangles", m->vertex_count, m->triangle_count);
@@ -979,6 +968,12 @@ static void on_frame(App* app, f32 dt)
     }
 
     igEnd();
+
+    // Every entity and component of the world on screen (read-only).
+    if (state->mode == RENDER_MODE_LIT_MODEL)
+        entity_panel_draw(&state->lit_world, "Entities");
+    else if (state->mode == RENDER_MODE_MATERIAL_GRID)
+        entity_panel_draw(&state->grid_world, "Entities");
 }
 
 // Runs from terminate(), before the GL context goes away.
@@ -989,11 +984,9 @@ static void on_shutdown(App* app)
     for (uint32 i = 0; i < TEXTURE_COUNT; ++i)
         rhi_texture_destroy(state->textures[i]);
 
-    scene_destroy(&state->demo_scene);   // borrows scene_model, frees nothing but its own entity array
-    model_destroy(&state->scene_model);
-    mesh_destroy(&state->ground_mesh);
-    material_destroy(&state->ground_material);
-    model_destroy(&state->grid_model);
+    world_shutdown(&state->lit_world);    // releases the worlds' assets...
+    world_shutdown(&state->grid_world);
+    assets_shutdown(&state->assets);      // ...then the models themselves
     ibl_destroy(&state->ibl);
     scene_renderer_destroy(&state->renderer);
 

@@ -86,6 +86,12 @@ model model_load_gltf(const char* path);
 // the world matrix. `out` is a column-major mat4.
 void model_get_fit_transform(const model* m, f32 target_size, mat4 out);
 
+// Wraps one already-uploaded mesh as a single-submesh model with no
+// materials of its own (it draws with default_material). Takes ownership of
+// `msh`. `transform` places the mesh in model space; NULL = identity. Used
+// for built-in primitives (Assets/AssetCache.h).
+model model_from_mesh(mesh msh, const mat4 transform);
+
 // Draws every submesh through `shader`, which must follow the uniform
 // contract in Material.h plus u_model / u_normal_matrix (the world matrix
 // and its inverse-transpose, set here per submesh). `world` is the whole
@@ -94,6 +100,21 @@ void model_get_fit_transform(const model* m, f32 target_size, mat4 out);
 // draw first, blended ones after (not depth-sorted). Restores the default
 // render state when done.
 void model_draw(const model* m, rhi_shader shader, const mat4 world);
+
+// Which submeshes model_draw_ex() draws. A renderer drawing many models
+// draws every model's MODEL_PASS_OPAQUE first, then every MODEL_PASS_BLEND,
+// so no model's transparent parts are drawn before another's opaque ones.
+typedef enum model_draw_pass
+{
+    MODEL_PASS_OPAQUE = 1 << 0,   // opaque + alpha-masked
+    MODEL_PASS_BLEND  = 1 << 1,
+    MODEL_PASS_ALL    = MODEL_PASS_OPAQUE | MODEL_PASS_BLEND
+} model_draw_pass;
+
+// model_draw() with a per-instance material override (see Material.h;
+// NULL = none) applied to every submesh, limited to `passes`.
+void model_draw_ex(const model* m, rhi_shader shader, const mat4 world,
+                   const material_override* override, model_draw_pass passes);
 
 // Depth-only pass for shadow mapping: draws every opaque/alpha-masked
 // submesh (blended ones are skipped, same as model_draw()'s first pass --

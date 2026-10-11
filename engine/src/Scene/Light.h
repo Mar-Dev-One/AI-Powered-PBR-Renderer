@@ -5,11 +5,11 @@
 #include <cglm/cglm.h>
 
 // A light's own parameters. Position/orientation are NOT stored here --
-// an ENTITY_LIGHT's placement comes from its owning entity's world
-// transform (Scene.h), same as ENTITY_MODEL borrows its placement rather
-// than keeping its own. `direction` below is therefore in the entity's
-// local space, not world space, and Scene.h is responsible for rotating it
-// into world space when it builds the per-frame light list.
+// a Light component's placement comes from its entity's world transform
+// (World/World.h), the same way a MeshRenderer's does. `direction` below is
+// therefore in the entity's local space, not world space, and
+// world_gather_lights() rotates it into world space when it builds the
+// per-frame light list.
 
 typedef enum light_type
 {

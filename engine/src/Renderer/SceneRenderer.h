@@ -3,25 +3,25 @@
 #include "../Core/Defines.h"
 #include "../RHI/RHI.h"
 #include "../Scene/Camera.h"
-#include "../Scene/Scene.h"
+#include "../World/World.h"
 #include "IBL.h"
 #include "PostProcess.h"
 #include "Shadow.h"
 
-// The lit frame, as one unit: cascaded shadows for the scene's first
+// The lit frame, as one unit: cascaded shadows for the world's first
 // directional light, an HDR scene target with optional skybox, the PBR
-// shader with every per-frame uniform (camera, lights, IBL, cascades), and
-// the final tone-mapping pass. An app supplies a scene, a camera and
-// scene_render_settings; it never touches pbr.frag's uniforms itself.
+// shader with every per-frame uniform (camera, lights, IBL, cascades), every
+// visible MeshRenderer, and the final tone-mapping pass. An app supplies a
+// World, a camera and scene_render_settings; it never touches pbr.frag's
+// uniforms itself.
 //
 // Two ways to drive it:
-//   - scene_renderer_draw(): everything, for a frame that is only the
-//     scene's ENTITY_MODELs.
-//   - scene_renderer_begin() / scene_renderer_end(): the same frame, but
-//     begin() hands back the bound PBR shader so the app can draw extra
-//     geometry (model_draw(), or material_bind() + mesh_draw()) before or
-//     after scene_draw_models(). Only u_model / u_normal_matrix and the
-//     material are left for those draws to set.
+//   - scene_renderer_draw(): the whole frame.
+//   - scene_renderer_begin() / scene_renderer_draw_world() /
+//     scene_renderer_end(): the same frame in pieces, for an app that also
+//     draws geometry that isn't in the World. begin() hands back the bound
+//     PBR shader; such draws only set u_model / u_normal_matrix and a
+//     material.
 //
 // pbr.vert/pbr.frag are hot-reloaded: scene_renderer_poll_hot_reload()
 // rebuilds them when either file changes on disk, keeping the old program
@@ -71,17 +71,22 @@ b8 scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
 // Call on window resize.
 void scene_renderer_resize(scene_renderer* r, uint16 width, uint16 height);
 
-// Requires scene_update_world_transforms() on `s` this frame. Renders the
-// shadow cascades, binds the HDR target, draws the skybox, then binds the
-// PBR shader with all per-frame state and returns it.
-rhi_shader scene_renderer_begin(scene_renderer* r, const scene* s, const camera* cam,
+// Requires world_update() on `w` this frame. Renders the shadow cascades,
+// binds the HDR target, draws the skybox, then binds the PBR shader with all
+// per-frame state and returns it.
+rhi_shader scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
                                 const scene_render_settings* settings);
+
+// Draws every visible MeshRenderer in `w` through `shader` (from begin()):
+// all opaque submeshes first, then all blended ones, so one entity's
+// transparency never gets drawn before another entity's opaque surfaces.
+void scene_renderer_draw_world(const world* w, rhi_shader shader);
 
 // Tone-maps the HDR target onto the default framebuffer.
 void scene_renderer_end(scene_renderer* r, const scene_render_settings* settings);
 
-// begin() + scene_draw_models() + end().
-void scene_renderer_draw(scene_renderer* r, const scene* s, const camera* cam,
+// begin() + scene_renderer_draw_world() + end().
+void scene_renderer_draw(scene_renderer* r, const world* w, const camera* cam,
                          const scene_render_settings* settings);
 
 // Rebuilds pbr.vert/pbr.frag now. On a compile/link failure the previous

@@ -56,6 +56,31 @@ typedef struct material
     rhi_texture textures[MATERIAL_SLOT_COUNT];
 } material;
 
+// Per-instance tweaks layered over a model's own materials at draw time
+// (World's MeshRenderer component): two placements of one model can differ
+// in color or finish without copying the model. Only the fields whose
+// MATERIAL_OVERRIDE_* bit is set in `fields` apply; base_color replaces
+// RGB and keeps the material's alpha. Textures still multiply as usual.
+typedef enum material_override_field
+{
+    MATERIAL_OVERRIDE_BASE_COLOR = 1 << 0,
+    MATERIAL_OVERRIDE_METALLIC   = 1 << 1,
+    MATERIAL_OVERRIDE_ROUGHNESS  = 1 << 2,
+    MATERIAL_OVERRIDE_EMISSIVE   = 1 << 3
+} material_override_field;
+
+typedef struct material_override
+{
+    uint32 fields;          // MATERIAL_OVERRIDE_* bits
+    f32    base_color[3];   // linear RGB
+    f32    metallic;
+    f32    roughness;
+    f32    emissive[3];     // linear RGB
+} material_override;
+
+// Writes the fields `o` enables into `m`. NULL or fields == 0 is a no-op.
+void material_apply_override(material* m, const material_override* o);
+
 // White, fully rough dielectric, no textures. What a mesh with no material
 // at all gets drawn with.
 void material_init_default(material* m);

@@ -7,24 +7,20 @@
 #include <cglm/cglm.h>   // glm_rad() -- M_PI isn't standard C and isn't worth chasing a define for
 
 void
-lighting_bind(rhi_shader shader, const scene* s)
+lighting_bind(rhi_shader shader, const world* w)
 {
     light lights[LIGHTING_MAX_LIGHTS];
     vec3  world_positions[LIGHTING_MAX_LIGHTS];
 
-    // scene_gather_lights() only writes world_positions[i] for
-    // LIGHT_POINT/LIGHT_SPOT entries -- zero the rest so a stray
-    // uninitialized position never reaches the shader for a directional
-    // light (harmless either way, since pbr.frag ignores position for
-    // LIGHT_DIRECTIONAL, but zeroed reads better under a debugger).
+    // Zeroed so entries past `count` never reach a debugger as garbage.
     memset(world_positions, 0, sizeof(world_positions));
 
-    uint32 count = scene_gather_lights(s, lights, world_positions, LIGHTING_MAX_LIGHTS);
+    uint32 count = world_gather_lights(w, lights, world_positions, LIGHTING_MAX_LIGHTS);
 
     rhi_shader_set_int(shader, "u_light_count", (int32)count);
 
     // The cascades (Renderer/Shadow.h) are fit to the first directional
-    // light in scene order -- tell pbr.frag which u_lights[] entry that is.
+    // light in world order -- tell pbr.frag which u_lights[] entry that is.
     int32 shadow_light_index = -1;
 
     for (uint32 i = 0; i < count; ++i)

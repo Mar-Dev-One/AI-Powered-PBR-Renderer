@@ -3,7 +3,7 @@
 #include "../Core/Defines.h"
 #include "../RHI/RHI.h"
 #include "../Scene/Camera.h"
-#include "../Scene/Scene.h"
+#include "../World/World.h"
 
 #include <cglm/cglm.h>
 
@@ -69,9 +69,9 @@ void csm_update(csm_state* csm, const camera* cam, const vec3 light_dir, f32 lam
 // Renders every cascade's depth-only pass: binds each cascade's framebuffer
 // in turn and draws `s` through csm's own depth shader with that cascade's
 // view_projection. Leaves the default framebuffer bound afterwards.
-// Requires scene_update_world_transforms() to have been called on `s` this
-// frame (same requirement as scene_draw_models_depth() itself).
-void csm_render(csm_state* csm, const scene* s);
+// Draws every visible, shadow-casting MeshRenderer in `w`. Requires
+// world_update() on `w` this frame.
+void csm_render(csm_state* csm, const world* w);
 
 // Per-frame setup for the PBR shader (assets/shaders/pbr.frag): binds each
 // cascade's depth texture to CSM_SLOT_FIRST + i and sets u_cascade_count,

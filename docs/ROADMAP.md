@@ -52,7 +52,7 @@ Principles:
 - **MCP before the in-app panel.** Claude Desktop gives a chat UI for free and tests the tool design
   before any UI is built.
 
-### Phase 1: World (entity-component system) replaces `Scene`
+### Phase 1: World (entity-component system) replaces `Scene` — done
 
 - Generational handles `entity_id { index, generation }`: destroyed slots bump the generation, so
   stale IDs are rejected instead of reaching a new entity.
@@ -72,6 +72,10 @@ Principles:
 
 **Done when:** the testbed builds its demo through the world API, and removing an entity
 mid-frame is safe.
+
+Status: done. `World/` (World, Components, Reflect), `Assets/AssetCache`, built-in cube/sphere/plane,
+per-entity material overrides, read-only `UI/EntityPanel`, headless `tests/world_tests.c` (ctest).
+Lit Model and Grid render as before; the ground is now a regular entity.
 
 ### Phase 2: Command layer (in-engine, no networking)
 

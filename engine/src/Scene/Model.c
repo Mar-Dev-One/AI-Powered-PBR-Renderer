@@ -195,12 +195,36 @@ void model_get_fit_transform(const model* m, f32 target_size, mat4 out)
     glm_translate(out, neg_center);
 }
 
+model model_from_mesh(mesh msh, const mat4 transform)
+{
+    model m = { 0 };
+
+    mat4 identity;
+    glm_mat4_identity(identity);
+
+    model_add_mesh(&m, msh);
+    model_add_submesh(&m, 0, -1, transform ? transform : identity);
+    material_init_default(&m.default_material);
+    model_finalize(&m);
+
+    return m;
+}
+
 void model_draw(const model* m, rhi_shader shader, const mat4 world)
+{
+    model_draw_ex(m, shader, world, NULL, MODEL_PASS_ALL);
+}
+
+void model_draw_ex(const model* m, rhi_shader shader, const mat4 world,
+                   const material_override* override, model_draw_pass passes)
 {
     // Pass 0: opaque + alpha-masked. Pass 1: blended, after everything
     // solid is in the depth buffer so it composites over it correctly.
     for (int pass = 0; pass < 2; ++pass)
     {
+        if (!(passes & (pass == 0 ? MODEL_PASS_OPAQUE : MODEL_PASS_BLEND)))
+            continue;
+
         for (uint32 i = 0; i < m->submesh_count; ++i)
         {
             const model_submesh* sub = &m->submeshes[i];
@@ -211,6 +235,16 @@ void model_draw(const model* m, rhi_shader shader, const mat4 world)
             b8 is_blend = (mat->alpha_mode == MATERIAL_ALPHA_BLEND);
             if ((pass == 1) != is_blend)
                 continue;
+
+            // A shallow copy is enough: material_bind() only reads it, and
+            // the borrowed texture pointers stay the model's.
+            material overridden;
+            if (override && override->fields)
+            {
+                overridden = *mat;
+                material_apply_override(&overridden, override);
+                mat = &overridden;
+            }
 
             mat4 model_matrix;
             glm_mat4_mul((vec4*)world, (vec4*)sub->transform, model_matrix);

@@ -55,6 +55,29 @@ void material_bind(const material* m, rhi_shader shader, b8 flip_winding)
     rhi_set_render_state(state);
 }
 
+void material_apply_override(material* m, const material_override* o)
+{
+    if (!o)
+        return;
+
+    if (o->fields & MATERIAL_OVERRIDE_BASE_COLOR)
+    {
+        m->base_color[0] = o->base_color[0];
+        m->base_color[1] = o->base_color[1];
+        m->base_color[2] = o->base_color[2];
+    }
+    if (o->fields & MATERIAL_OVERRIDE_METALLIC)
+        m->metallic = o->metallic;
+    if (o->fields & MATERIAL_OVERRIDE_ROUGHNESS)
+        m->roughness = o->roughness;
+    if (o->fields & MATERIAL_OVERRIDE_EMISSIVE)
+    {
+        m->emissive[0] = o->emissive[0];
+        m->emissive[1] = o->emissive[1];
+        m->emissive[2] = o->emissive[2];
+    }
+}
+
 void material_destroy(material* m)
 {
     if (!m)

@@ -8,6 +8,9 @@ add_library(PBR_Engine STATIC
     src/Renderer/Lighting.c
     src/Renderer/PostProcess.c
     src/Renderer/SceneRenderer.c
+    src/Assets/AssetCache.c
+    src/World/World.c
+    src/World/Reflect.c
     src/Renderer/Shadow.c
     src/RHI/RHI.c
     src/RHI/OpenGL/RHI_GL.c
@@ -21,10 +24,10 @@ add_library(PBR_Engine STATIC
     src/Scene/Mesh.c
     src/Scene/Material.c
     src/Scene/Model.c
-    src/Scene/Scene.c
     src/Scene/ModelObj.c
     src/Scene/ModelGltf.c
     src/UI/ImGuiLayer.c
+    src/UI/EntityPanel.c
 )
 
 # PUBLIC: consumers (testbed) #include headers like "App.h", "RHI/RHI.h",
