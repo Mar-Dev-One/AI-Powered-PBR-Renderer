@@ -138,6 +138,48 @@ uint32 world_gather_lights(const world* w, light* out_lights, vec3* out_position
 // if `e` is stale or has no Camera.
 b8 world_camera_view(const world* w, entity_id e, f32 aspect, camera* out);
 
+// --- Raw state (undo/redo) ---------------------------------------------------
+// Everything about one storage slot, live or not. The command layer's history
+// (Commands/History.h) records these before and after each change, and
+// restores them exactly -- same slot, same generation -- so IDs handed out
+// before an undo still name the same entity after it.
+
+typedef struct entity_state
+{
+    entity_id       id;      // slot + generation (for a dead slot: the generation it will hand out next)
+    b8              alive;
+    uint32          mask;    // COMPONENT_BIT()s
+    c_name          name;
+    c_transform     transform;
+    c_parent        parent;
+    c_mesh_renderer mesh_renderer;
+    c_light         light;
+    c_camera        camera;
+} entity_state;
+
+// Number of slots world_capture_states() writes.
+uint32 world_slot_count(const world* w);
+
+// Copies every slot's state into `out` (world_slot_count() entries).
+void world_capture_states(const world* w, entity_state* out);
+
+// The state a slot past the end of the storage is in: dead, generation 1.
+void world_empty_state(uint32 slot, entity_state* out);
+
+// True if the two states differ in anything observable; *out_components
+// (may be NULL) gets the COMPONENT_BIT()s whose presence or data differ.
+b8 entity_state_differs(const entity_state* a, const entity_state* b, uint32* out_components);
+
+// Puts each listed slot into its recorded state: revives it (with its
+// recorded ID) or kills it, writes every component, keeps MeshRenderer
+// reference counts right. A killed slot's generation still moves forward,
+// so its old ID stays stale rather than being handed out again.
+// The states must describe a consistent world together (as states captured
+// from one moment do) -- names and parents are written as recorded, without
+// the uniqueness/cycle checks the normal API applies. Call world_update()
+// afterwards.
+void world_apply_states(world* w, const entity_state* states, uint32 count);
+
 // --- Iteration --------------------------------------------------------------
 
 // Next live entity after `previous` (ENTITY_NULL = start) having every

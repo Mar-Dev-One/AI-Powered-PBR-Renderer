@@ -10,3 +10,7 @@ add_test(NAME SerializeTests COMMAND SerializeTests)
 add_executable(CommandTests command_tests.c)
 target_link_libraries(CommandTests PRIVATE PBR_Engine)
 add_test(NAME CommandTests COMMAND CommandTests)
+
+add_executable(HistoryTests history_tests.c)
+target_link_libraries(HistoryTests PRIVATE PBR_Engine)
+add_test(NAME HistoryTests COMMAND HistoryTests)

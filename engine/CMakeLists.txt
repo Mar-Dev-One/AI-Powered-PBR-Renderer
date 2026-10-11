@@ -30,6 +30,7 @@ add_library(PBR_Engine STATIC
     src/UI/EntityPanel.c
     src/World/Serialize.c
     src/Commands/Commands.c
+    src/Commands/History.c
     deps/cjson/cJSON.c
 )
 

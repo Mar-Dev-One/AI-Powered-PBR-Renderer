@@ -565,6 +565,160 @@ world_camera_view(const world* w, entity_id e, f32 aspect, camera* out)
     return true;
 }
 
+// --- Raw state (undo/redo) -------------------------------------------------------
+
+uint32
+world_slot_count(const world* w)
+{
+    return w->capacity;
+}
+
+void
+world_empty_state(uint32 slot, entity_state* out)
+{
+    memset(out, 0, sizeof(*out));
+    out->id = make_entity(slot, 1);
+}
+
+void
+world_capture_states(const world* w, entity_state* out)
+{
+    for (uint32 i = 0; i < w->capacity; ++i)
+    {
+        entity_state* s = &out[i];
+        memset(s, 0, sizeof(*s));
+
+        s->id    = make_entity(i, w->generations[i]);
+        s->alive = (w->masks[i] & WORLD_ALIVE_BIT) != 0;
+        if (!s->alive)
+            continue;
+
+        s->mask = w->masks[i] & ~WORLD_ALIVE_BIT;
+
+        // Only the meaningful bytes of the name, so states compare by value.
+        snprintf(s->name.value, ENTITY_NAME_MAX, "%s", w->names[i].value);
+        s->transform = w->transforms[i];
+        if (s->mask & COMPONENT_BIT(COMPONENT_PARENT))        s->parent        = w->parents[i];
+        if (s->mask & COMPONENT_BIT(COMPONENT_MESH_RENDERER)) s->mesh_renderer = w->mesh_renderers[i];
+        if (s->mask & COMPONENT_BIT(COMPONENT_LIGHT))         s->light         = w->lights[i];
+        if (s->mask & COMPONENT_BIT(COMPONENT_CAMERA))        s->camera        = w->cameras[i];
+    }
+}
+
+b8
+entity_state_differs(const entity_state* a, const entity_state* b, uint32* out_components)
+{
+    uint32 changed = 0;
+
+    if (a->alive && b->alive)
+    {
+        changed = a->mask ^ b->mask;   // components added or removed
+        uint32 both = a->mask & b->mask;
+
+        if (strcmp(a->name.value, b->name.value) != 0)
+            changed |= COMPONENT_BIT(COMPONENT_NAME);
+
+        // memcmp is fine here: component structs are always copied whole
+        // (padding included), so equal values compare equal byte for byte.
+        #define DIFF(bit, field) \
+            if ((both & COMPONENT_BIT(bit)) && memcmp(&a->field, &b->field, sizeof(a->field)) != 0) changed |= COMPONENT_BIT(bit)
+        DIFF(COMPONENT_TRANSFORM,     transform);
+        DIFF(COMPONENT_PARENT,        parent);
+        DIFF(COMPONENT_MESH_RENDERER, mesh_renderer);
+        DIFF(COMPONENT_LIGHT,         light);
+        DIFF(COMPONENT_CAMERA,        camera);
+        #undef DIFF
+    }
+    else if (a->alive != b->alive)
+    {
+        changed = a->alive ? a->mask : b->mask;
+    }
+
+    if (out_components)
+        *out_components = changed;
+
+    return changed != 0 || a->alive != b->alive || (a->alive && a->id != b->id);
+}
+
+// Removes `index` from the free list (it is about to be revived in place).
+static void
+take_from_free_list(world* w, uint32 index)
+{
+    for (uint32 i = 0; i < w->free_count; ++i)
+    {
+        if (w->free_list[i] == index)
+        {
+            w->free_list[i] = w->free_list[--w->free_count];
+            return;
+        }
+    }
+}
+
+void
+world_apply_states(world* w, const entity_state* states, uint32 count)
+{
+    // Room for every slot mentioned.
+    for (uint32 i = 0; i < count; ++i)
+    {
+        while (entity_slot(states[i].id) >= w->capacity)
+            grow(w);
+    }
+
+    // 1. Everything that should be alive: revive in place and write all
+    //    components raw. Parents are written as recorded, so by the end of
+    //    this pass every surviving child already points where it should.
+    for (uint32 i = 0; i < count; ++i)
+    {
+        const entity_state* s     = &states[i];
+        uint32              index = entity_slot(s->id);
+        if (!s->alive)
+            continue;
+
+        b8 was_alive = (w->masks[index] & WORLD_ALIVE_BIT) != 0;
+        b8 had_model = was_alive && (w->masks[index] & COMPONENT_BIT(COMPONENT_MESH_RENDERER));
+
+        if (!was_alive)
+        {
+            take_from_free_list(w, index);
+            w->alive_count++;
+        }
+
+        // Retain the new model before releasing the old (they may be the same).
+        if (s->mask & COMPONENT_BIT(COMPONENT_MESH_RENDERER))
+            assets_retain(w->assets, s->mesh_renderer.model);
+        if (had_model)
+            assets_release(w->assets, w->mesh_renderers[index].model);
+
+        w->generations[index]    = s->id >> ENTITY_INDEX_BITS;
+        w->masks[index]          = s->mask | WORLD_ALIVE_BIT;
+        w->names[index]          = s->name;
+        w->transforms[index]     = s->transform;
+        w->parents[index]        = s->parent;
+        w->mesh_renderers[index] = s->mesh_renderer;
+        w->lights[index]         = s->light;
+        w->cameras[index]        = s->camera;
+        w->update_stamps[index]  = 0;
+    }
+
+    // 2. Everything that should be dead. Any child that should outlive its
+    //    parent was re-pointed in pass 1, so world_destroy()'s recursion only
+    //    reaches entities that are meant to go too.
+    //
+    //    The generation is deliberately NOT wound back to the recorded one:
+    //    world_destroy() bumps it, so after undoing a creation the next
+    //    world_create() hands out a new ID rather than the undone entity's --
+    //    anyone still holding that ID sees it as stale, not as some new
+    //    entity. (Redo can still revive the exact ID: recording any new step
+    //    discards the redo tail first.)
+    for (uint32 i = 0; i < count; ++i)
+    {
+        const entity_state* s     = &states[i];
+        uint32              index = entity_slot(s->id);
+        if (!s->alive && (w->masks[index] & WORLD_ALIVE_BIT))
+            world_destroy(w, make_entity(index, w->generations[index]));
+    }
+}
+
 // --- Iteration ------------------------------------------------------------------
 
 entity_id
