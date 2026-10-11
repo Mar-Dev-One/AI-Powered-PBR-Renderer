@@ -19,11 +19,15 @@
 #include "Assets/AssetCache.h"
 #include "World/World.h"
 #include "Platform/Window.h"
+#include "UI/CommandConsole.h"
 #include "UI/EntityPanel.h"
 #include "UI/ImGuiLayer.h"
 #include "cimgui.h"
 
+#include <float.h>
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
 #include <GLFW/glfw3.h>
 
 // Texture picker: every path/name pair the GUI combo box can switch
@@ -103,15 +107,6 @@ static const char* HDRI_NAMES[] = {
 // smooth spheres) is the one worth seeing.
 #define GRID_CENTER_X       1.5f
 
-// The three demo lights, created identically in both lit worlds so the
-// same GUI sliders drive both (see sync_demo_lights()).
-typedef struct demo_lights
-{
-    entity_id key;    // directional, shadowed: the first Light entity in its world
-    entity_id fill;   // point
-    entity_id spot;   // spot, aimed at the origin
-} demo_lights;
-
 // Which of the two demo scenes on_frame draws this frame -- both share the
 // same camera/orbit controls, only the geometry/shader/GUI panel differ.
 typedef enum render_mode
@@ -133,16 +128,12 @@ typedef struct demo_state
 
     // --- Model viewer (RENDER_MODE_LIT_MODEL) ----------------------------
     // A loaded model on a ground plane under three lights, drawn through the
-    // PBR shader. Everything below is exposed through ImGui so the shading
-    // math is easy to see change live; the GUI edits these plain fields and
-    // sync_lit_world() / sync_grid_world() push them into the Worlds below
-    // every frame.
+    // PBR shader. The World is the single source of truth: the GUI's light,
+    // ground and material controls edit World components directly, so they
+    // always show what the console (and, later, an AI agent) last did.
     int        selected_model;     // index into MODEL_PATHS/MODEL_NAMES, driven by the GUI combo box
     int        loaded_model;       // which entry was last requested (-1 = not yet); the load may have failed
     b8         spin;
-    vec3       light_dir;          // direction the light travels toward the surface; normalized before use
-    vec3       light_color;
-    f32        light_intensity;
     f32        ambient_strength;
     f32        exposure;
 
@@ -152,37 +143,27 @@ typedef struct demo_state
     //               ground (built-in plane), key/fill/spot lights
     //   grid_world: one sphere entity per grid cell, each with its own
     //               metallic/roughness override, plus the same three lights
+    // The model/ground IDs may go stale if a command destroys them; the code
+    // checks before use and recreates the model entities when a model is
+    // picked.
     asset_cache assets;
     world       lit_world;
     world       grid_world;
     entity_id   model_pivot;
     entity_id   model_entity;
     entity_id   ground_entity;
-    demo_lights lit_lights;
-    demo_lights grid_lights;
     entity_id   grid_spheres[GRID_ROWS * GRID_COLUMNS];
 
-    // --- Fill light (point) -------------------------------------------------
-    // Position/color/intensity/range are all live-editable via ImGui, same as
-    // the key (directional) light above. "Disabled" zeroes its intensity, so
-    // the entity (and the GUI's values) survive toggling. Casts no shadow.
-    b8    fill_light_enabled;
-    vec3  fill_light_pos;
-    vec3  fill_light_color;
-    f32   fill_light_intensity;
-    f32   fill_light_range;
-
-    // --- Spot light ------------------------------------------------------------
-    // Off by default: a warm cone always aimed at the origin (where the model
-    // is centred), so moving it never loses the target. Exercises pbr.frag's
-    // LIGHT_SPOT path. Casts no shadow.
-    b8    spot_light_enabled;
-    vec3  spot_light_pos;
-    vec3  spot_light_color;
-    f32   spot_light_intensity;
-    f32   spot_light_range;
-    f32   spot_light_inner_degrees;
-    f32   spot_light_outer_degrees;
+    // --- Commands (Commands/Commands.h) ----------------------------------------
+    // One context + undo history per world; the console runs against the
+    // world on screen. App-level commands (camera, environment, exposure)
+    // come from HOST_COMMANDS below.
+    command_history lit_history;
+    command_history grid_history;
+    command_context lit_commands;
+    command_context grid_commands;
+    command_console console;
+    b8              show_console;   // F1 toggles
 
     // --- Lit rendering ---------------------------------------------------------
     // Renderer/SceneRenderer.h runs the whole lit frame (cascaded shadows,
@@ -196,7 +177,7 @@ typedef struct demo_state
     // --- Material grid (RENDER_MODE_MATERIAL_GRID) ----------------------------
     // The classic IBL test pattern: the same sphere 7 x 5 times, roughness
     // sweeping left to right and metallic top to bottom.
-    vec3 grid_albedo;   // sRGB, like default_albedo; converted to linear when applied
+    vec3 grid_albedo;   // sRGB, like default_albedo; applied when changed
 
     // --- Image-based lighting -----------------------------------------------
     // Baked from an HDRI (Renderer/IBL.h) and read by pbr.frag for ambient
@@ -208,10 +189,9 @@ typedef struct demo_state
     b8              show_skybox;     // draw the HDRI as the background
     f32             sky_blur;        // 0..1, how blurry the background is
 
-    b8 show_ground;
-
-    // Overrides for meshes the file gave no material (a bare .obj). Kept
-    // here rather than on the model so they survive switching models.
+    // Material for models the file gave none (a bare .obj), applied to the
+    // model entity's MeshRenderer override when a model loads or these change.
+    // Kept here rather than on the model so they survive switching models.
     vec3       default_albedo;
     f32        default_metallic;
     f32        default_roughness;
@@ -369,65 +349,33 @@ srgb_to_linear(const vec3 srgb, f32 out[3])
     out[2] = powf(srgb[2], 2.2f);
 }
 
-// Adds the key/fill/spot light entities to `w` from the GUI's current
-// values. Called once per world; sync_demo_lights() keeps them current.
+// Adds the demo's key/fill/spot lights to `w`. After this the World owns
+// them: the GUI edits them in place (draw_light_editors()) and commands can
+// change, add or remove them like any other entity.
 static void
-create_demo_lights(demo_state* state, world* w, demo_lights* out)
+create_demo_lights(world* w)
 {
     light key, fill, spot;
-    light_init_directional(&key, state->light_dir, state->light_color, state->light_intensity);
-    light_init_point(&fill, state->fill_light_color, state->fill_light_intensity, state->fill_light_range);
+    light_init_directional(&key, (vec3){ -0.4f, -0.6f, -0.5f }, (vec3){ 1.0f, 0.98f, 0.92f }, 2.5f);
+    light_init_point(&fill, (vec3){ 0.55f, 0.7f, 1.0f }, 3.0f, 8.0f);
 
-    // Direction is re-aimed every frame by sync_demo_lights(); any non-zero
-    // vector does here.
-    light_init_spot(&spot, (vec3){ 0.0f, -1.0f, 0.0f }, state->spot_light_color, state->spot_light_intensity,
-                    state->spot_light_range, state->spot_light_inner_degrees, state->spot_light_outer_degrees);
+    // A warm cone aimed at the origin, where the model sits. Intensity 0 =
+    // off until someone turns it up.
+    light_init_spot(&spot, (vec3){ 1.5f, -2.5f, -1.0f }, (vec3){ 1.0f, 0.75f, 0.45f }, 0.0f, 10.0f, 12.0f, 22.0f);
 
-    // Key first: it's the first directional light, so it's the one shadowed.
-    out->key  = world_create(w, "key_light");
-    out->fill = world_create(w, "fill_light");
-    out->spot = world_create(w, "spot_light");
+    // Key first: the first directional light is the one shadowed.
+    entity_id key_e  = world_create(w, "key_light");
+    entity_id fill_e = world_create(w, "fill_light");
+    entity_id spot_e = world_create(w, "spot_light");
 
-    world_add_light(w, out->key, key);
-    world_add_light(w, out->fill, fill);
-    world_add_light(w, out->spot, spot);
+    world_add_light(w, key_e, key);
+    world_add_light(w, fill_e, fill);
+    world_add_light(w, spot_e, spot);
+
+    glm_vec3_copy((vec3){ 1.5f, 1.0f, 1.5f }, world_transform(w, fill_e)->position);
+    glm_vec3_copy((vec3){ -1.5f, 2.5f, 1.0f }, world_transform(w, spot_e)->position);
 }
 
-// Pushes this frame's GUI light values into one world's light entities.
-// They're unparented, so their local transform/direction is world space.
-static void
-sync_demo_lights(demo_state* state, world* w, const demo_lights* lights)
-{
-    c_light* key = world_light(w, lights->key);
-    glm_vec3_normalize_to(state->light_dir, key->direction);
-    glm_vec3_copy(state->light_color, key->color);
-    key->intensity = state->light_intensity;
-
-    glm_vec3_copy(state->fill_light_pos, world_transform(w, lights->fill)->position);
-    c_light* fill = world_light(w, lights->fill);
-    glm_vec3_copy(state->fill_light_color, fill->color);
-    fill->intensity = state->fill_light_enabled ? state->fill_light_intensity : 0.0f;
-    fill->range     = state->fill_light_range;
-
-    glm_vec3_copy(state->spot_light_pos, world_transform(w, lights->spot)->position);
-    c_light* spot = world_light(w, lights->spot);
-
-    // Aim at the origin.
-    vec3 to_origin;
-    glm_vec3_negate_to(state->spot_light_pos, to_origin);
-    if (glm_vec3_norm2(to_origin) > 1e-8f)
-        glm_vec3_normalize_to(to_origin, spot->direction);
-
-    // The outer cone can't be narrower than the inner one.
-    if (state->spot_light_outer_degrees < state->spot_light_inner_degrees)
-        state->spot_light_outer_degrees = state->spot_light_inner_degrees;
-
-    glm_vec3_copy(state->spot_light_color, spot->color);
-    spot->intensity          = state->spot_light_enabled ? state->spot_light_intensity : 0.0f;
-    spot->range              = state->spot_light_range;
-    spot->inner_cone_degrees = state->spot_light_inner_degrees;
-    spot->outer_cone_degrees = state->spot_light_outer_degrees;
-}
 
 // Builds lit_world: the (still empty) model under a spinning pivot, the
 // ground plane and the lights. load_selected_model() fills the model in.
@@ -457,7 +405,7 @@ create_lit_world(demo_state* state)
     ground->material.metallic  = 0.0f;
     ground->material.roughness = 0.9f;
 
-    create_demo_lights(state, w, &state->lit_lights);
+    create_demo_lights(w);
 }
 
 // Builds grid_world: one built-in sphere per (roughness, metallic) cell.
@@ -485,16 +433,42 @@ create_grid_world(demo_state* state)
 
             c_mesh_renderer* mr = world_add_mesh_renderer(w, e, sphere);
             mr->material.fields    = MATERIAL_OVERRIDE_BASE_COLOR | MATERIAL_OVERRIDE_METALLIC | MATERIAL_OVERRIDE_ROUGHNESS;
+            srgb_to_linear(state->grid_albedo, mr->material.base_color);
             mr->material.metallic  = 1.0f - (f32)row / (f32)(GRID_ROWS - 1);
             mr->material.roughness = 0.05f + 0.95f * (f32)col / (f32)(GRID_COLUMNS - 1);
         }
     }
 
-    create_demo_lights(state, w, &state->grid_lights);
+    create_demo_lights(w);
+}
+
+// The GUI's default material, on the model entity -- but only for models
+// that brought no materials of their own (a bare .obj); glTF models keep
+// theirs. Runs when a model loads and when the GUI values change.
+static void
+apply_default_material(demo_state* state)
+{
+    c_mesh_renderer* mr = world_mesh_renderer(&state->lit_world, state->model_entity);
+    if (!mr)
+        return;
+
+    const model* m = assets_model(&state->assets, mr->model);
+    if (m && m->material_count == 0)
+    {
+        mr->material.fields = MATERIAL_OVERRIDE_BASE_COLOR | MATERIAL_OVERRIDE_METALLIC | MATERIAL_OVERRIDE_ROUGHNESS;
+        srgb_to_linear(state->default_albedo, mr->material.base_color);
+        mr->material.metallic  = state->default_metallic;
+        mr->material.roughness = state->default_roughness;
+    }
+    else
+    {
+        mr->material.fields = 0;
+    }
 }
 
 // Points lit_world's model entity at MODEL_PATHS[index], fits it into a ~2
-// unit box at the origin, and sits the ground under it.
+// unit box at the origin, and sits the ground under it. Recreates the
+// pivot/model entities if a command destroyed them.
 static void
 load_selected_model(demo_state* state, int index)
 {
@@ -504,11 +478,24 @@ load_selected_model(demo_state* state, int index)
     // re-log the error) every single frame.
     state->loaded_model = index;
 
+    if (!world_is_alive(w, state->model_pivot))
+        state->model_pivot = world_create(w, "model_pivot");
+    if (!world_is_alive(w, state->model_entity))
+    {
+        state->model_entity = world_create(w, "model");
+        world_add_mesh_renderer(w, state->model_entity, ASSET_NONE);
+    }
+    world_set_parent(w, state->model_entity, state->model_pivot);
+    if (!world_has(w, state->model_entity, COMPONENT_MESH_RENDERER))
+        world_add_mesh_renderer(w, state->model_entity, ASSET_NONE);
+
     asset_id id = assets_load_model(&state->assets, MODEL_PATHS[index]);
     world_set_model(w, state->model_entity, id);
+    apply_default_material(state);
 
     // Free the model this one replaced, rather than keeping every model
-    // ever picked resident on the GPU.
+    // ever picked resident on the GPU. (Undo history keeps the ones it
+    // still references.)
     assets_collect_unused(&state->assets);
 
     const model* m = assets_model(&state->assets, id);
@@ -530,7 +517,10 @@ load_selected_model(demo_state* state, int index)
     // spins about Y, which doesn't change Y, so this holds at every angle.
     vec3 fitted_min;
     glm_mat4_mulv3(fit, (f32*)m->bounds_min, 1.0f, fitted_min);
-    world_transform(w, state->ground_entity)->position[1] = fitted_min[1];
+    c_transform* ground = world_transform(w, state->ground_entity);
+    if (ground)
+        ground->position[1] = fitted_min[1];
+    world_update(w);
 }
 
 // Bakes HDRI_PATHS[index] into state->ibl, replacing whatever was there. A
@@ -549,6 +539,294 @@ load_selected_hdri(demo_state* state, int index)
 
     free(path);
 }
+
+// --- Application commands ------------------------------------------------------
+// Commands for state the World doesn't hold -- the camera, the HDRI and the
+// renderer settings -- registered with every command context, so the
+// console (and later an agent) can drive them like any built-in command.
+
+static void load_selected_hdri(demo_state* state, int index);
+
+static command_context*
+active_commands(demo_state* state)
+{
+    return state->mode == RENDER_MODE_MATERIAL_GRID ? &state->grid_commands : &state->lit_commands;
+}
+
+static cJSON*
+vec3_json(const f32* v)
+{
+    cJSON* a = cJSON_CreateArray();
+    for (int i = 0; i < 3; ++i)
+    {
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "%.4g", (double)v[i]);
+        cJSON_AddItemToArray(a, cJSON_CreateNumber(strtod(buffer, NULL)));
+    }
+    return a;
+}
+
+static b8
+json_vec3(const cJSON* item, vec3 out)
+{
+    if (!cJSON_IsArray(item) || cJSON_GetArraySize(item) != 3)
+        return false;
+    for (int i = 0; i < 3; ++i)
+    {
+        const cJSON* n = cJSON_GetArrayItem(item, i);
+        if (!cJSON_IsNumber(n))
+            return false;
+        out[i] = (f32)n->valuedouble;
+    }
+    return true;
+}
+
+// Re-derives the orbit controls from the camera, so mouse orbiting carries
+// on from wherever a command put it.
+static void
+orbit_from_camera(demo_state* state)
+{
+    vec3 offset;
+    glm_vec3_sub(state->cam.position, state->cam.target, offset);
+
+    state->orbit_distance = glm_max(glm_vec3_norm(offset), 0.01f);
+    state->orbit_yaw      = glm_deg(atan2f(offset[0], offset[2]));
+    state->orbit_pitch    = glm_deg(asinf(glm_clamp(offset[1] / state->orbit_distance, -1.0f, 1.0f)));
+}
+
+static b8
+host_environment_list(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    (void)args; (void)error; (void)error_size;
+    demo_state* state = user_data;
+
+    *out_result = cJSON_CreateObject();
+    cJSON* list = cJSON_AddArrayToObject(*out_result, "hdris");
+    for (uint32 i = 0; i < HDRI_COUNT; ++i)
+        cJSON_AddItemToArray(list, cJSON_CreateString(HDRI_PATHS[i]));
+
+    cJSON_AddStringToObject(*out_result, "current", HDRI_PATHS[state->selected_hdri]);
+    cJSON_AddBoolToObject(*out_result, "use_ibl", state->ibl_enabled);
+    cJSON_AddBoolToObject(*out_result, "show_skybox", state->show_skybox);
+    cJSON_AddNumberToObject(*out_result, "sky_blur", state->sky_blur);
+    return true;
+}
+
+static b8
+host_environment_set(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    demo_state* state = user_data;
+
+    const cJSON* hdri = cJSON_GetObjectItem(args, "hdri");
+    int          index = -1;
+    if (cJSON_IsString(hdri))
+    {
+        for (uint32 i = 0; i < HDRI_COUNT; ++i)
+        {
+            if (strcmp(HDRI_PATHS[i], hdri->valuestring) == 0 || strcmp(HDRI_NAMES[i], hdri->valuestring) == 0)
+                index = (int)i;
+        }
+        if (index < 0)
+        {
+            snprintf(error, error_size, "unknown HDRI \"%s\"; environment.list shows the available ones", hdri->valuestring);
+            return false;
+        }
+    }
+    else if (hdri && !cJSON_IsNull(hdri))
+    {
+        snprintf(error, error_size, "\"hdri\" must be a path from environment.list");
+        return false;
+    }
+
+    const cJSON* blur = cJSON_GetObjectItem(args, "sky_blur");
+    if (blur && (!cJSON_IsNumber(blur) || blur->valuedouble < 0.0 || blur->valuedouble > 1.0))
+    {
+        snprintf(error, error_size, "\"sky_blur\" must be a number from 0 (sharp) to 1 (blurriest)");
+        return false;
+    }
+
+    if (index >= 0 && index != state->loaded_hdri)
+    {
+        state->selected_hdri = index;
+        load_selected_hdri(state, index);
+    }
+
+    const cJSON* use_ibl = cJSON_GetObjectItem(args, "use_ibl");
+    const cJSON* skybox  = cJSON_GetObjectItem(args, "show_skybox");
+    if (cJSON_IsBool(use_ibl)) state->ibl_enabled = cJSON_IsTrue(use_ibl) && state->ibl.irradiance;
+    if (cJSON_IsBool(skybox))  state->show_skybox = cJSON_IsTrue(skybox);
+    if (blur)                  state->sky_blur    = (f32)blur->valuedouble;
+
+    return host_environment_list(user_data, NULL, out_result, error, error_size);
+}
+
+static b8
+host_view_get(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    (void)args; (void)error; (void)error_size;
+    demo_state* state = user_data;
+
+    *out_result = cJSON_CreateObject();
+    cJSON_AddItemToObject(*out_result, "position", vec3_json(state->cam.position));
+    cJSON_AddItemToObject(*out_result, "target", vec3_json(state->cam.target));
+    cJSON_AddNumberToObject(*out_result, "fov_degrees", state->cam.fov_degrees);
+    cJSON_AddNumberToObject(*out_result, "exposure", state->exposure);
+    cJSON_AddNumberToObject(*out_result, "ambient_strength", state->ambient_strength);
+    return true;
+}
+
+static b8
+host_view_set_camera(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    demo_state* state = user_data;
+
+    vec3 position, target;
+    glm_vec3_copy(state->cam.position, position);
+    glm_vec3_copy(state->cam.target, target);
+
+    const cJSON* p = cJSON_GetObjectItem(args, "position");
+    const cJSON* t = cJSON_GetObjectItem(args, "target");
+    if ((p && !json_vec3(p, position)) || (t && !json_vec3(t, target)))
+    {
+        snprintf(error, error_size, "\"position\" and \"target\" must be [x, y, z] in meters");
+        return false;
+    }
+    if (!p && !t)
+    {
+        snprintf(error, error_size, "pass \"position\" and/or \"target\"");
+        return false;
+    }
+    if (glm_vec3_distance(position, target) < 0.01f)
+    {
+        snprintf(error, error_size, "the camera can't be at the point it looks at");
+        return false;
+    }
+
+    glm_vec3_copy(position, state->cam.position);
+    glm_vec3_copy(target, state->cam.target);
+    orbit_from_camera(state);
+    orbit_camera_apply(state);
+    return host_view_get(user_data, NULL, out_result, error, error_size);
+}
+
+// Points the camera at an entity (or the whole scene), keeping the current
+// viewing angle, and backs off until it fits.
+static b8
+host_view_frame(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    demo_state* state = user_data;
+    const world* w = active_commands(state)->w;
+
+    vec3 bmin = { FLT_MAX, FLT_MAX, FLT_MAX }, bmax = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+    b8   any  = false;
+
+    const cJSON* target = cJSON_GetObjectItem(args, "entity");
+    if (target && !cJSON_IsNull(target))
+    {
+        entity_id e = cJSON_IsString(target) ? world_find(w, target->valuestring) : ENTITY_NULL;
+        if (!e)
+        {
+            snprintf(error, error_size, "no entity named \"%s\"", cJSON_IsString(target) ? target->valuestring : "?");
+            return false;
+        }
+        any = world_bounds(w, e, bmin, bmax);
+        if (!any)
+        {
+            const vec4* m = world_matrix(w, e);
+            vec3 c = { m[3][0], m[3][1], m[3][2] };
+            glm_vec3_sub(c, (vec3){ 0.5f, 0.5f, 0.5f }, bmin);
+            glm_vec3_add(c, (vec3){ 0.5f, 0.5f, 0.5f }, bmax);
+            any = true;
+        }
+    }
+    else
+    {
+        const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
+        for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+        {
+            vec3 emin, emax;
+            if (!world_mesh_renderer(w, e)->visible || !world_bounds(w, e, emin, emax))
+                continue;
+            glm_vec3_minv(bmin, emin, bmin);
+            glm_vec3_maxv(bmax, emax, bmax);
+            any = true;
+        }
+    }
+
+    if (!any)
+    {
+        snprintf(error, error_size, "nothing to frame");
+        return false;
+    }
+
+    vec3 center;
+    glm_vec3_center(bmin, bmax, center);
+    f32 radius = glm_max(glm_vec3_distance(bmin, bmax) * 0.5f, 0.05f);
+
+    glm_vec3_copy(center, state->cam.target);
+    state->orbit_distance = radius / sinf(glm_rad(state->cam.fov_degrees) * 0.5f) * 1.1f;
+    orbit_camera_apply(state);
+    return host_view_get(user_data, NULL, out_result, error, error_size);
+}
+
+static b8
+host_render_set(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    demo_state* state = user_data;
+
+    const cJSON* exposure = cJSON_GetObjectItem(args, "exposure");
+    const cJSON* ambient  = cJSON_GetObjectItem(args, "ambient_strength");
+    const cJSON* cascades = cJSON_GetObjectItem(args, "debug_show_cascades");
+
+    if ((exposure && (!cJSON_IsNumber(exposure) || exposure->valuedouble <= 0.0 || exposure->valuedouble > 16.0))
+        || (ambient && (!cJSON_IsNumber(ambient) || ambient->valuedouble < 0.0 || ambient->valuedouble > 4.0))
+        || (cascades && !cJSON_IsBool(cascades)))
+    {
+        snprintf(error, error_size, "exposure must be in (0, 16], ambient_strength in [0, 4], debug_show_cascades true/false");
+        return false;
+    }
+
+    if (exposure) state->exposure            = (f32)exposure->valuedouble;
+    if (ambient)  state->ambient_strength    = (f32)ambient->valuedouble;
+    if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
+
+    return host_view_get(user_data, NULL, out_result, error, error_size);
+}
+
+static const cmd_arg ARGS_ENVIRONMENT_SET[] = {
+    { "hdri",        "string",  false, "HDRI path from environment.list" },
+    { "use_ibl",     "boolean", false, "Light the scene from the HDRI (false = simple sky/ground ambient)" },
+    { "show_skybox", "boolean", false, "Show the HDRI as the background" },
+    { "sky_blur",    "number",  false, "Background blur, 0 (sharp) to 1" },
+};
+
+static const cmd_arg ARGS_SET_CAMERA[] = {
+    { "position", "vec3", false, "Camera position [x, y, z] in meters" },
+    { "target",   "vec3", false, "Point the camera looks at" },
+};
+
+static const cmd_arg ARGS_FRAME[] = {
+    { "entity", "entity", false, "Entity to frame; omit to frame everything visible" },
+};
+
+static const cmd_arg ARGS_RENDER_SET[] = {
+    { "exposure",            "number",  false, "Brightness multiplier before tone mapping, e.g. 1" },
+    { "ambient_strength",    "number",  false, "Strength of the image-based / ambient light, e.g. 0.5" },
+    { "debug_show_cascades", "boolean", false, "Tint shading by shadow cascade" },
+};
+
+#define HOST_ARGS(array) array, (uint32)(sizeof(array) / sizeof((array)[0]))
+
+static const cmd_host_command HOST_COMMANDS[] = {
+    { "environment.list", "The HDRIs that can light the scene, and the current settings", NULL, 0, false, host_environment_list },
+    { "environment.set",  "Changes the HDRI and how it lights and backs the scene",         HOST_ARGS(ARGS_ENVIRONMENT_SET), false, host_environment_set },
+    { "view.get",         "Where the camera is and what it looks at",                       NULL, 0, false, host_view_get },
+    { "view.set_camera",  "Moves the camera and/or what it looks at",                       HOST_ARGS(ARGS_SET_CAMERA),      false, host_view_set_camera },
+    { "view.frame",       "Points the camera at an entity (or everything) so it fills the view", HOST_ARGS(ARGS_FRAME),     false, host_view_frame },
+    { "render.set",       "Exposure, ambient strength and debug views",                      HOST_ARGS(ARGS_RENDER_SET),      false, host_render_set },
+};
+
+#define HOST_COMMAND_COUNT ((uint32)(sizeof(HOST_COMMANDS) / sizeof(HOST_COMMANDS[0])))
 
 // Runs once from App.c's run(), after the GL context / RHI / ImGui exist.
 static void
@@ -617,33 +895,14 @@ on_init(App* app)
     state->loaded_hdri   = -1;
     load_selected_hdri(state, state->selected_hdri);
 
-    state->show_ground = true;
-
     state->mode = RENDER_MODE_LIT_MODEL;
 
     glm_vec3_copy((vec3){ 0.9f, 0.3f, 0.25f }, state->default_albedo);
     state->default_metallic  = 0.0f;
     state->default_roughness = 0.45f;
 
-    glm_vec3_copy((vec3){ -0.4f, -0.6f, -0.5f }, state->light_dir);
-    glm_vec3_copy((vec3){ 1.0f, 0.98f, 0.92f }, state->light_color);
-    state->light_intensity  = 2.5f;
     state->ambient_strength = 0.5f;
     state->exposure         = 1.0f;
-
-    state->fill_light_enabled   = true;
-    glm_vec3_copy((vec3){ 1.5f, 1.0f, 1.5f }, state->fill_light_pos);
-    glm_vec3_copy((vec3){ 0.55f, 0.7f, 1.0f }, state->fill_light_color);
-    state->fill_light_intensity = 3.0f;
-    state->fill_light_range     = 8.0f;
-
-    state->spot_light_enabled       = false;
-    glm_vec3_copy((vec3){ -1.5f, 2.5f, 1.0f }, state->spot_light_pos);
-    glm_vec3_copy((vec3){ 1.0f, 0.75f, 0.45f }, state->spot_light_color);
-    state->spot_light_intensity     = 15.0f;
-    state->spot_light_range         = 10.0f;
-    state->spot_light_inner_degrees = 12.0f;
-    state->spot_light_outer_degrees = 22.0f;
 
     // --- Worlds -------------------------------------------------------------
     assets_init(&state->assets);
@@ -656,6 +915,30 @@ on_init(App* app)
     state->selected_model = 0;
     state->loaded_model   = -1;
     load_selected_model(state, state->selected_model);
+    world_update(&state->grid_world);
+
+    // --- Commands + console ---------------------------------------------------
+    console_init(&state->console);
+    state->show_console = true;
+
+    history_init(&state->lit_history);
+    history_init(&state->grid_history);
+
+    command_context* contexts[2]  = { &state->lit_commands, &state->grid_commands };
+    world*           worlds[2]    = { &state->lit_world, &state->grid_world };
+    command_history* histories[2] = { &state->lit_history, &state->grid_history };
+    for (int i = 0; i < 2; ++i)
+    {
+        *contexts[i] = (command_context){
+            .w                  = worlds[i],
+            .history            = histories[i],
+            .on_change          = console_on_change,
+            .on_change_user     = &state->console,
+            .host_commands      = HOST_COMMANDS,
+            .host_command_count = HOST_COMMAND_COUNT,
+            .host_user          = state,
+        };
+    }
 
     f32 aspect = (f32)framebuffer_size.width / (f32)framebuffer_size.height;
 
@@ -701,37 +984,74 @@ static void on_key(App* app, int key, int action, int mods)
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         app->should_close = true;
+
+    demo_state* state = (demo_state*)app->user_data;
+    if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
+        state->show_console = !state->show_console;
 }
 
-// Light + image-based-lighting controls, shared by the lit-model and material
-// grid panels.
+// One editor per Light entity in `w` -- whatever lights exist, including
+// ones added or renamed from the console. Edits go straight into the
+// components (no undo; the console's history covers commands).
 static void
-draw_lighting_controls(demo_state* state)
+draw_light_editors(world* w)
 {
-    igText("Light");
-    igColorEdit3("Light Color", state->light_color, 0);
-    igSliderFloat3("Light Direction", state->light_dir, -1.0f, 1.0f, "%.2f", 0);
-    igSliderFloat("Light Intensity", &state->light_intensity, 0.0f, 10.0f, "%.2f", 0);
-    igSeparator();
+    static const char* const TYPE_NAMES[] = { "directional", "point", "spot" };
 
-    igText("Fill light (point)");
-    igCheckbox("Enabled##fill", &state->fill_light_enabled);
-    igColorEdit3("Color##fill", state->fill_light_color, 0);
-    igSliderFloat3("Position##fill", state->fill_light_pos, -5.0f, 5.0f, "%.2f", 0);
-    igSliderFloat("Intensity##fill", &state->fill_light_intensity, 0.0f, 20.0f, "%.2f", 0);
-    igSliderFloat("Range##fill", &state->fill_light_range, 0.0f, 20.0f, "%.2f", 0);
-    igSeparator();
+    igText("Lights");
+    const uint32 mask  = COMPONENT_BIT(COMPONENT_LIGHT);
+    uint32       count = 0;
 
-    igText("Spot light (aimed at the origin)");
-    igCheckbox("Enabled##spot", &state->spot_light_enabled);
-    igColorEdit3("Color##spot", state->spot_light_color, 0);
-    igSliderFloat3("Position##spot", state->spot_light_pos, -5.0f, 5.0f, "%.2f", 0);
-    igSliderFloat("Intensity##spot", &state->spot_light_intensity, 0.0f, 50.0f, "%.2f", 0);
-    igSliderFloat("Range##spot", &state->spot_light_range, 0.0f, 20.0f, "%.2f", 0);
-    igSliderFloat("Inner angle##spot", &state->spot_light_inner_degrees, 0.0f, 89.0f, "%.1f deg", 0);
-    igSliderFloat("Outer angle##spot", &state->spot_light_outer_degrees, 0.0f, 89.0f, "%.1f deg", 0);
-    igSeparator();
+    for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+    {
+        c_light*     l = world_light(w, e);
+        c_transform* t = world_transform(w, e);
+        ++count;
 
+        igPushID_Int((int)e);
+        char header[ENTITY_NAME_MAX + 32];
+        snprintf(header, sizeof(header), "%s (%s)", world_name(w, e), TYPE_NAMES[l->type]);
+
+        if (igCollapsingHeader_TreeNodeFlags(header, l->type == LIGHT_DIRECTIONAL ? ImGuiTreeNodeFlags_DefaultOpen : 0))
+        {
+            igColorEdit3("Color", l->color, 0);
+            igSliderFloat("Intensity", &l->intensity, 0.0f, l->type == LIGHT_DIRECTIONAL ? 10.0f : 50.0f,
+                          l->intensity > 0.0f ? "%.2f" : "off (0)", 0);
+
+            if (l->type == LIGHT_DIRECTIONAL)
+            {
+                igSliderFloat3("Direction", l->direction, -1.0f, 1.0f, "%.2f", 0);
+            }
+            else
+            {
+                b8 moved = igSliderFloat3("Position", t->position, -5.0f, 5.0f, "%.2f", 0);
+                igSliderFloat("Range", &l->range, 0.0f, 20.0f, l->range > 0.0f ? "%.2f" : "unlimited", 0);
+
+                if (l->type == LIGHT_SPOT)
+                {
+                    igSliderFloat("Inner angle", &l->inner_cone_degrees, 0.0f, 89.0f, "%.1f deg", 0);
+                    igSliderFloat("Outer angle", &l->outer_cone_degrees, 0.0f, 89.0f, "%.1f deg", 0);
+                    if (l->outer_cone_degrees < l->inner_cone_degrees)
+                        l->outer_cone_degrees = l->inner_cone_degrees;
+
+                    // Keep the cone on the model while dragging it around.
+                    if ((moved || igButton("Aim at origin", (ImVec2_c){ 0, 0 })) && glm_vec3_norm2(t->position) > 1e-8f)
+                        glm_vec3_negate_to(t->position, l->direction);
+                }
+            }
+        }
+        igPopID();
+    }
+
+    if (count == 0)
+        igTextDisabled("(no lights -- add one from the console)");
+    igSeparator();
+}
+
+// Ambient, exposure and image-based lighting: renderer state, not World.
+static void
+draw_environment_controls(demo_state* state)
+{
     igSliderFloat("Ambient", &state->ambient_strength, 0.0f, 2.0f, "%.2f", 0);
     igSliderFloat("Exposure", &state->exposure, 0.1f, 4.0f, "%.2f", 0);
     igSeparator();
@@ -753,56 +1073,39 @@ draw_lighting_controls(demo_state* state)
     igSeparator();
 }
 
-// Pushes this frame's GUI state into lit_world and updates its transforms.
+// Per-frame World work for lit_world: the spin animation, then transforms.
+// Nothing else is pushed in -- the World holds the state.
 static void
 sync_lit_world(demo_state* state, f32 time)
 {
     world* w = &state->lit_world;
 
     // Spin about the model's own middle: the model is centred under the pivot.
-    world_transform(w, state->model_pivot)->rotation_deg[1] = state->spin ? glm_deg(time * 0.5f) : 0.0f;
+    c_transform* pivot = world_transform(w, state->model_pivot);
+    if (pivot && state->spin)
+        pivot->rotation_deg[1] = glm_deg(time * 0.5f);
 
-    // The GUI's default material only applies to models that brought no
-    // materials of their own (a bare .obj); glTF models keep theirs.
-    c_mesh_renderer* mr = world_mesh_renderer(w, state->model_entity);
-    const model*     m  = assets_model(&state->assets, mr->model);
-    if (m && m->material_count == 0)
-    {
-        mr->material.fields = MATERIAL_OVERRIDE_BASE_COLOR | MATERIAL_OVERRIDE_METALLIC | MATERIAL_OVERRIDE_ROUGHNESS;
-        srgb_to_linear(state->default_albedo, mr->material.base_color);
-        mr->material.metallic  = state->default_metallic;
-        mr->material.roughness = state->default_roughness;
-    }
-    else
-    {
-        mr->material.fields = 0;
-    }
-
-    world_mesh_renderer(w, state->ground_entity)->visible = state->show_ground;
-
-    sync_demo_lights(state, w, &state->lit_lights);
     world_update(w);
 }
 
-// Pushes this frame's GUI state into grid_world and updates its transforms.
+// The grid's albedo picker, applied to every sphere still in the grid
+// world when it changes.
 static void
-sync_grid_world(demo_state* state)
+apply_grid_albedo(demo_state* state)
 {
-    world* w = &state->grid_world;
-
     f32 albedo[3];
     srgb_to_linear(state->grid_albedo, albedo);
 
     for (int i = 0; i < GRID_ROWS * GRID_COLUMNS; ++i)
     {
-        c_mesh_renderer* mr = world_mesh_renderer(w, state->grid_spheres[i]);
+        c_mesh_renderer* mr = world_mesh_renderer(&state->grid_world, state->grid_spheres[i]);
+        if (!mr)
+            continue;   // removed from the console
+        mr->material.fields |= MATERIAL_OVERRIDE_BASE_COLOR;
         mr->material.base_color[0] = albedo[0];
         mr->material.base_color[1] = albedo[1];
         mr->material.base_color[2] = albedo[2];
     }
-
-    sync_demo_lights(state, w, &state->grid_lights);
-    world_update(w);
 }
 
 // Square the camera up to the grid -- the default viewpoint is a corner view
@@ -879,7 +1182,7 @@ static void on_frame(App* app, f32 dt)
         if (state->selected_hdri != state->loaded_hdri)
             load_selected_hdri(state, state->selected_hdri);
 
-        sync_grid_world(state);
+        world_update(&state->grid_world);
 
         // The demo is about ambient light, so no shadow pass.
         scene_render_settings settings = build_render_settings(state);
@@ -932,20 +1235,25 @@ static void on_frame(App* app, f32 dt)
     {
         igTextWrapped("Columns: roughness 0.05 to 1.0, left to right.");
         igTextWrapped("Rows: metallic 1.0 to 0.0, top to bottom.");
-        igColorEdit3("Albedo", state->grid_albedo, 0);
+        if (igColorEdit3("Albedo", state->grid_albedo, 0))
+            apply_grid_albedo(state);
         igSeparator();
 
-        draw_lighting_controls(state);
+        draw_light_editors(&state->grid_world);
+        draw_environment_controls(state);
     }
     else // RENDER_MODE_LIT_MODEL
     {
         igCombo_Str_arr("Model", &state->selected_model, MODEL_NAMES, (int)MODEL_COUNT, -1);
 
-        const model* m = assets_model(&state->assets,
-                                      world_mesh_renderer(&state->lit_world, state->model_entity)->model);
-        if (m)
+        const c_mesh_renderer* model_mr = world_mesh_renderer(&state->lit_world, state->model_entity);
+        const model*           m        = model_mr ? assets_model(&state->assets, model_mr->model) : NULL;
+        if (!model_mr)
         {
-
+            igTextWrapped("The \"model\" entity was removed; pick a model to bring it back.");
+        }
+        else if (m)
+        {
             igText("%u submeshes, %u materials, %u textures", m->submesh_count, m->material_count, m->texture_count);
             igText("%u vertices, %u triangles", m->vertex_count, m->triangle_count);
         }
@@ -955,25 +1263,35 @@ static void on_frame(App* app, f32 dt)
         }
 
         igCheckbox("Spin", &state->spin);
-        igCheckbox("Ground plane", &state->show_ground);
+
+        c_mesh_renderer* ground = world_mesh_renderer(&state->lit_world, state->ground_entity);
+        if (ground)
+            igCheckbox("Ground plane", &ground->visible);
+
         igCheckbox("Debug: show shadow cascades", &state->debug_show_cascades);
         igSeparator();
 
-        draw_lighting_controls(state);
+        draw_light_editors(&state->lit_world);
+        draw_environment_controls(state);
 
         igText("Default material (models without one)");
-        igColorEdit3("Albedo", state->default_albedo, 0);
-        igSliderFloat("Metallic", &state->default_metallic, 0.0f, 1.0f, "%.2f", 0);
-        igSliderFloat("Roughness", &state->default_roughness, 0.0f, 1.0f, "%.2f", 0);
+        b8 changed = igColorEdit3("Albedo", state->default_albedo, 0);
+        changed |= igSliderFloat("Metallic", &state->default_metallic, 0.0f, 1.0f, "%.2f", 0);
+        changed |= igSliderFloat("Roughness", &state->default_roughness, 0.0f, 1.0f, "%.2f", 0);
+        if (changed)
+            apply_default_material(state);
     }
 
     igEnd();
 
-    // Every entity and component of the world on screen (read-only).
-    if (state->mode == RENDER_MODE_LIT_MODEL)
-        entity_panel_draw(&state->lit_world, "Entities");
-    else if (state->mode == RENDER_MODE_MATERIAL_GRID)
-        entity_panel_draw(&state->grid_world, "Entities");
+    // Every entity and component of the world on screen (read-only), and
+    // the command console for it. The textured cube has no world; the
+    // console then works on the lit-model world.
+    command_context* active = active_commands(state);
+    if (state->mode != RENDER_MODE_TEXTURED_CUBE)
+        entity_panel_draw(active->w, "Entities");
+    if (state->show_console)
+        console_draw(&state->console, active, "Console (F1)");
 }
 
 // Runs from terminate(), before the GL context goes away.
@@ -984,6 +1302,9 @@ static void on_shutdown(App* app)
     for (uint32 i = 0; i < TEXTURE_COUNT; ++i)
         rhi_texture_destroy(state->textures[i]);
 
+    console_shutdown(&state->console);
+    history_shutdown(&state->lit_history, &state->lit_world);     // histories hold asset references too
+    history_shutdown(&state->grid_history, &state->grid_world);
     world_shutdown(&state->lit_world);    // releases the worlds' assets...
     world_shutdown(&state->grid_world);
     assets_shutdown(&state->assets);      // ...then the models themselves

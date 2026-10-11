@@ -77,7 +77,7 @@ Status: done. `World/` (World, Components, Reflect), `Assets/AssetCache`, built-
 per-entity material overrides, read-only `UI/EntityPanel`, headless `tests/world_tests.c` (ctest).
 Lit Model and Grid render as before; the ground is now a regular entity.
 
-### Phase 2: Command layer (in-engine, no networking)
+### Phase 2: Command layer (in-engine, no networking) — done
 
 - `cmd_execute(world, json) → json`.
 - Generic commands: `entity.create`, `entity.destroy`, `component.set`, `component.remove`,
@@ -91,6 +91,11 @@ Lit Model and Grid render as before; the ground is now a regular entity.
 - An ImGui command console for typing JSON commands by hand.
 
 **Done when:** a scene can be built, changed and undone entirely from the console.
+
+Status: done. `World/Serialize` (cJSON 1.7.18), `Commands/Commands` (generic + `place_model`,
+`entity.place`, `scene.save/load/list`, `batch`, `history.*`, app-registered host commands),
+`Commands/History` (in-place undo/redo, transactions, change events), `UI/CommandConsole` (F1).
+The testbed edits World components directly, so the console and the GUI never fight.
 
 ### Phase 3: Command server
 

@@ -28,6 +28,7 @@ add_library(PBR_Engine STATIC
     src/Scene/ModelGltf.c
     src/UI/ImGuiLayer.c
     src/UI/EntityPanel.c
+    src/UI/CommandConsole.c
     src/World/Serialize.c
     src/Commands/Commands.c
     src/Commands/History.c
