@@ -5,7 +5,10 @@
 // line of output, then serves until a client calls "test.shutdown" (or 60 s
 // pass, so a failed test run can't leave it behind).
 //
-//   ServerHost <discovery file path>
+//   ServerHost <discovery file path> [scenes folder]
+//
+// The built-in shapes are registered as bounds-only models (no GPU here),
+// so placement commands work exactly as in the app.
 
 #include "Commands/Commands.h"
 #include "Net/CommandServer.h"
@@ -41,7 +44,7 @@ main(int argc, char** argv)
 {
     if (argc < 2)
     {
-        fprintf(stderr, "usage: ServerHost <discovery file path>\n");
+        fprintf(stderr, "usage: ServerHost <discovery file path> [scenes folder]\n");
         return 2;
     }
 
@@ -49,6 +52,18 @@ main(int argc, char** argv)
     world           w;
     command_history history;
     assets_init(&assets);
+
+    // Same keys and 1 m bounds as the real built-ins, but no meshes: a
+    // later assets_builtin() finds these instead of uploading to a GPU.
+    static const char* const BUILTINS[] = { "builtin:cube", "builtin:sphere", "builtin:plane" };
+    for (int i = 0; i < 3; ++i)
+    {
+        model m = { 0 };
+        glm_vec3_copy((vec3){ -0.5f, i == 2 ? 0.0f : -0.5f, -0.5f }, m.bounds_min);
+        glm_vec3_copy((vec3){ 0.5f, i == 2 ? 0.0f : 0.5f, 0.5f }, m.bounds_max);
+        assets_add_model(&assets, BUILTINS[i], m);
+    }
+
     world_init(&w, &assets);
     history_init(&history);
 
@@ -57,6 +72,7 @@ main(int argc, char** argv)
         .history            = &history,
         .host_commands      = HOST_COMMANDS,
         .host_command_count = 1,
+        .scenes_dir         = argc > 2 ? argv[2] : NULL,
     };
 
     server_config   config = { .port = 0, .discovery_path = argv[1] };

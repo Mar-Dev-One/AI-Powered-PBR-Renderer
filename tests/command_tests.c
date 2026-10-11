@@ -235,6 +235,37 @@ test_describe_destroy_clear(void)
 }
 
 static void
+test_components_describe(void)
+{
+    CHECK(run("{\"cmd\": \"components.describe\"}"));
+    const cJSON* components = cJSON_GetObjectItem(result(), "components");
+    CHECK(cJSON_GetArraySize(components) == 4);   // Transform, MeshRenderer, Light, Camera
+
+    const cJSON* light = NULL;
+    const cJSON* c;
+    cJSON_ArrayForEach(c, components)
+    {
+        CHECK(strcmp(cJSON_GetObjectItem(c, "name")->valuestring, "Name") != 0);
+        if (strcmp(cJSON_GetObjectItem(c, "name")->valuestring, "Light") == 0)
+            light = c;
+    }
+    CHECK(light != NULL);
+
+    b8 has_enum = false, has_range = false;
+    const cJSON* f;
+    cJSON_ArrayForEach(f, cJSON_GetObjectItem(light, "fields"))
+    {
+        const char* name = cJSON_GetObjectItem(f, "name")->valuestring;
+        if (strcmp(name, "type") == 0)
+            has_enum = cJSON_GetArraySize(cJSON_GetObjectItem(f, "values")) == 3;
+        if (strcmp(name, "intensity") == 0)
+            has_range = cJSON_GetObjectItem(f, "max") != NULL;
+        CHECK(cJSON_GetObjectItem(f, "description") != NULL);
+    }
+    CHECK(has_enum && has_range);
+}
+
+static void
 test_assets_list(void)
 {
     CHECK(run("{\"cmd\": \"assets.list\"}"));
@@ -264,6 +295,7 @@ main(void)
     test_update();
     test_describe_destroy_clear();
     test_assets_list();
+    test_components_describe();
 
     cJSON_Delete(g_response);
     world_shutdown(&w);

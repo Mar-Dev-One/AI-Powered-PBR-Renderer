@@ -27,10 +27,12 @@ SERVER_HOST = Path(os.environ.get("PBR_SERVER_HOST", DEFAULT_HOST))
 
 
 class Host:
-    """A ServerHost process writing its discovery file to `discovery_path`."""
+    """A ServerHost process writing its discovery file to `discovery_path`
+    (and saving scenes to `scenes_dir`, if given)."""
 
-    def __init__(self, discovery_path: Path):
-        self.process = subprocess.Popen([str(SERVER_HOST), str(discovery_path)], stdout=subprocess.PIPE, text=True)
+    def __init__(self, discovery_path: Path, scenes_dir: Path | None = None):
+        command = [str(SERVER_HOST), str(discovery_path)] + ([str(scenes_dir)] if scenes_dir else [])
+        self.process = subprocess.Popen(command, stdout=subprocess.PIPE, text=True)
         self.url = self.process.stdout.readline().strip()
 
     def stop(self):

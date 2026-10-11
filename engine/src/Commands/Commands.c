@@ -646,6 +646,84 @@ visit_model_entry(const char* name, b8 is_directory, void* user_data)
     }
 }
 
+// components.describe: what component.set / entity.create accept, straight
+// from the reflection tables, so callers (and LLMs) don't have to guess.
+static const char*
+field_type_name(field_type type)
+{
+    switch (type)
+    {
+        case FIELD_F32:    return "number";
+        case FIELD_BOOL:   return "boolean";
+        case FIELD_VEC3:   return "vec3";
+        case FIELD_COLOR3: return "color";
+        case FIELD_ENUM:   return "enum";
+        case FIELD_STRING: return "string";
+        case FIELD_ASSET:  return "asset";
+        case FIELD_ENTITY: return "entity";
+        case FIELD_FLAGS:  return "flags";
+    }
+    return "unknown";
+}
+
+static b8
+cmd_components_describe(command_context* ctx, const cJSON* args, cmd_output* out)
+{
+    (void)ctx;
+    (void)args;
+
+    out->result = cJSON_CreateObject();
+    cJSON_AddStringToObject(out->result, "notes",
+                            "Set fields with component.set (only the ones to change). vec3 and color are [x, y, z]; "
+                            "colors are linear RGB 0-1. Every entity has a Transform. Names and parents are changed "
+                            "with entity.update, not as components. MeshRenderer material.* fields override the "
+                            "model's own material; null clears an override.");
+    cJSON* list = cJSON_AddArrayToObject(out->result, "components");
+
+    for (uint32 t = 0; t < COMPONENT_TYPE_COUNT; ++t)
+    {
+        if (t == COMPONENT_NAME || t == COMPONENT_PARENT)
+            continue;
+
+        const component_desc* c = reflect_component((component_type)t);
+        cJSON* entry = cJSON_CreateObject();
+        cJSON_AddStringToObject(entry, "name", c->name);
+
+        cJSON* fields = cJSON_AddArrayToObject(entry, "fields");
+        for (uint32 f = 0; f < c->field_count; ++f)
+        {
+            const field_desc* field = &c->fields[f];
+            if (field->type == FIELD_FLAGS)
+                continue;   // internal bookkeeping, never set directly
+
+            cJSON* fj = cJSON_CreateObject();
+            cJSON_AddStringToObject(fj, "name", field->name);
+            cJSON_AddStringToObject(fj, "type", field_type_name(field->type));
+            cJSON_AddStringToObject(fj, "description", field->doc);
+
+            if (field->min < field->max)
+            {
+                cJSON_AddNumberToObject(fj, "min", field->min);
+                cJSON_AddNumberToObject(fj, "max", field->max);
+            }
+            if (field->type == FIELD_ENUM)
+            {
+                cJSON* values = cJSON_AddArrayToObject(fj, "values");
+                for (uint32 v = 0; v < field->enum_count; ++v)
+                    cJSON_AddItemToArray(values, cJSON_CreateString(field->enum_names[v]));
+            }
+            if (field->nonzero)
+                cJSON_AddBoolToObject(fj, "nonzero", true);
+            if (field->override_bit || field->type == FIELD_ASSET)
+                cJSON_AddBoolToObject(fj, "nullable", true);
+
+            cJSON_AddItemToArray(fields, fj);
+        }
+        cJSON_AddItemToArray(list, entry);
+    }
+    return true;
+}
+
 static b8
 cmd_assets_list(command_context* ctx, const cJSON* args, cmd_output* out)
 {
@@ -1480,6 +1558,7 @@ static const cmd_def COMMANDS[] = {
     { "component.set",    "Sets fields of a component, adding the component if missing",    ARGS(ARGS_COMPONENT_SET),    true,  cmd_component_set },
     { "component.remove", "Removes a component from an entity",                              ARGS(ARGS_COMPONENT_REMOVE), true,  cmd_component_remove },
     { "assets.list",      "Models that can be used in a MeshRenderer's \"model\" field",     NO_ARGS,                     false, cmd_assets_list },
+    { "components.describe", "Every component's fields: type, range, allowed values, meaning",  NO_ARGS,                     false, cmd_components_describe },
     { "place_model",      "Adds a model sized in meters and placed by intent: on the ground, on top of or beside another entity",
                                                                                               ARGS(ARGS_PLACE_MODEL),      true,  cmd_place_model },
     { "entity.place",     "Moves an entity: onto the ground, on top of or beside another entity, or to a position",
