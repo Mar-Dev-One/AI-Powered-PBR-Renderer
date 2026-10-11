@@ -56,6 +56,16 @@ rhi_framebuffer gl_framebuffer_create(rhi_framebuffer_desc desc)
         fb->depth_texture = create_attachment(RHI_FORMAT_DEPTH24, desc.width, desc.height);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                                 GL_TEXTURE_2D, fb->depth_texture->handle, 0);
+
+        // texture() on a sampler2DShadow then returns the fraction of the
+        // 2x2 texels around the lookup that pass ref <= stored depth,
+        // bilinearly weighted -- PCF in hardware. The attachment is
+        // linear-filtered already (create_attachment()).
+        if (desc.depth_compare)
+        {
+            glTextureParameteri(fb->depth_texture->handle, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+            glTextureParameteri(fb->depth_texture->handle, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+        }
     }
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)

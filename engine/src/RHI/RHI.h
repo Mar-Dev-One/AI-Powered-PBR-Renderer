@@ -91,6 +91,8 @@ typedef struct rhi_framebuffer_desc
     const rhi_framebuffer_attachment* color_attachments;    // NULL/0 for a depth-only target (e.g. shadow map)
     uint32                            color_attachment_count; // must be <= RHI_MAX_COLOR_ATTACHMENTS
     b8                                has_depth_attachment;
+    b8                                depth_compare;   // depth texture samples as a comparison (GLSL sampler2DShadow,
+                                                       // hardware 2x2 PCF) instead of returning raw depth -- shadow maps
 } rhi_framebuffer_desc;
 
 // A cube map: six square faces addressed by direction. Face order matches

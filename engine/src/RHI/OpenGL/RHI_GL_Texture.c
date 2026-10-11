@@ -58,6 +58,26 @@ gl_filter_to_gl(rhi_texture_filter filter, b8 has_mipmaps)
     return has_mipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR;
 }
 
+// Anisotropic filtering level for mipmapped textures: the driver's maximum,
+// capped at 16x (the usual ceiling, and where returns stop being visible).
+// Core since GL 4.6; queried once, on first use.
+static GLfloat
+gl_anisotropy_level(void)
+{
+    static GLfloat level = 0.0f;
+
+    if (level == 0.0f)
+    {
+        GLfloat max_supported = 1.0f;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_supported);
+        level = max_supported < 16.0f ? max_supported : 16.0f;
+        if (level < 1.0f)
+            level = 1.0f;
+    }
+
+    return level;
+}
+
 static GLenum
 gl_wrap_to_gl(rhi_texture_wrap wrap)
 {
@@ -109,7 +129,15 @@ rhi_texture gl_texture_create(rhi_texture_desc desc)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)gl_wrap_to_gl(desc.wrap));
 
     if (mipmaps)
+    {
         glGenerateMipmap(GL_TEXTURE_2D);
+
+        // Without this, trilinear filtering picks the mip level from the
+        // longer screen-space axis of each pixel's footprint, so textures
+        // on surfaces seen at a grazing angle (floors, walls) blur out.
+        if (desc.filter == RHI_FILTER_LINEAR)
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, gl_anisotropy_level());
+    }
 
     glBindTexture(GL_TEXTURE_2D, 0);
 

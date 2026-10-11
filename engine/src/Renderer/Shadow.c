@@ -40,7 +40,8 @@ csm_create(csm_state* csm, uint32 cascade_count, uint32 resolution)
         .height                 = (uint16)resolution,
         .color_attachments      = NULL,
         .color_attachment_count = 0,
-        .has_depth_attachment   = true
+        .has_depth_attachment   = true,
+        .depth_compare          = true   // pbr.frag samples these as sampler2DShadow
     };
 
     for (uint32 i = 0; i < cascade_count; ++i)
@@ -218,7 +219,8 @@ csm_update(csm_state* csm, const camera* cam, const vec3 light_dir, f32 lambda)
         glm_ortho(-radius, radius, -radius, radius, 0.01f, radius * 4.0f, light_proj);
         glm_mat4_mul(light_proj, light_view, csm->cascades[c].view_projection);
 
-        csm->cascades[c].split_far = slice_far;
+        csm->cascades[c].split_far        = slice_far;
+        csm->cascades[c].texel_world_size = texel_size;
     }
 }
 
@@ -257,5 +259,8 @@ csm_bind(const csm_state* csm, rhi_shader pbr_shader)
 
         snprintf(name, sizeof(name), "u_cascade_splits[%u]", i);
         rhi_shader_set_float(pbr_shader, name, csm->cascades[i].split_far);
+
+        snprintf(name, sizeof(name), "u_cascade_texel_sizes[%u]", i);
+        rhi_shader_set_float(pbr_shader, name, csm->cascades[i].texel_world_size);
     }
 }

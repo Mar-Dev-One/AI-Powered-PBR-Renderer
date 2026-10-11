@@ -39,6 +39,7 @@ typedef struct shadow_cascade
     rhi_framebuffer map;              // depth-only, resolution x resolution
     mat4            view_projection;  // light's view * projection for this slice; recomputed every csm_update()
     f32             split_far;        // view-space depth (distance along the camera's forward axis) this cascade's far edge sits at
+    f32             texel_world_size; // world-space width of one shadow-map texel; scales pbr.frag's normal-offset bias
 } shadow_cascade;
 
 typedef struct csm_state
@@ -74,7 +75,7 @@ void csm_render(csm_state* csm, const scene* s);
 
 // Per-frame setup for the PBR shader (assets/shaders/pbr.frag): binds each
 // cascade's depth texture to CSM_SLOT_FIRST + i and sets u_cascade_count,
-// u_cascade_splits[], and u_light_view_projection[]. Call after csm_update()
-// (and, for the frame's shadows to be current, after csm_render()) and
-// before drawing lit geometry.
+// u_cascade_splits[], u_cascade_texel_sizes[] and u_light_view_projection[].
+// Call after csm_update() (and, for the frame's shadows to be current, after
+// csm_render()) and before drawing lit geometry.
 void csm_bind(const csm_state* csm, rhi_shader pbr_shader);
