@@ -241,8 +241,7 @@ test_batch_failure_changes_nothing(void)
     CHECK(error_mentions("commands[2]") && error_mentions("no entity named \"nope\""));
 
     CHECK(find("floor") != ENTITY_NULL && find("rug") == ENTITY_NULL);
-    CHECK(strcmp(g_last_source, "batch rolled back") == 0);
-    CHECK(g_ctx.revision > revision);   // listeners saw the changes and their undo
+    CHECK(g_ctx.revision == revision);   // nothing changed in the end, so nothing was announced
 
     CHECK(run("{\"cmd\":\"history.list\"}"));
     CHECK(cJSON_GetArraySize(cJSON_GetObjectItem(result(), "steps")) == 1);
@@ -276,6 +275,20 @@ test_revisions_and_events(void)
 
     CHECK(run("{\"cmd\":\"history.undo\"}"));
     CHECK(g_ctx.revision == 2 && strcmp(g_last_source, "undo entity.create x") == 0);
+}
+
+static void
+test_batch_is_one_event(void)
+{
+    reset(true);
+
+    CHECK(run("{\"cmd\":\"batch\",\"args\":{\"label\":\"furnish\",\"commands\":["
+              "{\"cmd\":\"entity.create\",\"args\":{\"name\":\"a\"}},"
+              "{\"cmd\":\"entity.create\",\"args\":{\"name\":\"b\"}},"
+              "{\"cmd\":\"entity.create\",\"args\":{\"name\":\"c\"}}]}}"));
+    CHECK(g_events == 1 && g_ctx.revision == 1);
+    CHECK(strcmp(g_last_source, "batch furnish") == 0);
+    CHECK(cJSON_GetArraySize(cJSON_GetObjectItem(result(), "changes")) == 3);
 }
 
 static void
@@ -323,6 +336,7 @@ main(void)
     test_transactions();
     test_batch_failure_changes_nothing();
     test_revisions_and_events();
+    test_batch_is_one_event();
     test_without_history();
     test_step_limit();
 

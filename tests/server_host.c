@@ -64,6 +64,9 @@ main(int argc, char** argv)
     if (!server)
         return 1;
 
+    ctx.on_change      = server_on_change;
+    ctx.on_change_user = server;
+
     printf("%s\n", server_url(server));
     fflush(stdout);
 

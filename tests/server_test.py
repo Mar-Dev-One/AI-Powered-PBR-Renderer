@@ -54,6 +54,7 @@ class WebSocket:
                 break
             response += chunk
         head, _, self.pending = response.partition(b"\r\n\r\n")
+        self.notifications = []   # server-pushed messages received while waiting for responses
         self.status_line = head.split(b"\r\n")[0].decode()
         self.headers = {}
         for line in head.split(b"\r\n")[1:]:
@@ -97,21 +98,39 @@ class WebSocket:
         b0, b1 = self._read_exact(2)
         opcode = b0 & 0x0F
         length = b1 & 0x7F
-        check(not (b1 & 0x80), "server frames are unmasked")
+        if b1 & 0x80:   # only counted when it fails: every frame passes through here
+            check(False, "server frames are unmasked")
         if length == 126:
             length = struct.unpack(">H", self._read_exact(2))[0]
         elif length == 127:
             length = struct.unpack(">Q", self._read_exact(8))[0]
         return opcode, self._read_exact(length)
 
+    def recv_message(self):
+        opcode, payload = self.recv_frame()
+        check(opcode == 0x1, "messages are text frames")
+        return json.loads(payload)
+
     def call(self, method, params=None, id=1):
+        """Sends a request and returns its response; notifications that
+        arrive first are kept in self.notifications."""
         message = {"jsonrpc": "2.0", "id": id, "method": method}
         if params is not None:
             message["params"] = params
         self.send_frame(0x1, json.dumps(message).encode())
-        opcode, payload = self.recv_frame()
-        check(opcode == 0x1, "responses are text frames")
-        return json.loads(payload)
+        while True:
+            reply = self.recv_message()
+            if "id" in reply:
+                return reply
+            self.notifications.append(reply)
+
+    def wait_notification(self):
+        """The next server-pushed message (one kept earlier, or a new one)."""
+        if self.notifications:
+            return self.notifications.pop(0)
+        reply = self.recv_message()
+        check("id" not in reply, "expected a notification, got a response")
+        return reply
 
     def close(self):
         self.sock.close()
@@ -168,8 +187,7 @@ def main():
         check(r["error"]["code"] == -32601, "unknown method")
 
         ws.send_frame(0x1, b"{not json")
-        _, payload = ws.recv_frame()
-        check(json.loads(payload)["error"]["code"] == -32700, "parse error")
+        check(ws.recv_message()["error"]["code"] == -32700, "parse error")
 
         # A notification runs without a reply: the next frame answers id 9.
         ws.send_frame(0x1, json.dumps({"jsonrpc": "2.0", "method": "entity.create", "params": {"name": "quiet"}}).encode())
@@ -185,8 +203,7 @@ def main():
         ws.send_frame(0x1, message[:20], fin=False)          # fragmented
         ws.send_frame(0x0, message[20:40], fin=False)
         ws.send_frame(0x0, message[40:], fin=True)
-        _, payload = ws.recv_frame()
-        check(json.loads(payload).get("id") == 10, "fragmented messages are reassembled")
+        check(ws.recv_message().get("id") == 10, "fragmented messages are reassembled")
 
         # 64-bit length in, 16-bit+ lengths out: create many entities in one batch.
         commands = [{"cmd": "entity.create", "args": {"name": "e%d" % i}} for i in range(400)]
@@ -197,12 +214,43 @@ def main():
         check(r["result"]["count"] == 402, "scene sees everything: %s" % r.get("result", {}).get("count"))
 
         # --- Two clients ---------------------------------------------------------------------
+        ws.notifications.clear()
         other = WebSocket("127.0.0.1", port, good_path)
         check(other.upgraded, "a second client connects")
         r = other.call("history.undo", id=1)
         check(r["result"]["undone"].startswith("padding"), "clients share the same world and history")
+        check(len(other.notifications) == 1 and other.notifications[0]["params"]["source"].startswith("undo"),
+              "the undoing client got its own event before the reply")
+        other.notifications.clear()
         r = ws.call("scene.describe", {"summary": True}, id=13)
         check(r["result"]["count"] == 2, "the other client's undo is visible")
+
+        # --- Change events ---------------------------------------------------------------------
+        # The first client heard about the second one's undo, unprompted.
+        event = ws.wait_notification()
+        check(event.get("method") == "scene.changed", "changes are pushed as scene.changed")
+        params = event.get("params", {})
+        check(params.get("source", "").startswith("undo padding"), "the event says what caused it")
+        check(len(params.get("changes", [])) == 400 and params["changes"][0]["op"] == "destroyed",
+              "the event lists what changed")
+        undo_revision = params.get("revision", 0)
+
+        # A change from this client: the other one is told; this one gets
+        # the event too, just before its own response.
+        ws.call("entity.create", {"name": "news"}, id=14)
+        mine = ws.notifications.pop(0) if ws.notifications else {}
+        check(mine.get("params", {}).get("source") == "entity.create news", "the caller gets its own event first")
+        check(mine.get("params", {}).get("revision") == undo_revision + 1, "revisions count up")
+
+        theirs = other.wait_notification()
+        check(theirs.get("params", {}).get("changes", [{}])[0].get("name") == "news", "other clients are told")
+
+        # Reads and failed commands change nothing, so nothing is pushed:
+        # the next message the other client sees is the reply to its own call.
+        ws.call("scene.describe", id=15)
+        ws.call("entity.get", {"entity": "nobody"}, id=16)
+        other.call("scene.describe", id=2)
+        check(not other.notifications, "no events for reads or failures")
         other.close()
 
         # --- Protocol errors close the connection -------------------------------------------
@@ -215,6 +263,8 @@ def main():
         # --- Clean close -------------------------------------------------------------------
         ws.send_frame(0x8, struct.pack(">H", 1000))
         opcode, payload = ws.recv_frame()
+        while opcode == 0x1:   # a notification queued before the close
+            opcode, payload = ws.recv_frame()
         check(opcode == 0x8, "close is answered")
         ws.close()
 

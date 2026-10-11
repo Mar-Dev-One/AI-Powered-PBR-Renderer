@@ -44,6 +44,19 @@ void server_poll(command_server* server, command_context* ctx);
 // Sends `text` (one JSON-RPC message) to every connected client.
 void server_broadcast(command_server* server, const char* text);
 
+// Pushes a JSON-RPC notification -- {"jsonrpc": "2.0", "method": `method`,
+// "params": `params`} -- to every connected client. `params` may be NULL.
+void server_notify(command_server* server, const char* method, const cJSON* params);
+
+// A cmd_change_fn (Commands.h) that broadcasts each change as a
+// "scene.changed" notification whose params are the change event:
+//   {"revision": n, "source": "place_model ball", "changes": [...]}
+// Install with ctx->on_change = server_on_change, ctx->on_change_user = server.
+// The client that caused a change gets the notification too, just before
+// its own response.
+#define SERVER_CHANGE_NOTIFICATION "scene.changed"
+void server_on_change(void* server, const cJSON* event);
+
 uint16      server_port(const command_server* server);
 const char* server_url(const command_server* server);    // ws://127.0.0.1:<port>/?token=<token>
 uint32      server_client_count(const command_server* server);

@@ -31,7 +31,8 @@
 //   { "revision": n, "source": "component.set lamp", "changes": [...] }
 // and -- with a history attached -- records an undo step. `history.begin` /
 // `history.commit` group several commands into one step; `batch` runs a list
-// of commands all-or-nothing as one step.
+// of commands all-or-nothing as one step and one event ("batch <label>"),
+// or, if it fails, changes nothing and announces nothing.
 
 // Called after every change to the world, from whichever command made it
 // (including undo, redo and rollbacks). `event` is only valid during the call.

@@ -321,7 +321,10 @@ static cJSON*
 announce_changes(command_context* ctx, const char* source, const history_change* changes, uint32 count, b8 reverse)
 {
     cJSON* list = changes_to_json(changes, count, reverse);
-    if (count == 0)
+
+    // Inside a batch, the batch announces the net result once at the end
+    // (or nothing, if it fails and is undone).
+    if (count == 0 || ctx->batch_depth > 0)
         return list;
 
     ctx->revision++;
@@ -1800,20 +1803,22 @@ cmd_batch(command_context* ctx, const cJSON* args, cmd_output* out)
 
     if (!ok)
     {
-        // Each command already announced its own change; announce the undo too.
+        // Nothing was announced while the batch ran, and after this the
+        // world is as it was -- so there is nothing to announce at all.
         if (count > 0)
-        {
             history_apply(ctx->w, changes, count, false);
-            cJSON_Delete(announce_changes(ctx, "batch rolled back", changes, count, true));
-        }
         free(changes);
         cJSON_Delete(results);
         return false;
     }
 
+    // One event for the whole batch: its net effect.
+    char source[HISTORY_LABEL_MAX + 8];
+    snprintf(source, sizeof(source), "batch%s%s", label ? " " : "", label ? label : "");
+
     out->result = cJSON_CreateObject();
     cJSON_AddItemToObject(out->result, "results", results);
-    cJSON_AddItemToObject(out->result, "changes", changes_to_json(changes, count, false));
+    cJSON_AddItemToObject(out->result, "changes", announce_changes(ctx, source, changes, count, false));
 
     b8 record = ctx->history && count > 0 && !history_in_transaction(ctx->history) && ctx->batch_depth == 0;
     if (record)

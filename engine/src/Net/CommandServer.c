@@ -844,6 +844,23 @@ server_broadcast(command_server* s, const char* text)
     // Sent on the next server_poll().
 }
 
+void
+server_notify(command_server* s, const char* method, const cJSON* params)
+{
+    if (!s)
+        return;
+
+    char* text = jsonrpc_notification(method, params);
+    server_broadcast(s, text);
+    cJSON_free(text);
+}
+
+void
+server_on_change(void* server, const cJSON* event)
+{
+    server_notify(server, SERVER_CHANGE_NOTIFICATION, event);
+}
+
 uint16
 server_port(const command_server* s)
 {

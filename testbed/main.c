@@ -166,6 +166,14 @@ typedef struct demo_state
     command_console console;
     b8              show_console;   // F1 toggles
 
+    // Each world's on_change: the console log plus a "scene.changed" push to
+    // every server client, tagged with which world it was.
+    struct world_listener
+    {
+        struct demo_state* state;
+        const char*        world_name;
+    } lit_listener, grid_listener;
+
     // Lets other processes (the MCP server, an agent, scripts) run the same
     // commands over a localhost WebSocket; see Net/CommandServer.h. NULL if
     // it couldn't start -- the app works without it.
@@ -553,6 +561,26 @@ load_selected_hdri(demo_state* state, int index)
 
 static void load_selected_hdri(demo_state* state, int index);
 
+// on_change for both worlds: show the change in the console, and push it to
+// connected clients with the world's name, since each world keeps its own
+// revision count.
+static void
+on_world_change(void* user_data, const cJSON* event)
+{
+    struct world_listener* listener = user_data;
+    demo_state*            state    = listener->state;
+
+    console_on_change(&state->console, event);
+
+    if (state->server)
+    {
+        cJSON* params = cJSON_Duplicate(event, true);
+        cJSON_AddStringToObject(params, "world", listener->world_name);
+        server_notify(state->server, SERVER_CHANGE_NOTIFICATION, params);
+        cJSON_Delete(params);
+    }
+}
+
 static command_context*
 active_commands(demo_state* state)
 {
@@ -936,16 +964,20 @@ on_init(App* app)
     history_init(&state->lit_history);
     history_init(&state->grid_history);
 
-    command_context* contexts[2]  = { &state->lit_commands, &state->grid_commands };
-    world*           worlds[2]    = { &state->lit_world, &state->grid_world };
-    command_history* histories[2] = { &state->lit_history, &state->grid_history };
+    state->lit_listener  = (struct world_listener){ state, "lit" };
+    state->grid_listener = (struct world_listener){ state, "grid" };
+
+    command_context*       contexts[2]  = { &state->lit_commands, &state->grid_commands };
+    world*                 worlds[2]    = { &state->lit_world, &state->grid_world };
+    command_history*       histories[2] = { &state->lit_history, &state->grid_history };
+    struct world_listener* listeners[2] = { &state->lit_listener, &state->grid_listener };
     for (int i = 0; i < 2; ++i)
     {
         *contexts[i] = (command_context){
             .w                  = worlds[i],
             .history            = histories[i],
-            .on_change          = console_on_change,
-            .on_change_user     = &state->console,
+            .on_change          = on_world_change,
+            .on_change_user     = listeners[i],
             .host_commands      = HOST_COMMANDS,
             .host_command_count = HOST_COMMAND_COUNT,
             .host_user          = state,
