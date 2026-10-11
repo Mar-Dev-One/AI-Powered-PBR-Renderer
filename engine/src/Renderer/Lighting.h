@@ -23,8 +23,9 @@
 // scene_gather_lights() itself.
 //
 // Shadowing: pbr.frag only shadow-tests against the cascades Renderer/
-// Shadow.h builds for one directional light (see csm_update()), whichever
-// ENTITY_LIGHT was added to the scene first (storage order, see Scene.h) --
-// add the shadow-casting key light before any other light entity until
-// per-light shadow maps exist.
+// Shadow.h builds for one directional light (see csm_update()). This sets
+// u_shadow_light_index to the first LIGHT_DIRECTIONAL in scene storage
+// order (Scene.h), so pass that same light's direction to csm_update(); -1
+// (no directional light) leaves every light unshadowed. Point and spot
+// lights cast no shadows until per-light shadow maps exist.
 void lighting_bind(rhi_shader shader, const scene* s);

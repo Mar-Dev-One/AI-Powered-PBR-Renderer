@@ -117,9 +117,8 @@ uint32 scene_count_lights(const scene* s);
 // meaningless and left untouched for LIGHT_DIRECTIONAL. out_world_positions
 // may be NULL if the caller only wants directions/colors.
 //
-// This does not itself feed a shader -- pbr.frag still takes exactly one
-// hardcoded directional light -- it exists so a multi-light pbr.frag can be
-// wired up against scene data without another pass over Scene.c.
+// This does not itself feed a shader -- Renderer/Lighting.h's
+// lighting_bind() builds on it to upload pbr.frag's u_lights[].
 // Requires scene_update_world_transforms() to have been called this frame.
 uint32 scene_gather_lights(const scene* s, light* out_lights, vec3* out_world_positions, uint32 max_lights);
 

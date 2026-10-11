@@ -1,7 +1,8 @@
 #version 460 core
 
 // Metallic-roughness PBR (Cook-Torrance GGX) for models loaded through
-// Scene/Model.h. Direct light is one directional light; indirect light is
+// Scene/Model.h. Direct light is up to MAX_LIGHTS punctual lights
+// (directional/point/spot, uploaded by Renderer/Lighting.h); indirect light is
 // image-based (Renderer/IBL.h: baked irradiance + GGX-prefiltered environment)
 // when u_use_ibl is set, and otherwise a cheap sky/ground hemisphere -- enough
 // that metals aren't pitch black while no environment is loaded.
@@ -11,6 +12,14 @@
 // Must match pbr.vert's #define of the same name (and Renderer/Shadow.h's
 // CSM_MAX_CASCADES on the C side) -- see pbr.vert's comment.
 #define CSM_MAX_CASCADES 4
+
+// Must match Renderer/Lighting.h's LIGHTING_MAX_LIGHTS -- see its comment.
+#define MAX_LIGHTS 8
+
+// Values of Scene/Light.h's light_type enum.
+#define LIGHT_DIRECTIONAL 0
+#define LIGHT_POINT       1
+#define LIGHT_SPOT        2
 
 in vec3 v_world_pos;
 in vec3 v_normal;
@@ -39,9 +48,28 @@ uniform sampler2D u_occlusion_tex;           // slot 3, R = occlusion
 uniform sampler2D u_emissive_tex;            // slot 4, sRGB
 
 // --- Scene -------------------------------------------------------------------
-uniform vec3  u_light_dir;         // direction the light travels, normalized
-uniform vec3  u_light_color;
-uniform float u_light_intensity;
+// Layout set by lighting_bind() (Renderer/Lighting.h). Units follow glTF's
+// KHR_lights_punctual: directional intensity is illuminance, point/spot
+// intensity is luminous intensity, falling off with 1/d^2.
+struct scene_light
+{
+    int   type;        // LIGHT_DIRECTIONAL / LIGHT_POINT / LIGHT_SPOT
+    vec3  color;       // linear RGB
+    float intensity;
+    vec3  direction;   // world space, normalized: the direction the light travels
+    vec3  position;    // world space; unused by LIGHT_DIRECTIONAL
+    float range;       // attenuation reaches 0 here; 0 = no cutoff
+    float inner_cos;   // LIGHT_SPOT: cos of the full-intensity half-angle
+    float outer_cos;   // LIGHT_SPOT: cos of the zero-intensity half-angle
+};
+
+uniform scene_light u_lights[MAX_LIGHTS];
+uniform int         u_light_count;
+
+// Index into u_lights[] of the light the cascades below were rendered for,
+// or -1 if no light is shadowed (set by lighting_bind()).
+uniform int u_shadow_light_index;
+
 uniform vec3  u_view_pos;
 uniform float u_ambient_strength;
 uniform float u_exposure;
@@ -169,6 +197,47 @@ float shadow_calculation(vec4 light_space_pos, float NoL, int cascade_index)
     return shadow / 9.0;
 }
 
+// Smooth window that takes punctual light falloff to exactly 0 at `range`
+// (KHR_lights_punctual's recommended form), times inverse-square falloff.
+float distance_attenuation(float dist_sq, float range)
+{
+    float attenuation = 1.0 / max(dist_sq, 1e-4);
+    if (range > 0.0)
+    {
+        float ratio  = dist_sq / (range * range);   // (d / range)^2
+        float window = clamp(1.0 - ratio * ratio, 0.0, 1.0);
+        attenuation *= window * window;
+    }
+    return attenuation;
+}
+
+float spot_attenuation(vec3 L, scene_light light)
+{
+    // L points from the surface to the light; direction is the way the light travels.
+    float cos_angle = dot(-L, light.direction);
+    float t = clamp((cos_angle - light.outer_cos) / max(light.inner_cos - light.outer_cos, 1e-4), 0.0, 1.0);
+    return t * t;
+}
+
+// Cook-Torrance GGX specular + Lambert diffuse for one light, scaled by
+// N.L. `radiance` is the light's color * intensity * attenuation.
+vec3 shade_light(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 diffuse_color, vec3 f0, float alpha, float NoV)
+{
+    float NoL = max(dot(N, L), 0.0);
+    if (NoL <= 0.0)
+        return vec3(0.0);
+
+    vec3  H   = normalize(V + L);
+    float NoH = max(dot(N, H), 0.0);
+    float VoH = max(dot(V, H), 0.0);
+
+    vec3 F = fresnel_schlick(VoH, f0);
+    vec3 specular = distribution_ggx(NoH, alpha) * visibility_smith_ggx(NoV, NoL, alpha) * F;
+    vec3 diffuse  = (1.0 - F) * diffuse_color / PI;
+
+    return (diffuse + specular) * radiance * NoL;
+}
+
 vec3 hemisphere(vec3 dir)
 {
     const vec3 sky    = vec3(0.55, 0.65, 0.85);
@@ -234,19 +303,42 @@ void main()
     float alpha = roughness * roughness;
 
     // --- Direct light ----------------------------------------------------------
-    vec3  L   = normalize(-u_light_dir);
-    vec3  H   = normalize(V + L);
-    float NoL = max(dot(N, L), 0.0);
-    float NoH = max(dot(N, H), 0.0);
-    float VoH = max(dot(V, H), 0.0);
+    int  cascade_index = pick_cascade(v_view_depth);
+    vec3 direct        = vec3(0.0);
 
-    vec3 F = fresnel_schlick(VoH, f0);
-    vec3 specular = distribution_ggx(NoH, alpha) * visibility_smith_ggx(NoV, NoL, alpha) * F;
-    vec3 diffuse  = (1.0 - F) * diffuse_color / PI;
+    for (int i = 0; i < u_light_count; ++i)
+    {
+        scene_light light = u_lights[i];
 
-    int   cascade_index = pick_cascade(v_view_depth);
-    float shadow        = cascade_index >= 0 ? shadow_calculation(v_light_space_pos[cascade_index], NoL, cascade_index) : 0.0;
-    vec3  direct = (diffuse + specular) * u_light_color * u_light_intensity * NoL * (1.0 - shadow);
+        vec3  L;
+        float attenuation = 1.0;
+        if (light.type == LIGHT_DIRECTIONAL)
+        {
+            L = -light.direction;
+        }
+        else
+        {
+            vec3  to_light = light.position - v_world_pos;
+            float dist_sq  = dot(to_light, to_light);
+            L = to_light * inversesqrt(max(dist_sq, 1e-8));
+
+            attenuation = distance_attenuation(dist_sq, light.range);
+            if (light.type == LIGHT_SPOT)
+                attenuation *= spot_attenuation(L, light);
+        }
+
+        if (attenuation <= 0.0)
+            continue;
+
+        if (i == u_shadow_light_index && cascade_index >= 0)
+        {
+            float NoL = max(dot(N, L), 0.0);
+            attenuation *= 1.0 - shadow_calculation(v_light_space_pos[cascade_index], NoL, cascade_index);
+        }
+
+        vec3 radiance = light.color * light.intensity * attenuation;
+        direct += shade_light(N, V, L, radiance, diffuse_color, f0, alpha, NoV);
+    }
 
     // --- Ambient --------------------------------------------------------------------
     vec3 R = reflect(-V, N);

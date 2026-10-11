@@ -59,7 +59,7 @@ void csm_destroy(csm_state* csm);
 // Recomputes every cascade's split distance and light view-projection from
 // this frame's camera and light direction. `light_dir` is the direction the
 // light travels (toward the surface), same convention as pbr.frag's
-// u_light_dir -- not required to be pre-normalized. `lambda` blends the
+// u_lights[].direction -- not required to be pre-normalized. `lambda` blends the
 // near/far split scheme between fully uniform (0.0) and fully logarithmic
 // (1.0); 0.5 is a good default (see csm_update()'s comment for why).
 // Call once per frame before csm_render().

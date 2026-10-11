@@ -23,10 +23,17 @@ lighting_bind(rhi_shader shader, const scene* s)
 
     rhi_shader_set_int(shader, "u_light_count", (int32)count);
 
+    // The cascades (Renderer/Shadow.h) are fit to the first directional
+    // light in scene order -- tell pbr.frag which u_lights[] entry that is.
+    int32 shadow_light_index = -1;
+
     for (uint32 i = 0; i < count; ++i)
     {
         const light* l = &lights[i];
         char         name[48];
+
+        if (shadow_light_index < 0 && l->type == LIGHT_DIRECTIONAL)
+            shadow_light_index = (int32)i;
 
         snprintf(name, sizeof(name), "u_lights[%u].type", i);
         rhi_shader_set_int(shader, name, (int32)l->type);
@@ -54,4 +61,6 @@ lighting_bind(rhi_shader shader, const scene* s)
         snprintf(name, sizeof(name), "u_lights[%u].outer_cos", i);
         rhi_shader_set_float(shader, name, cosf(glm_rad(l->outer_cone_degrees)));
     }
+
+    rhi_shader_set_int(shader, "u_shadow_light_index", shadow_light_index);
 }

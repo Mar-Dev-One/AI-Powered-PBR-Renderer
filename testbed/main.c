@@ -143,7 +143,7 @@ typedef struct demo_state
     // position/color/intensity/range are all live-editable via ImGui, same
     // as the key (directional) light above. Disabled by zeroing intensity
     // (see sync_scene_lights()) rather than removed -- Scene.h has no
-    // entity-removal call yet (see its ownership note).
+    // entity-removal call yet (see its ownership note). Casts no shadow.
     int32 fill_light_entity;
     b8    fill_light_enabled;
     vec3  fill_light_pos;
@@ -533,6 +533,18 @@ on_init(App* app)
     light_init_directional(&initial_light, state->light_dir, state->light_color, state->light_intensity);
     state->light_entity = scene_add_light(&state->demo_scene, initial_light, NULL, ENTITY_NO_PARENT);
 
+    // Added after the key light, so lighting_bind() keeps shadowing the key
+    // light (first directional in scene order).
+    state->fill_light_enabled   = true;
+    glm_vec3_copy((vec3){ 1.5f, 1.0f, 1.5f }, state->fill_light_pos);
+    glm_vec3_copy((vec3){ 0.55f, 0.7f, 1.0f }, state->fill_light_color);
+    state->fill_light_intensity = 3.0f;
+    state->fill_light_range     = 8.0f;
+
+    light fill_light;
+    light_init_point(&fill_light, state->fill_light_color, state->fill_light_intensity, state->fill_light_range);
+    state->fill_light_entity = scene_add_light(&state->demo_scene, fill_light, NULL, ENTITY_NO_PARENT);
+
     f32 aspect = (f32)framebuffer_size.width / (f32)framebuffer_size.height;
 
     vec3 initial_position = { 2.5f, 2.0f, 3.5f };
@@ -587,6 +599,16 @@ draw_lighting_controls(demo_state* state)
     igColorEdit3("Light Color", state->light_color, 0);
     igSliderFloat3("Light Direction", state->light_dir, -1.0f, 1.0f, "%.2f", 0);
     igSliderFloat("Light Intensity", &state->light_intensity, 0.0f, 10.0f, "%.2f", 0);
+    igSeparator();
+
+    igText("Fill light (point)");
+    igCheckbox("Enabled##fill", &state->fill_light_enabled);
+    igColorEdit3("Color##fill", state->fill_light_color, 0);
+    igSliderFloat3("Position##fill", state->fill_light_pos, -5.0f, 5.0f, "%.2f", 0);
+    igSliderFloat("Intensity##fill", &state->fill_light_intensity, 0.0f, 20.0f, "%.2f", 0);
+    igSliderFloat("Range##fill", &state->fill_light_range, 0.0f, 20.0f, "%.2f", 0);
+    igSeparator();
+
     igSliderFloat("Ambient", &state->ambient_strength, 0.0f, 2.0f, "%.2f", 0);
     igSliderFloat("Exposure", &state->exposure, 0.1f, 4.0f, "%.2f", 0);
     igSeparator();
@@ -606,6 +628,28 @@ draw_lighting_controls(demo_state* state)
         igText("assets/%s", HDRI_PATHS[state->selected_hdri]);
     }
     igSeparator();
+}
+
+// Pushes this frame's GUI-driven light values into demo_scene's light
+// entities and refreshes world transforms, so lighting_bind() and
+// scene_gather_lights() see them. Both entities are unparented, so local ==
+// world transform. The fill light is disabled by zeroing its intensity --
+// Scene.h has no entity removal.
+static void
+sync_scene_lights(demo_state* state)
+{
+    light* key = &state->demo_scene.entities[state->light_entity].as_light;
+    glm_vec3_normalize_to(state->light_dir, key->direction);
+    glm_vec3_copy(state->light_color, key->color);
+    key->intensity = state->light_intensity;
+
+    entity* fill_entity = &state->demo_scene.entities[state->fill_light_entity];
+    glm_translate_make(fill_entity->local_transform, state->fill_light_pos);
+    glm_vec3_copy(state->fill_light_color, fill_entity->as_light.color);
+    fill_entity->as_light.intensity = state->fill_light_enabled ? state->fill_light_intensity : 0.0f;
+    fill_entity->as_light.range     = state->fill_light_range;
+
+    scene_update_world_transforms(&state->demo_scene);
 }
 
 // Square the camera up to the grid -- the default viewpoint is a corner view
@@ -659,18 +703,13 @@ draw_material_grid(demo_state* state, const mat4 view_projection)
         ibl_draw_skybox(&state->ibl, view, projection, state->exposure, state->sky_blur);
     }
 
-    vec3 light_dir_normalized;
-    glm_vec3_normalize_to(state->light_dir, light_dir_normalized);
+    sync_scene_lights(state);
 
     rhi_shader shader = state->pbr_shader;
 
     rhi_shader_bind(shader);
     rhi_shader_set_mat4(shader, "u_view_projection", (const f32*)view_projection);
-    rhi_shader_set_vec3(shader, "u_light_dir",
-                         light_dir_normalized[0], light_dir_normalized[1], light_dir_normalized[2]);
-    rhi_shader_set_vec3(shader, "u_light_color",
-                         state->light_color[0], state->light_color[1], state->light_color[2]);
-    rhi_shader_set_float(shader, "u_light_intensity", state->light_intensity);
+    lighting_bind(shader, &state->demo_scene);
     rhi_shader_set_vec3(shader, "u_view_pos",
                          state->cam.position[0], state->cam.position[1], state->cam.position[2]);
     rhi_shader_set_float(shader, "u_ambient_strength", state->ambient_strength);
@@ -793,30 +832,17 @@ static void on_frame(App* app, f32 dt)
             glm_mat4_mul(world, state->model_fit, world);
 
             // Push this frame's GUI-driven values into the scene: the model
-            // entity's placement, and the light entity's parameters (both
-            // entities are unparented, so their local == world transform --
-            // scene_update_world_transforms() below is a no-op for them
-            // today, but keeps this correct the moment either gets a
-            // parent).
+            // entity's placement (unparented, so local == world), then the
+            // lights, which also refreshes world transforms.
             glm_mat4_copy(world, state->demo_scene.entities[state->model_entity].local_transform);
+            sync_scene_lights(state);
 
-            light* scene_light = &state->demo_scene.entities[state->light_entity].as_light;
-            glm_vec3_normalize_to(state->light_dir, scene_light->direction);
-            glm_vec3_copy(state->light_color, scene_light->color);
-            scene_light->intensity = state->light_intensity;
-
-            scene_update_world_transforms(&state->demo_scene);
-
-            // Single-light bridge: pbr.frag still takes exactly one
-            // hardcoded directional light (see Renderer/Scene.h's note on
-            // scene_gather_lights), so pull just the one light this demo
-            // has out of the scene rather than reading state->light_dir/
-            // light_color/light_intensity directly -- this is the seam a
-            // future multi-light pbr.frag hangs off instead of another pass
-            // over this file.
+            // The key light is the scene's first light and its only
+            // directional one, which is the light lighting_bind() marks as
+            // shadowed -- so fit the cascades to its world-space direction.
             light gathered_lights[1];
             scene_gather_lights(&state->demo_scene, gathered_lights, NULL, 1);
-            f32* light_dir_normalized = gathered_lights[0].direction;   // already normalized, see light_init_directional()
+            f32* light_dir_normalized = gathered_lights[0].direction;   // normalized by scene_gather_lights()
 
             // --- Shadow pass -----------------------------------------------
             // Re-fit every cascade to this frame's camera + light_dir, then
@@ -848,11 +874,7 @@ static void on_frame(App* app, f32 dt)
             rhi_shader_set_mat4(shader, "u_view_projection", (const f32*)view_projection);
             rhi_shader_set_mat4(shader, "u_view", (const f32*)view_only);   // pbr.vert: v_view_depth, for cascade selection
             rhi_shader_set_int(shader, "u_debug_show_cascades", state->debug_show_cascades);
-            rhi_shader_set_vec3(shader, "u_light_dir",
-                                 light_dir_normalized[0], light_dir_normalized[1], light_dir_normalized[2]);
-            rhi_shader_set_vec3(shader, "u_light_color",
-                                 state->light_color[0], state->light_color[1], state->light_color[2]);
-            rhi_shader_set_float(shader, "u_light_intensity", state->light_intensity);
+            lighting_bind(shader, &state->demo_scene);
             rhi_shader_set_vec3(shader, "u_view_pos",
                                  state->cam.position[0], state->cam.position[1], state->cam.position[2]);
             rhi_shader_set_float(shader, "u_ambient_strength", state->ambient_strength);
