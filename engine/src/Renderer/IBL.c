@@ -289,8 +289,7 @@ void ibl_bind(const ibl_environment* ibl, rhi_shader pbr_shader)
     rhi_shader_set_int(pbr_shader, "u_use_ibl", 1);
 }
 
-void ibl_draw_skybox(const ibl_environment* ibl, const mat4 view, const mat4 projection,
-                     f32 exposure, f32 blur)
+void ibl_draw_skybox(const ibl_environment* ibl, const mat4 view, const mat4 projection, f32 blur)
 {
     if (!ibl || !ibl->environment || !ibl->skybox_shader)
         return;
@@ -309,7 +308,6 @@ void ibl_draw_skybox(const ibl_environment* ibl, const mat4 view, const mat4 pro
     rhi_shader_bind(shader);
     rhi_shader_set_mat4(shader, "u_view", (const f32*)view);
     rhi_shader_set_mat4(shader, "u_projection", (const f32*)projection);
-    rhi_shader_set_float(shader, "u_exposure", exposure);
     rhi_shader_set_float(shader, "u_lod", blur * (f32)(ibl->environment_mip_count - 1));
     rhi_shader_set_int(shader, "u_environment", IBL_SLOT_ENVIRONMENT);
     rhi_texture_bind(ibl->environment, IBL_SLOT_ENVIRONMENT);

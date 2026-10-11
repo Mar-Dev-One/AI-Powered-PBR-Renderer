@@ -70,7 +70,7 @@ void ibl_bind(const ibl_environment* ibl, rhi_shader pbr_shader);
 
 // Draws the environment as a background at the far plane. Call before the
 // scene geometry (blended materials need the sky already behind them).
-// `blur` is 0..1: 0 = sharp panorama, 1 = the blurriest mip. Exposure matches
-// pbr.frag's u_exposure. Leaves the default render state active afterwards.
-void ibl_draw_skybox(const ibl_environment* ibl, const mat4 view, const mat4 projection,
-                     f32 exposure, f32 blur);
+// `blur` is 0..1: 0 = sharp panorama, 1 = the blurriest mip. Writes linear
+// HDR, so draw it into Renderer/PostProcess.h's scene target. Leaves the
+// default render state active afterwards.
+void ibl_draw_skybox(const ibl_environment* ibl, const mat4 view, const mat4 projection, f32 blur);

@@ -6,8 +6,8 @@
 // image-based (Renderer/IBL.h: baked irradiance + GGX-prefiltered environment)
 // when u_use_ibl is set, and otherwise a cheap sky/ground hemisphere -- enough
 // that metals aren't pitch black while no environment is loaded.
-// Output is tone-mapped and gamma-encoded, so it goes straight to the
-// (non-sRGB) default framebuffer.
+// Output is linear HDR radiance for Renderer/PostProcess.h's RGBA16F scene
+// target; exposure, tone mapping and gamma happen there (tonemap.frag).
 
 // Must match pbr.vert's #define of the same name (and Renderer/Shadow.h's
 // CSM_MAX_CASCADES on the C side) -- see pbr.vert's comment.
@@ -72,7 +72,6 @@ uniform int u_shadow_light_index;
 
 uniform vec3  u_view_pos;
 uniform float u_ambient_strength;
-uniform float u_exposure;
 
 // Cascaded shadow maps (Renderer/Shadow.h): one depth-only texture per
 // cascade, near cascades first. u_cascade_splits[i] is the view-space
@@ -245,11 +244,6 @@ vec3 hemisphere(vec3 dir)
     return mix(ground, sky, dir.y * 0.5 + 0.5);
 }
 
-vec3 aces_tonemap(vec3 x)
-{
-    return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
-}
-
 void main()
 {
     // --- Surface inputs ------------------------------------------------------
@@ -366,9 +360,6 @@ void main()
                  * occlusion * u_ambient_strength;
 
     vec3 color = direct + ambient + emissive;
-
-    color = aces_tonemap(color * u_exposure);
-    color = pow(color, vec3(1.0 / 2.2));
 
     // Debug: overlay a per-cascade tint (red -> green -> blue -> yellow,
     // CSM_MAX_CASCADES == 4) so a cascade fit/split problem shows up as a

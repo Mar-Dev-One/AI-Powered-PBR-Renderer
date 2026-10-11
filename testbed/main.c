@@ -13,6 +13,7 @@
 #include "RHI/RHI.h"
 #include "Renderer/IBL.h"
 #include "Renderer/Lighting.h"
+#include "Renderer/PostProcess.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/Shadow.h"
 #include "Scene/Camera.h"
@@ -157,7 +158,13 @@ typedef struct demo_state
     // controls) and light_dir (live via the GUI) can change frame to
     // frame, so the cascades can't be baked once at load time.
     csm_state csm;
-    b8        debug_show_cascades;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
+    b8        debug_show_cascades;
+
+    // --- HDR + tone mapping ---------------------------------------------
+    // The lit modes render linear HDR into post's scene target, then
+    // post_end_scene() tone-maps it to the screen with `exposure`. The
+    // textured cube is plain LDR and draws straight to the screen.
+    post_process post;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
 
     // --- Image-based lighting -----------------------------------------------
     // Baked from an HDRI (Renderer/IBL.h) and read by pbr.frag for ambient
@@ -459,6 +466,9 @@ on_init(App* app)
     if (!csm_create(&state->csm, CASCADE_COUNT, SHADOW_MAP_SIZE))
         FATAL("demo: failed to create cascaded shadow maps");
 
+    if (!post_create(&state->post, framebuffer_size.width, framebuffer_size.height))
+        FATAL("demo: failed to create the HDR post-process pass");
+
     // Cascade texture units (CSM_SLOT_FIRST..+CSM_MAX_CASCADES-1) sit right
     // after Material.h's five material slots (MATERIAL_SLOT_COUNT) so
     // material_bind() never binds over them -- csm_bind() rebinds the
@@ -580,6 +590,7 @@ static void on_resize(App* app, uint16 width, uint16 height)
         return;
 
     camera_set_aspect(&state->cam, (f32)width / (f32)height);
+    post_resize(&state->post, width, height);
 }
 
 static void on_key(App* app, int key, int action, int mods)
@@ -700,7 +711,7 @@ draw_material_grid(demo_state* state, const mat4 view_projection)
         camera_get_view(&state->cam, view);
         camera_get_projection(&state->cam, projection);
 
-        ibl_draw_skybox(&state->ibl, view, projection, state->exposure, state->sky_blur);
+        ibl_draw_skybox(&state->ibl, view, projection, state->sky_blur);
     }
 
     sync_scene_lights(state);
@@ -713,7 +724,6 @@ draw_material_grid(demo_state* state, const mat4 view_projection)
     rhi_shader_set_vec3(shader, "u_view_pos",
                          state->cam.position[0], state->cam.position[1], state->cam.position[2]);
     rhi_shader_set_float(shader, "u_ambient_strength", state->ambient_strength);
-    rhi_shader_set_float(shader, "u_exposure", state->exposure);
 
     // The demo is about ambient light: rather than fit and render cascades
     // for it, just tell the shader nothing casts a shadow (see pbr.frag's
@@ -759,6 +769,11 @@ draw_material_grid(demo_state* state, const mat4 view_projection)
     }
 }
 
+// Background where nothing (not even the skybox) is drawn: App.c's screen
+// clear color, (0.4, 0.1, 0.12) in sRGB, converted to linear so it comes
+// out of tone mapping looking about the same.
+#define SCENE_CLEAR_LINEAR 0.133f, 0.0063f, 0.0094f
+
 static void on_frame(App* app, f32 dt)
 {
     (void)dt;
@@ -797,7 +812,9 @@ static void on_frame(App* app, f32 dt)
         if (state->selected_hdri != state->loaded_hdri)
             load_selected_hdri(state, state->selected_hdri);
 
+        post_begin_scene(&state->post, SCENE_CLEAR_LINEAR);
         draw_material_grid(state, view_projection);
+        post_end_scene(&state->post, state->exposure);
     }
     else // RENDER_MODE_LIT_MODEL
     {
@@ -854,6 +871,10 @@ static void on_frame(App* app, f32 dt)
             csm_update(&state->csm, &state->cam, light_dir_normalized, 0.5f);
             csm_render(&state->csm, &state->demo_scene);
 
+            // csm_render() leaves the default framebuffer bound -- switch
+            // to the HDR target only now, for everything that's shaded.
+            post_begin_scene(&state->post, SCENE_CLEAR_LINEAR);
+
             // Background first: it writes no depth, and blended materials drawn
             // below need the sky already behind them.
             if (state->ibl_enabled && state->show_skybox)
@@ -862,7 +883,7 @@ static void on_frame(App* app, f32 dt)
                 camera_get_view(&state->cam, view);
                 camera_get_projection(&state->cam, projection);
 
-                ibl_draw_skybox(&state->ibl, view, projection, state->exposure, state->sky_blur);
+                ibl_draw_skybox(&state->ibl, view, projection, state->sky_blur);
             }
 
             rhi_shader shader = state->pbr_shader;
@@ -878,7 +899,6 @@ static void on_frame(App* app, f32 dt)
             rhi_shader_set_vec3(shader, "u_view_pos",
                                  state->cam.position[0], state->cam.position[1], state->cam.position[2]);
             rhi_shader_set_float(shader, "u_ambient_strength", state->ambient_strength);
-            rhi_shader_set_float(shader, "u_exposure", state->exposure);
 
             // Ambient light: baked IBL when enabled, else the shader's
             // hemisphere fallback. Uses IBL_SLOT_* texture units, clear of
@@ -922,6 +942,8 @@ static void on_frame(App* app, f32 dt)
 
                 rhi_set_render_state(rhi_render_state_default());
             }
+
+            post_end_scene(&state->post, state->exposure);
         }
     }
 
@@ -1007,6 +1029,7 @@ static void on_shutdown(App* app)
     model_destroy(&state->grid_model);
     ibl_destroy(&state->ibl);
     csm_destroy(&state->csm);
+    post_destroy(&state->post);
     rhi_shader_destroy(state->pbr_shader);
 
     rhi_shader_destroy(state->shader);
