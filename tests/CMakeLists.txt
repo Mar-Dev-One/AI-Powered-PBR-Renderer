@@ -35,3 +35,7 @@ if(Python3_Interpreter_FOUND)
              COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/server_test.py
                      $<TARGET_FILE:ServerHost> ${CMAKE_CURRENT_BINARY_DIR}/server-discovery.json)
 endif()
+
+add_executable(EncodingTests encoding_tests.c)
+target_link_libraries(EncodingTests PRIVATE PBR_Engine)
+add_test(NAME EncodingTests COMMAND EncodingTests)

@@ -34,6 +34,19 @@ image image_load_from_memory(const uint8* data, uint64 size, uint8 desired_chann
 
 void  image_free(image* img);
 
+// Encodes 8-bit pixels as a PNG file in memory. Rows are in this codebase's
+// bottom-up order (row 0 = bottom, as image_load() and rhi_read_pixels()
+// produce them); the PNG comes out the right way up. Returns the encoded
+// bytes (caller frees) and their count in *out_size, or NULL on failure.
+uint8* image_encode_png(const uint8* pixels, uint16 width, uint16 height, uint8 channel_count, size_t* out_size);
+
+// Shrinks (or copies, if the sizes match) `src` into `dst` by averaging the
+// block of source pixels each destination pixel covers -- a box filter,
+// which keeps thin details from flickering away the way skipping pixels
+// would. Works for any channel count; row order is preserved.
+void image_resize_box(const uint8* src, uint16 src_width, uint16 src_height, uint8 channel_count,
+                      uint8* dst, uint16 dst_width, uint16 dst_height);
+
 // Decoded floating-point (HDR) image: always 4 channels (RGBA, linear
 // radiance, alpha = 1), 32-bit float per channel. Used for environment maps,
 // where values well above 1.0 (the sun, bright windows) matter.

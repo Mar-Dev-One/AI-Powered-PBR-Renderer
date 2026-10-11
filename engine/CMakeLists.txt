@@ -3,6 +3,7 @@ add_library(PBR_Engine STATIC
     src/Core/FileIO.c
     src/Core/Paths.c
     src/Core/Image.c
+    src/Core/Encoding.c
     src/Renderer/Renderer.c
     src/Renderer/IBL.c
     src/Renderer/Lighting.c

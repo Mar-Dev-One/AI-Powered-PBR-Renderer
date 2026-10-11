@@ -97,7 +97,7 @@ Status: done. `World/Serialize` (cJSON 1.7.18), `Commands/Commands` (generic + `
 `Commands/History` (in-place undo/redo, transactions, change events), `UI/CommandConsole` (F1).
 The testbed edits World components directly, so the console and the GUI never fight.
 
-### Phase 3: Command server
+### Phase 3: Command server — done
 
 - [mongoose](https://github.com/cesanta/mongoose) WebSocket on `127.0.0.1` only, plus a token
   from a config file.
@@ -107,6 +107,12 @@ The testbed edits World components directly, so the console and the GUI never fi
 - `view.screenshot`: `rhi_read_pixels` → PNG (`stb_image_write`) → base64.
 
 **Done when:** a short Python script adds a light and gets a screenshot back.
+
+Status: done. Our own WebSocket server (MIT; mongoose is GPL) in `Net/CommandServer`, JSON-RPC 2.0
+in `Commands/JsonRpc`, token + origin checks, discovery file `~/.pbr-renderer/server.json`,
+non-blocking polling on the main thread (no threads), `scene.changed` notifications (tagged by
+world; one per batch), `view.screenshot` (offscreen render without UI, box-downscaled PNG, base64).
+Tested end to end with a stdlib-only Python client (`tests/server_test.py`).
 
 ### Phase 4: Python package `pbr_agent` + MCP
 

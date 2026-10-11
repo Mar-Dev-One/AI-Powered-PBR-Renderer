@@ -5,6 +5,22 @@
 // the STBI_FAILURE_USERMSG variant, the default reason strings are enough.
 #include "stb_image.h"
 
+// PNG encoding to memory only (screenshots): no stdio file-writing code.
+// Its unused HDR writer calls sprintf (bounded, harmless), which MSVC
+// flags as deprecated; silence that for this one vendored header.
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STBI_WRITE_NO_STDIO
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable : 4996)
+#endif
+#include "stb_image_write.h"
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
+
+#include <string.h>
+
 image image_load(const char* path, uint8 desired_channels)
 {
     image img = { 0 };
@@ -105,4 +121,91 @@ void image_hdr_free(image_hdr* img)
 
     stbi_image_free(img->pixels);
     img->pixels = NULL;
+}
+
+// stbi_write_png_to_func() hands the encoded bytes over in pieces.
+typedef struct png_buffer
+{
+    uint8* data;
+    size_t size;
+    size_t capacity;
+    b8     failed;
+} png_buffer;
+
+static void
+append_png_bytes(void* context, void* data, int size)
+{
+    png_buffer* b = context;
+    if (b->failed || size <= 0)
+        return;
+
+    if (b->size + (size_t)size > b->capacity)
+    {
+        size_t capacity = b->capacity ? b->capacity * 2 : 65536;
+        while (capacity < b->size + (size_t)size)
+            capacity *= 2;
+
+        uint8* grown = realloc(b->data, capacity);
+        if (!grown)
+        {
+            b->failed = true;
+            return;
+        }
+        b->data     = grown;
+        b->capacity = capacity;
+    }
+    memcpy(b->data + b->size, data, (size_t)size);
+    b->size += (size_t)size;
+}
+
+uint8* image_encode_png(const uint8* pixels, uint16 width, uint16 height, uint8 channel_count, size_t* out_size)
+{
+    png_buffer buffer = { 0 };
+
+    // Bottom-up rows in, top-down PNG out.
+    stbi_flip_vertically_on_write(1);
+    int ok = stbi_write_png_to_func(append_png_bytes, &buffer, width, height, channel_count,
+                                    pixels, (int)width * channel_count);
+    stbi_flip_vertically_on_write(0);
+
+    if (!ok || buffer.failed)
+    {
+        LOG_ERROR("Could not encode a %ux%u PNG\n", (unsigned)width, (unsigned)height);
+        free(buffer.data);
+        *out_size = 0;
+        return NULL;
+    }
+
+    *out_size = buffer.size;
+    return buffer.data;
+}
+
+void image_resize_box(const uint8* src, uint16 src_width, uint16 src_height, uint8 channel_count,
+                      uint8* dst, uint16 dst_width, uint16 dst_height)
+{
+    for (uint32 y = 0; y < dst_height; ++y)
+    {
+        // Source rows [y0, y1) map onto destination row y.
+        uint32 y0 = y * src_height / dst_height;
+        uint32 y1 = (y + 1) * src_height / dst_height;
+        if (y1 <= y0) y1 = y0 + 1;
+
+        for (uint32 x = 0; x < dst_width; ++x)
+        {
+            uint32 x0 = x * src_width / dst_width;
+            uint32 x1 = (x + 1) * src_width / dst_width;
+            if (x1 <= x0) x1 = x0 + 1;
+
+            uint32 count = (y1 - y0) * (x1 - x0);
+            for (uint32 c = 0; c < channel_count; ++c)
+            {
+                uint32 sum = 0;
+                for (uint32 sy = y0; sy < y1; ++sy)
+                    for (uint32 sx = x0; sx < x1; ++sx)
+                        sum += src[((size_t)sy * src_width + sx) * channel_count + c];
+
+                dst[((size_t)y * dst_width + x) * channel_count + c] = (uint8)((sum + count / 2) / count);
+            }
+        }
+    }
 }

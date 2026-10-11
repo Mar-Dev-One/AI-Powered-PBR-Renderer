@@ -96,10 +96,19 @@ post_begin_scene(post_process* post, f32 r, f32 g, f32 b)
 void
 post_end_scene(post_process* post, f32 exposure)
 {
+    post_end_scene_to(post, exposure, NULL);
+}
+
+void
+post_end_scene_to(post_process* post, f32 exposure, rhi_framebuffer target)
+{
     if (!post->scene_target)
         return;
 
-    rhi_framebuffer_bind_default();
+    if (target)
+        rhi_framebuffer_bind(target);
+    else
+        rhi_framebuffer_bind_default();
 
     // Every pixel is overwritten, so don't let depth or blending from the
     // scene pass get in the way, and don't leave depth behind for the UI.

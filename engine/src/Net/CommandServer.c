@@ -5,6 +5,7 @@
 #include "CommandServer.h"
 
 #include "../Commands/JsonRpc.h"
+#include "../Core/Encoding.h"
 #include "../Core/FileIO.h"
 
 #include <ctype.h>
@@ -86,7 +87,7 @@ buffer_free(byte_buffer* b)
     memset(b, 0, sizeof(*b));
 }
 
-// --- SHA-1 and Base64 (only for the WebSocket handshake) ------------------------------
+// --- SHA-1 (only for the WebSocket handshake) ------------------------------------------
 
 typedef struct sha1_state
 {
@@ -160,25 +161,6 @@ sha1(const unsigned char* data, size_t length, unsigned char out[20])
         out[i * 4 + 2] = (unsigned char)(s.h[i] >> 8);
         out[i * 4 + 3] = (unsigned char)(s.h[i]);
     }
-}
-
-static void
-base64(const unsigned char* data, size_t length, char* out)
-{
-    static const char ALPHABET[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    size_t o = 0;
-    for (size_t i = 0; i < length; i += 3)
-    {
-        uint32 v = (uint32)data[i] << 16;
-        if (i + 1 < length) v |= (uint32)data[i + 1] << 8;
-        if (i + 2 < length) v |= data[i + 2];
-
-        out[o++] = ALPHABET[(v >> 18) & 63];
-        out[o++] = ALPHABET[(v >> 12) & 63];
-        out[o++] = i + 1 < length ? ALPHABET[(v >> 6) & 63] : '=';
-        out[o++] = i + 2 < length ? ALPHABET[v & 63] : '=';
-    }
-    out[o] = '\0';
 }
 
 // --- Server state -------------------------------------------------------------------
@@ -605,7 +587,7 @@ handle_handshake(command_server* s, ws_client* c)
     unsigned char digest[20];
     sha1((const unsigned char*)combined, (size_t)combined_length, digest);
     char accept[32];
-    base64(digest, sizeof(digest), accept);
+    base64_encode(digest, sizeof(digest), accept);
 
     char response[256];
     int  response_length = snprintf(response, sizeof(response),

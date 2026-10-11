@@ -42,5 +42,9 @@ void post_begin_scene(post_process* post, f32 r, f32 g, f32 b);
 // active, so UI drawn afterwards lands on top of the tone-mapped image.
 void post_end_scene(post_process* post, f32 exposure);
 
+// Same, but into `target` (an RGBA8 framebuffer the size of the scene
+// target) instead of the screen -- for screenshots. Leaves `target` bound.
+void post_end_scene_to(post_process* post, f32 exposure, rhi_framebuffer target);
+
 // Safe on a zeroed / failed / already-destroyed post_process.
 void post_destroy(post_process* post);

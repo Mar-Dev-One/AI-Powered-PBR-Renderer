@@ -117,6 +117,29 @@ log_changes(command_console* console, const cJSON* changes, console_entry_kind k
     }
 }
 
+// Replaces long strings (base64 image data, say) with a short note, so a
+// screenshot result doesn't flood the log.
+#define CONSOLE_MAX_STRING 200
+
+static void
+shorten_long_strings(cJSON* node)
+{
+    cJSON* child;
+    cJSON_ArrayForEach(child, node)
+    {
+        if (cJSON_IsString(child) && strlen(child->valuestring) > CONSOLE_MAX_STRING)
+        {
+            char note[96];
+            snprintf(note, sizeof(note), "<%u characters, not shown>", (unsigned)strlen(child->valuestring));
+            cJSON_SetValuestring(child, note);
+        }
+        else if (cJSON_IsObject(child) || cJSON_IsArray(child))
+        {
+            shorten_long_strings(child);
+        }
+    }
+}
+
 static void
 log_response(command_console* console, const cJSON* response)
 {
@@ -134,6 +157,7 @@ log_response(command_console* console, const cJSON* response)
     // The result as indented JSON, minus the change list (shown compactly below).
     cJSON* result = cJSON_Duplicate(cJSON_GetObjectItem(response, "result"), true);
     cJSON_DeleteItemFromObject(result, "changes");
+    shorten_long_strings(result);
     if (cJSON_GetArraySize(result) > 0)
     {
         char* text = cJSON_Print(result);

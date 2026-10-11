@@ -220,6 +220,41 @@ scene_renderer_draw(scene_renderer* r, const world* w, const camera* cam,
     scene_renderer_end(r, settings);
 }
 
+uint8*
+scene_renderer_capture(scene_renderer* r, const world* w, const camera* cam,
+                       const scene_render_settings* settings, uint16* out_width, uint16* out_height)
+{
+    uint16 width  = r->post.width;
+    uint16 height = r->post.height;
+    if (!width || !height)
+        return NULL;
+
+    // Screenshots are rare: a target per capture keeps nothing resident.
+    rhi_framebuffer_attachment color  = { .format = RHI_FORMAT_RGBA8 };
+    rhi_framebuffer            target = rhi_framebuffer_create((rhi_framebuffer_desc){
+        .width                  = width,
+        .height                 = height,
+        .color_attachments      = &color,
+        .color_attachment_count = 1,
+    });
+
+    rhi_shader shader = scene_renderer_begin(r, w, cam, settings);
+    scene_renderer_draw_world(w, shader);
+    post_end_scene_to(&r->post, settings->exposure, target);   // leaves `target` bound
+
+    uint8* pixels = malloc((size_t)width * height * 4);
+    if (!pixels)
+        FATAL("scene_renderer_capture: out of memory");
+    rhi_read_pixels(0, 0, width, height, pixels);
+
+    rhi_framebuffer_bind_default();
+    rhi_framebuffer_destroy(target);
+
+    *out_width  = width;
+    *out_height = height;
+    return pixels;
+}
+
 b8
 scene_renderer_reload_shaders(scene_renderer* r)
 {

@@ -9,6 +9,8 @@
 
 #include "App.h"
 #include "Core/Defines.h"
+#include "Core/Encoding.h"
+#include "Core/Image.h"
 #include "Core/Paths.h"
 #include "RHI/RHI.h"
 #include "Renderer/IBL.h"
@@ -560,6 +562,7 @@ load_selected_hdri(demo_state* state, int index)
 // console (and later an agent) can drive them like any built-in command.
 
 static void load_selected_hdri(demo_state* state, int index);
+static scene_render_settings build_render_settings(const demo_state* state);
 
 // on_change for both worlds: show the change in the console, and push it to
 // connected clients with the world's name, since each world keeps its own
@@ -833,6 +836,103 @@ host_render_set(void* user_data, const cJSON* args, cJSON** out_result, char* er
     return host_view_get(user_data, NULL, out_result, error, error_size);
 }
 
+// What the scene looks like right now, as a PNG -- rendered fresh,
+// without the editor's panels, so a model can see its own work.
+static b8
+host_view_screenshot(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    demo_state* state = user_data;
+
+    // Longest side in pixels. Smaller keeps the payload (and an LLM's
+    // context) small; 768 is plenty to judge composition and lighting.
+    int          max_size = 768;
+    const cJSON* size     = cJSON_GetObjectItem(args, "max_size");
+    if (size)
+    {
+        if (!cJSON_IsNumber(size) || size->valuedouble < 64 || size->valuedouble > 4096)
+        {
+            snprintf(error, error_size, "\"max_size\" must be a whole number of pixels from 64 to 4096");
+            return false;
+        }
+        max_size = (int)size->valuedouble;
+    }
+
+    command_context*      ctx      = active_commands(state);
+    scene_render_settings settings = build_render_settings(state);
+    if (state->mode == RENDER_MODE_MATERIAL_GRID)
+        settings.shadows = false;   // as on screen
+
+    world_update(ctx->w);
+
+    uint16 width, height;
+    uint8* rgba = scene_renderer_capture(&state->renderer, ctx->w, &state->cam, &settings, &width, &height);
+    if (!rgba)
+    {
+        snprintf(error, error_size, "nothing to capture (is the window minimized?)");
+        return false;
+    }
+
+    // Fit within max_size, keeping the aspect ratio.
+    uint16 out_w = width, out_h = height;
+    int    longest = width > height ? width : height;
+    if (longest > max_size)
+    {
+        out_w = (uint16)glm_max(1.0f, roundf((f32)width  * (f32)max_size / (f32)longest));
+        out_h = (uint16)glm_max(1.0f, roundf((f32)height * (f32)max_size / (f32)longest));
+    }
+
+    uint8* scaled = rgba;
+    if (out_w != width || out_h != height)
+    {
+        scaled = malloc((size_t)out_w * out_h * 4);
+        if (!scaled)
+            FATAL("screenshot: out of memory");
+        image_resize_box(rgba, width, height, 4, scaled, out_w, out_h);
+    }
+
+    // Alpha is always 1 here; RGB makes a smaller PNG.
+    uint8* rgb = malloc((size_t)out_w * out_h * 3);
+    if (!rgb)
+        FATAL("screenshot: out of memory");
+    for (size_t i = 0; i < (size_t)out_w * out_h; ++i)
+    {
+        rgb[i * 3 + 0] = scaled[i * 4 + 0];
+        rgb[i * 3 + 1] = scaled[i * 4 + 1];
+        rgb[i * 3 + 2] = scaled[i * 4 + 2];
+    }
+
+    size_t png_size;
+    uint8* png = image_encode_png(rgb, out_w, out_h, 3, &png_size);
+
+    if (scaled != rgba)
+        free(scaled);
+    free(rgba);
+    free(rgb);
+
+    if (!png)
+    {
+        snprintf(error, error_size, "PNG encoding failed");
+        return false;
+    }
+
+    char* data = base64_encode_alloc(png, png_size);
+    free(png);
+
+    *out_result = cJSON_CreateObject();
+    cJSON_AddStringToObject(*out_result, "format", "png");
+    cJSON_AddStringToObject(*out_result, "encoding", "base64");
+    cJSON_AddNumberToObject(*out_result, "width", out_w);
+    cJSON_AddNumberToObject(*out_result, "height", out_h);
+    cJSON_AddNumberToObject(*out_result, "bytes", (double)png_size);
+    cJSON_AddStringToObject(*out_result, "data", data);
+    free(data);
+    return true;
+}
+
+static const cmd_arg ARGS_SCREENSHOT[] = {
+    { "max_size", "number", false, "Longest side in pixels, 64-4096 (default 768); the window's size if smaller" },
+};
+
 static const cmd_arg ARGS_ENVIRONMENT_SET[] = {
     { "hdri",        "string",  false, "HDRI path from environment.list" },
     { "use_ibl",     "boolean", false, "Light the scene from the HDRI (false = simple sky/ground ambient)" },
@@ -864,6 +964,8 @@ static const cmd_host_command HOST_COMMANDS[] = {
     { "view.set_camera",  "Moves the camera and/or what it looks at",                       HOST_ARGS(ARGS_SET_CAMERA),      false, host_view_set_camera },
     { "view.frame",       "Points the camera at an entity (or everything) so it fills the view", HOST_ARGS(ARGS_FRAME),     false, host_view_frame },
     { "render.set",       "Exposure, ambient strength and debug views",                      HOST_ARGS(ARGS_RENDER_SET),      false, host_render_set },
+    { "view.screenshot",  "The scene as a PNG (base64), rendered now without the editor's panels -- to check how it looks",
+                                                                                               HOST_ARGS(ARGS_SCREENSHOT),      false, host_view_screenshot },
 };
 
 #define HOST_COMMAND_COUNT ((uint32)(sizeof(HOST_COMMANDS) / sizeof(HOST_COMMANDS[0])))
