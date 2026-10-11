@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pbr-agent"
+version = "0.1.0"
+description = "Drive the PBR Renderer's scene from AI tools: an engine client, tool definitions and an MCP server"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=2.3,<3",
+    "websockets>=17,<18",
+]
+
+[project.scripts]
+pbr-mcp = "pbr_agent.mcp_server:main"
+
+[tool.setuptools]
+packages = ["pbr_agent"]

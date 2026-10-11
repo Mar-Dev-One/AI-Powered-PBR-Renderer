@@ -73,3 +73,7 @@ imgui.ini
 # Python bytecode (tests/server_test.py, the upcoming pbr_agent package)
 __pycache__/
 *.pyc
+
+# Python virtual environment and build metadata for agent/
+agent/.venv/
+*.egg-info/
