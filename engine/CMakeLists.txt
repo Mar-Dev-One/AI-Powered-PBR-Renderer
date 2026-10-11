@@ -29,6 +29,7 @@ add_library(PBR_Engine STATIC
     src/UI/ImGuiLayer.c
     src/UI/EntityPanel.c
     src/World/Serialize.c
+    src/Commands/Commands.c
     deps/cjson/cJSON.c
 )
 

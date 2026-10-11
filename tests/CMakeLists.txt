@@ -6,3 +6,7 @@ add_test(NAME WorldTests COMMAND WorldTests)
 add_executable(SerializeTests serialize_tests.c)
 target_link_libraries(SerializeTests PRIVATE PBR_Engine)
 add_test(NAME SerializeTests COMMAND SerializeTests)
+
+add_executable(CommandTests command_tests.c)
+target_link_libraries(CommandTests PRIVATE PBR_Engine)
+add_test(NAME CommandTests COMMAND CommandTests)
