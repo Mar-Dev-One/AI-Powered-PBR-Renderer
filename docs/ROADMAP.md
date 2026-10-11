@@ -15,11 +15,11 @@ The AI track drives the order; renderer features slot in where they help it.
 
 ## Open checks (before Phase 1)
 
-- [ ] Verify new shadows visually: light direction around (-0.4, -0.6, +0.5), cascade debug on, orbit;
-      look for acne, peter-panning, cascade seams (tune `sample_cascade()` biases,
-      `SHADOW_FILTER_RADIUS`, `CASCADE_BLEND_FRACTION` in `pbr.frag`)
-- [ ] Verify Grid mode through `SceneRenderer`
-- [ ] Exercise a spot light (shader path exists, never run)
+- [x] Verify new shadows visually: soft and continuous, no acne or peter-panning on the avocado or
+      the ground, cascade split where expected (tune `sample_cascade()` biases,
+      `SHADOW_FILTER_RADIUS`, `CASCADE_BLEND_FRACTION` in `pbr.frag` if a model shows artifacts)
+- [x] Verify Grid mode through `SceneRenderer`
+- [x] Exercise a spot light: the testbed's "Spot light" panel, a warm cone aimed at the origin, off by default
 
 ---
 

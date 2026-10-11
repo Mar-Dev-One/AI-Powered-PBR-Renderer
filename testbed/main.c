@@ -149,6 +149,19 @@ typedef struct demo_state
     f32   fill_light_intensity;
     f32   fill_light_range;
 
+    // --- Spot light ------------------------------------------------------------
+    // A third light, off by default: a warm cone always aimed at the origin
+    // (where model_fit centres the model), so moving it never loses the
+    // target. Exercises pbr.frag's LIGHT_SPOT path. Casts no shadow.
+    int32 spot_light_entity;
+    b8    spot_light_enabled;
+    vec3  spot_light_pos;
+    vec3  spot_light_color;
+    f32   spot_light_intensity;
+    f32   spot_light_range;
+    f32   spot_light_inner_degrees;
+    f32   spot_light_outer_degrees;
+
     // --- Lit rendering ---------------------------------------------------------
     // Renderer/SceneRenderer.h runs the whole lit frame (cascaded shadows,
     // HDR target, skybox, PBR uniforms, tone mapping) for both lit modes;
@@ -525,6 +538,21 @@ on_init(App* app)
     light_init_point(&fill_light, state->fill_light_color, state->fill_light_intensity, state->fill_light_range);
     state->fill_light_entity = scene_add_light(&state->demo_scene, fill_light, NULL, ENTITY_NO_PARENT);
 
+    state->spot_light_enabled       = false;
+    glm_vec3_copy((vec3){ -1.5f, 2.5f, 1.0f }, state->spot_light_pos);
+    glm_vec3_copy((vec3){ 1.0f, 0.75f, 0.45f }, state->spot_light_color);
+    state->spot_light_intensity     = 15.0f;
+    state->spot_light_range         = 10.0f;
+    state->spot_light_inner_degrees = 12.0f;
+    state->spot_light_outer_degrees = 22.0f;
+
+    // Direction is re-aimed every frame by sync_scene_lights(); any
+    // non-zero vector does here.
+    light spot_light;
+    light_init_spot(&spot_light, (vec3){ 0.0f, -1.0f, 0.0f }, state->spot_light_color, state->spot_light_intensity,
+                    state->spot_light_range, state->spot_light_inner_degrees, state->spot_light_outer_degrees);
+    state->spot_light_entity = scene_add_light(&state->demo_scene, spot_light, NULL, ENTITY_NO_PARENT);
+
     f32 aspect = (f32)framebuffer_size.width / (f32)framebuffer_size.height;
 
     vec3 initial_position = { 2.5f, 2.0f, 3.5f };
@@ -590,6 +618,16 @@ draw_lighting_controls(demo_state* state)
     igSliderFloat("Range##fill", &state->fill_light_range, 0.0f, 20.0f, "%.2f", 0);
     igSeparator();
 
+    igText("Spot light (aimed at the origin)");
+    igCheckbox("Enabled##spot", &state->spot_light_enabled);
+    igColorEdit3("Color##spot", state->spot_light_color, 0);
+    igSliderFloat3("Position##spot", state->spot_light_pos, -5.0f, 5.0f, "%.2f", 0);
+    igSliderFloat("Intensity##spot", &state->spot_light_intensity, 0.0f, 50.0f, "%.2f", 0);
+    igSliderFloat("Range##spot", &state->spot_light_range, 0.0f, 20.0f, "%.2f", 0);
+    igSliderFloat("Inner angle##spot", &state->spot_light_inner_degrees, 0.0f, 89.0f, "%.1f deg", 0);
+    igSliderFloat("Outer angle##spot", &state->spot_light_outer_degrees, 0.0f, 89.0f, "%.1f deg", 0);
+    igSeparator();
+
     igSliderFloat("Ambient", &state->ambient_strength, 0.0f, 2.0f, "%.2f", 0);
     igSliderFloat("Exposure", &state->exposure, 0.1f, 4.0f, "%.2f", 0);
     igSeparator();
@@ -629,6 +667,25 @@ sync_scene_lights(demo_state* state)
     glm_vec3_copy(state->fill_light_color, fill_entity->as_light.color);
     fill_entity->as_light.intensity = state->fill_light_enabled ? state->fill_light_intensity : 0.0f;
     fill_entity->as_light.range     = state->fill_light_range;
+
+    entity* spot_entity = &state->demo_scene.entities[state->spot_light_entity];
+    glm_translate_make(spot_entity->local_transform, state->spot_light_pos);
+
+    // Aim at the origin. Unparented, so this local direction is already world space.
+    vec3 to_origin;
+    glm_vec3_negate_to(state->spot_light_pos, to_origin);
+    if (glm_vec3_norm2(to_origin) > 1e-8f)
+        glm_vec3_normalize_to(to_origin, spot_entity->as_light.direction);
+
+    // The outer cone can't be narrower than the inner one.
+    if (state->spot_light_outer_degrees < state->spot_light_inner_degrees)
+        state->spot_light_outer_degrees = state->spot_light_inner_degrees;
+
+    glm_vec3_copy(state->spot_light_color, spot_entity->as_light.color);
+    spot_entity->as_light.intensity          = state->spot_light_enabled ? state->spot_light_intensity : 0.0f;
+    spot_entity->as_light.range              = state->spot_light_range;
+    spot_entity->as_light.inner_cone_degrees = state->spot_light_inner_degrees;
+    spot_entity->as_light.outer_cone_degrees = state->spot_light_outer_degrees;
 
     scene_update_world_transforms(&state->demo_scene);
 }
