@@ -2,3 +2,7 @@
 add_executable(WorldTests world_tests.c)
 target_link_libraries(WorldTests PRIVATE PBR_Engine)
 add_test(NAME WorldTests COMMAND WorldTests)
+
+add_executable(SerializeTests serialize_tests.c)
+target_link_libraries(SerializeTests PRIVATE PBR_Engine)
+add_test(NAME SerializeTests COMMAND SerializeTests)

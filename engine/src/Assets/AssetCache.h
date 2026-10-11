@@ -56,6 +56,15 @@ asset_id assets_load_model(asset_cache* cache, const char* relative_path);
 // A built-in primitive, created on first request.
 asset_id assets_builtin(asset_cache* cache, builtin_shape shape);
 
+// Either of the above by key: "builtin:cube" / "builtin:sphere" /
+// "builtin:plane", or a path under assets/. ASSET_NONE for an unknown
+// built-in name or a model that fails to load.
+asset_id assets_resolve(asset_cache* cache, const char* key);
+
+// True if `key` names a built-in ("builtin:..."), known or not -- lets a
+// caller reject a typo'd built-in without trying to load it from disk.
+b8 assets_is_builtin_key(const char* key);
+
 // NULL for ASSET_NONE or a stale ID.
 const model* assets_model(const asset_cache* cache, asset_id id);
 

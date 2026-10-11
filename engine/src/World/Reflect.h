@@ -39,6 +39,7 @@ typedef struct field_desc
     const char* const* enum_names;    // FIELD_ENUM: names indexed by value
     uint32             enum_count;
     b8                 via_setter;
+    b8                 nonzero;       // FIELD_VEC3: must not be (0, 0, 0) -- e.g. a direction
     uint32             override_bit;
     const char*        doc;
 } field_desc;

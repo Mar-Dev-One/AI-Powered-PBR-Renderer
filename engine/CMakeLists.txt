@@ -28,6 +28,8 @@ add_library(PBR_Engine STATIC
     src/Scene/ModelGltf.c
     src/UI/ImGuiLayer.c
     src/UI/EntityPanel.c
+    src/World/Serialize.c
+    deps/cjson/cJSON.c
 )
 
 # PUBLIC: consumers (testbed) #include headers like "App.h", "RHI/RHI.h",
@@ -63,6 +65,10 @@ target_link_libraries(PBR_Engine PUBLIC
 # all PRIVATE, same reasoning as the ASSETS_ROOT definition below
 # (implementation detail, not something consumers of PBR_Engine need to see).
 target_include_directories(PBR_Engine PRIVATE deps/stb deps/fast_obj deps/cgltf)
+
+# cJSON (vendored v1.7.18, MIT) is PUBLIC: World/Serialize.h and the command
+# layer hand cJSON trees across the API.
+target_include_directories(PBR_Engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/deps/cjson)
 
 # PRIVATE: only Core/Paths.c reads this macro (asset_path() bakes it in at
 # runtime). testbed/main.c never references ASSETS_ROOT itself, so there's

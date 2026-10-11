@@ -65,7 +65,7 @@ static const field_desc LIGHT_FIELDS[] = {
     { .name = "intensity", .type = FIELD_F32, .offset = offsetof(light, intensity),
       .min = 0.0f, .max = 1000.0f,
       .doc = "Directional: illuminance (lux-like). Point/spot: luminous intensity, falls off with distance squared" },
-    { .name = "direction", .type = FIELD_VEC3, .offset = offsetof(light, direction),
+    { .name = "direction", .type = FIELD_VEC3, .offset = offsetof(light, direction), .nonzero = true,
       .doc = "Directional/spot: direction the light travels, in the entity's local space" },
     { .name = "range", .type = FIELD_F32, .offset = offsetof(light, range),
       .min = 0.0f, .max = 1000.0f, .doc = "Point/spot: distance where the light fades to zero; 0 = no limit" },

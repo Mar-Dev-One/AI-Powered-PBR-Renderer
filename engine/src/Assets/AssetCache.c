@@ -184,6 +184,31 @@ assets_builtin(asset_cache* cache, builtin_shape shape)
     return insert(cache, BUILTIN_KEYS[shape], m);
 }
 
+b8
+assets_is_builtin_key(const char* key)
+{
+    return key && strncmp(key, "builtin:", 8) == 0;
+}
+
+asset_id
+assets_resolve(asset_cache* cache, const char* key)
+{
+    if (!key || !key[0])
+        return ASSET_NONE;
+
+    if (assets_is_builtin_key(key))
+    {
+        for (uint32 s = 0; s < BUILTIN_SHAPE_COUNT; ++s)
+        {
+            if (strcmp(key, BUILTIN_KEYS[s]) == 0)
+                return assets_builtin(cache, (builtin_shape)s);
+        }
+        return ASSET_NONE;
+    }
+
+    return assets_load_model(cache, key);
+}
+
 const model*
 assets_model(const asset_cache* cache, asset_id id)
 {
