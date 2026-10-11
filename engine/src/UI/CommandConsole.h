@@ -60,6 +60,9 @@ void console_shutdown(command_console* console);
 // Draws the window and runs whatever is submitted against `ctx`.
 void console_draw(command_console* console, command_context* ctx, const char* window_title);
 
+// Adds an informational line to the log (shown in grey).
+void console_info(command_console* console, const char* text);
+
 // Runs one line of input exactly as if typed.
 void console_submit(command_console* console, command_context* ctx, const char* line);
 

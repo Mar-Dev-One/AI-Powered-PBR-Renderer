@@ -65,6 +65,12 @@ remember_input(command_console* console, const char* line)
 }
 
 void
+console_info(command_console* console, const char* text)
+{
+    add_entry(console, CONSOLE_INFO, text);
+}
+
+void
 console_init(command_console* console)
 {
     memset(console, 0, sizeof(*console));

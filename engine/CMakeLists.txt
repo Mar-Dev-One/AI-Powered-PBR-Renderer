@@ -32,6 +32,8 @@ add_library(PBR_Engine STATIC
     src/World/Serialize.c
     src/Commands/Commands.c
     src/Commands/History.c
+    src/Commands/JsonRpc.c
+    src/Net/CommandServer.c
     deps/cjson/cJSON.c
 )
 
@@ -61,6 +63,11 @@ target_link_libraries(PBR_Engine PUBLIC
     cglm
     cimgui
 )
+
+# Winsock for Net/CommandServer.c (POSIX sockets need no extra library).
+if(WIN32)
+    target_link_libraries(PBR_Engine PUBLIC ws2_32)
+endif()
 
 # stb_image, fast_obj and cgltf are single vendored headers (no
 # CMakeLists of their own, unlike the git-submodule deps above), needed only

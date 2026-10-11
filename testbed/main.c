@@ -19,6 +19,7 @@
 #include "Assets/AssetCache.h"
 #include "World/World.h"
 #include "Platform/Window.h"
+#include "Net/CommandServer.h"
 #include "UI/CommandConsole.h"
 #include "UI/EntityPanel.h"
 #include "UI/ImGuiLayer.h"
@@ -164,6 +165,11 @@ typedef struct demo_state
     command_context grid_commands;
     command_console console;
     b8              show_console;   // F1 toggles
+
+    // Lets other processes (the MCP server, an agent, scripts) run the same
+    // commands over a localhost WebSocket; see Net/CommandServer.h. NULL if
+    // it couldn't start -- the app works without it.
+    command_server* server;
 
     // --- Lit rendering ---------------------------------------------------------
     // Renderer/SceneRenderer.h runs the whole lit frame (cascaded shadows,
@@ -553,16 +559,22 @@ active_commands(demo_state* state)
     return state->mode == RENDER_MODE_MATERIAL_GRID ? &state->grid_commands : &state->lit_commands;
 }
 
+// f32 -> JSON number at 4 significant digits, so 1.3f reads 1.3 rather
+// than 1.2999999523162842.
+static cJSON*
+number_json(f32 value)
+{
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%.4g", (double)value);
+    return cJSON_CreateNumber(strtod(buffer, NULL));
+}
+
 static cJSON*
 vec3_json(const f32* v)
 {
     cJSON* a = cJSON_CreateArray();
     for (int i = 0; i < 3; ++i)
-    {
-        char buffer[32];
-        snprintf(buffer, sizeof(buffer), "%.4g", (double)v[i]);
-        cJSON_AddItemToArray(a, cJSON_CreateNumber(strtod(buffer, NULL)));
-    }
+        cJSON_AddItemToArray(a, number_json(v[i]));
     return a;
 }
 
@@ -608,7 +620,7 @@ host_environment_list(void* user_data, const cJSON* args, cJSON** out_result, ch
     cJSON_AddStringToObject(*out_result, "current", HDRI_PATHS[state->selected_hdri]);
     cJSON_AddBoolToObject(*out_result, "use_ibl", state->ibl_enabled);
     cJSON_AddBoolToObject(*out_result, "show_skybox", state->show_skybox);
-    cJSON_AddNumberToObject(*out_result, "sky_blur", state->sky_blur);
+    cJSON_AddItemToObject(*out_result, "sky_blur", number_json(state->sky_blur));
     return true;
 }
 
@@ -669,9 +681,9 @@ host_view_get(void* user_data, const cJSON* args, cJSON** out_result, char* erro
     *out_result = cJSON_CreateObject();
     cJSON_AddItemToObject(*out_result, "position", vec3_json(state->cam.position));
     cJSON_AddItemToObject(*out_result, "target", vec3_json(state->cam.target));
-    cJSON_AddNumberToObject(*out_result, "fov_degrees", state->cam.fov_degrees);
-    cJSON_AddNumberToObject(*out_result, "exposure", state->exposure);
-    cJSON_AddNumberToObject(*out_result, "ambient_strength", state->ambient_strength);
+    cJSON_AddItemToObject(*out_result, "fov_degrees", number_json(state->cam.fov_degrees));
+    cJSON_AddItemToObject(*out_result, "exposure", number_json(state->exposure));
+    cJSON_AddItemToObject(*out_result, "ambient_strength", number_json(state->ambient_strength));
     return true;
 }
 
@@ -940,6 +952,18 @@ on_init(App* app)
         };
     }
 
+    state->server = server_start(NULL);
+    if (state->server)
+    {
+        char line[256];
+        snprintf(line, sizeof(line), "Command server: %s (also in ~/.pbr-renderer/server.json)", server_url(state->server));
+        console_info(&state->console, line);
+    }
+    else
+    {
+        console_info(&state->console, "Command server could not start; only this console can run commands.");
+    }
+
     f32 aspect = (f32)framebuffer_size.width / (f32)framebuffer_size.height;
 
     vec3 initial_position = { 2.5f, 2.0f, 3.5f };
@@ -1156,6 +1180,10 @@ static void on_frame(App* app, f32 dt)
     // Picks up edits to pbr.vert/pbr.frag saved while the app runs.
     scene_renderer_poll_hot_reload(&state->renderer);
 
+    // Requests from other processes, run against the world on screen --
+    // before rendering, so their changes show this same frame.
+    server_poll(state->server, active_commands(state));
+
     f32 time = (f32)window_get_time();
 
     if (state->mode == RENDER_MODE_TEXTURED_CUBE)
@@ -1213,6 +1241,10 @@ static void on_frame(App* app, f32 dt)
     igDockSpaceOverViewport(0, NULL, ImGuiDockNodeFlags_PassthruCentralNode, NULL);
 
     igBegin("Scene", NULL, 0);
+
+    if (state->server)
+        igTextDisabled("Command server: port %u, %u client(s)", (unsigned)server_port(state->server),
+                       server_client_count(state->server));
 
     igText("Render Mode");
     igRadioButton_IntPtr("Textured Cube", (int*)&state->mode, RENDER_MODE_TEXTURED_CUBE);
@@ -1302,6 +1334,7 @@ static void on_shutdown(App* app)
     for (uint32 i = 0; i < TEXTURE_COUNT; ++i)
         rhi_texture_destroy(state->textures[i]);
 
+    server_stop(state->server);
     console_shutdown(&state->console);
     history_shutdown(&state->lit_history, &state->lit_world);     // histories hold asset references too
     history_shutdown(&state->grid_history, &state->grid_world);
