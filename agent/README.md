@@ -6,6 +6,12 @@ app, and expose its commands to AI tools.
 - `pbr_agent.EngineClient`: async client for the app's command server (a localhost WebSocket
   speaking JSON-RPC 2.0). It finds the app through `~/.pbr-renderer/server.json`, which the app
   writes at startup, and reconnects if the app is restarted.
+- `pbr_agent.tools`: the tools an AI gets (24: look, build, change, view, files), defined once
+  with JSON Schemas and mapped onto engine commands.
+- `pbr_agent.prompt`: the conventions and working method an AI should follow in the scene.
+- `pbr_agent.mcp_server` (`pbr-mcp`): an MCP server over stdio exposing those tools, so Claude
+  Desktop, Claude Code or any MCP client can build scenes in the running app. Screenshots come back
+  as images, and the live scene is the resource `scene://current`.
 
 ## Setup
 
@@ -15,7 +21,38 @@ agent/.venv/Scripts/python -m pip install -e agent        # Windows
 agent/.venv/bin/python -m pip install -e agent            # macOS / Linux
 ```
 
-## Use
+## Use from Claude
+
+Start the app (the Testbed) first, or at any time; the MCP server connects on the first tool
+call. Both setups below run the console script `pbr-mcp` from the virtual environment. The path
+shown is this repository on Windows; adjust it to yours (`agent/.venv/bin/pbr-mcp` on macOS and
+Linux).
+
+**Claude Code**:
+
+```sh
+claude mcp add pbr-renderer -- C:\Dev\My\PBR-Renderer\agent\.venv\Scripts\pbr-mcp.exe
+```
+
+**Claude Desktop**: add the server to `claude_desktop_config.json` (Settings -> Developer -> Edit
+Config; on Windows it is `%APPDATA%\Claude\claude_desktop_config.json`), then restart Claude
+Desktop:
+
+```json
+{
+  "mcpServers": {
+    "pbr-renderer": {
+      "command": "C:\\Dev\\My\\PBR-Renderer\\agent\\.venv\\Scripts\\pbr-mcp.exe"
+    }
+  }
+}
+```
+
+Then ask for a scene, e.g. "put a table in the middle with a lamp on it, light it warmly and
+show me". The claude.ai website only reaches remote MCP servers over HTTPS, so it can't use this
+local server directly.
+
+## Use from Python
 
 ```python
 import asyncio

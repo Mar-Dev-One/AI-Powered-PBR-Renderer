@@ -114,7 +114,7 @@ non-blocking polling on the main thread (no threads), `scene.changed` notificati
 world; one per batch), `view.screenshot` (offscreen render without UI, box-downscaled PNG, base64).
 Tested end to end with a stdlib-only Python client (`tests/server_test.py`).
 
-### Phase 4: Python package `pbr_agent` + MCP
+### Phase 4: Python package `pbr_agent` + MCP — done
 
 - `engine_client.py`: async JSON-RPC WebSocket client.
 - `tools.py`: the single tool registry (name, description, schema, engine call).
@@ -124,6 +124,12 @@ Tested end to end with a stdlib-only Python client (`tests/server_test.py`).
   describe before editing, screenshot after big changes.
 
 **Done when:** "add a red sphere left of the avocado" in Claude Desktop appears in the running app.
+
+Status: done (in `agent/`). `EngineClient` (async, discovery with stale-pid check, safe
+reconnect), `tools.py` (24 tools, examples run against the engine as a drift test),
+`prompt.py` (shared instructions), `mcp_server.py` / `pbr-mcp` on MCP SDK 2.x (low-level Server,
+stdio, screenshots as images, `scene://current`). Verified end to end through a real MCP client
+against the running Testbed. Registration: `agent/README.md`.
 
 > The claude.ai website only reaches **remote** MCP servers over HTTPS (it needs a tunnel plus
 > authentication). Claude Desktop and Claude Code run local stdio servers directly; start there.

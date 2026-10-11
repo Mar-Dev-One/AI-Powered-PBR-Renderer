@@ -39,6 +39,7 @@ class Host:
         if self.process.poll() is None:
             self.process.kill()
             self.process.wait()
+        self.process.stdout.close()
 
 
 @unittest.skipUnless(SERVER_HOST.exists(), f"build ServerHost first ({SERVER_HOST})")
