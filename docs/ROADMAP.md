@@ -148,6 +148,8 @@ against the running Testbed. Registration: `agent/README.md`.
 - The app spawns the Python sidecar (path from config) and shows "agent offline" if it isn't
   running. API keys stay in the sidecar's environment.
 
+ ### ^^^^ Done ^^^^
+
 **Done when:** the same request works from both front-ends, and each one sees the other's changes
 live.
 
