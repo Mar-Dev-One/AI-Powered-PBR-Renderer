@@ -1,17 +1,157 @@
-# PBR-Renderer
-A modern OpenGL PBR renderer implementing physically based shading, HDR rendering, image-based lighting (IBL), shadow mapping, and a modular graphics architecture (Uncompleted yet).
+# AI Powered PBR-Renderer
 
-## Model loading
+A physically based renderer in C11 and OpenGL 4.6, with an AI scene builder: describe a scene in
+Claude Desktop or Claude Code and watch it get built in the running app.
 
-`model_load(path)` (`engine/src/Scene/Model.h`) loads by file extension:
+- **Rendering**: Cook-Torrance GGX metallic-roughness shading, image-based lighting from HDRIs
+  (multi-scatter, specular occlusion), cascaded shadow maps with filtered soft shadows, HDR
+  rendering with ACES tone mapping and exposure, directional / point / spot lights.
+- **Scene**: an entity-component world with generational handles, reflected components, a
+  reference-counted asset cache, and JSON scene files.
+- **Commands**: every scene change goes through one JSON command API, with validation, clear
+  errors, and undo/redo grouped into transactions. The in-app console, the GUI and AI clients all
+  use it.
+- **Remote control**: a localhost WebSocket server speaking JSON-RPC 2.0, with change
+  notifications and offscreen screenshots.
+- **AI**: a Python package (`pbr_agent`) with an async engine client, 24 tool definitions, and an
+  MCP server so any MCP client can build scenes.
+
+The project is a work in progress; see [docs/ROADMAP.md](docs/ROADMAP.md) for what's done and
+what's next.
+
+## Building
+
+Requirements: CMake 3.10+, a C11 and C++17 compiler (C++ is only for Dear ImGui), and a GPU with
+OpenGL 4.6.
+
+```sh
+git clone --recursive https://github.com/Mar-Dev-One/PBR-Renderer.git
+cd PBR-Renderer
+cmake -S . -B build
+cmake --build build --config Release
+```
+
+If you cloned without `--recursive`, run `git submodule update --init` first (GLFW, cglm and
+cimgui are submodules; the other dependencies are vendored in `engine/deps/`).
+
+Run the testbed from `build/testbed/` (`Release/Testbed.exe` with Visual Studio). The assets path
+is compiled in, so it can be started from any directory.
+
+## Using the testbed
+
+The **Scene** window switches between three modes:
+
+- **Lit Model**: a model viewer on a ground plane, with a model picker, spin, and a cascade debug
+  view.
+- **Grid**: a metallic × roughness sphere grid, for checking IBL and the BRDF.
+- **Textured Cube**: a basic texture test.
+
+The lighting panel edits every light in the scene, plus ambient strength, exposure, the HDRI, IBL
+and the skybox.
+
+| Input | Action |
+|---|---|
+| Left mouse drag | Orbit the camera |
+| Mouse wheel | Zoom |
+| F1 | Command console |
+| Esc | Quit |
+
+### Command console
+
+The console (F1) runs the same JSON commands that remote clients send:
+
+```json
+{"cmd": "place_model", "args": {"model": "builtin:sphere", "size": 0.3, "on_ground": true}}
+```
+
+Commands cover entities and components (`entity.create`, `component.set`, ...), high-level
+placement (`place_model`, `entity.place` relative to other entities), scene files (`scene.save`,
+`scene.load`, `scene.list`), undo/redo (`history.*`), batches, and app-level settings such as the
+camera and environment. `scene.describe` shows the current world. Saved scenes live in
+[assets/scenes/](assets/scenes/); two example scenes built by an AI are included.
+
+## Building scenes with Claude
+
+When the testbed starts, it opens a command server on `127.0.0.1` and writes how to reach it
+(port and token) to `~/.pbr-renderer/server.json`. The `pbr-mcp` server in [agent/](agent/)
+connects to it and exposes the scene tools over MCP.
+
+```sh
+python -m venv agent/.venv
+agent/.venv/Scripts/python -m pip install -e agent      # Windows
+agent/.venv/bin/python -m pip install -e agent          # macOS / Linux
+
+claude mcp add pbr-renderer -- /path/to/PBR-Renderer/agent/.venv/Scripts/pbr-mcp.exe
+```
+
+Then start the testbed and ask for something like *"put a table in the middle with a lamp on it,
+light it warmly and show me"*. Claude can inspect the scene, place and edit entities, set lights,
+camera and environment, take screenshots, and save scenes.
+
+See [agent/README.md](agent/README.md) for Claude Desktop setup and for using the engine client
+from your own Python code.
+
+## Models
+
+`model_load(path)` ([engine/src/Scene/Model.h](engine/src/Scene/Model.h)) picks a loader by file
+extension:
 
 | Format | Loader | Notes |
 |---|---|---|
-| `.gltf` / `.glb` | [cgltf](https://github.com/jkuhlmann/cgltf) | Scene hierarchy, multiple meshes/materials, embedded or external textures, PBR metallic-roughness (base color, metal/rough, normal, occlusion, emissive), alpha mask/blend, double-sided. |
-| `.obj` (+ `.mtl`) | [fast_obj](https://github.com/thisistherk/fast_obj) | Vertices are welded, `Kd`/`Ke`/`Ns`/`d` and `map_Kd`/`map_Ke` become a PBR material. |
+| `.gltf` / `.glb` | [cgltf](https://github.com/jkuhlmann/cgltf) | Scene hierarchy, multiple meshes and materials, embedded or external textures, PBR metallic-roughness (base color, metal/rough, normal, occlusion, emissive), alpha mask/blend, double-sided. |
+| `.obj` (+ `.mtl`) | [fast_obj](https://github.com/thisistherk/fast_obj) | Vertices are welded; `Kd`/`Ke`/`Ns`/`d` and `map_Kd`/`map_Ke` become a PBR material. |
 
-Every format is converted to the same `model` / `material` / `mesh` types and drawn with
-`model_draw()` and `assets/shaders/pbr.*`. Not supported yet: skinning/animation, morph targets,
-Draco/meshopt compression, `KHR_texture_transform`, and second UV sets.
+Both are converted to the same `model` / `material` / `mesh` types and drawn with
+`assets/shaders/pbr.*`. Not supported yet: skinning and animation, morph targets, Draco/meshopt
+compression, `KHR_texture_transform`, and second UV sets.
 
-Drop a file in `assets/models/` and add it to `MODEL_PATHS` in `testbed/main.c` to view it.
+To add a model to the testbed's picker, put it in `assets/models/` and add it to `MODEL_PATHS` in
+[testbed/main.c](testbed/main.c). HDRIs work the same way: an equirectangular `.hdr` in
+`assets/hdri/`, listed in `HDRI_PATHS`. [Poly Haven](https://polyhaven.com/hdris) is a good
+source.
+
+## Project layout
+
+```
+engine/src/
+  App, Platform/   window, main loop, input
+  RHI/             rendering hardware interface (OpenGL backend)
+  Renderer/        scene renderer, lighting, shadows, IBL baking, post-processing
+  Scene/           camera, lights, materials, meshes, model loaders
+  World/           entity-component world, reflection, JSON serialization
+  Assets/          shared, reference-counted asset cache
+  Commands/        command API, undo/redo history, JSON-RPC
+  Net/             localhost WebSocket command server
+  UI/              ImGui layer, entity panel, command console
+testbed/           the demo app
+assets/            shaders, models, HDRIs, textures, scenes
+agent/             pbr_agent Python package and MCP server
+tests/             headless C tests and end-to-end server tests
+docs/              roadmap
+```
+
+## Tests
+
+The C tests are headless (no window or GL context), so they run anywhere:
+
+```sh
+ctest --test-dir build -C Release --output-on-failure
+```
+
+They cover the world, serialization, commands, undo history, placement, JSON-RPC and encoding.
+With Python 3 on the path, ctest also runs an end-to-end test of the WebSocket server, and, when
+`agent/.venv` exists, the `pbr_agent` test suite.
+
+## Dependencies
+
+[GLFW](https://github.com/glfw/glfw), [glad](https://github.com/Dav1dde/glad),
+[cglm](https://github.com/recp/cglm), [Dear ImGui](https://github.com/ocornut/imgui) via
+[cimgui](https://github.com/cimgui/cimgui), [stb_image / stb_image_write](https://github.com/nothings/stb),
+[cgltf](https://github.com/jkuhlmann/cgltf), [fast_obj](https://github.com/thisistherk/fast_obj),
+[cJSON](https://github.com/DaveGamble/cJSON). Python side: the
+[MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) and
+[websockets](https://github.com/python-websockets/websockets).
+
+## License
+
+[MIT](LICENSE)
