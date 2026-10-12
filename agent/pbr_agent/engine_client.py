@@ -5,7 +5,8 @@ The app publishes where it listens in a discovery file
 client reads it, connects over WebSocket and speaks JSON-RPC 2.0: a command
 name is the method, its arguments are the params (see
 engine/src/Commands/JsonRpc.h). Changes to the scene arrive as
-"scene.changed" notifications.
+"scene.changed" notifications; any other notification (the chat's, say) can
+be listened to by method name.
 
     async with EngineClient() as engine:
         lamp = await engine.call("place_model", {"model": "builtin:sphere", "size": 0.3})
@@ -32,12 +33,15 @@ DEFAULT_DISCOVERY_PATH = Path.home() / ".pbr-renderer" / "server.json"
 MAX_MESSAGE_BYTES = 64 * 1024 * 1024
 
 ChangeListener = Callable[[dict], Any]
+NotificationListener = Callable[[dict], Any]
+
+CHANGE_NOTIFICATION = "scene.changed"
 
 # Commands that only read: safe to send again if the connection dropped
 # before their answer arrived (see EngineClient.call).
 READ_ONLY_METHODS = frozenset({
     "commands.list", "components.describe", "scene.describe", "scene.list", "entity.get",
-    "assets.list", "history.list", "environment.list", "view.get", "view.screenshot",
+    "assets.list", "history.list", "environment.list", "view.get", "view.screenshot", "chat.history",
 })
 
 
@@ -57,6 +61,11 @@ class EngineError(Exception):
         self.message = message
         self.code = code
         self.command_code = command_code
+
+
+def _engine_error(error: dict) -> EngineError:
+    return EngineError(error.get("message", "command failed"), error.get("code", 0),
+                       (error.get("data") or {}).get("code"))
 
 
 def _process_alive(pid: int) -> bool:
@@ -116,6 +125,11 @@ class EngineClient:
     If the connection drops (the app was closed or restarted), the next call
     re-reads the discovery file -- a restarted app has a new token -- and
     reconnects once before giving up.
+
+    `hello`, if given, is sent as the server's "server.hello" params on every
+    (re)connection -- e.g. {"client": "pbr-agent", "role": "chat_agent"} to
+    claim a role (engine/src/Net/CommandServer.h). If the server refuses it,
+    connecting fails with that EngineError.
     """
 
     def __init__(
@@ -124,16 +138,19 @@ class EngineClient:
         *,
         discovery_path: str | os.PathLike | None = None,
         call_timeout: float = 60.0,
+        hello: dict | None = None,
     ):
         self._fixed_url = url
         self._discovery_path = discovery_path
         self._call_timeout = call_timeout
+        self._hello = hello
 
         self._ws: ClientConnection | None = None
         self._reader: asyncio.Task | None = None
+        self._closed: asyncio.Event | None = None   # set once the current connection is gone
         self._pending: dict[int, asyncio.Future] = {}
         self._ids = itertools.count(1)
-        self._listeners: list[ChangeListener] = []
+        self._listeners: dict[str, list[NotificationListener]] = {}
         self._connect_lock = asyncio.Lock()
 
     # --- connection -------------------------------------------------------------
@@ -161,7 +178,24 @@ class EngineClient:
             except OSError as error:
                 raise EngineNotRunning(f"Can't reach the app at {url.split('?')[0]}: {error}") from None
 
-            self._reader = asyncio.create_task(self._read_loop(self._ws))
+            self._closed = asyncio.Event()
+            self._reader = asyncio.create_task(self._read_loop(self._ws, self._closed))
+
+            if self._hello is not None:
+                try:
+                    reply = await self._roundtrip("server.hello", self._hello)
+                except EngineNotRunning:
+                    await self.close()
+                    raise
+                if "error" in reply:
+                    await self.close()
+                    raise _engine_error(reply["error"])
+
+    async def wait_closed(self) -> None:
+        """Returns once the current connection has closed (at once if there is none)."""
+        closed = self._closed
+        if self._ws is not None and closed is not None:
+            await closed.wait()
 
     async def close(self) -> None:
         ws, self._ws = self._ws, None
@@ -194,22 +228,13 @@ class EngineClient:
         retry_after_send = method in READ_ONLY_METHODS
 
         for attempt in range(2):
-            request_id = next(self._ids)
-            message = {"jsonrpc": "2.0", "id": request_id, "method": method}
-            if params is not None:
-                message["params"] = params
-
-            future: asyncio.Future = asyncio.get_running_loop().create_future()
-            sent = False
+            sent: list[int] = []
             try:
                 # Let the reader notice a connection that has already been
                 # closed (app quit or restarted) before we reuse it.
                 await asyncio.sleep(0)
                 await self.connect()
-                self._pending[request_id] = future
-                await self._send(message)
-                sent = True
-                reply = await asyncio.wait_for(future, self._call_timeout)
+                reply = await self._roundtrip(method, params, sent)
                 break
             except EngineNotRunning:
                 await self.close()
@@ -220,14 +245,28 @@ class EngineClient:
                     ) from None
                 if attempt == 1:
                     raise
-            finally:
-                self._pending.pop(request_id, None)
 
         if "error" in reply:
-            error = reply["error"]
-            raise EngineError(error.get("message", "command failed"), error.get("code", 0),
-                              (error.get("data") or {}).get("code"))
+            raise _engine_error(reply["error"])
         return reply.get("result")
+
+    async def _roundtrip(self, method: str, params: dict | None, sent: list | None = None) -> dict:
+        """Sends one request on the current connection and returns the raw
+        reply. Appends to `sent` once the request has gone out."""
+        request_id = next(self._ids)
+        message = {"jsonrpc": "2.0", "id": request_id, "method": method}
+        if params is not None:
+            message["params"] = params
+
+        future: asyncio.Future = asyncio.get_running_loop().create_future()
+        self._pending[request_id] = future
+        try:
+            await self._send(message)
+            if sent is not None:
+                sent.append(request_id)
+            return await asyncio.wait_for(future, self._call_timeout)
+        finally:
+            self._pending.pop(request_id, None)
 
     async def notify(self, method: str, params: dict | None = None) -> None:
         """Runs a command without waiting for (or getting) a result."""
@@ -251,12 +290,21 @@ class EngineClient:
     def add_change_listener(self, listener: ChangeListener) -> None:
         """Calls `listener(params)` for every "scene.changed" notification:
         {"revision", "source", "changes": [...], "world"}. May be async."""
-        self._listeners.append(listener)
+        self.add_notification_listener(CHANGE_NOTIFICATION, listener)
 
     def remove_change_listener(self, listener: ChangeListener) -> None:
-        self._listeners.remove(listener)
+        self.remove_notification_listener(CHANGE_NOTIFICATION, listener)
 
-    async def _read_loop(self, ws: ClientConnection) -> None:
+    def add_notification_listener(self, method: str, listener: NotificationListener) -> None:
+        """Calls `listener(params)` for every notification named `method` that
+        the app pushes, e.g. "chat.event". May be async; listeners run one at
+        a time in arrival order, so a slow one holds up the rest."""
+        self._listeners.setdefault(method, []).append(listener)
+
+    def remove_notification_listener(self, method: str, listener: NotificationListener) -> None:
+        self._listeners[method].remove(listener)
+
+    async def _read_loop(self, ws: ClientConnection, closed: asyncio.Event) -> None:
         try:
             async for raw in ws:
                 try:
@@ -268,23 +316,24 @@ class EngineClient:
                     future = self._pending.get(message["id"])
                     if future and not future.done():
                         future.set_result(message)
-                elif message.get("method") == "scene.changed":
-                    await self._dispatch_change(message.get("params") or {})
+                elif isinstance(message.get("method"), str):
+                    await self._dispatch(message["method"], message.get("params") or {})
         except ConnectionClosed:
             pass
         finally:
             if self._ws is ws:
                 self._ws = None
             self._fail_pending(EngineNotRunning("the app closed the connection"))
+            closed.set()
 
-    async def _dispatch_change(self, params: dict) -> None:
-        for listener in list(self._listeners):
+    async def _dispatch(self, method: str, params: dict) -> None:
+        for listener in list(self._listeners.get(method, ())):
             try:
                 result = listener(params)
                 if inspect.isawaitable(result):
                     await result
             except Exception as error:   # a listener's bug mustn't kill the connection
-                print(f"pbr_agent: change listener failed: {error!r}", file=sys.stderr)
+                print(f"pbr_agent: {method} listener failed: {error!r}", file=sys.stderr)
 
     def _fail_pending(self, error: Exception) -> None:
         for future in self._pending.values():

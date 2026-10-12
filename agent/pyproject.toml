@@ -5,17 +5,20 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pbr-agent"
 version = "0.1.0"
-description = "Drive the PBR Renderer's scene from AI tools: an engine client, tool definitions and an MCP server"
+description = "Drive the PBR Renderer's scene from AI tools: an engine client, tool definitions, an MCP server and the in-app chat agent"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
+    "anthropic>=1.13,<2",
     "mcp>=2.3,<3",
+    "openai>=2,<3",
     "websockets>=17,<18",
 ]
 
 [project.scripts]
 pbr-mcp = "pbr_agent.mcp_server:main"
+pbr-agent = "pbr_agent.agent:main"
 
 [tool.setuptools]
 packages = ["pbr_agent"]

@@ -1,7 +1,8 @@
 // server_host.c
 //
 // A headless process running a World behind the command server, for
-// server_test.py: no window, no GPU. Prints the server's URL on its first
+// server_test.py and the agent's tests: no window, no GPU. It has the chat
+// commands too (Chat/ChatSession.h), so a chat agent can be tested against it. Prints the server's URL on its first
 // line of output, then serves until a client calls "test.shutdown" (or 60 s
 // pass, so a failed test run can't leave it behind).
 //
@@ -10,6 +11,7 @@
 // The built-in shapes are registered as bounds-only models (no GPU here),
 // so placement commands work exactly as in the app.
 
+#include "Chat/ChatSession.h"
 #include "Commands/Commands.h"
 #include "Net/CommandServer.h"
 
@@ -28,9 +30,9 @@
 static b8 g_quit = false;
 
 static b8
-host_shutdown(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+host_shutdown(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
-    (void)user_data; (void)args; (void)out_result; (void)error; (void)error_size;
+    (void)user_data; (void)ctx; (void)args; (void)out_result; (void)error; (void)error_size;
     g_quit = true;
     return true;
 }
@@ -83,6 +85,11 @@ main(int argc, char** argv)
     ctx.on_change      = server_on_change;
     ctx.on_change_user = server;
 
+    chat_session chat;
+    chat_init(&chat, server);
+    ctx.module_commands = chat_commands(&ctx.module_command_count);
+    ctx.module_user     = &chat;
+
     printf("%s\n", server_url(server));
     fflush(stdout);
 
@@ -90,11 +97,13 @@ main(int argc, char** argv)
     while (!g_quit && time(NULL) - start < 60)
     {
         server_poll(server, &ctx);
+        chat_poll(&chat);
         sleep_ms(2);
     }
 
     // One more poll so the shutdown request gets its reply.
     server_poll(server, &ctx);
+    chat_shutdown(&chat);
     server_stop(server);
 
     history_shutdown(&history, &w);

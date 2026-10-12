@@ -26,3 +26,16 @@ Working method
 7. Keep the user's existing work: change or delete only what the request is about. undo reverts
    your last step if something went wrong.
 """
+
+# Added for the in-app chat panel (agent.py), after SCENE_INSTRUCTIONS.
+IN_APP_INSTRUCTIONS = """\
+
+In the app's chat panel
+- The user is chatting with you in a small panel inside the renderer, watching the scene change as
+  you work. Reply in a sentence or two: what you did, or what you need to know. Plain text only --
+  no Markdown, headings, lists or tables.
+- Each request is one undo step for the user: one click undoes everything you did for it. undo and
+  redo are not available to you here; to fix a mistake, change or delete what you made.
+- A message may start with a note from the app in parentheses (e.g. that the user undid your last
+  turn). Take it into account; don't reply to it.
+"""

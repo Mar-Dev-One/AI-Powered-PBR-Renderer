@@ -36,6 +36,7 @@ typedef struct cmd_def
     b8                      mutates;   // snapshots, changes, undo step, world_update()
     cmd_handler             handler;   // built-in commands
     const cmd_host_command* host;      // application commands (handler == NULL)
+    void*                   host_user; // what `host` is called with
 } cmd_def;
 
 static b8
@@ -1577,6 +1578,25 @@ static const cmd_def COMMANDS[] = {
 
 #define COMMAND_COUNT (sizeof(COMMANDS) / sizeof(COMMANDS[0]))
 
+// Application commands: the host's table, then the module's.
+static uint32
+host_command_total(const command_context* ctx)
+{
+    return ctx->host_command_count + ctx->module_command_count;
+}
+
+static const cmd_host_command*
+host_command_at(const command_context* ctx, uint32 i, void** out_user)
+{
+    if (i < ctx->host_command_count)
+    {
+        if (out_user) *out_user = ctx->host_user;
+        return &ctx->host_commands[i];
+    }
+    if (out_user) *out_user = ctx->module_user;
+    return &ctx->module_commands[i - ctx->host_command_count];
+}
+
 static b8
 cmd_commands_list(command_context* ctx, const cJSON* args, cmd_output* out)
 {
@@ -1585,7 +1605,7 @@ cmd_commands_list(command_context* ctx, const cJSON* args, cmd_output* out)
     out->result = cJSON_CreateObject();
     cJSON* list = cJSON_AddArrayToObject(out->result, "commands");
 
-    uint32 total = (uint32)COMMAND_COUNT + ctx->host_command_count;
+    uint32 total = (uint32)COMMAND_COUNT + host_command_total(ctx);
     for (uint32 i = 0; i < total; ++i)
     {
         const char*    name;
@@ -1598,7 +1618,7 @@ cmd_commands_list(command_context* ctx, const cJSON* args, cmd_output* out)
         }
         else
         {
-            const cmd_host_command* h = &ctx->host_commands[i - COMMAND_COUNT];
+            const cmd_host_command* h = host_command_at(ctx, i - COMMAND_COUNT, NULL);
             name = h->name; doc = h->doc; def_args = h->args; arg_count = h->arg_count;
         }
 
@@ -1647,12 +1667,13 @@ find_command(const command_context* ctx, const char* name, cmd_def* out)
             return true;
         }
     }
-    for (uint32 i = 0; i < ctx->host_command_count; ++i)
+    for (uint32 i = 0; i < host_command_total(ctx); ++i)
     {
-        const cmd_host_command* h = &ctx->host_commands[i];
+        void*                   user;
+        const cmd_host_command* h = host_command_at(ctx, i, &user);
         if (strcmp(h->name, name) == 0)
         {
-            *out = (cmd_def){ h->name, h->doc, h->args, h->arg_count, h->mutates_world, NULL, h };
+            *out = (cmd_def){ h->name, h->doc, h->args, h->arg_count, h->mutates_world, NULL, h, user };
             return true;
         }
     }
@@ -1702,10 +1723,10 @@ cmd_execute(command_context* ctx, const cJSON* request)
     {
         char   message[2048];
         size_t used  = (size_t)snprintf(message, sizeof(message), "unknown command \"%s\"; commands are: ", cmd->valuestring);
-        uint32 total = (uint32)COMMAND_COUNT + ctx->host_command_count;
+        uint32 total = (uint32)COMMAND_COUNT + host_command_total(ctx);
         for (uint32 i = 0; i < total && used < sizeof(message); ++i)
         {
-            const char* name = i < COMMAND_COUNT ? COMMANDS[i].name : ctx->host_commands[i - COMMAND_COUNT].name;
+            const char* name = i < COMMAND_COUNT ? COMMANDS[i].name : host_command_at(ctx, i - COMMAND_COUNT, NULL)->name;
             used += (size_t)snprintf(message + used, sizeof(message) - used, "%s%s", i ? ", " : "", name);
         }
         return error_response(CMD_ERROR_UNKNOWN_COMMAND, message);
@@ -1739,7 +1760,7 @@ cmd_execute(command_context* ctx, const cJSON* request)
     else
     {
         out.error_code = CMD_ERROR_INVALID_VALUE;
-        ok = def->host->fn(ctx->host_user, args, &out.result, out.error, sizeof(out.error));
+        ok = def->host->fn(def->host_user, ctx, args, &out.result, out.error, sizeof(out.error));
     }
 
     history_change* changes = NULL;

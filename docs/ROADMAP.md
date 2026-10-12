@@ -134,7 +134,7 @@ against the running Testbed. Registration: `agent/README.md`.
 > The claude.ai website only reaches **remote** MCP servers over HTTPS (it needs a tunnel plus
 > authentication). Claude Desktop and Claude Code run local stdio servers directly; start there.
 
-### Phase 5: In-app chat panel
+### Phase 5: In-app chat panel — done
 
 - `agent.py`: a Claude API tool-use loop over the same `tools.py`; keeps history and streams
   replies; each user turn is wrapped in a transaction.
@@ -151,6 +151,15 @@ against the running Testbed. Registration: `agent/README.md`.
 **Done when:** the same request works from both front-ends, and each one sees the other's changes
 live.
 
+Status: done. `Chat/ChatSession` (the conversation, `chat.*` commands, one transaction per turn
+that the engine opens and closes itself, so Stop or a lost agent can't leave undo blocked),
+`UI/ChatPanel` (streaming text, collapsible tool calls, Stop, Undo turn, New chat, busy and
+offline states), `server.hello` roles in `Net/CommandServer` (the agent is the client holding
+`chat_agent`), `Core/Process` (the app starts the sidecar, logs to `~/.pbr-renderer/agent.log`).
+`agent/pbr_agent/agent.py`: streaming Claude tool-use loop over `tools.py`, append-only history,
+progress notes between tool calls. Tested end to end against `ServerHost` with a scripted model
+(`agent/tests/test_agent.py`). Not yet exercised against the live Claude API.
+
 ### Phase 6: Quality
 
 1. **Asset catalog** `assets/catalog.json`: ID, description, tags, real-world size in meters,
@@ -160,7 +169,7 @@ live.
 3. **Verify loop:** screenshot after multi-step turns, then check for floating objects, overlaps,
    darkness and objects out of frame. This is where LangGraph starts to pay off
    (plan → build → verify → fix); before it, a plain tool-use loop is enough.
-4. Scene files: `scene.save`/`scene.load` as JSON.
+4. ~~Scene files: `scene.save`/`scene.load` as JSON.~~ Done in Phase 2.
 5. A `fetch_asset` tool backed by the Poly Haven API (models and HDRIs).
 
 ---

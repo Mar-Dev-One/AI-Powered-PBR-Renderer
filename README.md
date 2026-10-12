@@ -13,8 +13,8 @@ Claude Desktop or Claude Code and watch it get built in the running app.
   use it.
 - **Remote control**: a localhost WebSocket server speaking JSON-RPC 2.0, with change
   notifications and offscreen screenshots.
-- **AI**: a Python package (`pbr_agent`) with an async engine client, 24 tool definitions, and an
-  MCP server so any MCP client can build scenes.
+- **AI**: a Python package (`pbr_agent`) with an async engine client, 24 tool definitions, an
+  MCP server so any MCP client can build scenes, and an in-app chat panel backed by a Claude agent.
 
 The project is a work in progress; see [docs/ROADMAP.md](docs/ROADMAP.md) for what's done and
 what's next.
@@ -54,6 +54,7 @@ and the skybox.
 | Left mouse drag | Orbit the camera |
 | Mouse wheel | Zoom |
 | F1 | Command console |
+| Chat window | Ask the AI agent to build or change the scene |
 | Esc | Quit |
 
 ### Command console
@@ -91,6 +92,23 @@ camera and environment, take screenshots, and save scenes.
 See [agent/README.md](agent/README.md) for Claude Desktop setup and for using the engine client
 from your own Python code.
 
+### In-app chat
+
+The testbed's **Chat** window talks to the same tools without leaving the app. At launch the
+testbed starts the agent (`python -m pbr_agent.agent` from `agent/.venv`), which connects back
+through the command server. Set `ANTHROPIC_API_KEY` in the environment the testbed starts from
+(or run `ant auth login`); without credentials the panel says so.
+
+Replies stream in, each tool call shows as a line you can expand, and **Stop** ends a turn early.
+Each request is one undo step: **Undo turn** (or the console's Undo) reverts everything the agent
+did for it. Changes made from Claude Desktop or Claude Code show up live in the app, and the chat's
+changes show up for them.
+
+`PBR_AGENT_PYTHON` points at a different Python, `PBR_AGENT_AUTOSTART=0` turns the automatic start
+off (the panel has a **Start agent** button), and `PBR_AGENT_MODEL` / `PBR_AGENT_EFFORT` pick the
+model and effort (default `claude-opus-5-5`, `medium`). The agent logs to
+`~/.pbr-renderer/agent.log`.
+
 ## Models
 
 `model_load(path)` ([engine/src/Scene/Model.h](engine/src/Scene/Model.h)) picks a loader by file
@@ -122,10 +140,11 @@ engine/src/
   Assets/          shared, reference-counted asset cache
   Commands/        command API, undo/redo history, JSON-RPC
   Net/             localhost WebSocket command server
-  UI/              ImGui layer, entity panel, command console
+  Chat/            in-app chat session (turns, undo per turn, agent connection)
+  UI/              ImGui layer, entity panel, command console, chat panel
 testbed/           the demo app
 assets/            shaders, models, HDRIs, textures, scenes
-agent/             pbr_agent Python package and MCP server
+agent/             pbr_agent Python package: MCP server and in-app chat agent
 tests/             headless C tests and end-to-end server tests
 docs/              roadmap
 ```
@@ -149,8 +168,9 @@ With Python 3 on the path, ctest also runs an end-to-end test of the WebSocket s
 [cimgui](https://github.com/cimgui/cimgui), [stb_image / stb_image_write](https://github.com/nothings/stb),
 [cgltf](https://github.com/jkuhlmann/cgltf), [fast_obj](https://github.com/thisistherk/fast_obj),
 [cJSON](https://github.com/DaveGamble/cJSON). Python side: the
-[MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) and
-[websockets](https://github.com/python-websockets/websockets).
+[MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk),
+[websockets](https://github.com/python-websockets/websockets) and the
+[Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python).
 
 ## License
 

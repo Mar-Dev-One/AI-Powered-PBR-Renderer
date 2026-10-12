@@ -246,9 +246,9 @@ test_scene_files(void)
 static int g_exposure_calls;
 
 static b8
-host_set_exposure(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+host_set_exposure(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
-    (void)user_data;
+    (void)user_data; (void)ctx;
     const cJSON* value = cJSON_GetObjectItem(args, "value");
     if (!cJSON_IsNumber(value) || value->valuedouble <= 0.0)
     {

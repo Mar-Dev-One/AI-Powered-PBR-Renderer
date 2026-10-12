@@ -175,6 +175,8 @@ typedef struct ws_client
     byte_buffer out;
     byte_buffer message;      // a fragmented text message being reassembled
     b8          in_message;
+    char        role[SERVER_ROLE_MAX];   // claimed with server.hello; "" = none
+    char        name[64];                // what the client called itself in server.hello
 } ws_client;
 
 struct command_server
@@ -601,10 +603,86 @@ handle_handshake(command_server* s, ws_client* c)
 
 // --- Frames --------------------------------------------------------------------------
 
-static void
-handle_message(command_context* ctx, ws_client* c, const char* text)
+static ws_client*
+find_role(command_server* s, const char* role)
 {
-    char* response = jsonrpc_handle(ctx, text);
+    for (uint32 i = 0; i < SERVER_MAX_CLIENTS; ++i)
+    {
+        ws_client* c = &s->clients[i];
+        if (c->in_use && c->upgraded && !c->closing && c->role[0] && strcmp(c->role, role) == 0)
+            return c;
+    }
+    return NULL;
+}
+
+// server.hello: the server's own method, about the connection rather than
+// the world -- so it is answered here and never reaches the commands.
+static char*
+handle_hello(command_server* s, ws_client* c, const cJSON* request)
+{
+    const cJSON* id     = cJSON_GetObjectItemCaseSensitive(request, "id");
+    const cJSON* params = cJSON_GetObjectItemCaseSensitive(request, "params");
+    const cJSON* role   = cJSON_GetObjectItemCaseSensitive(params, "role");
+    const cJSON* name   = cJSON_GetObjectItemCaseSensitive(params, "client");
+
+    cJSON* response = cJSON_CreateObject();
+    cJSON_AddStringToObject(response, "jsonrpc", "2.0");
+    cJSON_AddItemToObject(response, "id", id ? cJSON_Duplicate(id, true) : cJSON_CreateNull());
+
+    const char* error = NULL;
+    const char* code  = CMD_ERROR_INVALID_ARGS;
+    if ((role && !cJSON_IsString(role) && !cJSON_IsNull(role)) || (name && !cJSON_IsString(name)))
+        error = "server.hello takes {\"client\": <name>, \"role\": <role or null>}";
+    else if (cJSON_IsString(role) && (!role->valuestring[0] || strlen(role->valuestring) >= SERVER_ROLE_MAX))
+        error = "\"role\" must be 1 to 31 characters";
+    else if (cJSON_IsString(role))
+    {
+        ws_client* holder = find_role(s, role->valuestring);
+        if (holder && holder != c)
+        {
+            error = "another client already holds that role";
+            code  = CMD_ERROR_CONFLICT;
+        }
+    }
+
+    if (error)
+    {
+        cJSON* e = cJSON_AddObjectToObject(response, "error");
+        cJSON_AddNumberToObject(e, "code", strcmp(code, CMD_ERROR_CONFLICT) == 0 ? JSONRPC_COMMAND_FAILED : JSONRPC_INVALID_PARAMS);
+        cJSON_AddStringToObject(e, "message", error);
+        cJSON_AddStringToObject(cJSON_AddObjectToObject(e, "data"), "code", code);
+    }
+    else
+    {
+        if (role)
+            snprintf(c->role, sizeof(c->role), "%s", cJSON_IsString(role) ? role->valuestring : "");
+        if (name)
+            snprintf(c->name, sizeof(c->name), "%s", name->valuestring);
+
+        cJSON* result = cJSON_AddObjectToObject(response, "result");
+        cJSON_AddStringToObject(result, "server", "pbr-renderer");
+        cJSON_AddItemToObject(result, "role", c->role[0] ? cJSON_CreateString(c->role) : cJSON_CreateNull());
+    }
+
+    char* text = id ? cJSON_PrintUnformatted(response) : NULL;   // a notification gets no answer
+    cJSON_Delete(response);
+    return text;
+}
+
+static void
+handle_message(command_server* s, command_context* ctx, ws_client* c, const char* text)
+{
+    char* response = NULL;
+
+    // Cheap test first: only parse here what might be server.hello.
+    cJSON* request = strstr(text, "server.hello") ? cJSON_Parse(text) : NULL;
+    const cJSON* method = cJSON_GetObjectItemCaseSensitive(request, "method");
+    if (cJSON_IsString(method) && strcmp(method->valuestring, SERVER_HELLO_METHOD) == 0)
+        response = handle_hello(s, c, request);
+    else
+        response = jsonrpc_handle(ctx, text);
+    cJSON_Delete(request);
+
     if (response)
     {
         queue_frame(c, WS_TEXT, response, strlen(response));
@@ -614,7 +692,7 @@ handle_message(command_context* ctx, ws_client* c, const char* text)
 
 // Parses and handles every complete frame in `c->in`.
 static void
-handle_frames(command_context* ctx, ws_client* c)
+handle_frames(command_server* s, command_context* ctx, ws_client* c)
 {
     while (!c->closing && c->in.length >= 2)
     {
@@ -695,7 +773,7 @@ handle_frames(command_context* ctx, ws_client* c)
             if (fin)
             {
                 buffer_append(&c->message, "", 1);   // NUL-terminate
-                handle_message(ctx, c, (const char*)c->message.data);
+                handle_message(s, ctx, c, (const char*)c->message.data);
                 c->message.length = 0;
             }
         }
@@ -803,7 +881,7 @@ server_poll(command_server* s, command_context* ctx)
         if (!c->closing && !c->upgraded)
             handle_handshake(s, c);
         if (!c->closing && c->upgraded)
-            handle_frames(ctx, c);
+            handle_frames(s, ctx, c);
 
         if (!flush(c) || (c->closing && c->out.length == 0))
             drop_client(c);
@@ -835,6 +913,25 @@ server_notify(command_server* s, const char* method, const cJSON* params)
     char* text = jsonrpc_notification(method, params);
     server_broadcast(s, text);
     cJSON_free(text);
+}
+
+b8
+server_has_role(command_server* s, const char* role)
+{
+    return s && find_role(s, role) != NULL;
+}
+
+b8
+server_notify_role(command_server* s, const char* role, const char* method, const cJSON* params)
+{
+    ws_client* c = s ? find_role(s, role) : NULL;
+    if (!c)
+        return false;
+
+    char* text = jsonrpc_notification(method, params);
+    queue_frame(c, WS_TEXT, text, strlen(text));
+    cJSON_free(text);
+    return true;   // sent on the next server_poll()
 }
 
 void

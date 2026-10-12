@@ -57,6 +57,22 @@ void server_notify(command_server* server, const char* method, const cJSON* para
 #define SERVER_CHANGE_NOTIFICATION "scene.changed"
 void server_on_change(void* server, const cJSON* event);
 
+// Roles: a client can say who it is, and claim a role, with the server's own
+// method (answered by the server, never run as a command):
+//   -> {"jsonrpc": "2.0", "id": 1, "method": "server.hello",
+//       "params": {"client": "pbr-agent", "role": "chat_agent"}}
+//   <- {"jsonrpc": "2.0", "id": 1, "result": {"server": "pbr-renderer", "role": "chat_agent"}}
+// A role is held by one connection at a time (a second claim fails with
+// data.code "conflict") and is released when that connection closes, or
+// with "role": null. The app finds its chat agent this way (Chat/ChatSession.h).
+#define SERVER_HELLO_METHOD "server.hello"
+#define SERVER_ROLE_MAX     32
+
+b8 server_has_role(command_server* server, const char* role);
+
+// Pushes a notification to the client holding `role`; false if none does.
+b8 server_notify_role(command_server* server, const char* role, const char* method, const cJSON* params);
+
 uint16      server_port(const command_server* server);
 const char* server_url(const command_server* server);    // ws://127.0.0.1:<port>/?token=<token>
 uint32      server_client_count(const command_server* server);

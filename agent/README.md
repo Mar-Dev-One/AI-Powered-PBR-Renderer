@@ -12,6 +12,8 @@ app, and expose its commands to AI tools.
 - `pbr_agent.mcp_server` (`pbr-mcp`): an MCP server over stdio exposing those tools, so Claude
   Desktop, Claude Code or any MCP client can build scenes in the running app. Screenshots come back
   as images, and the live scene is the resource `scene://current`.
+- `pbr_agent.agent` (`pbr-agent`): the app's in-app chat agent, a Claude API tool-use loop over
+  the same tools. The app starts it; see below.
 
 ## Setup
 
@@ -52,6 +54,51 @@ Then ask for a scene, e.g. "put a table in the middle with a lamp on it, light i
 show me". The claude.ai website only reaches remote MCP servers over HTTPS, so it can't use this
 local server directly.
 
+## The in-app chat agent
+
+The testbed starts `python -m pbr_agent.agent --exit-with-app` from this virtual environment at
+launch. The agent connects to the app's command server, claims the role `chat_agent`
+(`server.hello`), and then serves the **Chat** window:
+
+```
+app  --chat.request {turn, text}-->  agent  <-->  Claude API + tools (engine commands)
+agent  --chat.event {turn, type: text | progress | tool_call | tool_result | done | error}-->  app
+```
+
+The app makes each turn one undo step, and ends the turn itself on Stop or if the agent goes away
+(`engine/src/Chat/ChatSession.h`). `undo` and `redo` aren't offered to the in-app model, since
+they can't run inside the turn's transaction. Its conversation stays in memory until **New chat**.
+
+It reads Claude API credentials from its environment: `ANTHROPIC_API_KEY`, or an `ant auth login`
+profile. Options (or environment variables): `--model` (`PBR_AGENT_MODEL`, default
+`claude-opus-5-5`), `--effort` (`PBR_AGENT_EFFORT`, default `medium`), `--discovery`. Without
+`--exit-with-app` it waits for the app and reconnects when the app restarts, which is handy when
+working on the agent:
+
+```sh
+PBR_AGENT_AUTOSTART=0 build/testbed/Release/Testbed.exe     # the app, without its own agent
+agent/.venv/Scripts/pbr-agent                               # this one instead
+```
+
+### Without a Claude API key
+
+`--provider` (`PBR_AGENT_PROVIDER`) switches the chat to an OpenAI-compatible API
+(`pbr_agent/openai_model.py`); set it where the app is started, like the key:
+
+| Provider | Setup | Default model (`PBR_AGENT_MODEL`) |
+|----------|-------|-----------------------------------|
+| `gemini` | `GEMINI_API_KEY`, free from <https://aistudio.google.com/apikey> | `gemini-3.8-flash` |
+| `ollama` | a running Ollama with a tool-calling model pulled (`ollama pull qwen3`) | `qwen3` |
+| `openai` | `PBR_AGENT_BASE_URL` (LM Studio: `http://localhost:1234/v1`, OpenRouter, ...) and `PBR_AGENT_API_KEY` | `gpt-5-mini` |
+
+These lose the Claude-only features: no progress notes between tool calls, and instead of
+server-side clearing only the two newest screenshots are kept in the context. Free tiers are
+rate-limited; a turn that hits the limit ends with an error, and asking again continues.
+
+Requests use streaming, adaptive thinking with progress notes (shown in the panel between tool
+calls), prompt caching, server-side clearing of old tool results (screenshots), and server-side
+refusal fallback (`fallbacks: "default"`).
+
 ## Use from Python
 
 ```python
@@ -74,7 +121,8 @@ asyncio.run(main())
 ## Tests
 
 The tests run the headless `ServerHost` built with the engine (`build/tests/...`; set
-`PBR_SERVER_HOST` to use another path):
+`PBR_SERVER_HOST` to use another path). The chat agent's tests use a scripted model in place of
+Claude, so they need no API key:
 
 ```sh
 agent/.venv/Scripts/python -m unittest discover -s agent/tests

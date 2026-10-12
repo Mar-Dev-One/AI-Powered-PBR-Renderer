@@ -4,6 +4,7 @@ add_library(PBR_Engine STATIC
     src/Core/Paths.c
     src/Core/Image.c
     src/Core/Encoding.c
+    src/Core/Process.c
     src/Renderer/Renderer.c
     src/Renderer/IBL.c
     src/Renderer/Lighting.c
@@ -30,11 +31,13 @@ add_library(PBR_Engine STATIC
     src/UI/ImGuiLayer.c
     src/UI/EntityPanel.c
     src/UI/CommandConsole.c
+    src/UI/ChatPanel.c
     src/World/Serialize.c
     src/Commands/Commands.c
     src/Commands/History.c
     src/Commands/JsonRpc.c
     src/Net/CommandServer.c
+    src/Chat/ChatSession.c
     deps/cjson/cJSON.c
 )
 

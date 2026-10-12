@@ -8,10 +8,13 @@
 // instead of a flat NDC triangle.
 
 #include "App.h"
+#include "Chat/ChatSession.h"
 #include "Core/Defines.h"
 #include "Core/Encoding.h"
+#include "Core/FileIO.h"
 #include "Core/Image.h"
 #include "Core/Paths.h"
+#include "Core/Process.h"
 #include "RHI/RHI.h"
 #include "Renderer/IBL.h"
 #include "Renderer/Renderer.h"
@@ -22,6 +25,7 @@
 #include "World/World.h"
 #include "Platform/Window.h"
 #include "Net/CommandServer.h"
+#include "UI/ChatPanel.h"
 #include "UI/CommandConsole.h"
 #include "UI/EntityPanel.h"
 #include "UI/ImGuiLayer.h"
@@ -30,6 +34,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <GLFW/glfw3.h>
 
@@ -180,6 +185,17 @@ typedef struct demo_state
     // commands over a localhost WebSocket; see Net/CommandServer.h. NULL if
     // it couldn't start -- the app works without it.
     command_server* server;
+
+    // --- Chat (Chat/ChatSession.h) -------------------------------------------------
+    // The in-app chat with the AI agent. The agent is a Python sidecar
+    // (agent/pbr_agent/agent.py) that the app starts at launch and that
+    // connects back through the command server; agent_note says why it isn't
+    // there when it isn't. Any agent that connects works, not only ours.
+    chat_session chat;
+    chat_panel   chat_panel;
+    process*     agent_process;
+    char         agent_note[1280];
+    char         agent_log[1024];
 
     // --- Lit rendering ---------------------------------------------------------
     // Renderer/SceneRenderer.h runs the whole lit frame (cascaded shadows,
@@ -638,9 +654,9 @@ orbit_from_camera(demo_state* state)
 }
 
 static b8
-host_environment_list(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+host_environment_list(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
-    (void)args; (void)error; (void)error_size;
+    (void)ctx; (void)args; (void)error; (void)error_size;
     demo_state* state = user_data;
 
     *out_result = cJSON_CreateObject();
@@ -656,7 +672,7 @@ host_environment_list(void* user_data, const cJSON* args, cJSON** out_result, ch
 }
 
 static b8
-host_environment_set(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+host_environment_set(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
     demo_state* state = user_data;
 
@@ -700,13 +716,13 @@ host_environment_set(void* user_data, const cJSON* args, cJSON** out_result, cha
     if (cJSON_IsBool(skybox))  state->show_skybox = cJSON_IsTrue(skybox);
     if (blur)                  state->sky_blur    = (f32)blur->valuedouble;
 
-    return host_environment_list(user_data, NULL, out_result, error, error_size);
+    return host_environment_list(user_data, ctx, NULL, out_result, error, error_size);
 }
 
 static b8
-host_view_get(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
-    (void)args; (void)error; (void)error_size;
+    (void)ctx; (void)args; (void)error; (void)error_size;
     demo_state* state = user_data;
 
     *out_result = cJSON_CreateObject();
@@ -719,7 +735,7 @@ host_view_get(void* user_data, const cJSON* args, cJSON** out_result, char* erro
 }
 
 static b8
-host_view_set_camera(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+host_view_set_camera(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
     demo_state* state = user_data;
 
@@ -749,16 +765,16 @@ host_view_set_camera(void* user_data, const cJSON* args, cJSON** out_result, cha
     glm_vec3_copy(target, state->cam.target);
     orbit_from_camera(state);
     orbit_camera_apply(state);
-    return host_view_get(user_data, NULL, out_result, error, error_size);
+    return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
 }
 
 // Points the camera at an entity (or the whole scene), keeping the current
 // viewing angle, and backs off until it fits.
 static b8
-host_view_frame(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+host_view_frame(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
-    demo_state* state = user_data;
-    const world* w = active_commands(state)->w;
+    demo_state*  state = user_data;
+    const world* w     = ctx->w;
 
     vec3 bmin = { FLT_MAX, FLT_MAX, FLT_MAX }, bmax = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
     b8   any  = false;
@@ -809,11 +825,11 @@ host_view_frame(void* user_data, const cJSON* args, cJSON** out_result, char* er
     glm_vec3_copy(center, state->cam.target);
     state->orbit_distance = radius / sinf(glm_rad(state->cam.fov_degrees) * 0.5f) * 1.1f;
     orbit_camera_apply(state);
-    return host_view_get(user_data, NULL, out_result, error, error_size);
+    return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
 }
 
 static b8
-host_render_set(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
     demo_state* state = user_data;
 
@@ -833,13 +849,13 @@ host_render_set(void* user_data, const cJSON* args, cJSON** out_result, char* er
     if (ambient)  state->ambient_strength    = (f32)ambient->valuedouble;
     if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
 
-    return host_view_get(user_data, NULL, out_result, error, error_size);
+    return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
 }
 
 // What the scene looks like right now, as a PNG -- rendered fresh,
 // without the editor's panels, so a model can see its own work.
 static b8
-host_view_screenshot(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+host_view_screenshot(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
     demo_state* state = user_data;
 
@@ -857,7 +873,6 @@ host_view_screenshot(void* user_data, const cJSON* args, cJSON** out_result, cha
         max_size = (int)size->valuedouble;
     }
 
-    command_context*      ctx      = active_commands(state);
     scene_render_settings settings = build_render_settings(state);
     if (state->mode == RENDER_MODE_MATERIAL_GRID)
         settings.shadows = false;   // as on screen
@@ -970,6 +985,70 @@ static const cmd_host_command HOST_COMMANDS[] = {
 
 #define HOST_COMMAND_COUNT ((uint32)(sizeof(HOST_COMMANDS) / sizeof(HOST_COMMANDS[0])))
 
+// --- Chat agent sidecar -----------------------------------------------------------
+// The agent runs as "python -m pbr_agent.agent --exit-with-app" with the
+// Python from the agent's virtual environment (agent/README.md), or the one
+// PBR_AGENT_PYTHON names. It reads its API key from the environment it
+// inherits from the app, and logs to ~/.pbr-renderer/agent.log.
+
+static void
+start_agent(demo_state* state)
+{
+    if (state->agent_process && process_running(state->agent_process, NULL))
+        return;
+    process_destroy(state->agent_process);
+    state->agent_process = NULL;
+
+    char*       python;
+    const char* configured = getenv("PBR_AGENT_PYTHON");
+    if (configured && configured[0])
+    {
+        size_t length = strlen(configured) + 1;
+        python = malloc(length);
+        if (!python)
+            FATAL("demo: out of memory");
+        memcpy(python, configured, length);
+    }
+    else
+    {
+#ifdef _WIN32
+        python = asset_path("../agent/.venv/Scripts/python.exe");
+#else
+        python = asset_path("../agent/.venv/bin/python");
+#endif
+    }
+
+    if (!file_exists(python))
+    {
+        snprintf(state->agent_note, sizeof(state->agent_note),
+                 "No agent environment at %s. Set it up as agent/README.md describes, or set PBR_AGENT_PYTHON.", python);
+        free(python);
+        return;
+    }
+
+    const char* argv[] = { python, "-m", "pbr_agent.agent", "--exit-with-app", NULL };
+    state->agent_process = process_spawn(argv, state->agent_log);
+    if (state->agent_process)
+        snprintf(state->agent_note, sizeof(state->agent_note), "Starting the agent...");
+    else
+        snprintf(state->agent_note, sizeof(state->agent_note), "Could not start %s.", python);
+    free(python);
+}
+
+// Notices the sidecar exiting, and says where to look.
+static void
+watch_agent(demo_state* state)
+{
+    int exit_code;
+    if (!state->agent_process || process_running(state->agent_process, &exit_code))
+        return;
+
+    snprintf(state->agent_note, sizeof(state->agent_note), "The agent exited (code %d); its log is %s.",
+             exit_code, state->agent_log);
+    process_destroy(state->agent_process);
+    state->agent_process = NULL;
+}
+
 // Runs once from App.c's run(), after the GL context / RHI / ImGui exist.
 static void
 on_init(App* app)
@@ -1069,6 +1148,13 @@ on_init(App* app)
     state->lit_listener  = (struct world_listener){ state, "lit" };
     state->grid_listener = (struct world_listener){ state, "grid" };
 
+    state->server = server_start(NULL);
+    chat_init(&state->chat, state->server);
+    chat_panel_init(&state->chat_panel);
+
+    uint32                  chat_command_count;
+    const cmd_host_command* chat_command_table = chat_commands(&chat_command_count);
+
     command_context*       contexts[2]  = { &state->lit_commands, &state->grid_commands };
     world*                 worlds[2]    = { &state->lit_world, &state->grid_world };
     command_history*       histories[2] = { &state->lit_history, &state->grid_history };
@@ -1076,17 +1162,19 @@ on_init(App* app)
     for (int i = 0; i < 2; ++i)
     {
         *contexts[i] = (command_context){
-            .w                  = worlds[i],
-            .history            = histories[i],
-            .on_change          = on_world_change,
-            .on_change_user     = listeners[i],
-            .host_commands      = HOST_COMMANDS,
-            .host_command_count = HOST_COMMAND_COUNT,
-            .host_user          = state,
+            .w                    = worlds[i],
+            .history              = histories[i],
+            .on_change            = on_world_change,
+            .on_change_user       = listeners[i],
+            .host_commands        = HOST_COMMANDS,
+            .host_command_count   = HOST_COMMAND_COUNT,
+            .host_user            = state,
+            .module_commands      = chat_command_table,
+            .module_command_count = chat_command_count,
+            .module_user          = &state->chat,
         };
     }
 
-    state->server = server_start(NULL);
     if (state->server)
     {
         char line[256];
@@ -1097,6 +1185,22 @@ on_init(App* app)
     {
         console_info(&state->console, "Command server could not start; only this console can run commands.");
     }
+
+#ifdef _WIN32
+    const char* home = getenv("USERPROFILE");
+#else
+    const char* home = getenv("HOME");
+#endif
+    snprintf(state->agent_log, sizeof(state->agent_log), "%s/.pbr-renderer/agent.log", home ? home : ".");
+
+    // The chat agent connects through the server, so without one there's no agent.
+    const char* autostart = getenv("PBR_AGENT_AUTOSTART");
+    if (!state->server)
+        snprintf(state->agent_note, sizeof(state->agent_note), "The command server didn't start, so no agent can connect.");
+    else if (autostart && strcmp(autostart, "0") == 0)
+        snprintf(state->agent_note, sizeof(state->agent_note), "Not started automatically (PBR_AGENT_AUTOSTART=0).");
+    else
+        start_agent(state);
 
     f32 aspect = (f32)framebuffer_size.width / (f32)framebuffer_size.height;
 
@@ -1317,6 +1421,8 @@ static void on_frame(App* app, f32 dt)
     // Requests from other processes, run against the world on screen --
     // before rendering, so their changes show this same frame.
     server_poll(state->server, active_commands(state));
+    chat_poll(&state->chat);
+    watch_agent(state);
 
     f32 time = (f32)window_get_time();
 
@@ -1458,6 +1564,10 @@ static void on_frame(App* app, f32 dt)
         entity_panel_draw(active->w, "Entities");
     if (state->show_console)
         console_draw(&state->console, active, "Console (F1)");
+
+    if (chat_panel_draw(&state->chat_panel, &state->chat, active, "Chat", state->agent_note) == CHAT_PANEL_START_AGENT
+        && state->server)
+        start_agent(state);
 }
 
 // Runs from terminate(), before the GL context goes away.
@@ -1468,7 +1578,9 @@ static void on_shutdown(App* app)
     for (uint32 i = 0; i < TEXTURE_COUNT; ++i)
         rhi_texture_destroy(state->textures[i]);
 
-    server_stop(state->server);
+    chat_shutdown(&state->chat);             // closes a running turn's transaction
+    server_stop(state->server);              // the agent (--exit-with-app) leaves when its connection closes...
+    process_destroy(state->agent_process);   // ...or is ended here
     console_shutdown(&state->console);
     history_shutdown(&state->lit_history, &state->lit_world);     // histories hold asset references too
     history_shutdown(&state->grid_history, &state->grid_world);

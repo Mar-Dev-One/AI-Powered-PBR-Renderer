@@ -47,11 +47,15 @@ typedef struct cmd_arg
     const char* doc;
 } cmd_arg;
 
+typedef struct command_context command_context;
+
 // A command the application adds for state the World doesn't hold -- the
 // camera, the HDRI environment, rendering settings. It is listed, argument-
-// checked and reported exactly like a built-in command. Return false and
-// fill `error` to fail; on success *out_result may stay NULL ({} is sent).
-typedef b8 (*cmd_host_fn)(void* user_data, const cJSON* args, cJSON** out_result, char* error, size_t error_size);
+// checked and reported exactly like a built-in command, and is handed the
+// context it runs in. Return false and fill `error` to fail; on success
+// *out_result may stay NULL ({} is sent).
+typedef b8 (*cmd_host_fn)(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result,
+                          char* error, size_t error_size);
 
 typedef struct cmd_host_command
 {
@@ -75,7 +79,13 @@ typedef struct command_context
     uint32                  host_command_count;
     void*                   host_user;
 
-    const char* scenes_dir;            // where scene.save/load/list work; NULL = assets/scenes
+    // A second table, for an engine module that brings commands of its own
+    // (the chat session, Chat/ChatSession.h), with its own user data.
+    const cmd_host_command* module_commands;
+    uint32                  module_command_count;
+    void*                   module_user;
+
+    const char* scenes_dir;           // where scene.save/load/list work; NULL = assets/scenes
 
     uint32           batch_depth;      // internal: > 0 while a batch runs its commands
 } command_context;
