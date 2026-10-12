@@ -1,0 +1,3760 @@
+{
+	"entities":	[{
+			"id":	3145732,
+			"name":	"cone_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5, 0.25, 4.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.5, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.12, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	3145733,
+			"name":	"cone_0_stripe",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 0.33, 4.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.24, 0.07, 0.24]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097173,
+			"name":	"cone_1_stripe",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5, 0.33, 4.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.24, 0.07, 0.24]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097175,
+			"name":	"cone_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.5, 0.25, 3.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.5, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.12, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097176,
+			"name":	"cone_3_stripe",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.5, 0.33, 3.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.24, 0.07, 0.24]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097177,
+			"name":	"cone_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.5, 0.25, 3.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.5, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.12, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097178,
+			"name":	"cone_2_stripe",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.5, 0.33, 3.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.24, 0.07, 0.24]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097179,
+			"name":	"cone_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 0.25, 4.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.5, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.12, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097180,
+			"name":	"barrier_post_8",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4, 0.5, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 1, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.9],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097181,
+			"name":	"barrier_bar_7",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.5, 0.85, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.95, 0.14, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097182,
+			"name":	"barrier_post_7",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3, 0.5, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 1, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.9],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097183,
+			"name":	"barrier_bar_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-1.5, 0.85, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.95, 0.14, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.05, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097184,
+			"name":	"barrier_bar_6",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.5, 0.85, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.95, 0.14, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.05, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097185,
+			"name":	"barrier_post_6",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2, 0.5, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 1, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.9],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097186,
+			"name":	"barrier_bar_5",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1.5, 0.85, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.95, 0.14, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097187,
+			"name":	"barrier_post_5",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1, 0.5, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 1, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.9],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097188,
+			"name":	"barrier_bar_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.5, 0.85, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.95, 0.14, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.05, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097189,
+			"name":	"barrier_post_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.5, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 1, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.9],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097190,
+			"name":	"barrier_bar_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.5, 0.85, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.95, 0.14, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097191,
+			"name":	"barrier_post_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-1, 0.5, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 1, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.9],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097192,
+			"name":	"barrier_post_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2, 0.5, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 1, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.9],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097193,
+			"name":	"barrier_bar_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.5, 0.85, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.95, 0.14, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097194,
+			"name":	"barrier_post_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3, 0.5, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 1, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.9],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097195,
+			"name":	"barrier_bar_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3.5, 0.85, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.95, 0.14, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.05, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097196,
+			"name":	"barrier_post_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4, 0.5, 4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 1, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.9],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097197,
+			"name":	"sand_pile",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[7.2, 0, -1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.2, 1, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.78, 0.66, 0.42],
+					"material.metallic":	0,
+					"material.roughness":	1
+				}
+			}
+		}, {
+			"id":	2097198,
+			"name":	"pipe_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[7, 0.46, -3.52],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3.2, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.35, 0.36, 0.38],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097199,
+			"name":	"pipe_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[7, 0.46, -3.84],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3.2, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.35, 0.36, 0.38],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097200,
+			"name":	"pipe_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[7, 0.16, -3.36],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3.2, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.35, 0.36, 0.38],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097201,
+			"name":	"pipe_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[7, 0.16, -3.68],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3.2, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.35, 0.36, 0.38],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097202,
+			"name":	"pipe_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[7, 0.16, -4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3.2, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.35, 0.36, 0.38],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097203,
+			"name":	"site_office_door",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.5, 0.95, -6.09],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.7, 1.9, 0.02]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.85, 0.85],
+					"material.metallic":	0.4,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	2097204,
+			"name":	"site_office_window",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5.8, 1.45, -6.09],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 0.7, 0.02]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.15, 0.2],
+					"material.metallic":	1,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	2097205,
+			"name":	"site_office",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5.8, 1.2, -7.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3.4, 2.4, 2.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.35, 0.55],
+					"material.metallic":	0.3,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	2097217,
+			"name":	"worker_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.9, 0, -3.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097207,
+			"name":	"worker_b_arm_r",
+			"parent":	"worker_b",
+			"components":	{
+				"Transform":	{
+					"position":	[0.29, 1.38, 0],
+					"rotation_deg":	[14.566, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097206,
+			"name":	"worker_b_arm_r_mesh",
+			"parent":	"worker_b_arm_r",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.27, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.12, 0.55, 0.14]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.75, 0.95, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097209,
+			"name":	"worker_b_leg_r",
+			"parent":	"worker_b",
+			"components":	{
+				"Transform":	{
+					"position":	[0.11, 0.88, 0],
+					"rotation_deg":	[-18.208, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097208,
+			"name":	"worker_b_leg_r_mesh",
+			"parent":	"worker_b_leg_r",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.43, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.86, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.08, 0.12, 0.25],
+					"material.metallic":	0,
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	2097211,
+			"name":	"worker_b_arm_l",
+			"parent":	"worker_b",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.29, 1.38, 0],
+					"rotation_deg":	[-14.566, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097210,
+			"name":	"worker_b_arm_l_mesh",
+			"parent":	"worker_b_arm_l",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.27, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.12, 0.55, 0.14]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.75, 0.95, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097213,
+			"name":	"worker_b_leg_l",
+			"parent":	"worker_b",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.11, 0.88, 0],
+					"rotation_deg":	[18.208, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097212,
+			"name":	"worker_b_leg_l_mesh",
+			"parent":	"worker_b_leg_l",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.43, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.86, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.08, 0.12, 0.25],
+					"material.metallic":	0,
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	2097214,
+			"name":	"worker_b_helmet",
+			"parent":	"worker_b",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.68, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.16, 0.32]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.98, 0.85, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097215,
+			"name":	"worker_b_head",
+			"parent":	"worker_b",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.58, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.24, 0.26, 0.24]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.58, 0.45],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097216,
+			"name":	"worker_b_torso",
+			"parent":	"worker_b",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.15, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.42, 0.55, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.75, 0.95, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097229,
+			"name":	"worker_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.8, 0, 1.35],
+					"rotation_deg":	[0, 90, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097219,
+			"name":	"worker_a_arm_r",
+			"parent":	"worker_a",
+			"components":	{
+				"Transform":	{
+					"position":	[0.29, 1.38, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097218,
+			"name":	"worker_a_arm_r_mesh",
+			"parent":	"worker_a_arm_r",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.27, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.12, 0.55, 0.14]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.35, 0.02],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097221,
+			"name":	"worker_a_leg_r",
+			"parent":	"worker_a",
+			"components":	{
+				"Transform":	{
+					"position":	[0.11, 0.88, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097220,
+			"name":	"worker_a_leg_r_mesh",
+			"parent":	"worker_a_leg_r",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.43, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.86, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.08, 0.12, 0.25],
+					"material.metallic":	0,
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	2097223,
+			"name":	"worker_a_arm_l",
+			"parent":	"worker_a",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.29, 1.38, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097222,
+			"name":	"worker_a_arm_l_mesh",
+			"parent":	"worker_a_arm_l",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.27, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.12, 0.55, 0.14]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.35, 0.02],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097225,
+			"name":	"worker_a_leg_l",
+			"parent":	"worker_a",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.11, 0.88, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097224,
+			"name":	"worker_a_leg_l_mesh",
+			"parent":	"worker_a_leg_l",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.43, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.86, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.08, 0.12, 0.25],
+					"material.metallic":	0,
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	2097226,
+			"name":	"worker_a_helmet",
+			"parent":	"worker_a",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.68, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.16, 0.32]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.98, 0.85, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097227,
+			"name":	"worker_a_head",
+			"parent":	"worker_a",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.58, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.24, 0.26, 0.24]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.58, 0.45],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097228,
+			"name":	"worker_a_torso",
+			"parent":	"worker_a",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.15, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.42, 0.55, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.35, 0.02],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097246,
+			"name":	"mixer",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6.8, 0, 2.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097230,
+			"name":	"mixer_beacon",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.75, 2.45, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.22, 0.22, 0.22]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.5, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.3,
+					"material.emissive":	[8, 3, 0.2]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.55, 0.1],
+					"intensity":	14,
+					"direction":	[0, -1, 0],
+					"range":	8,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	2097237,
+			"name":	"mixer_drum_mount",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[0.7, 2, 0],
+					"rotation_deg":	[0, 0, -14],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097236,
+			"name":	"mixer_drum",
+			"parent":	"mixer_drum_mount",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097231,
+			"name":	"mixer_drum_fin_3",
+			"parent":	"mixer_drum",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, -0.72],
+					"rotation_deg":	[270, 0, 0],
+					"scale":	[2, 0.08, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0.2,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097232,
+			"name":	"mixer_drum_fin_2",
+			"parent":	"mixer_drum",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.72, 0],
+					"rotation_deg":	[180, 0, 0],
+					"scale":	[2, 0.08, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0.2,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097233,
+			"name":	"mixer_drum_shell",
+			"parent":	"mixer_drum",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3, 1.55, 1.55]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.45, 0.05],
+					"material.metallic":	0.2,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097234,
+			"name":	"mixer_drum_fin_1",
+			"parent":	"mixer_drum",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0.72],
+					"rotation_deg":	[90, 0, 0],
+					"scale":	[2, 0.08, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0.2,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097235,
+			"name":	"mixer_drum_fin_0",
+			"parent":	"mixer_drum",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.72, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 0.08, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	0.2,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097238,
+			"name":	"mixer_wheel_2_r",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[1.6, 0.5, 0.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.03, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097239,
+			"name":	"mixer_wheel_2_l",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[1.6, 0.5, -0.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.03, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097240,
+			"name":	"mixer_wheel_1_r",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[0.5, 0.5, 0.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.03, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097241,
+			"name":	"mixer_wheel_0_r",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.7, 0.5, 0.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.03, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097242,
+			"name":	"mixer_wheel_1_l",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[0.5, 0.5, -0.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.03, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097243,
+			"name":	"mixer_windscreen",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[-2.36, 1.85, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.02, 0.6, 1.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.15, 0.2],
+					"material.metallic":	1,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	2097244,
+			"name":	"mixer_wheel_0_l",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.7, 0.5, -0.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.03, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097245,
+			"name":	"mixer_cab",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.75, 1.65, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.2, 1.4, 1.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.9],
+					"material.metallic":	0.3,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097247,
+			"name":	"mixer_chassis",
+			"parent":	"mixer",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.85, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[4.6, 0.35, 1.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.05, 0.05, 0.055],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097248,
+			"name":	"trench",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-10.6, 0, 2.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.4, 0.08, 1.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.1, 0.07, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	1
+				}
+			}
+		}, {
+			"id":	2097249,
+			"name":	"spoil_heap",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-10.6, 0, -1.7],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.6, 1.1, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.32, 0.24, 0.16],
+					"material.metallic":	0,
+					"material.roughness":	1
+				}
+			}
+		}, {
+			"id":	2097250,
+			"name":	"crane_brace_4_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 5.6, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097256,
+			"name":	"crane_brace_5_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 6.8, -4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097265,
+			"name":	"scaffold_deck_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.45, -0.85],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[6.6, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.38, 0.2],
+					"material.metallic":	0,
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	2097266,
+			"name":	"excavator",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-7.2, 0, 0.5],
+					"rotation_deg":	[0, 180, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097260,
+			"name":	"excavator_cab",
+			"parent":	"excavator",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.75, 0],
+					"rotation_deg":	[0, 32, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097257,
+			"name":	"excavator_boom",
+			"parent":	"excavator_cab",
+			"components":	{
+				"Transform":	{
+					"position":	[0.7, 0.9, -0.3],
+					"rotation_deg":	[0, 0, 35],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097254,
+			"name":	"excavator_stick",
+			"parent":	"excavator_boom",
+			"components":	{
+				"Transform":	{
+					"position":	[2.8, 0, 0],
+					"rotation_deg":	[0, 0, -95],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097252,
+			"name":	"excavator_bucket",
+			"parent":	"excavator_stick",
+			"components":	{
+				"Transform":	{
+					"position":	[1.8, 0, 0],
+					"rotation_deg":	[0, 0, -30],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097251,
+			"name":	"excavator_bucket_shell",
+			"parent":	"excavator_bucket",
+			"components":	{
+				"Transform":	{
+					"position":	[0.25, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 0.45, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.05, 0.05, 0.055],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097253,
+			"name":	"excavator_stick_arm",
+			"parent":	"excavator_stick",
+			"components":	{
+				"Transform":	{
+					"position":	[0.9, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.8, 0.25, 0.25]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097255,
+			"name":	"excavator_boom_arm",
+			"parent":	"excavator_boom",
+			"components":	{
+				"Transform":	{
+					"position":	[1.4, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.8, 0.35, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097258,
+			"name":	"excavator_counterweight",
+			"parent":	"excavator_cab",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.25, 0.65, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.4, 0.75, 1.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.05, 0.05, 0.055],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097259,
+			"name":	"excavator_glass",
+			"parent":	"excavator_cab",
+			"components":	{
+				"Transform":	{
+					"position":	[0.76, 1.45, 0.45],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.02, 0.65, 0.65]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.15, 0.2],
+					"material.metallic":	1,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	2097261,
+			"name":	"excavator_cabin",
+			"parent":	"excavator_cab",
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 1.4, 0.45],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.9, 0.9, 0.75]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097262,
+			"name":	"excavator_body",
+			"parent":	"excavator_cab",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.2, 0.6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 0.8, 1.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097263,
+			"name":	"excavator_track_r",
+			"parent":	"excavator",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.3, 0.85],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.8, 0.6, 0.55]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.05, 0.05, 0.055],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097264,
+			"name":	"excavator_track_l",
+			"parent":	"excavator",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.3, -0.85],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.8, 0.6, 0.55]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.05, 0.05, 0.055],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097267,
+			"name":	"scaffold_rail_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 3, -1.15],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[6.6, 0.05, 0.05]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097268,
+			"name":	"scaffold_rail_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.8, -1.15],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[6.6, 0.05, 0.05]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097269,
+			"name":	"scaffold_deck_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.25, -0.85],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[6.6, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.38, 0.2],
+					"material.metallic":	0,
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	2097270,
+			"name":	"scaffold_pole_2_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1.1, 1.6, -1.15],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 3.2, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097271,
+			"name":	"scaffold_pole_3_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.2, 1.6, -1.15],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 3.2, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097272,
+			"name":	"scaffold_pole_3_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.2, 1.6, -0.55],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 3.2, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097273,
+			"name":	"scaffold_pole_2_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1.1, 1.6, -0.55],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 3.2, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097274,
+			"name":	"scaffold_pole_1_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-1.1, 1.6, -1.15],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 3.2, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097275,
+			"name":	"scaffold_pole_0_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3.2, 1.6, -0.55],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 3.2, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097276,
+			"name":	"scaffold_pole_1_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-1.1, 1.6, -0.55],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 3.2, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097277,
+			"name":	"scaffold_pole_0_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3.2, 1.6, -1.15],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 3.2, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097278,
+			"name":	"crane_hook",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.4742, 4.3, -4.157],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.24, 0.22]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.75, 0.05],
+					"material.metallic":	0.4,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097279,
+			"name":	"crane_cable",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.4742, 6.66, -4.157],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.03, 4.48, 0.03]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097290,
+			"name":	"crane_brace_6_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.3, 8, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097291,
+			"name":	"crane_slew",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 9.2, -4.5],
+					"rotation_deg":	[0, -4.384, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	2097280,
+			"name":	"crane_tie_back",
+			"parent":	"crane_slew",
+			"components":	{
+				"Transform":	{
+					"position":	[-2, 1.275, 0],
+					"rotation_deg":	[0, 0, -150.642],
+					"scale":	[4.5894, 0.04, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097281,
+			"name":	"crane_trolley",
+			"parent":	"crane_slew",
+			"components":	{
+				"Transform":	{
+					"position":	[4.4874, -0.3, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 0.2, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.05, 0.05, 0.055],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	2097282,
+			"name":	"crane_tip_light",
+			"parent":	"crane_slew",
+			"components":	{
+				"Transform":	{
+					"position":	[9.45, 0.3, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.15, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.1, 0.05],
+					"material.metallic":	0,
+					"material.roughness":	0.4,
+					"material.emissive":	[6, 0.4, 0.2]
+				}
+			}
+		}, {
+			"id":	2097283,
+			"name":	"crane_tie_front",
+			"parent":	"crane_slew",
+			"components":	{
+				"Transform":	{
+					"position":	[4.5, 1.285, 0],
+					"rotation_deg":	[0, 0, -13.916],
+					"scale":	[9.2722, 0.04, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.65],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	2097284,
+			"name":	"crane_apex",
+			"parent":	"crane_slew",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.35, 2.4, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097285,
+			"name":	"crane_counterweight",
+			"parent":	"crane_slew",
+			"components":	{
+				"Transform":	{
+					"position":	[-3.6, -0.45, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 0.8, 0.9]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.54, 0.52],
+					"material.metallic":	0,
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	2097286,
+			"name":	"crane_cab_glass",
+			"parent":	"crane_slew",
+			"components":	{
+				"Transform":	{
+					"position":	[1.16, -0.6, 0.55],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.02, 0.6, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.15, 0.2],
+					"material.metallic":	1,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	2097287,
+			"name":	"crane_cab",
+			"parent":	"crane_slew",
+			"components":	{
+				"Transform":	{
+					"position":	[0.7, -0.65, 0.55],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.9, 0.9, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.88],
+					"material.metallic":	0.2,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097288,
+			"name":	"crane_counter_jib",
+			"parent":	"crane_slew",
+			"components":	{
+				"Transform":	{
+					"position":	[-2.6, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3.2, 0.3, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097289,
+			"name":	"crane_jib",
+			"parent":	"crane_slew",
+			"components":	{
+				"Transform":	{
+					"position":	[4.25, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[10.5, 0.35, 0.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097292,
+			"name":	"crane_brace_6_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 8, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097293,
+			"name":	"crane_brace_6_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 8, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097294,
+			"name":	"crane_brace_6_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 8, -4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097295,
+			"name":	"crane_brace_5_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 6.8, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097296,
+			"name":	"crane_brace_5_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 6.8, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097297,
+			"name":	"crane_brace_5_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.3, 6.8, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097298,
+			"name":	"crane_brace_4_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.3, 5.6, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097299,
+			"name":	"block_38",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 0.75, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.601415, 0.288849, 0.192566],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097300,
+			"name":	"crane_brace_4_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 5.6, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097301,
+			"name":	"crane_brace_4_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 5.6, -4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097302,
+			"name":	"crane_brace_3_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 4.4, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097303,
+			"name":	"crane_brace_3_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.3, 4.4, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097304,
+			"name":	"crane_brace_3_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 4.4, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097305,
+			"name":	"crane_brace_3_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 4.4, -4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097306,
+			"name":	"crane_brace_2_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 3.2, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097307,
+			"name":	"crane_brace_2_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.3, 3.2, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097308,
+			"name":	"crane_brace_2_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 3.2, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097309,
+			"name":	"crane_brace_2_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 3.2, -4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097310,
+			"name":	"crane_brace_1_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 2, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097311,
+			"name":	"crane_brace_1_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.3, 2, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097312,
+			"name":	"crane_brace_1_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097313,
+			"name":	"crane_brace_1_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2, -4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097314,
+			"name":	"crane_brace_0_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 0.8, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097315,
+			"name":	"crane_brace_0_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.3, 0.8, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.06, 0.06, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097316,
+			"name":	"crane_brace_0_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.8, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097317,
+			"name":	"crane_brace_0_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.8, -4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.06, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097318,
+			"name":	"crane_mast_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 4.6, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 9.2, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097319,
+			"name":	"crane_mast_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.3, 4.6, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 9.2, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097320,
+			"name":	"crane_mast_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 4.6, -4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 9.2, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097321,
+			"name":	"crane_mast_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.3, 4.6, -4.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 9.2, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.65, 0.04],
+					"material.metallic":	0.3,
+					"material.roughness":	0.45
+				}
+			}
+		}, {
+			"id":	2097322,
+			"name":	"crane_footing",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.2, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.2, 0.4, 2.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.54, 0.52],
+					"material.metallic":	0,
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	2097323,
+			"name":	"block_50",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 0.35, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.38, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.668018, 0.32881, 0.219207],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097324,
+			"name":	"block_49",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 0.35, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.598794, 0.287276, 0.191518],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097325,
+			"name":	"block_48",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 0.35, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.642945, 0.313767, 0.209178],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097326,
+			"name":	"block_47",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 0.35, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.657514, 0.322508, 0.215006],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097327,
+			"name":	"block_46",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 0.35, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.62252, 0.301512, 0.201008],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097328,
+			"name":	"block_45",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 0.35, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.627442, 0.304465, 0.202977],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097329,
+			"name":	"block_44",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 0.35, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.59441, 0.284646, 0.189764],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097330,
+			"name":	"block_43",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 0.35, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.639899, 0.31194, 0.20796],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097331,
+			"name":	"block_42",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 0.35, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.38, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.649438, 0.317663, 0.211775],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097332,
+			"name":	"block_41",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 0.75, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.599977, 0.287986, 0.191991],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097333,
+			"name":	"block_40",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 0.75, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.615318, 0.297191, 0.198127],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097334,
+			"name":	"block_39",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 0.75, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.628556, 0.305134, 0.203422],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097335,
+			"name":	"block_37",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 0.75, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.612759, 0.295656, 0.197104],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097336,
+			"name":	"block_36",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 0.75, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.63804, 0.310824, 0.207216],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097337,
+			"name":	"block_35",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 0.75, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.590596, 0.282358, 0.188238],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097338,
+			"name":	"block_34",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 0.75, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.57596, 0.273576, 0.182384],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097339,
+			"name":	"block_33",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 0.75, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.38, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.576279, 0.273767, 0.182512],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097340,
+			"name":	"block_32",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 1.15, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.624774, 0.302865, 0.20191],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097341,
+			"name":	"block_31",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 1.15, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.60724, 0.292344, 0.194896],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097342,
+			"name":	"block_30",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 1.15, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.633891, 0.308335, 0.205557],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097343,
+			"name":	"block_29",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 1.15, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.62816, 0.304896, 0.203264],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097344,
+			"name":	"block_28",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 1.15, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.588073, 0.280844, 0.187229],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097345,
+			"name":	"block_27",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 1.15, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.651613, 0.318968, 0.212645],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097346,
+			"name":	"block_26",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 1.15, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.600848, 0.288509, 0.192339],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097347,
+			"name":	"block_25",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 1.15, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.38, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.581779, 0.277068, 0.184712],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097348,
+			"name":	"block_24",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 1.15, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.584426, 0.278655, 0.18577],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097349,
+			"name":	"block_23",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 1.55, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.598961, 0.287377, 0.191584],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097350,
+			"name":	"block_22",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 1.55, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.655847, 0.321508, 0.214339],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097351,
+			"name":	"block_21",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 1.55, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.574658, 0.272795, 0.181863],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097352,
+			"name":	"block_20",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 1.55, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.667625, 0.328575, 0.21905],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097353,
+			"name":	"block_19",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 1.55, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.609668, 0.293801, 0.195867],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097354,
+			"name":	"block_18",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 1.55, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.62771, 0.304626, 0.203084],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097355,
+			"name":	"block_17",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 1.55, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.664771, 0.326863, 0.217908],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097356,
+			"name":	"block_16",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 1.55, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.38, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.632743, 0.307646, 0.205097],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097357,
+			"name":	"block_15",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 1.55, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.592324, 0.283394, 0.18893],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097358,
+			"name":	"block_14",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 1.95, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.58238, 0.277428, 0.184952],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097359,
+			"name":	"block_13",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 1.95, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.652685, 0.319611, 0.213074],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097360,
+			"name":	"block_12",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 1.95, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.612452, 0.295471, 0.196981],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097361,
+			"name":	"block_11",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 1.95, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.579071, 0.275443, 0.183629],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097362,
+			"name":	"block_10",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 1.95, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.576986, 0.274191, 0.182794],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097363,
+			"name":	"block_09",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 1.95, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.613365, 0.296019, 0.197346],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097364,
+			"name":	"block_08",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 1.95, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.38, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.57375, 0.27225, 0.1815],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097365,
+			"name":	"block_07",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 1.95, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.620744, 0.300446, 0.200297],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097366,
+			"name":	"block_06",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.02, 1.95, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.5758, 0.27348, 0.18232],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097367,
+			"name":	"block_05",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 2.35, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.606569, 0.291941, 0.194628],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097368,
+			"name":	"block_04",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 2.35, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.623588, 0.302153, 0.201435],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097369,
+			"name":	"block_03",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.38, 2.35, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.577244, 0.274346, 0.182897],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097370,
+			"name":	"block_02",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 2.35, -6.92],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.635093, 0.309056, 0.206037],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097371,
+			"name":	"block_00",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 2.35, -6.08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.602383, 0.28943, 0.192953],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097372,
+			"name":	"block_01",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 2.35, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.78, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.585085, 0.279051, 0.186034],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	2097373,
+			"name":	"pallet",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 0.075, -6.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.6, 0.15, 1.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.38, 0.2],
+					"material.metallic":	0,
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	2097374,
+			"name":	"foundation",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.15, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[7, 0.3, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.54, 0.52],
+					"material.metallic":	0,
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	2097375,
+			"name":	"sun",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"directional",
+					"color":	[1, 0.9, 0.78],
+					"intensity":	3.2,
+					"direction":	[-0.5, -0.8, -0.35],
+					"range":	0,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	2097376,
+			"name":	"ground",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[60, 1, 60]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.24, 0.18, 0.12],
+					"material.metallic":	0,
+					"material.roughness":	0.95
+				}
+			}
+		}],
+	"format":	"pbr-scene",
+	"version":	1
+}
