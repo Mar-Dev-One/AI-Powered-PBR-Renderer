@@ -224,6 +224,17 @@ typedef struct demo_state
     f64 last_cursor_x;
     f64 last_cursor_y;
     b8  dragging;
+
+    // --- Selection --------------------------------------------------------------
+    // One entity of the world on screen. A short left click in the view picks
+    // (World/World.h world_pick()); a drag still orbits. The Entities panel
+    // shows it and can set it; F frames it; Esc clears it. Kept with the world
+    // it belongs to: the two worlds' entity IDs overlap.
+    entity_id    selected;
+    const world* selection_world;
+    b8           reveal_selection;   // picked in the view this frame: open the Entities tree to it
+    f64          press_x;            // where the left button went down in the view
+    f64          press_y;
 } demo_state;
 
 static inline f32
@@ -255,6 +266,8 @@ orbit_camera_apply(demo_state* state)
 // orbit_pitch. Polling (rather than a glfwSetCursorPosCallback) keeps this
 // self-contained in the demo layer. Goes through the window_* input
 // wrappers rather than GLFW directly.
+static void select_at(demo_state* state, f64 x, f64 y);
+
 static void
 orbit_camera_update(demo_state* state, window* wind)
 {
@@ -266,7 +279,12 @@ orbit_camera_update(demo_state* state, window* wind)
 
     if (lmb_down && !imgui_has_mouse)
     {
-        if (state->dragging)
+        if (!state->dragging)
+        {
+            state->press_x = cursor_x;
+            state->press_y = cursor_y;
+        }
+        else
         {
             const f32 sensitivity = 0.25f;
 
@@ -281,6 +299,12 @@ orbit_camera_update(demo_state* state, window* wind)
     }
     else
     {
+        // Released after barely moving: a click, not an orbit -- select.
+        const f64 click_slop = 4.0;   // pixels
+        if (state->dragging && !lmb_down && fabs(cursor_x - state->press_x) <= click_slop
+            && fabs(cursor_y - state->press_y) <= click_slop)
+            select_at(state, cursor_x, cursor_y);
+
         state->dragging = false;
     }
 
@@ -1044,6 +1068,165 @@ watch_agent(demo_state* state)
     state->agent_process = NULL;
 }
 
+// --- Selection -------------------------------------------------------------------
+
+// Clears the selection if it no longer names a live entity of the world on
+// screen (deleted, scene loaded, other mode).
+static void
+validate_selection(demo_state* state)
+{
+    const world* w = active_commands(state)->w;
+    if (state->selection_world != w || !world_is_alive(w, state->selected))
+    {
+        state->selected        = ENTITY_NULL;
+        state->selection_world = w;
+    }
+}
+
+static void
+set_selection(demo_state* state, entity_id e)
+{
+    state->selected        = e;
+    state->selection_world = active_commands(state)->w;
+}
+
+// A click in the view at window point (x, y): selects what's under it, or
+// clears the selection on empty space.
+static void
+select_at(demo_state* state, f64 x, f64 y)
+{
+    const ImGuiViewport* viewport = igGetMainViewport();
+    const world*         w        = active_commands(state)->w;
+
+    vec3 origin, direction;
+    camera_screen_ray(&state->cam, (f32)x, (f32)y, viewport->Size.x, viewport->Size.y, origin, direction);
+
+    // Lights and cameras have nothing to click on: a 25 cm sphere stands in.
+    set_selection(state, world_pick(w, origin, direction, 0.25f, NULL));
+    state->reveal_selection = state->selected != ENTITY_NULL;
+}
+
+// What to outline for `e`: its own bounds, else the bounds of everything
+// parented under it (a pivot), else false.
+static b8
+selection_bounds(const world* w, entity_id e, vec3 lo, vec3 hi)
+{
+    if (world_bounds(w, e, lo, hi))
+        return true;
+
+    b8 any = false;
+    glm_vec3_fill(lo, FLT_MAX);
+    glm_vec3_fill(hi, -FLT_MAX);
+    for (entity_id child = world_next(w, ENTITY_NULL, COMPONENT_BIT(COMPONENT_MESH_RENDERER)); child;
+         child = world_next(w, child, COMPONENT_BIT(COMPONENT_MESH_RENDERER)))
+    {
+        b8 under = false;
+        for (entity_id p = world_parent(w, child); p && !under; p = world_parent(w, p))
+            under = p == e;
+
+        vec3 child_lo, child_hi;
+        if (under && world_bounds(w, child, child_lo, child_hi))
+        {
+            glm_vec3_minv(lo, child_lo, lo);
+            glm_vec3_maxv(hi, child_hi, hi);
+            any = true;
+        }
+    }
+    return any;
+}
+
+// Outlines the selection over the scene: its bounding box (or a ring at its
+// position for a light, camera or empty), with its name. Drawn with ImGui's
+// background list -- above the 3D view, below every panel. Call after the
+// world was drawn, with the same pose (inside a Spin preview).
+static void
+draw_selection(demo_state* state, const world* w)
+{
+    if (state->selection_world != w || !world_is_alive(w, state->selected))
+        return;
+
+    const ImGuiViewport* viewport = igGetMainViewport();
+    ImDrawList*          draw     = igGetBackgroundDrawList((ImGuiViewport*)viewport);
+    const f32            width    = viewport->Size.x;
+    const f32            height   = viewport->Size.y;
+    const ImU32          color    = 0xFF00AAFF;   // orange (ABGR)
+
+    entity_id e = state->selected;
+    f32 label_x = 0.0f, label_y = FLT_MAX;
+    b8  labelled = false;
+
+    vec3 lo, hi;
+    if (selection_bounds(w, e, lo, hi))
+    {
+        // 8 corners (bit 0 = x, 1 = y, 2 = z) and the 12 edges between them.
+        f32 sx[8], sy[8];
+        b8  visible[8];
+        for (int i = 0; i < 8; ++i)
+        {
+            vec3 corner = { (i & 1) ? hi[0] : lo[0], (i & 2) ? hi[1] : lo[1], (i & 4) ? hi[2] : lo[2] };
+            visible[i] = camera_world_to_screen(&state->cam, corner, width, height, &sx[i], &sy[i]);
+            if (visible[i] && sy[i] < label_y)
+            {
+                label_x  = sx[i];
+                label_y  = sy[i];
+                labelled = true;
+            }
+        }
+
+        static const int EDGES[12][2] = {
+            { 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 },   // along x
+            { 0, 2 }, { 1, 3 }, { 4, 6 }, { 5, 7 },   // along y
+            { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 },   // along z
+        };
+        for (int i = 0; i < 12; ++i)
+        {
+            int a = EDGES[i][0], b = EDGES[i][1];
+            if (visible[a] && visible[b])
+                ImDrawList_AddLine(draw, (ImVec2_c){ viewport->Pos.x + sx[a], viewport->Pos.y + sy[a] },
+                                   (ImVec2_c){ viewport->Pos.x + sx[b], viewport->Pos.y + sy[b] }, color, 2.0f);
+        }
+    }
+    else
+    {
+        const vec4* m = world_matrix(w, e);
+        f32 x, y;
+        if (m && camera_world_to_screen(&state->cam, (vec3){ m[3][0], m[3][1], m[3][2] }, width, height, &x, &y))
+        {
+            ImDrawList_AddCircle(draw, (ImVec2_c){ viewport->Pos.x + x, viewport->Pos.y + y }, 12.0f, color, 24, 2.0f);
+            label_x  = x;
+            label_y  = y - 12.0f;
+            labelled = true;
+        }
+    }
+
+    if (labelled)
+    {
+        const char* name = world_name(w, e);
+        ImDrawList_AddText_Vec2(draw, (ImVec2_c){ viewport->Pos.x + label_x + 4.0f, viewport->Pos.y + label_y - 18.0f },
+                                color, name, NULL);
+    }
+}
+
+// F: points the camera at the selection, as view.frame does.
+static void
+frame_selection(demo_state* state)
+{
+    validate_selection(state);
+    if (!state->selected)
+        return;
+
+    command_context* ctx  = active_commands(state);
+    cJSON*           args = cJSON_CreateObject();
+    cJSON_AddStringToObject(args, "entity", world_name(ctx->w, state->selected));
+
+    cJSON* result = NULL;
+    char   error[256];
+    if (!host_view_frame(state, ctx, args, &result, error, sizeof(error)))
+        console_info(&state->console, error);
+    cJSON_Delete(result);
+    cJSON_Delete(args);
+}
+
 // Runs once from App.c's run(), after the GL context / RHI / ImGui exist.
 static void
 on_init(App* app)
@@ -1190,10 +1373,19 @@ static void on_key(App* app, int key, int action, int mods)
 {
     (void)mods;
 
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        app->should_close = true;
-
     demo_state* state = (demo_state*)app->user_data;
+
+    // Esc clears the selection first; with nothing selected it quits.
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        validate_selection(state);
+        if (state->selected)
+            state->selected = ENTITY_NULL;
+        else
+            app->should_close = true;
+    }
+    if (key == GLFW_KEY_F && action == GLFW_PRESS)
+        frame_selection(state);
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
         state->show_console = !state->show_console;
     if (key == GLFW_KEY_F5 && action == GLFW_PRESS)
@@ -1430,6 +1622,7 @@ static void on_frame(App* app, f32 dt)
     // Left-drag to orbit the camera around the target. Must run after
     // imgui_layer_new_frame() (WantCaptureMouse needs this frame's ImGui
     // state) which App.c already guarantees by calling it before on_frame.
+    validate_selection(state);
     orbit_camera_update(state, wind);
 
     // Picks up edits to pbr.vert/pbr.frag saved while the app runs.
@@ -1456,6 +1649,7 @@ static void on_frame(App* app, f32 dt)
         settings.shadows = false;
 
         scene_renderer_draw(&state->renderer, &state->grid_world, &state->cam, &settings);
+        draw_selection(state, &state->grid_world);
         spin_preview_end(&state->grid_world, &preview);
     }
     else // RENDER_MODE_LIT_MODEL
@@ -1471,6 +1665,7 @@ static void on_frame(App* app, f32 dt)
 
         scene_render_settings settings = build_render_settings(state);
         scene_renderer_draw(&state->renderer, &state->lit_world, &state->cam, &settings);
+        draw_selection(state, &state->lit_world);
         spin_preview_end(&state->lit_world, &preview);
     }
 
@@ -1558,7 +1753,10 @@ static void on_frame(App* app, f32 dt)
     // Every entity and component of the world on screen (read-only), and
     // the command console for it.
     command_context* active = active_commands(state);
-    entity_panel_draw(active->w, "Entities");
+    validate_selection(state);   // commands this frame may have removed it
+    entity_panel_draw(active->w, "Entities", &state->selected, state->reveal_selection);
+    state->selection_world  = active->w;
+    state->reveal_selection = false;
     if (state->show_console)
         console_draw(&state->console, active, "Console (F1)");
 

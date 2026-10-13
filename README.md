@@ -67,6 +67,11 @@ The **Scene** window switches between two modes:
   view.
 - **Grid**: a metallic × roughness sphere grid, for checking IBL and the BRDF.
 
+**Selecting:** click an object in the view (a short click; dragging still orbits) or its name in
+the **Entities** panel. The selection is outlined in orange with its name; lights and cameras are
+picked by clicking where they are. **F** frames the selection, **Esc** clears it (and quits when
+nothing is selected), and clicking empty space deselects.
+
 The lighting panel edits every light in the scene, plus ambient strength, exposure, the HDRI, IBL
 and the skybox.
 

@@ -371,6 +371,71 @@ test_tick(asset_cache* assets)
     world_shutdown(&w);
 }
 
+// Selection support: a screen ray from the camera, and world_pick() taking
+// the nearest hit -- boxes by their bounds, lights by a marker sphere,
+// hidden entities and boxes around the ray's start ignored.
+static void
+test_pick(asset_cache* assets)
+{
+    // The centre of the screen looks straight at the target.
+    camera cam;
+    camera_init(&cam, (vec3){ 0.0f, 0.0f, 10.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, 45.0f, 2.0f, 0.1f, 100.0f);
+    vec3 origin, direction;
+    camera_screen_ray(&cam, 400.0f, 200.0f, 800.0f, 400.0f, origin, direction);
+    CHECK(fabsf(direction[0]) < 1e-4f && fabsf(direction[1]) < 1e-4f && fabsf(direction[2] + 1.0f) < 1e-4f);
+    CHECK(fabsf(origin[2] - 9.9f) < 1e-3f);   // starts on the near plane
+
+    // world -> screen is the inverse: the origin projects to the centre.
+    f32 sx, sy;
+    CHECK(camera_world_to_screen(&cam, (vec3){ 0.0f, 0.0f, 0.0f }, 800.0f, 400.0f, &sx, &sy));
+    CHECK(fabsf(sx - 400.0f) < 0.01f && fabsf(sy - 200.0f) < 0.01f);
+    CHECK(!camera_world_to_screen(&cam, (vec3){ 0.0f, 0.0f, 20.0f }, 800.0f, 400.0f, &sx, &sy));   // behind
+
+    // A 1 m box model, bounds only (no GPU).
+    model box = { 0 };
+    glm_vec3_fill(box.bounds_min, -0.5f);
+    glm_vec3_fill(box.bounds_max,  0.5f);
+    asset_id box_id = assets_add_model(assets, "test:pick_box", box);
+
+    world w;
+    world_init(&w, assets);
+    entity_id front = world_create(&w, "front");
+    entity_id back  = world_create(&w, "back");
+    entity_id lamp  = world_create(&w, "lamp");
+    world_add_mesh_renderer(&w, front, box_id);
+    world_add_mesh_renderer(&w, back, box_id);
+    world_transform(&w, front)->position[2] = 2.0f;
+    world_transform(&w, back)->position[2]  = -2.0f;
+
+    light l;
+    light_init_point(&l, (vec3){ 1.0f, 1.0f, 1.0f }, 1.0f, 0.0f);
+    world_add_light(&w, lamp, l);
+    world_transform(&w, lamp)->position[0] = 3.0f;
+    world_update(&w);
+
+    // Down the -Z axis from z = 10: the nearer box wins, at its front face.
+    f32 t = 0.0f;
+    CHECK(world_pick(&w, (vec3){ 0.0f, 0.0f, 10.0f }, (vec3){ 0.0f, 0.0f, -1.0f }, 0.25f, &t) == front);
+    CHECK(fabsf(t - 7.5f) < 1e-4f);
+
+    // Hidden: the ray goes through to the one behind.
+    world_mesh_renderer(&w, front)->visible = false;
+    CHECK(world_pick(&w, (vec3){ 0.0f, 0.0f, 10.0f }, (vec3){ 0.0f, 0.0f, -1.0f }, 0.25f, NULL) == back);
+    world_mesh_renderer(&w, front)->visible = true;
+
+    // A light has no bounds: its marker sphere is what gets hit.
+    CHECK(world_pick(&w, (vec3){ 3.0f, 0.0f, 10.0f }, (vec3){ 0.0f, 0.0f, -1.0f }, 0.25f, NULL) == lamp);
+    CHECK(world_pick(&w, (vec3){ 3.5f, 0.0f, 10.0f }, (vec3){ 0.0f, 0.0f, -1.0f }, 0.25f, NULL) == ENTITY_NULL);
+
+    // Starting inside a box (a room around the camera) doesn't pick it.
+    CHECK(world_pick(&w, (vec3){ 0.0f, 0.0f, 2.0f }, (vec3){ 0.0f, 0.0f, -1.0f }, 0.25f, NULL) == back);
+
+    // Missing everything.
+    CHECK(world_pick(&w, (vec3){ 0.0f, 5.0f, 10.0f }, (vec3){ 0.0f, 0.0f, -1.0f }, 0.25f, NULL) == ENTITY_NULL);
+
+    world_shutdown(&w);
+}
+
 int
 main(void)
 {
@@ -385,6 +450,7 @@ main(void)
     test_gather_lights(&assets);
     test_reflection(&assets);
     test_tick(&assets);
+    test_pick(&assets);
 
     assets_shutdown(&assets);
 

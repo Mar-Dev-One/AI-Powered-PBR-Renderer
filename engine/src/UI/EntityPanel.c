@@ -75,12 +75,40 @@ draw_field(const world* w, const component_desc* component, const field_desc* fi
     }
 }
 
-static void
-draw_entity(const world* w, entity_id e)
+// True if `ancestor` is `e`'s parent, grandparent, ...
+static b8
+is_ancestor(const world* w, entity_id ancestor, entity_id e)
 {
+    for (entity_id p = world_parent(w, e); p; p = world_parent(w, p))
+    {
+        if (p == ancestor)
+            return true;
+    }
+    return false;
+}
+
+static void
+draw_entity(const world* w, entity_id e, entity_id* selection, b8 reveal)
+{
+    entity_id selected = selection ? *selection : ENTITY_NULL;
+
+    // Clicking the name selects; the arrow (or a double-click) opens.
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
+                             | ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (e == selected)
+        flags |= ImGuiTreeNodeFlags_Selected;
+    if (reveal && selected && is_ancestor(w, e, selected))
+        igSetNextItemOpen(true, ImGuiCond_Always);
+
     // The ID in the label: what tools (and the LLM) will refer to.
-    b8 open = igTreeNode_Ptr((const void*)(uintptr_t)e, "%s  #%u.%u",
-                             world_name(w, e), entity_slot(e), e >> ENTITY_INDEX_BITS);
+    b8 open = igTreeNodeEx_Ptr((const void*)(uintptr_t)e, flags, "%s  #%u.%u",
+                               world_name(w, e), entity_slot(e), e >> ENTITY_INDEX_BITS);
+
+    if (selection && igIsItemClicked(ImGuiMouseButton_Left) && !igIsItemToggledOpen())
+        *selection = e;
+    if (reveal && e == selected)
+        igSetScrollHereY(0.5f);
+
     if (!open)
         return;
 
@@ -111,14 +139,14 @@ draw_entity(const world* w, entity_id e)
          child = world_next(w, child, COMPONENT_BIT(COMPONENT_PARENT)))
     {
         if (world_parent(w, child) == e)
-            draw_entity(w, child);
+            draw_entity(w, child, selection, reveal);
     }
 
     igTreePop();
 }
 
 void
-entity_panel_draw(const world* w, const char* window_title)
+entity_panel_draw(const world* w, const char* window_title, entity_id* selection, b8 reveal)
 {
     // First run only (after that imgui.ini remembers where the user put it):
     // a tall column at the right edge, clear of the app's own panels.
@@ -134,13 +162,17 @@ entity_panel_draw(const world* w, const char* window_title)
     }
 
     igText("%u entities", world_count(w));
+    if (selection && *selection)
+        igText("Selected: %s", world_name(w, *selection));
+    else if (selection)
+        igTextDisabled("Nothing selected: click an entity here or in the view");
     igSeparator();
 
     // Roots: no parent, or a parent that no longer exists.
     for (entity_id e = world_next(w, ENTITY_NULL, 0); e; e = world_next(w, e, 0))
     {
         if (!world_is_alive(w, world_parent(w, e)))
-            draw_entity(w, e);
+            draw_entity(w, e, selection, reveal);
     }
 
     igEnd();

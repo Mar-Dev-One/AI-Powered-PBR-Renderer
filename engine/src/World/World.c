@@ -1,5 +1,6 @@
 #include "World.h"
 
+#include <float.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -538,6 +539,89 @@ world_bounds(const world* w, entity_id e, vec3 out_min, vec3 out_max)
     glm_vec3_copy(w->bounds_min[index], out_min);
     glm_vec3_copy(w->bounds_max[index], out_max);
     return true;
+}
+
+// Slab test: the entry distance of the ray into [lo, hi], or -1 if it misses
+// or starts inside.
+static f32
+ray_box(const vec3 origin, const vec3 direction, const vec3 lo, const vec3 hi)
+{
+    f32 t_enter = -FLT_MAX;
+    f32 t_exit  = FLT_MAX;
+
+    for (int axis = 0; axis < 3; ++axis)
+    {
+        if (fabsf(direction[axis]) < 1e-8f)
+        {
+            if (origin[axis] < lo[axis] || origin[axis] > hi[axis])
+                return -1.0f;   // parallel to this slab and outside it
+            continue;
+        }
+
+        f32 t0 = (lo[axis] - origin[axis]) / direction[axis];
+        f32 t1 = (hi[axis] - origin[axis]) / direction[axis];
+        if (t0 > t1) { f32 swap = t0; t0 = t1; t1 = swap; }
+
+        t_enter = fmaxf(t_enter, t0);
+        t_exit  = fminf(t_exit, t1);
+        if (t_enter > t_exit)
+            return -1.0f;
+    }
+
+    return t_enter >= 0.0f ? t_enter : -1.0f;
+}
+
+// Entry distance of the ray into a sphere, or -1 if it misses or starts inside.
+static f32
+ray_sphere(const vec3 origin, const vec3 direction, const vec3 center, f32 radius)
+{
+    vec3 to_center;
+    glm_vec3_sub((f32*)center, (f32*)origin, to_center);
+
+    f32 along = glm_vec3_dot(to_center, (f32*)direction);
+    f32 miss2 = glm_vec3_norm2(to_center) - along * along;
+    if (miss2 > radius * radius)
+        return -1.0f;
+
+    f32 t = along - sqrtf(radius * radius - miss2);
+    return t >= 0.0f ? t : -1.0f;
+}
+
+entity_id
+world_pick(const world* w, const vec3 origin, const vec3 direction, f32 marker_radius, f32* out_distance)
+{
+    entity_id best      = ENTITY_NULL;
+    f32       best_t    = FLT_MAX;
+    const uint32 marker = COMPONENT_BIT(COMPONENT_LIGHT) | COMPONENT_BIT(COMPONENT_CAMERA);
+
+    for (entity_id e = world_next(w, ENTITY_NULL, 0); e; e = world_next(w, e, 0))
+    {
+        uint32 index = entity_slot(e);
+        f32    t     = -1.0f;
+
+        vec3 lo, hi;
+        if (world_bounds(w, e, lo, hi))
+        {
+            if (!w->mesh_renderers[index].visible)
+                continue;
+            t = ray_box(origin, direction, lo, hi);
+        }
+        else if (w->masks[index] & marker)
+        {
+            const vec4* m = w->world_matrices[index];
+            t = ray_sphere(origin, direction, (vec3){ m[3][0], m[3][1], m[3][2] }, marker_radius);
+        }
+
+        if (t >= 0.0f && t < best_t)
+        {
+            best_t = t;
+            best   = e;
+        }
+    }
+
+    if (out_distance && best)
+        *out_distance = best_t;
+    return best;
 }
 
 uint32

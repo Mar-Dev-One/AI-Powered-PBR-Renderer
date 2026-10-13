@@ -138,6 +138,14 @@ const vec4* world_matrix(const world* w, entity_id e);
 // MeshRenderer with a loaded model.
 b8 world_bounds(const world* w, entity_id e, vec3 out_min, vec3 out_max);
 
+// The entity a ray (origin + t * direction, t >= 0; direction normalized)
+// hits first, as of the last world_update(): a visible MeshRenderer by its
+// world bounds, or -- since they have no surface to click -- a Light or
+// Camera without bounds by a sphere of `marker_radius` around its position.
+// A box the ray starts inside (a room around the camera) doesn't count.
+// ENTITY_NULL if nothing is hit; *out_distance (may be NULL) gets t.
+entity_id world_pick(const world* w, const vec3 origin, const vec3 direction, f32 marker_radius, f32* out_distance);
+
 // Every Light entity's light, with `direction` rotated into world space
 // (normalized) and, if out_positions is non-NULL, its world position.
 // Storage order, up to `max`. Returns how many were written.

@@ -37,3 +37,15 @@ void camera_get_projection(const camera* cam, mat4 out_projection);
 
 // Convenience: out_view_projection = projection * view.
 void camera_get_view_projection(const camera* cam, mat4 out_view_projection);
+
+// Screen <-> world, for picking and drawing over the scene. Screen points are
+// in pixels from the top-left of a `width` x `height` view, the way mouse
+// coordinates come.
+
+// The ray through screen point (x, y): it starts on the near plane and
+// out_direction is normalized.
+void camera_screen_ray(const camera* cam, f32 x, f32 y, f32 width, f32 height, vec3 out_origin, vec3 out_direction);
+
+// Where a world point lands on screen. False (outputs untouched) if it is
+// behind the camera.
+b8 camera_world_to_screen(const camera* cam, const vec3 point, f32 width, f32 height, f32* out_x, f32* out_y);
