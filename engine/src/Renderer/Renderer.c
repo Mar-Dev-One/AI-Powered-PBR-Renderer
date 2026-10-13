@@ -25,7 +25,10 @@ b8 init_renderer(window_descriptor init_window_desc)
     // {0,0,0,0} until the first resize event, and any offscreen pass done
     // before that would restore to a zero-size viewport on
     // rhi_framebuffer_bind_default().
-    rhi_set_viewport(0, 0, init_window_desc.width, init_window_desc.height);
+    // The framebuffer's actual size: the descriptor's may be 0 (default /
+    // fullscreen) or differ on high-DPI screens.
+    window_size size = window_get_size(main_renderer->drawing_window);
+    rhi_set_viewport(0, 0, size.width, size.height);
 
     return true;
 }

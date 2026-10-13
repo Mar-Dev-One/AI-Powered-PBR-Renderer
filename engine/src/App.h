@@ -44,6 +44,12 @@ typedef struct App
     void* user_data;             // optional, passed through to every hook via app->user_data
     b8 should_close;             // set this from a hook to exit run() without closing the window
 
+    // Window size in pixels; 0 = 800 x 600, or the monitor's own resolution
+    // when fullscreen.
+    uint16 width;
+    uint16 height;
+    b8     fullscreen;
+
     // Dear ImGui (UI/ImGuiLayer.h) for tools like the editor. Off for a game
     // runtime: ImGui is never initialised, so no ig*() / imgui_layer_*() calls.
     b8 use_imgui;

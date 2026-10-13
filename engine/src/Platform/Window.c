@@ -24,7 +24,24 @@ window* window_create(window_descriptor desc)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, desc.resizable ? GLFW_TRUE : GLFW_FALSE);
 
-    GLFWwindow* handle = glfwCreateWindow(desc.width, desc.height, desc.title, NULL, NULL);
+    GLFWmonitor* monitor = NULL;
+    if (desc.fullscreen)
+    {
+        monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = monitor ? glfwGetVideoMode(monitor) : NULL;
+        if (mode && (desc.width == 0 || desc.height == 0))
+        {
+            desc.width  = (uint16)mode->width;
+            desc.height = (uint16)mode->height;
+        }
+    }
+    if (desc.width == 0 || desc.height == 0)
+    {
+        desc.width  = 800;
+        desc.height = 600;
+    }
+
+    GLFWwindow* handle = glfwCreateWindow(desc.width, desc.height, desc.title, monitor, NULL);
 
     if (!handle) {
         glfwTerminate();
@@ -36,9 +53,14 @@ window* window_create(window_descriptor desc)
 
     window* wind = malloc(sizeof(window));
 
+    // The framebuffer's size, as the resize callback reports it: it differs
+    // from the requested window size on high-DPI screens and in fullscreen.
+    int framebuffer_width, framebuffer_height;
+    glfwGetFramebufferSize(handle, &framebuffer_width, &framebuffer_height);
+
     wind->handle = handle;
-    wind->width = desc.width;
-    wind->height = desc.height;
+    wind->width = (uint16)framebuffer_width;
+    wind->height = (uint16)framebuffer_height;
     wind->vsync = desc.vsync;
     strncpy(wind->title, desc.title, WINDOW_TITLE_MAX_LEN - 1);
     wind->title[WINDOW_TITLE_MAX_LEN - 1] = '\0';

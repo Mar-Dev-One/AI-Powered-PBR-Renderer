@@ -1,5 +1,6 @@
 #include "World.h"
 
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -56,6 +57,7 @@ grow(world* w)
     w->mesh_renderers = grow_array(w->mesh_renderers, new_capacity, sizeof(*w->mesh_renderers));
     w->lights         = grow_array(w->lights,         new_capacity, sizeof(*w->lights));
     w->cameras        = grow_array(w->cameras,        new_capacity, sizeof(*w->cameras));
+    w->spins          = grow_array(w->spins,          new_capacity, sizeof(*w->spins));
     w->world_matrices = grow_array(w->world_matrices, new_capacity, sizeof(*w->world_matrices));
     w->bounds_min     = grow_array(w->bounds_min,     new_capacity, sizeof(*w->bounds_min));
     w->bounds_max     = grow_array(w->bounds_max,     new_capacity, sizeof(*w->bounds_max));
@@ -96,6 +98,7 @@ world_shutdown(world* w)
     free(w->mesh_renderers);
     free(w->lights);
     free(w->cameras);
+    free(w->spins);
     free(w->world_matrices);
     free(w->bounds_min);
     free(w->bounds_max);
@@ -295,6 +298,7 @@ COMPONENT_GETTER(world_transform,     c_transform,     transforms,     COMPONENT
 COMPONENT_GETTER(world_mesh_renderer, c_mesh_renderer, mesh_renderers, COMPONENT_MESH_RENDERER)
 COMPONENT_GETTER(world_light,         c_light,         lights,         COMPONENT_LIGHT)
 COMPONENT_GETTER(world_camera,        c_camera,        cameras,        COMPONENT_CAMERA)
+COMPONENT_GETTER(world_spin,          c_spin,          spins,          COMPONENT_SPIN)
 
 entity_id
 world_parent(const world* w, entity_id e)
@@ -364,6 +368,36 @@ world_add_camera(world* w, entity_id e, f32 fov_degrees, f32 near_plane, f32 far
     w->cameras[index] = (c_camera){ fov_degrees, near_plane, far_plane };
     w->masks[index] |= COMPONENT_BIT(COMPONENT_CAMERA);
     return &w->cameras[index];
+}
+
+c_spin*
+world_add_spin(world* w, entity_id e, const vec3 degrees_per_second)
+{
+    uint32 index = live_index(w, e);
+    if (index == UINT32_MAX)
+        return NULL;
+
+    memset(&w->spins[index], 0, sizeof(w->spins[index]));   // padding too: states compare with memcmp
+    glm_vec3_copy((f32*)degrees_per_second, w->spins[index].degrees_per_second);
+    w->masks[index] |= COMPONENT_BIT(COMPONENT_SPIN);
+    return &w->spins[index];
+}
+
+void
+world_tick(world* w, f32 dt)
+{
+    const uint32 mask = COMPONENT_BIT(COMPONENT_SPIN);
+    for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+    {
+        uint32 index = entity_slot(e);
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            // fmodf keeps it inside Transform's +-360 range, so the pose can
+            // still be read back and saved like any other.
+            f32* angle = &w->transforms[index].rotation_deg[axis];
+            *angle = fmodf(*angle + w->spins[index].degrees_per_second[axis] * dt, 360.0f);
+        }
+    }
 }
 
 b8
@@ -602,6 +636,7 @@ world_capture_states(const world* w, entity_state* out)
         if (s->mask & COMPONENT_BIT(COMPONENT_MESH_RENDERER)) s->mesh_renderer = w->mesh_renderers[i];
         if (s->mask & COMPONENT_BIT(COMPONENT_LIGHT))         s->light         = w->lights[i];
         if (s->mask & COMPONENT_BIT(COMPONENT_CAMERA))        s->camera        = w->cameras[i];
+        if (s->mask & COMPONENT_BIT(COMPONENT_SPIN))          s->spin          = w->spins[i];
     }
 }
 
@@ -627,6 +662,7 @@ entity_state_differs(const entity_state* a, const entity_state* b, uint32* out_c
         DIFF(COMPONENT_MESH_RENDERER, mesh_renderer);
         DIFF(COMPONENT_LIGHT,         light);
         DIFF(COMPONENT_CAMERA,        camera);
+        DIFF(COMPONENT_SPIN,          spin);
         #undef DIFF
     }
     else if (a->alive != b->alive)
@@ -697,6 +733,7 @@ world_apply_states(world* w, const entity_state* states, uint32 count)
         w->mesh_renderers[index] = s->mesh_renderer;
         w->lights[index]         = s->light;
         w->cameras[index]        = s->camera;
+        w->spins[index]          = s->spin;
         w->update_stamps[index]  = 0;
     }
 

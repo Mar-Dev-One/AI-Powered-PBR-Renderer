@@ -55,10 +55,11 @@ void run(App* app)
 
     window_descriptor desc = {
         .title = app->name,
-        .width = 800,
-        .height = 600,
+        .width = app->width,
+        .height = app->height,
         .resizable = true,
-        .vsync = true
+        .vsync = true,
+        .fullscreen = app->fullscreen
     };
 
     init_renderer(desc);

@@ -4,11 +4,17 @@
 // by the editor's scene.save) and plays it. No ImGui, no command console, no
 // command server, no chat -- those are editor-only (editor/main.c).
 //
-//   Testbed [scene] [hdri]
-//     scene  a name under assets/scenes/ ("orrery_plaza") or a path to a
-//            .json file; defaults to DEFAULT_SCENE
-//     hdri   a Radiance .hdr under assets/ for image-based lighting,
-//            overriding the scene's own
+//   Testbed [options] [scene] [hdri]
+//     scene         a name under assets/scenes/ ("orrery_plaza") or a path to
+//                   a .json file; defaults to DEFAULT_SCENE
+//     hdri          a Radiance .hdr under assets/ for image-based lighting,
+//                   overriding the scene's own
+//     --width N     window size in pixels (default 1280 x 720; in fullscreen,
+//     --height N    the monitor's resolution unless given)
+//     --fullscreen  fullscreen on the primary monitor
+//
+// The game runs the scene's behaviours (World/World.h world_tick(): Spin
+// components turn their entities); the editor shows them standing still.
 //
 // The scene file's "environment" (World/Environment.h) sets the HDRI,
 // exposure, ambient strength and skybox, as they were in the editor when it
@@ -150,25 +156,44 @@ orbit_camera_apply(game_state* state)
     state->cam.position[2] = state->cam.target[2] + state->orbit_distance * cosf(pitch_rad) * cosf(yaw_rad);
 }
 
-// Points the orbit camera at the middle of everything drawn, far enough back
-// to see all of it. Needs world_update() first (world_bounds() reads it).
+// Grows [lo, hi] by every drawn entity's bounds; with `skip_flat`, leaves
+// out flat ones (ground planes, floors: under 2% as tall as they are wide),
+// which would otherwise set the framing on their own. False if none counted.
+static b8
+gather_bounds(const world* w, b8 skip_flat, vec3 lo, vec3 hi)
+{
+    b8 any = false;
+
+    const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
+    for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+    {
+        const c_mesh_renderer* mr = world_mesh_renderer(w, e);
+        vec3 e_lo, e_hi;
+        if (!mr->visible || !world_bounds(w, e, e_lo, e_hi))
+            continue;
+
+        f32 height = e_hi[1] - e_lo[1];
+        f32 width  = fmaxf(e_hi[0] - e_lo[0], e_hi[2] - e_lo[2]);
+        if (skip_flat && height < width * 0.02f)
+            continue;
+
+        glm_vec3_minv(lo, e_lo, lo);
+        glm_vec3_maxv(hi, e_hi, hi);
+        any = true;
+    }
+    return any;
+}
+
+// Points the orbit camera at the middle of what's in the scene, far enough
+// back to see all of it. Needs world_update() first (world_bounds() reads it).
 static void
 frame_scene(game_state* state)
 {
     vec3 lo = { FLT_MAX, FLT_MAX, FLT_MAX };
     vec3 hi = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
-    b8   any = false;
 
-    const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
-    for (entity_id e = world_next(&state->world, ENTITY_NULL, mask); e; e = world_next(&state->world, e, mask))
-    {
-        vec3 e_lo, e_hi;
-        if (!world_bounds(&state->world, e, e_lo, e_hi))
-            continue;
-        glm_vec3_minv(lo, e_lo, lo);
-        glm_vec3_maxv(hi, e_hi, hi);
-        any = true;
-    }
+    // Frame the objects, not the floor -- unless the floor is all there is.
+    b8 any = gather_bounds(&state->world, true, lo, hi) || gather_bounds(&state->world, false, lo, hi);
 
     vec3 center = { 0.0f, 0.0f, 0.0f };
     f32  radius = 2.0f;
@@ -295,10 +320,10 @@ on_scroll(App* app, f64 dx, f64 dy)
 static void
 on_frame(App* app, f32 dt)
 {
-    (void)dt;
-
     game_state* state = (game_state*)app->user_data;
 
+    // A long stall (window dragged, breakpoint) shouldn't fling things around.
+    world_tick(&state->world, fminf(dt, 0.1f));
     world_update(&state->world);
 
     // The scene camera follows its entity (it may be animated or parented);
@@ -328,15 +353,92 @@ on_shutdown(App* app)
     scene_renderer_destroy(&state->renderer);
 }
 
+// A whole number in 1..max, or 0 if `text` isn't one.
+static uint16
+parse_size(const char* text, uint16 max)
+{
+    char* end;
+    long  value = text ? strtol(text, &end, 10) : 0;
+    return (text && *end == '\0' && value > 0 && value <= max) ? (uint16)value : 0;
+}
+
+static void
+print_usage(void)
+{
+    printf("usage: Testbed [--width N] [--height N] [--fullscreen] [scene] [hdri]\n"
+           "  scene  name under assets/scenes/ or a path to a .json file (default %s)\n"
+           "  hdri   .hdr under assets/, overriding the scene's own\n", DEFAULT_SCENE);
+}
+
 int main(int argc, char** argv)
 {
-    game_state state = {
-        .scene_arg = argc > 1 ? argv[1] : DEFAULT_SCENE,
-        .hdri_arg  = argc > 2 ? argv[2] : NULL,
-    };
+    game_state state = { .scene_arg = DEFAULT_SCENE };
+
+    uint16 width      = 0;
+    uint16 height     = 0;
+    b8     fullscreen = false;
+    int    positional = 0;
+
+    for (int i = 1; i < argc; ++i)
+    {
+        const char* arg = argv[i];
+        if (strcmp(arg, "--fullscreen") == 0)
+        {
+            fullscreen = true;
+        }
+        else if (strcmp(arg, "--width") == 0 || strcmp(arg, "--height") == 0)
+        {
+            uint16 value = parse_size(i + 1 < argc ? argv[++i] : NULL, 16384);
+            if (!value)
+            {
+                fprintf(stderr, "%s needs a size in pixels\n", arg);
+                print_usage();
+                return 1;
+            }
+            *(arg[2] == 'w' ? &width : &height) = value;
+        }
+        else if (strcmp(arg, "--help") == 0 || strcmp(arg, "-h") == 0)
+        {
+            print_usage();
+            return 0;
+        }
+        else if (arg[0] == '-' && arg[1] == '-')
+        {
+            fprintf(stderr, "unknown option %s\n", arg);
+            print_usage();
+            return 1;
+        }
+        else if (positional == 0)
+        {
+            state.scene_arg = arg;
+            ++positional;
+        }
+        else if (positional == 1)
+        {
+            state.hdri_arg = arg;
+            ++positional;
+        }
+        else
+        {
+            fprintf(stderr, "unexpected argument %s\n", arg);
+            print_usage();
+            return 1;
+        }
+    }
+
+    // Windowed defaults to 1280 x 720; fullscreen to the monitor's own mode
+    // (Platform/Window.h), unless a size was given.
+    if (!fullscreen)
+    {
+        width  = width ? width : 1280;
+        height = height ? height : 720;
+    }
 
     App app = {
         .name        = "PBR Renderer",
+        .width       = width,
+        .height      = height,
+        .fullscreen  = fullscreen,
         .on_init     = on_init,
         .on_frame    = on_frame,
         .on_shutdown = on_shutdown,

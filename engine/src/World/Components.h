@@ -33,6 +33,7 @@ typedef enum component_type
     COMPONENT_MESH_RENDERER,
     COMPONENT_LIGHT,
     COMPONENT_CAMERA,
+    COMPONENT_SPIN,
     COMPONENT_TYPE_COUNT
 } component_type;
 
@@ -81,3 +82,11 @@ typedef struct c_camera
     f32 near_plane;
     f32 far_plane;
 } c_camera;
+
+// Turns the entity's Transform.rotation_deg at a steady rate while the game
+// runs (world_tick()). The editor never ticks, so what it saves is the pose
+// as authored.
+typedef struct c_spin
+{
+    vec3 degrees_per_second;   // added to rotation_deg (x = pitch, y = yaw, z = roll) each second
+} c_spin;

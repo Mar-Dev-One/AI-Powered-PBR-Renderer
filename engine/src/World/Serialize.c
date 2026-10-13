@@ -433,6 +433,10 @@ ensure_component(world* w, entity_id e, component_type type)
             world_add_camera(w, e, 45.0f, 0.1f, 100.0f);
             break;
 
+        case COMPONENT_SPIN:
+            world_add_spin(w, e, (vec3){ 0.0f, 30.0f, 0.0f });   // a slow turn about Y
+            break;
+
         default:
             break;   // Name and Transform always exist; Parent is added by world_set_parent()
     }

@@ -338,6 +338,39 @@ test_reflection(asset_cache* assets)
     world_shutdown(&w);
 }
 
+// world_tick(): Spin turns rotation_deg by rate * dt, wraps within +-360,
+// and leaves entities without a Spin alone.
+static void
+test_tick(asset_cache* assets)
+{
+    world w;
+    world_init(&w, assets);
+
+    entity_id spinner = world_create(&w, "spinner");
+    entity_id still   = world_create(&w, "still");
+    CHECK(world_add_spin(&w, spinner, (vec3){ 0.0f, 90.0f, -45.0f }) != NULL);
+    CHECK(world_has(&w, spinner, COMPONENT_SPIN) && !world_has(&w, still, COMPONENT_SPIN));
+
+    world_tick(&w, 0.5f);
+    const f32* r = world_transform(&w, spinner)->rotation_deg;
+    CHECK(fabsf(r[0]) < 1e-4f && fabsf(r[1] - 45.0f) < 1e-4f && fabsf(r[2] + 22.5f) < 1e-4f);
+
+    // 45 + 90 * 4 = 405 -> 45; stays inside Transform's +-360 range.
+    world_tick(&w, 4.0f);
+    CHECK(fabsf(r[1] - 45.0f) < 1e-3f);
+    CHECK(fabsf(r[2]) <= 360.0f);
+
+    const f32* s = world_transform(&w, still)->rotation_deg;
+    CHECK(s[0] == 0.0f && s[1] == 0.0f && s[2] == 0.0f);
+
+    // Removing it stops the turning.
+    world_remove(&w, spinner, COMPONENT_SPIN);
+    world_tick(&w, 1.0f);
+    CHECK(fabsf(r[1] - 45.0f) < 1e-3f);
+
+    world_shutdown(&w);
+}
+
 int
 main(void)
 {
@@ -351,6 +384,7 @@ main(void)
     test_iteration_and_destroy_mid_loop(&assets);
     test_gather_lights(&assets);
     test_reflection(&assets);
+    test_tick(&assets);
 
     assets_shutdown(&assets);
 

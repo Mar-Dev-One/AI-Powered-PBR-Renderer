@@ -71,7 +71,7 @@ MATERIAL = {
     "additionalProperties": False,
 }
 
-COMPONENT = {"type": "string", "enum": ["Transform", "MeshRenderer", "Light", "Camera"]}
+COMPONENT = {"type": "string", "enum": ["Transform", "MeshRenderer", "Light", "Camera", "Spin"]}
 
 
 def _schema(properties: dict, required: list[str] | None = None) -> dict:
@@ -247,8 +247,8 @@ TOOLS: list[Tool] = [
     ),
     Tool(
         "remove_component",
-        "Removes a MeshRenderer, Light or Camera from an entity (the entity stays).",
-        _schema({"entity": ENTITY, "component": {"type": "string", "enum": ["MeshRenderer", "Light", "Camera"]}},
+        "Removes a MeshRenderer, Light, Camera or Spin from an entity (the entity stays).",
+        _schema({"entity": ENTITY, "component": {"type": "string", "enum": ["MeshRenderer", "Light", "Camera", "Spin"]}},
                 ["entity", "component"]),
         "component.remove", example={"entity": "desk_lamp", "component": "Light"},
     ),

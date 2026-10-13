@@ -10,6 +10,7 @@ typedef struct window_descriptor {
     uint16      height;
     b8          resizable;
     b8          vsync;
+    b8          fullscreen;   // on the primary monitor; width/height 0 = its current video mode
 } window_descriptor;
 
 typedef struct window_size {

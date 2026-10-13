@@ -44,6 +44,7 @@ typedef struct world
     c_mesh_renderer* mesh_renderers;
     c_light*         lights;
     c_camera*        cameras;
+    c_spin*          spins;
 
     // Derived by world_update().
     mat4*   world_matrices;
@@ -96,6 +97,7 @@ c_transform*     world_transform(const world* w, entity_id e);
 c_mesh_renderer* world_mesh_renderer(const world* w, entity_id e);
 c_light*         world_light(const world* w, entity_id e);
 c_camera*        world_camera(const world* w, entity_id e);
+c_spin*          world_spin(const world* w, entity_id e);
 entity_id        world_parent(const world* w, entity_id e);   // ENTITY_NULL if unparented or stale
 
 // Add (or replace) a component and return it, NULL if `e` is stale.
@@ -104,6 +106,7 @@ entity_id        world_parent(const world* w, entity_id e);   // ENTITY_NULL if 
 c_mesh_renderer* world_add_mesh_renderer(world* w, entity_id e, asset_id model);
 c_light*         world_add_light(world* w, entity_id e, light l);
 c_camera*        world_add_camera(world* w, entity_id e, f32 fov_degrees, f32 near_plane, f32 far_plane);
+c_spin*          world_add_spin(world* w, entity_id e, const vec3 degrees_per_second);
 
 // Swaps a MeshRenderer's model, keeping reference counts right. False if
 // `e` is stale or has no MeshRenderer.
@@ -121,6 +124,12 @@ b8 world_set_parent(world* w, entity_id child, entity_id parent);
 // MeshRenderer's world-space bounds. Call once per frame after changing
 // transforms and before rendering or gathering lights.
 void world_update(world* w);
+
+// Advances the behaviour components by `dt` seconds -- today, Spin turns
+// rotation_deg (kept within +-360). For a running game: the game runtime
+// calls it once per frame before world_update(); the editor doesn't, so its
+// scenes stay as authored.
+void world_tick(world* w, f32 dt);
 
 // World matrix as of the last world_update(); NULL if stale.
 const vec4* world_matrix(const world* w, entity_id e);
@@ -155,6 +164,7 @@ typedef struct entity_state
     c_mesh_renderer mesh_renderer;
     c_light         light;
     c_camera        camera;
+    c_spin          spin;
 } entity_state;
 
 // Number of slots world_capture_states() writes.

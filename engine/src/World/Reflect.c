@@ -84,6 +84,12 @@ static const field_desc CAMERA_FIELDS[] = {
       .min = 0.01f, .max = 100000.0f, .doc = "Farthest visible distance" },
 };
 
+static const field_desc SPIN_FIELDS[] = {
+    { .name = "degrees_per_second", .type = FIELD_VEC3, .offset = offsetof(c_spin, degrees_per_second),
+      .min = -3600.0f, .max = 3600.0f,
+      .doc = "Turn rate in degrees per second about each axis (x = pitch, y = yaw, z = roll); runs only in the game, not the editor" },
+};
+
 static const component_desc COMPONENTS[COMPONENT_TYPE_COUNT] = {
     [COMPONENT_NAME]          = { "Name",         COMPONENT_NAME,          sizeof(c_name),          NAME_FIELDS,          COUNT_OF(NAME_FIELDS) },
     [COMPONENT_TRANSFORM]     = { "Transform",    COMPONENT_TRANSFORM,     sizeof(c_transform),     TRANSFORM_FIELDS,     COUNT_OF(TRANSFORM_FIELDS) },
@@ -91,6 +97,7 @@ static const component_desc COMPONENTS[COMPONENT_TYPE_COUNT] = {
     [COMPONENT_MESH_RENDERER] = { "MeshRenderer", COMPONENT_MESH_RENDERER, sizeof(c_mesh_renderer), MESH_RENDERER_FIELDS, COUNT_OF(MESH_RENDERER_FIELDS) },
     [COMPONENT_LIGHT]         = { "Light",        COMPONENT_LIGHT,         sizeof(c_light),         LIGHT_FIELDS,         COUNT_OF(LIGHT_FIELDS) },
     [COMPONENT_CAMERA]        = { "Camera",       COMPONENT_CAMERA,        sizeof(c_camera),        CAMERA_FIELDS,        COUNT_OF(CAMERA_FIELDS) },
+    [COMPONENT_SPIN]          = { "Spin",         COMPONENT_SPIN,          sizeof(c_spin),          SPIN_FIELDS,          COUNT_OF(SPIN_FIELDS) },
 };
 
 const component_desc*
@@ -144,6 +151,7 @@ reflect_component_data(const world* w, entity_id e, component_type type)
         case COMPONENT_MESH_RENDERER: return &w->mesh_renderers[index];
         case COMPONENT_LIGHT:         return &w->lights[index];
         case COMPONENT_CAMERA:        return &w->cameras[index];
+        case COMPONENT_SPIN:          return &w->spins[index];
         default:                      return NULL;
     }
 }
