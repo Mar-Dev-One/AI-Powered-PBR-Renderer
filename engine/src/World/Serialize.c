@@ -543,6 +543,22 @@ deserialize_component(world* w, entity_id e, component_type type, const cJSON* f
     return true;
 }
 
+// True for a JSON [0, 0, 0].
+static b8
+is_zero_vec3(const cJSON* item)
+{
+    if (!cJSON_IsArray(item) || cJSON_GetArraySize(item) != 3)
+        return false;
+
+    const cJSON* v;
+    cJSON_ArrayForEach(v, item)
+    {
+        if (!cJSON_IsNumber(v) || v->valuedouble != 0.0)
+            return false;
+    }
+    return true;
+}
+
 b8
 deserialize_scene(world* w, const cJSON* scene, entity_id* out_created, uint32* out_count,
                   char* error, size_t error_size)
@@ -613,8 +629,22 @@ deserialize_scene(world* w, const cJSON* scene, entity_id* out_created, uint32* 
                 break;
             }
 
+            // Scenes saved before light_init_point() gave point lights a real
+            // direction hold [0, 0, 0] there; read it as the default (straight
+            // down), which a point light ignores anyway. Only for scene files:
+            // commands still reject a zero direction.
+            cJSON* fixed = NULL;
+            if (c->type == COMPONENT_LIGHT && is_zero_vec3(cJSON_GetObjectItem(component, "direction")))
+            {
+                fixed = cJSON_Duplicate(component, true);
+                cJSON_ReplaceItemInObject(fixed, "direction", vec3_to_json((vec3){ 0.0f, -1.0f, 0.0f }));
+            }
+
             char component_error[512];
-            if (!deserialize_component(w, e, c->type, component, component_error, sizeof(component_error)))
+            b8   component_ok = deserialize_component(w, e, c->type, fixed ? fixed : component, component_error,
+                                                      sizeof(component_error));
+            cJSON_Delete(fixed);
+            if (!component_ok)
             {
                 set_error(error, error_size, "entity \"%s\": %s", world_name(w, e), component_error);
                 ok = false;

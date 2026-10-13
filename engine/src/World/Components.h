@@ -84,8 +84,8 @@ typedef struct c_camera
 } c_camera;
 
 // Turns the entity's Transform.rotation_deg at a steady rate while the game
-// runs (world_tick()). The editor never ticks, so what it saves is the pose
-// as authored.
+// runs (world_tick()). The editor never ticks -- it only previews the turning
+// while drawing -- so what it saves is the pose as authored.
 typedef struct c_spin
 {
     vec3 degrees_per_second;   // added to rotation_deg (x = pitch, y = yaw, z = roll) each second

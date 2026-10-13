@@ -56,6 +56,9 @@ b8 deserialize_component(world* w, entity_id e, component_type type, const cJSON
 // each new entity in file order, so it needs room for the length of the
 // file's "entities" array; `out_count` (may be NULL) gets how many were made.
 //
+// Older files stay loadable: a Light "direction" of [0, 0, 0] (written for
+// point lights before they got a default direction) reads as [0, -1, 0].
+//
 // Not all-or-nothing: on false, the entities made before the bad one stay in
 // `w` (the command layer's undo restores the world; a runtime clears it), and
 // `error` (may be NULL) names the entity and what is wrong with it.

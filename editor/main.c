@@ -146,7 +146,6 @@ typedef struct demo_state
     // always show what the console (and, later, an AI agent) last did.
     int        selected_model;     // index into MODEL_PATHS/MODEL_NAMES, driven by the GUI combo box
     int        loaded_model;       // which entry was last requested (-1 = not yet); the load may have failed
-    b8         spin;
 
     // --- Worlds (World/World.h) ----------------------------------------------
     // Both lit modes are Worlds sharing one asset cache:
@@ -1416,19 +1415,83 @@ draw_environment_controls(demo_state* state)
     igSeparator();
 }
 
-// Per-frame World work for lit_world: the spin animation, then transforms.
-// Nothing else is pushed in -- the World holds the state.
+// The model viewer's "Spin": a Spin component on model_pivot (the model is
+// centred under it, so it turns about its own middle), the same rate the
+// viewer always used: 0.5 rad/s about Y. A component rather than an
+// animation in this file, so the game plays it too.
+#define MODEL_SPIN_DEGREES_PER_SECOND 28.6479f
+
 static void
-sync_lit_world(demo_state* state, f32 time)
+set_model_spin(demo_state* state, b8 on)
 {
     world* w = &state->lit_world;
+    if (on)
+        world_add_spin(w, state->model_pivot, (vec3){ 0.0f, MODEL_SPIN_DEGREES_PER_SECOND, 0.0f });
+    else
+        world_remove(w, state->model_pivot, COMPONENT_SPIN);
+}
 
-    // Spin about the model's own middle: the model is centred under the pivot.
-    c_transform* pivot = world_transform(w, state->model_pivot);
-    if (pivot && state->spin)
-        pivot->rotation_deg[1] = glm_deg(time * 0.5f);
+// --- Spin preview -------------------------------------------------------------------
+// The editor never runs world_tick(): what it holds -- and what panels,
+// commands, scene.save and the live link see -- is the authored pose. To still
+// show Spin components moving, a frame's draw is bracketed by
+// spin_preview_begin() (turn every spinning entity by `time`) and
+// spin_preview_end() (put the authored rotations back).
 
-    world_update(w);
+typedef struct spin_preview
+{
+    entity_id* entities;
+    vec3*      rotations;   // authored rotation_deg, restored by spin_preview_end()
+    uint32     count;
+} spin_preview;
+
+static spin_preview
+spin_preview_begin(world* w, f32 time)
+{
+    spin_preview preview = { 0 };
+    const uint32 mask    = COMPONENT_BIT(COMPONENT_SPIN);
+
+    uint32 capacity = world_count(w);
+    if (capacity == 0)
+        return preview;
+    preview.entities  = malloc(capacity * sizeof(*preview.entities));
+    preview.rotations = malloc(capacity * sizeof(*preview.rotations));
+    if (!preview.entities || !preview.rotations)
+        FATAL("demo: out of memory");
+
+    for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+    {
+        c_transform*  t    = world_transform(w, e);
+        const c_spin* spin = world_spin(w, e);
+
+        preview.entities[preview.count] = e;
+        glm_vec3_copy(t->rotation_deg, preview.rotations[preview.count]);
+        ++preview.count;
+
+        for (int axis = 0; axis < 3; ++axis)
+            t->rotation_deg[axis] = fmodf(t->rotation_deg[axis] + spin->degrees_per_second[axis] * time, 360.0f);
+    }
+    return preview;
+}
+
+static void
+spin_preview_end(world* w, spin_preview* preview)
+{
+    for (uint32 i = 0; i < preview->count; ++i)
+    {
+        c_transform* t = world_transform(w, preview->entities[i]);
+        if (t)
+            glm_vec3_copy(preview->rotations[i], t->rotation_deg);
+    }
+
+    // World matrices and bounds back to the authored pose too, for commands
+    // that read them (placement relative to an entity, frame, describe).
+    if (preview->count)
+        world_update(w);
+
+    free(preview->entities);
+    free(preview->rotations);
+    *preview = (spin_preview){ 0 };
 }
 
 // The grid's albedo picker, applied to every sphere still in the grid
@@ -1527,6 +1590,7 @@ static void on_frame(App* app, f32 dt)
     {
         sync_hdri(state);
 
+        spin_preview preview = spin_preview_begin(&state->grid_world, time);
         world_update(&state->grid_world);
 
         // The demo is about ambient light, so no shadow pass.
@@ -1534,6 +1598,7 @@ static void on_frame(App* app, f32 dt)
         settings.shadows = false;
 
         scene_renderer_draw(&state->renderer, &state->grid_world, &state->cam, &settings);
+        spin_preview_end(&state->grid_world, &preview);
     }
     else // RENDER_MODE_LIT_MODEL
     {
@@ -1543,10 +1608,12 @@ static void on_frame(App* app, f32 dt)
 
         sync_hdri(state);
 
-        sync_lit_world(state, time);
+        spin_preview preview = spin_preview_begin(&state->lit_world, time);
+        world_update(&state->lit_world);
 
         scene_render_settings settings = build_render_settings(state);
         scene_renderer_draw(&state->renderer, &state->lit_world, &state->cam, &settings);
+        spin_preview_end(&state->lit_world, &preview);
     }
 
     // App/on_frame runs between imgui_layer_new_frame() and
@@ -1616,7 +1683,9 @@ static void on_frame(App* app, f32 dt)
             igText("Model failed to load (see console)");
         }
 
-        igCheckbox("Spin", &state->spin);
+        b8 spin = world_has(&state->lit_world, state->model_pivot, COMPONENT_SPIN);
+        if (igCheckbox("Spin", &spin))
+            set_model_spin(state, spin);
 
         c_mesh_renderer* ground = world_mesh_renderer(&state->lit_world, state->ground_entity);
         if (ground)

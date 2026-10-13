@@ -127,8 +127,8 @@ void world_update(world* w);
 
 // Advances the behaviour components by `dt` seconds -- today, Spin turns
 // rotation_deg (kept within +-360). For a running game: the game runtime
-// calls it once per frame before world_update(); the editor doesn't, so its
-// scenes stay as authored.
+// calls it once per frame before world_update(); the editor doesn't (it
+// previews Spin only while drawing), so its scenes stay as authored.
 void world_tick(world* w, f32 dt);
 
 // World matrix as of the last world_update(); NULL if stale.

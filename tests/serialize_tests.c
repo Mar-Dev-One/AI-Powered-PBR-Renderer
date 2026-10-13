@@ -271,6 +271,41 @@ test_world_order(asset_cache* assets)
     world_shutdown(&w);
 }
 
+// A world built in code (light_init_*(), as the editor's demo lights are)
+// must load back from its own scene file. Regression: light_init_point() left
+// direction at [0, 0, 0], which deserialization rightly rejects, so saving
+// the editor's default world produced a file nothing could load.
+static void
+test_code_built_world_round_trips(asset_cache* assets)
+{
+    world w;
+    world_init(&w, assets);
+
+    light point, spot, sun;
+    light_init_point(&point, (vec3){ 0.5f, 0.7f, 1.0f }, 3.0f, 8.0f);
+    light_init_spot(&spot, (vec3){ 1.0f, -2.0f, 0.0f }, (vec3){ 1.0f, 0.8f, 0.5f }, 2.0f, 10.0f, 12.0f, 22.0f);
+    light_init_directional(&sun, (vec3){ -0.4f, -0.6f, -0.5f }, (vec3){ 1.0f, 1.0f, 1.0f }, 2.5f);
+    world_add_light(&w, world_create(&w, "fill"), point);
+    world_add_light(&w, world_create(&w, "cone"), spot);
+    world_add_light(&w, world_create(&w, "sun"), sun);
+
+    cJSON* scene = serialize_world(&w);
+    cJSON_AddStringToObject(scene, "format", SCENE_FORMAT);
+
+    world back;
+    world_init(&back, assets);
+    g_error[0] = '\0';
+    CHECK(deserialize_scene(&back, scene, NULL, NULL, g_error, sizeof(g_error)));
+    if (g_error[0])
+        fprintf(stderr, "  %s\n", g_error);
+    CHECK(world_count(&back) == 3);
+    CHECK(world_light(&back, world_find(&back, "fill"))->type == LIGHT_POINT);
+
+    cJSON_Delete(scene);
+    world_shutdown(&back);
+    world_shutdown(&w);
+}
+
 // Scene environment: round trip, partial updates, null HDRI, and
 // all-or-nothing validation (ranges, types, paths outside assets/).
 static void
@@ -336,6 +371,7 @@ main(void)
     test_names_and_parents(&assets);
     test_world_order(&assets);
     test_environment();
+    test_code_built_world_round_trips(&assets);
 
     assets_shutdown(&assets);
 

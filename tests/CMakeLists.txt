@@ -7,6 +7,11 @@ add_executable(SerializeTests serialize_tests.c)
 target_link_libraries(SerializeTests PRIVATE PBR_Engine)
 add_test(NAME SerializeTests COMMAND SerializeTests)
 
+# Every scene in assets/scenes/ still loads with today's format rules.
+add_executable(SceneFileTests scene_file_tests.c)
+target_link_libraries(SceneFileTests PRIVATE PBR_Engine)
+add_test(NAME SceneFileTests COMMAND SceneFileTests)
+
 add_executable(CommandTests command_tests.c)
 target_link_libraries(CommandTests PRIVATE PBR_Engine)
 add_test(NAME CommandTests COMMAND CommandTests)

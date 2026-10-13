@@ -18,7 +18,8 @@
 //                   the game this way.
 //
 // The game runs the scene's behaviours (World/World.h world_tick(): Spin
-// components turn their entities); the editor shows them standing still.
+// components turn their entities); the editor only previews them, keeping
+// the authored pose in the scene.
 //
 // The scene file's "environment" (World/Environment.h) sets the HDRI,
 // exposure, ambient strength and skybox, as they were in the editor when it
@@ -120,17 +121,12 @@ resolve_scene_path(const char* arg)
     return asset_path(relative);
 }
 
-// A spinning entity's pose, carried across a live reload by name.
-typedef struct spin_pose
-{
-    char name[ENTITY_NAME_MAX];
-    vec3 rotation_deg;
-} spin_pose;
-
 // Replaces the world (and environment) with `scene`'s. `source` names it in
-// the log. With `keep_spin`, entities that spin keep the pose the game has
-// turned them to, so an edit elsewhere doesn't snap them back -- the editor
-// never ticks, so its file always holds the authored pose.
+// the log. The scene is loaded into a fresh world first and swapped in only
+// if it loads, so a bad update leaves the game showing the last good scene.
+// With `keep_spin`, entities that spin keep the pose the game has turned
+// them to, so an edit elsewhere doesn't snap them back -- the editor never
+// ticks, so its file always holds the authored pose.
 //
 // TODO: stopgap for the live link (World/LiveScene.h). A full reload wipes
 // runtime state, and only Spin poses are carried over, matched by name.
@@ -138,52 +134,44 @@ typedef struct spin_pose
 static b8
 apply_scene(game_state* state, const cJSON* scene, const char* source, b8 keep_spin)
 {
-    world* w = &state->world;
+    world next;
+    world_init(&next, &state->assets);
 
-    spin_pose* poses      = NULL;
-    uint32     pose_count = 0;
+    char error[640];
+    if (!deserialize_scene(&next, scene, NULL, NULL, error, sizeof(error)))
+    {
+        LOG_ERROR("testbed: can't load '%s': %s%s\n", source, error,
+                  world_count(&state->world) ? " -- still showing the last scene that loaded" : "");
+        world_shutdown(&next);
+        return false;
+    }
+
     if (keep_spin)
     {
         const uint32 mask = COMPONENT_BIT(COMPONENT_SPIN);
-        poses = malloc((world_count(w) + 1) * sizeof(*poses));
-        if (!poses)
-            FATAL("testbed: out of memory");
-        for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+        for (entity_id e = world_next(&next, ENTITY_NULL, mask); e; e = world_next(&next, e, mask))
         {
-            snprintf(poses[pose_count].name, ENTITY_NAME_MAX, "%s", world_name(w, e));
-            glm_vec3_copy(world_transform(w, e)->rotation_deg, poses[pose_count].rotation_deg);
-            ++pose_count;
+            const c_transform* before = world_transform(&state->world, world_find(&state->world, world_name(&next, e)));
+            if (before)
+                glm_vec3_copy((f32*)before->rotation_deg, world_transform(&next, e)->rotation_deg);
         }
     }
-
-    world_clear(w);
-
-    char error[640];
-    b8   ok = deserialize_scene(w, scene, NULL, NULL, error, sizeof(error));
-    if (!ok)
+    else
     {
-        LOG_ERROR("testbed: can't load '%s': %s\n", source, error);
-        world_clear(w);   // no half-loaded scene
-    }
-    else if (!keep_spin)
-    {
-        LOG_INFO("testbed: loaded '%s' (%u entities)\n", source, world_count(w));
+        LOG_INFO("testbed: loaded '%s' (%u entities)\n", source, world_count(&next));
     }
 
-    for (uint32 i = 0; i < pose_count; ++i)
-    {
-        entity_id e = world_find(w, poses[i].name);
-        if (world_spin(w, e))
-            glm_vec3_copy(poses[i].rotation_deg, world_transform(w, e)->rotation_deg);
-    }
-    free(poses);
+    // The new world already holds its models, so releasing the old one's
+    // references doesn't unload anything both use.
+    world_shutdown(&state->world);
+    state->world = next;
 
     // A bad environment doesn't stop the scene from playing: it keeps the last one.
-    const cJSON* env = ok ? cJSON_GetObjectItem(scene, "environment") : NULL;
+    const cJSON* env = cJSON_GetObjectItem(scene, "environment");
     if (env && !deserialize_environment(env, &state->env, error, sizeof(error)))
         LOG_WARN("testbed: '%s': %s -- keeping the previous environment\n", source, error);
 
-    return ok;
+    return true;
 }
 
 static b8

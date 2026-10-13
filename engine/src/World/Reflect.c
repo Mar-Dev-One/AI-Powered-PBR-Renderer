@@ -87,7 +87,7 @@ static const field_desc CAMERA_FIELDS[] = {
 static const field_desc SPIN_FIELDS[] = {
     { .name = "degrees_per_second", .type = FIELD_VEC3, .offset = offsetof(c_spin, degrees_per_second),
       .min = -3600.0f, .max = 3600.0f,
-      .doc = "Turn rate in degrees per second about each axis (x = pitch, y = yaw, z = roll); runs only in the game, not the editor" },
+      .doc = "Turn rate in degrees per second about each axis (x = pitch, y = yaw, z = roll); the game turns the entity; the editor previews it without changing the saved rotation" },
 };
 
 static const component_desc COMPONENTS[COMPONENT_TYPE_COUNT] = {

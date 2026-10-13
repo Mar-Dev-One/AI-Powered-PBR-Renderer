@@ -17,7 +17,10 @@ void
 light_init_point(light* l, vec3 color, f32 intensity, f32 range)
 {
     l->type      = LIGHT_POINT;
-    glm_vec3_zero(l->direction);   // unused by LIGHT_POINT; zeroed rather than left uninitialized
+    // Unused by LIGHT_POINT, but kept a valid direction (straight down) rather
+    // than zero: a scene file rejects a zero direction (World/Reflect.h marks
+    // it nonzero), and it's what the light aims at if it becomes a spot.
+    glm_vec3_copy((vec3){ 0.0f, -1.0f, 0.0f }, l->direction);
     glm_vec3_copy(color, l->color);
     l->intensity = intensity;
 
