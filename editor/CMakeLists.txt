@@ -4,3 +4,9 @@
 add_executable(Editor main.c)
 
 target_link_libraries(Editor PRIVATE PBR_Engine)
+
+# F5 in the editor starts the game following its edits (World/LiveScene.h),
+# so the editor needs to know where the Testbed binary is -- and that it's
+# built whenever the editor is.
+add_dependencies(Editor Testbed)
+target_compile_definitions(Editor PRIVATE TESTBED_EXE="$<TARGET_FILE:Testbed>")

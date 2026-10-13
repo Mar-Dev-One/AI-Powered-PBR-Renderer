@@ -5,6 +5,11 @@
 // the command server other processes (MCP server, AI agent, scripts) drive
 // it through, and the in-app chat. The game runtime -- the same engine with
 // none of this -- is testbed/main.c.
+//
+// Live link: the world on screen is published to the live scene file
+// (World/LiveScene.h) whenever it changes, however it changed -- panels,
+// console, agent. F5 (or "Play in Testbed") starts the game with --live, and
+// it follows every edit while it keeps running.
 
 #include "App.h"
 #include "Chat/ChatSession.h"
@@ -21,6 +26,7 @@
 #include "Scene/Camera.h"
 #include "Scene/Model.h"
 #include "Assets/AssetCache.h"
+#include "World/LiveScene.h"
 #include "World/World.h"
 #include "Platform/Window.h"
 #include "Net/CommandServer.h"
@@ -191,6 +197,12 @@ typedef struct demo_state
     chat_session chat;
     chat_panel   chat_panel;
     process*     agent_process;
+
+    // --- Live link to the game (World/LiveScene.h) ------------------------------
+    live_publisher live;
+    process*       game_process;   // the Testbed started by F5; NULL if not running
+    char           game_log[1024];
+    char           game_note[256];
     char         agent_note[1280];
     char         agent_log[1024];
 
@@ -1056,6 +1068,45 @@ start_agent(demo_state* state)
     free(python);
 }
 
+// F5: starts the game (TESTBED_EXE, set by CMake) following this editor's
+// scene. Publishes first, so it finds the current world straight away.
+static void
+start_game(demo_state* state)
+{
+    if (state->game_process && process_running(state->game_process, NULL))
+    {
+        snprintf(state->game_note, sizeof(state->game_note), "The game is already running.");
+        return;
+    }
+    process_destroy(state->game_process);
+    state->game_process = NULL;
+
+    if (!file_exists(TESTBED_EXE))
+    {
+        snprintf(state->game_note, sizeof(state->game_note), "No game at %s; build the Testbed target.", TESTBED_EXE);
+        return;
+    }
+
+    const char* argv[] = { TESTBED_EXE, "--live", NULL };
+    state->game_process = process_spawn(argv, state->game_log);
+    snprintf(state->game_note, sizeof(state->game_note), state->game_process
+             ? "Game running, following your edits." : "Could not start the game; see %s.", state->game_log);
+}
+
+// Notices the game being closed.
+static void
+watch_game(demo_state* state)
+{
+    int exit_code;
+    if (!state->game_process || process_running(state->game_process, &exit_code))
+        return;
+
+    snprintf(state->game_note, sizeof(state->game_note), exit_code == 0
+             ? "Game closed." : "The game exited (code %d); its log is %s.", exit_code, state->game_log);
+    process_destroy(state->game_process);
+    state->game_process = NULL;
+}
+
 // Notices the sidecar exiting, and says where to look.
 static void
 watch_agent(demo_state* state)
@@ -1209,6 +1260,8 @@ on_init(App* app)
     const char* home = getenv("HOME");
 #endif
     snprintf(state->agent_log, sizeof(state->agent_log), "%s/.pbr-renderer/agent.log", home ? home : ".");
+    snprintf(state->game_log, sizeof(state->game_log), "%s/.pbr-renderer/game.log", home ? home : ".");
+    live_publisher_init(&state->live, NULL);
 
     // The chat agent connects through the server, so without one there's no agent.
     const char* autostart = getenv("PBR_AGENT_AUTOSTART");
@@ -1267,6 +1320,8 @@ static void on_key(App* app, int key, int action, int mods)
     demo_state* state = (demo_state*)app->user_data;
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
         state->show_console = !state->show_console;
+    if (key == GLFW_KEY_F5 && action == GLFW_PRESS)
+        start_game(state);
 }
 
 // One editor per Light entity in `w` -- whatever lights exist, including
@@ -1445,6 +1500,7 @@ static void on_frame(App* app, f32 dt)
     server_poll(state->server, active_commands(state));
     chat_poll(&state->chat);
     watch_agent(state);
+    watch_game(state);
 
     f32 time = (f32)window_get_time();
 
@@ -1505,6 +1561,12 @@ static void on_frame(App* app, f32 dt)
     if (state->server)
         igTextDisabled("Command server: port %u, %u client(s)", (unsigned)server_port(state->server),
                        server_client_count(state->server));
+
+    if (igButton(state->game_process ? "Game running (F5)" : "Play in Testbed (F5)", (ImVec2_c){ 0, 0 }))
+        start_game(state);
+    if (state->game_note[0])
+        igTextDisabled("%s", state->game_note);
+    igSeparator();
 
     igText("Render Mode");
     igRadioButton_IntPtr("Textured Cube", (int*)&state->mode, RENDER_MODE_TEXTURED_CUBE);
@@ -1588,6 +1650,13 @@ static void on_frame(App* app, f32 dt)
     if (chat_panel_draw(&state->chat_panel, &state->chat, active, "Chat", state->agent_note) == CHAT_PANEL_START_AGENT
         && state->server)
         start_agent(state);
+
+    // Whatever changed this frame -- panels, console, agent -- goes to the
+    // live scene file, for a game running with --live.
+    // TODO: re-serializes the whole world to detect a change; to be replaced
+    // by an in-editor Play mode / incremental sync (World/LiveScene.h). That
+    // needs the panels to edit through commands, so every change is an event.
+    live_publisher_publish(&state->live, active->w, &state->env, window_get_time(), 0.1);
 }
 
 // Runs from terminate(), before the GL context goes away.
@@ -1601,6 +1670,8 @@ static void on_shutdown(App* app)
     chat_shutdown(&state->chat);             // closes a running turn's transaction
     server_stop(state->server);              // the agent (--exit-with-app) leaves when its connection closes...
     process_destroy(state->agent_process);   // ...or is ended here
+    process_destroy(state->game_process);    // the game started by F5 closes with the editor
+    live_publisher_shutdown(&state->live);
     console_shutdown(&state->console);
     history_shutdown(&state->lit_history, &state->lit_world);     // histories hold asset references too
     history_shutdown(&state->grid_history, &state->grid_world);

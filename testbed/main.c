@@ -12,6 +12,10 @@
 //     --width N     window size in pixels (default 1280 x 720; in fullscreen,
 //     --height N    the monitor's resolution unless given)
 //     --fullscreen  fullscreen on the primary monitor
+//     --live        follow the editor: play the scene it is editing
+//                   (World/LiveScene.h) and pick up every edit as it happens,
+//                   instead of loading `scene` once. F5 in the editor starts
+//                   the game this way.
 //
 // The game runs the scene's behaviours (World/World.h world_tick(): Spin
 // components turn their entities); the editor shows them standing still.
@@ -35,6 +39,7 @@
 #include "Renderer/SceneRenderer.h"
 #include "Scene/Camera.h"
 #include "World/Environment.h"
+#include "World/LiveScene.h"
 #include "World/Serialize.h"
 #include "World/World.h"
 
@@ -47,6 +52,9 @@
 
 #define DEFAULT_SCENE "orrery_plaza"
 #define DEFAULT_HDRI  "hdri/citrus_orchard_road_puresky_4k.hdr"
+
+// How often --live checks the editor's scene file.
+#define LIVE_POLL_SECONDS 0.1
 
 // Same shadow setup as the editor, so a scene looks the same in both.
 #define SHADOW_MAP_SIZE 2048
@@ -62,6 +70,13 @@ typedef struct game_state
     scene_renderer  renderer;
     scene_environment env;   // from the scene file; see World/Environment.h
     ibl_environment   ibl;     // env.hdri baked; all zeroes if it couldn't be loaded
+    char              baked_hdri[ENVIRONMENT_HDRI_MAX];   // what `ibl` was last baked from
+    b8                hdri_baked;                         // false until the first bake
+
+    // --live: the editor's scene file, reloaded whenever it changes.
+    b8           live;
+    live_watcher watcher;
+    b8           framed;   // the orbit camera has been aimed at the scene once
 
     // The scene's Camera entity, or ENTITY_NULL to use the orbit camera.
     entity_id scene_camera;
@@ -105,6 +120,72 @@ resolve_scene_path(const char* arg)
     return asset_path(relative);
 }
 
+// A spinning entity's pose, carried across a live reload by name.
+typedef struct spin_pose
+{
+    char name[ENTITY_NAME_MAX];
+    vec3 rotation_deg;
+} spin_pose;
+
+// Replaces the world (and environment) with `scene`'s. `source` names it in
+// the log. With `keep_spin`, entities that spin keep the pose the game has
+// turned them to, so an edit elsewhere doesn't snap them back -- the editor
+// never ticks, so its file always holds the authored pose.
+//
+// TODO: stopgap for the live link (World/LiveScene.h). A full reload wipes
+// runtime state, and only Spin poses are carried over, matched by name.
+// Replace with incremental changes that leave untouched entities alone.
+static b8
+apply_scene(game_state* state, const cJSON* scene, const char* source, b8 keep_spin)
+{
+    world* w = &state->world;
+
+    spin_pose* poses      = NULL;
+    uint32     pose_count = 0;
+    if (keep_spin)
+    {
+        const uint32 mask = COMPONENT_BIT(COMPONENT_SPIN);
+        poses = malloc((world_count(w) + 1) * sizeof(*poses));
+        if (!poses)
+            FATAL("testbed: out of memory");
+        for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+        {
+            snprintf(poses[pose_count].name, ENTITY_NAME_MAX, "%s", world_name(w, e));
+            glm_vec3_copy(world_transform(w, e)->rotation_deg, poses[pose_count].rotation_deg);
+            ++pose_count;
+        }
+    }
+
+    world_clear(w);
+
+    char error[640];
+    b8   ok = deserialize_scene(w, scene, NULL, NULL, error, sizeof(error));
+    if (!ok)
+    {
+        LOG_ERROR("testbed: can't load '%s': %s\n", source, error);
+        world_clear(w);   // no half-loaded scene
+    }
+    else if (!keep_spin)
+    {
+        LOG_INFO("testbed: loaded '%s' (%u entities)\n", source, world_count(w));
+    }
+
+    for (uint32 i = 0; i < pose_count; ++i)
+    {
+        entity_id e = world_find(w, poses[i].name);
+        if (world_spin(w, e))
+            glm_vec3_copy(poses[i].rotation_deg, world_transform(w, e)->rotation_deg);
+    }
+    free(poses);
+
+    // A bad environment doesn't stop the scene from playing: it keeps the last one.
+    const cJSON* env = ok ? cJSON_GetObjectItem(scene, "environment") : NULL;
+    if (env && !deserialize_environment(env, &state->env, error, sizeof(error)))
+        LOG_WARN("testbed: '%s': %s -- keeping the previous environment\n", source, error);
+
+    return ok;
+}
+
 static b8
 load_scene(game_state* state, const char* arg)
 {
@@ -120,27 +201,36 @@ load_scene(game_state* state, const char* arg)
     cJSON* scene = cJSON_Parse(text);
     free(text);
 
-    char error[640];
-    b8   ok = scene && deserialize_scene(&state->world, scene, NULL, NULL, error, sizeof(error));
-
-    if (!ok)
-    {
-        LOG_ERROR("testbed: can't load '%s': %s\n", path, scene ? error : "not valid JSON");
-        world_clear(&state->world);   // no half-loaded scene
-    }
+    b8 ok = scene != NULL;
+    if (ok)
+        ok = apply_scene(state, scene, path, false);
     else
-    {
-        LOG_INFO("testbed: loaded '%s' (%u entities)\n", path, world_count(&state->world));
-    }
-
-    // A bad environment doesn't stop the scene from playing: it keeps the defaults.
-    const cJSON* env = ok ? cJSON_GetObjectItem(scene, "environment") : NULL;
-    if (env && !deserialize_environment(env, &state->env, error, sizeof(error)))
-        LOG_WARN("testbed: '%s': %s -- using the default environment\n", path, error);
+        LOG_ERROR("testbed: can't load '%s': not valid JSON\n", path);
 
     cJSON_Delete(scene);
     free(path);
     return ok;
+}
+
+// Bakes env.hdri into `ibl` if it changed since the last bake (a live edit
+// can switch it). A missing file leaves the hemisphere ambient light.
+static void
+sync_hdri(game_state* state)
+{
+    if (state->hdri_baked && strcmp(state->baked_hdri, state->env.hdri) == 0)
+        return;
+
+    ibl_destroy(&state->ibl);
+    memcpy(state->baked_hdri, state->env.hdri, sizeof(state->baked_hdri));
+    state->hdri_baked = true;
+
+    if (!state->env.hdri[0])
+        return;
+
+    char* path = asset_path(state->env.hdri);
+    if (!ibl_create(&state->ibl, path))
+        LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", path);
+    free(path);
 }
 
 // --- Camera ----------------------------------------------------------------------
@@ -242,6 +332,25 @@ orbit_camera_update(game_state* state, window* wind)
     state->last_cursor_y = cursor_y;
 }
 
+// Picks the view after the world changed: the scene's first Camera entity,
+// else the orbit camera -- aimed at the scene the first time only, so a live
+// edit doesn't yank the view away from where the player left it.
+static void
+choose_camera(game_state* state)
+{
+    entity_id previous  = state->scene_camera;
+    state->scene_camera = world_next(&state->world, ENTITY_NULL, COMPONENT_BIT(COMPONENT_CAMERA));
+
+    if (state->scene_camera && state->scene_camera != previous)
+        LOG_INFO("testbed: viewing through camera '%s'\n", world_name(&state->world, state->scene_camera));
+
+    if (!state->scene_camera && (!state->framed || previous))
+    {
+        frame_scene(state);
+        state->framed = world_count(&state->world) > 0;
+    }
+}
+
 // --- App hooks -------------------------------------------------------------------
 
 static void
@@ -259,26 +368,29 @@ on_init(App* app)
 
     assets_init(&state->assets);
     world_init(&state->world, &state->assets);
-    load_scene(state, state->scene_arg);
+
+    if (state->live)
+    {
+        // The editor writes the file as soon as it runs; until then, an empty world.
+        live_watcher_init(&state->watcher, NULL);
+        cJSON* scene = live_watcher_poll(&state->watcher, 0.0, 0.0);
+        if (scene)
+            apply_scene(state, scene, state->watcher.path, false);
+        else
+            LOG_INFO("testbed: waiting for the editor (%s)\n", state->watcher.path);
+        cJSON_Delete(scene);
+    }
+    else
+    {
+        load_scene(state, state->scene_arg);
+    }
     world_update(&state->world);
 
     if (state->hdri_arg)
         snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", state->hdri_arg);
+    sync_hdri(state);
 
-    if (state->env.hdri[0])
-    {
-        char* hdri_path = asset_path(state->env.hdri);
-        if (!ibl_create(&state->ibl, hdri_path))
-            LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", hdri_path);
-        free(hdri_path);
-    }
-
-    const uint32 camera_mask = COMPONENT_BIT(COMPONENT_CAMERA);
-    state->scene_camera = world_next(&state->world, ENTITY_NULL, camera_mask);
-    if (state->scene_camera)
-        LOG_INFO("testbed: viewing through camera '%s'\n", world_name(&state->world, state->scene_camera));
-    else
-        frame_scene(state);
+    choose_camera(state);
 }
 
 static void
@@ -322,6 +434,22 @@ on_frame(App* app, f32 dt)
 {
     game_state* state = (game_state*)app->user_data;
 
+    // --live: the editor changed something -- take its world, keep playing.
+    if (state->live)
+    {
+        cJSON* scene = live_watcher_poll(&state->watcher, window_get_time(), LIVE_POLL_SECONDS);
+        if (scene)
+        {
+            apply_scene(state, scene, state->watcher.path, true);
+            if (state->hdri_arg)   // the command line still wins
+                snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", state->hdri_arg);
+            sync_hdri(state);
+            world_update(&state->world);
+            choose_camera(state);
+            cJSON_Delete(scene);
+        }
+    }
+
     // A long stall (window dragged, breakpoint) shouldn't fling things around.
     world_tick(&state->world, fminf(dt, 0.1f));
     world_update(&state->world);
@@ -347,6 +475,8 @@ on_shutdown(App* app)
 {
     game_state* state = (game_state*)app->user_data;
 
+    if (state->live)
+        live_watcher_shutdown(&state->watcher);
     world_shutdown(&state->world);    // releases the world's assets...
     assets_shutdown(&state->assets);  // ...then the models themselves
     ibl_destroy(&state->ibl);
@@ -365,7 +495,8 @@ parse_size(const char* text, uint16 max)
 static void
 print_usage(void)
 {
-    printf("usage: Testbed [--width N] [--height N] [--fullscreen] [scene] [hdri]\n"
+    printf("usage: Testbed [--width N] [--height N] [--fullscreen] [--live] [scene] [hdri]\n"
+           "  --live follow the scene the editor is editing, live\n"
            "  scene  name under assets/scenes/ or a path to a .json file (default %s)\n"
            "  hdri   .hdr under assets/, overriding the scene's own\n", DEFAULT_SCENE);
 }
@@ -385,6 +516,10 @@ int main(int argc, char** argv)
         if (strcmp(arg, "--fullscreen") == 0)
         {
             fullscreen = true;
+        }
+        else if (strcmp(arg, "--live") == 0)
+        {
+            state.live = true;
         }
         else if (strcmp(arg, "--width") == 0 || strcmp(arg, "--height") == 0)
         {
@@ -435,7 +570,7 @@ int main(int argc, char** argv)
     }
 
     App app = {
-        .name        = "PBR Renderer",
+        .name        = state.live ? "PBR Renderer (live from the editor)" : "PBR Renderer",
         .width       = width,
         .height      = height,
         .fullscreen  = fullscreen,

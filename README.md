@@ -41,7 +41,7 @@ can be started from any directory.
   console, command server and in-app chat described below.
 - **Testbed** (`build/testbed/Release/Testbed.exe`): the game runtime. It loads a scene saved by
   the editor and plays it, with no UI, console or command server:
-  `Testbed [--width N] [--height N] [--fullscreen] [scene] [hdri]`, where `scene` is a name under `assets/scenes/` (default
+  `Testbed [--width N] [--height N] [--fullscreen] [--live] [scene] [hdri]`, where `scene` is a name under `assets/scenes/` (default
   `orrery_plaza`) or a path to a `.json` file, and `hdri` is a `.hdr` under `assets/` that
   overrides the scene's own. The scene file carries its environment (HDRI, exposure, ambient
   strength, skybox), so it looks as it did in the editor. It views the scene through its first
@@ -49,6 +49,14 @@ can be started from any directory.
   left-drag orbits and the wheel zooms. The window is 1280 x 720 by default. The game runs the
   scene's behaviours: a `Spin` component turns its entity at `degrees_per_second`, while the
   editor shows it at rest so what you save is what you authored. Esc quits.
+
+**Live editing.** Press **F5** (or **Play in Testbed** in the Scene window) in the editor to start
+the game with `--live`: it plays the world the editor has on screen and picks up every change —
+from the panels, the console or the agent — within a fraction of a second, while it keeps running
+(spinning entities keep turning). The editor publishes its world and environment to
+`~/.pbr-renderer/live_scene.json` whenever it changes, and the game reloads that file; the editor
+stays the source of truth. The game started by F5 closes with the editor; its output goes to
+`~/.pbr-renderer/game.log`.
 
 ## Using the editor
 

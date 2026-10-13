@@ -176,6 +176,31 @@ progress notes between tool calls. Tested end to end against `ServerHost` with a
 
 ---
 
+## Editor / runtime split
+
+The editor (`editor/`) and the game runtime (`testbed/`) are separate apps on one engine library.
+Scenes carry their environment, and `Spin` components run only in the game (`world_tick()`).
+
+### Live link: first version, to replace
+
+F5 in the editor starts `Testbed --live`, which follows the editor through a shared scene file
+(`World/LiveScene.h`). It works, but it is a stopgap:
+
+- Whole-world sync: every edit re-serializes and reloads every entity (cost grows with the scene)
+- The game's runtime state is rebuilt on every edit; only `Spin` poses are kept, matched by name
+- Entity IDs don't survive a reload; one-way only; up to ~0.2 s latency; one fixed file
+
+Next steps:
+
+- [ ] In-editor Play mode: Play copies the world and ticks the copy in the viewport, Stop restores
+      the edited world; pause and step. Becomes the main way to test while editing
+- [ ] Panels edit through commands (so every edit is an undoable change event), instead of
+      writing components directly
+- [ ] Separate-process live editing by incremental changes over the command server (the game
+      connects as a client and applies `scene.changed` events), replacing the file link
+- [ ] Split the build: a runtime library without ImGui/Chat/Net/Commands for the game, the editor
+      on top (same `engine/` folder)
+
 ## Feature roadmap
 
 ### Now: small, high value

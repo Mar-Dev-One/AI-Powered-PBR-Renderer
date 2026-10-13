@@ -34,6 +34,7 @@ add_library(PBR_Engine STATIC
     src/UI/ChatPanel.c
     src/World/Serialize.c
     src/World/Environment.c
+    src/World/LiveScene.c
     src/Commands/Commands.c
     src/Commands/History.c
     src/Commands/JsonRpc.c
