@@ -141,8 +141,6 @@ typedef struct demo_state
     int        selected_model;     // index into MODEL_PATHS/MODEL_NAMES, driven by the GUI combo box
     int        loaded_model;       // which entry was last requested (-1 = not yet); the load may have failed
     b8         spin;
-    f32        ambient_strength;
-    f32        exposure;
 
     // --- Worlds (World/World.h) ----------------------------------------------
     // Both lit modes are Worlds sharing one asset cache:
@@ -210,15 +208,17 @@ typedef struct demo_state
     // sweeping left to right and metallic top to bottom.
     vec3 grid_albedo;   // sRGB, like default_albedo; applied when changed
 
-    // --- Image-based lighting -----------------------------------------------
-    // Baked from an HDRI (Renderer/IBL.h) and read by pbr.frag for ambient
-    // diffuse + specular. All zeroes when no HDRI could be loaded.
-    ibl_environment ibl;
-    int             selected_hdri;   // index into HDRI_PATHS/HDRI_NAMES, driven by the GUI combo box
-    int             loaded_hdri;     // which entry `ibl` was last baked from (-1 = not yet); the load may have failed
-    b8              ibl_enabled;     // use `ibl` for ambient light (needs a loaded HDRI)
-    b8              show_skybox;     // draw the HDRI as the background
-    f32             sky_blur;        // 0..1, how blurry the background is
+    // --- Environment + image-based lighting -----------------------------------
+    // `env` (World/Environment.h) is the single source of truth for the HDRI,
+    // IBL / skybox switches, exposure and ambient strength: the GUI, the
+    // environment.set / render.set commands and scene.load all write it, and
+    // scene.save stores it with the scene. `ibl` is env.hdri baked
+    // (Renderer/IBL.h), all zeroes when it couldn't be loaded; sync_hdri()
+    // re-bakes it whenever env.hdri changes.
+    scene_environment env;
+    ibl_environment   ibl;
+    char              baked_hdri[ENVIRONMENT_HDRI_MAX];   // what `ibl` was last baked from; the bake may have failed
+    b8                hdri_baked;                         // false until the first bake
 
     // Material for models the file gave none (a bare .obj), applied to the
     // model entity's MeshRenderer override when a model loads or these change.
@@ -554,21 +554,40 @@ load_selected_model(demo_state* state, int index)
     world_update(w);
 }
 
-// Bakes HDRI_PATHS[index] into state->ibl, replacing whatever was there. A
+// Bakes env.hdri into state->ibl if it changed since the last bake -- picked
+// in the GUI, set by environment.set or brought in by scene.load. A
 // missing/unreadable file leaves image-based lighting off, not the app dead.
 static void
-load_selected_hdri(demo_state* state, int index)
+sync_hdri(demo_state* state)
 {
+    if (state->hdri_baked && strcmp(state->baked_hdri, state->env.hdri) == 0)
+        return;
+
     ibl_destroy(&state->ibl);
-    state->loaded_hdri = index;
+    memcpy(state->baked_hdri, state->env.hdri, sizeof(state->baked_hdri));
+    state->hdri_baked = true;
 
-    char* path = asset_path(HDRI_PATHS[index]);
-    state->ibl_enabled = ibl_create(&state->ibl, path);
+    if (!state->env.hdri[0])
+        return;   // no HDRI: the hemisphere ambient light
 
-    if (!state->ibl_enabled)
+    char* path = asset_path(state->env.hdri);
+    if (!ibl_create(&state->ibl, path))
         LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", path);
 
     free(path);
+}
+
+// env.hdri's index in HDRI_PATHS, or -1 for one the picker doesn't list (a
+// scene file can name any .hdr under assets/) or none.
+static int
+hdri_index(const demo_state* state)
+{
+    for (uint32 i = 0; i < HDRI_COUNT; ++i)
+    {
+        if (strcmp(HDRI_PATHS[i], state->env.hdri) == 0)
+            return (int)i;
+    }
+    return -1;
 }
 
 // --- Application commands ------------------------------------------------------
@@ -576,7 +595,6 @@ load_selected_hdri(demo_state* state, int index)
 // renderer settings -- registered with every command context, so the
 // console (and later an agent) can drive them like any built-in command.
 
-static void load_selected_hdri(demo_state* state, int index);
 static scene_render_settings build_render_settings(const demo_state* state);
 
 // on_change for both worlds: show the change in the console, and push it to
@@ -663,10 +681,14 @@ host_environment_list(void* user_data, command_context* ctx, const cJSON* args, 
     for (uint32 i = 0; i < HDRI_COUNT; ++i)
         cJSON_AddItemToArray(list, cJSON_CreateString(HDRI_PATHS[i]));
 
-    cJSON_AddStringToObject(*out_result, "current", HDRI_PATHS[state->selected_hdri]);
-    cJSON_AddBoolToObject(*out_result, "use_ibl", state->ibl_enabled);
-    cJSON_AddBoolToObject(*out_result, "show_skybox", state->show_skybox);
-    cJSON_AddItemToObject(*out_result, "sky_blur", number_json(state->sky_blur));
+    if (state->env.hdri[0])
+        cJSON_AddStringToObject(*out_result, "current", state->env.hdri);
+    else
+        cJSON_AddNullToObject(*out_result, "current");
+    cJSON_AddBoolToObject(*out_result, "hdri_loaded", state->ibl.irradiance != 0);
+    cJSON_AddBoolToObject(*out_result, "use_ibl", state->env.use_ibl);
+    cJSON_AddBoolToObject(*out_result, "show_skybox", state->env.show_skybox);
+    cJSON_AddItemToObject(*out_result, "sky_blur", number_json(state->env.sky_blur));
     return true;
 }
 
@@ -703,17 +725,17 @@ host_environment_set(void* user_data, command_context* ctx, const cJSON* args, c
         return false;
     }
 
-    if (index >= 0 && index != state->loaded_hdri)
+    if (index >= 0)
     {
-        state->selected_hdri = index;
-        load_selected_hdri(state, index);
+        snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", HDRI_PATHS[index]);
+        sync_hdri(state);
     }
 
     const cJSON* use_ibl = cJSON_GetObjectItem(args, "use_ibl");
     const cJSON* skybox  = cJSON_GetObjectItem(args, "show_skybox");
-    if (cJSON_IsBool(use_ibl)) state->ibl_enabled = cJSON_IsTrue(use_ibl) && state->ibl.irradiance;
-    if (cJSON_IsBool(skybox))  state->show_skybox = cJSON_IsTrue(skybox);
-    if (blur)                  state->sky_blur    = (f32)blur->valuedouble;
+    if (cJSON_IsBool(use_ibl)) state->env.use_ibl     = cJSON_IsTrue(use_ibl);
+    if (cJSON_IsBool(skybox))  state->env.show_skybox = cJSON_IsTrue(skybox);
+    if (blur)                  state->env.sky_blur    = (f32)blur->valuedouble;
 
     return host_environment_list(user_data, ctx, NULL, out_result, error, error_size);
 }
@@ -728,8 +750,8 @@ host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
     cJSON_AddItemToObject(*out_result, "position", vec3_json(state->cam.position));
     cJSON_AddItemToObject(*out_result, "target", vec3_json(state->cam.target));
     cJSON_AddItemToObject(*out_result, "fov_degrees", number_json(state->cam.fov_degrees));
-    cJSON_AddItemToObject(*out_result, "exposure", number_json(state->exposure));
-    cJSON_AddItemToObject(*out_result, "ambient_strength", number_json(state->ambient_strength));
+    cJSON_AddItemToObject(*out_result, "exposure", number_json(state->env.exposure));
+    cJSON_AddItemToObject(*out_result, "ambient_strength", number_json(state->env.ambient_strength));
     return true;
 }
 
@@ -844,8 +866,8 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
         return false;
     }
 
-    if (exposure) state->exposure            = (f32)exposure->valuedouble;
-    if (ambient)  state->ambient_strength    = (f32)ambient->valuedouble;
+    if (exposure) state->env.exposure         = (f32)exposure->valuedouble;
+    if (ambient)  state->env.ambient_strength = (f32)ambient->valuedouble;
     if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
 
     return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
@@ -1109,20 +1131,15 @@ on_init(App* app)
 
     state->grid_albedo[0] = state->grid_albedo[1] = state->grid_albedo[2] = 0.9f;
 
-    state->show_skybox   = true;
-    state->sky_blur      = 0.0f;
-    state->selected_hdri = 0;
-    state->loaded_hdri   = -1;
-    load_selected_hdri(state, state->selected_hdri);
+    state->env = scene_environment_default();
+    snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", HDRI_PATHS[0]);
+    sync_hdri(state);
 
     state->mode = RENDER_MODE_LIT_MODEL;
 
     glm_vec3_copy((vec3){ 0.9f, 0.3f, 0.25f }, state->default_albedo);
     state->default_metallic  = 0.0f;
     state->default_roughness = 0.45f;
-
-    state->ambient_strength = 0.5f;
-    state->exposure         = 1.0f;
 
     // --- Worlds -------------------------------------------------------------
     assets_init(&state->assets);
@@ -1171,6 +1188,7 @@ on_init(App* app)
             .module_commands      = chat_command_table,
             .module_command_count = chat_command_count,
             .module_user          = &state->chat,
+            .environment          = &state->env,
         };
     }
 
@@ -1309,27 +1327,36 @@ draw_light_editors(world* w)
     igSeparator();
 }
 
-// Ambient, exposure and image-based lighting: renderer state, not World.
+// Ambient, exposure and image-based lighting: the scene's environment, not
+// World entities (saved with the scene all the same).
 static void
 draw_environment_controls(demo_state* state)
 {
-    igSliderFloat("Ambient", &state->ambient_strength, 0.0f, 2.0f, "%.2f", 0);
-    igSliderFloat("Exposure", &state->exposure, 0.1f, 4.0f, "%.2f", 0);
+    igSliderFloat("Ambient", &state->env.ambient_strength, 0.0f, 2.0f, "%.2f", 0);
+    igSliderFloat("Exposure", &state->env.exposure, 0.1f, 4.0f, "%.2f", 0);
     igSeparator();
 
     igText("Image-based lighting");
-    igCombo_Str_arr("HDRI", &state->selected_hdri, HDRI_NAMES, (int)HDRI_COUNT, -1);
+    int index = hdri_index(state);
+    if (igCombo_Str_arr("HDRI", &index, HDRI_NAMES, (int)HDRI_COUNT, -1) && index >= 0)
+        snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", HDRI_PATHS[index]);
+    if (index < 0 && state->env.hdri[0])
+        igTextDisabled("From the scene: %s", state->env.hdri);
 
     if (state->ibl.irradiance)
     {
-        igCheckbox("Use IBL", &state->ibl_enabled);
-        igCheckbox("Show skybox", &state->show_skybox);
-        igSliderFloat("Sky blur", &state->sky_blur, 0.0f, 1.0f, "%.2f", 0);
+        igCheckbox("Use IBL", &state->env.use_ibl);
+        igCheckbox("Show skybox", &state->env.show_skybox);
+        igSliderFloat("Sky blur", &state->env.sky_blur, 0.0f, 1.0f, "%.2f", 0);
+    }
+    else if (state->env.hdri[0])
+    {
+        igText("No HDRI loaded. Expected:");
+        igText("assets/%s", state->env.hdri);
     }
     else
     {
-        igText("No HDRI loaded. Expected:");
-        igText("assets/%s", HDRI_PATHS[state->selected_hdri]);
+        igText("No HDRI set.");
     }
     igSeparator();
 }
@@ -1387,11 +1414,7 @@ build_render_settings(const demo_state* state)
 {
     scene_render_settings settings = scene_render_settings_default();
 
-    settings.ibl                 = state->ibl_enabled ? &state->ibl : NULL;
-    settings.show_skybox         = state->show_skybox;
-    settings.sky_blur            = state->sky_blur;
-    settings.ambient_strength    = state->ambient_strength;
-    settings.exposure            = state->exposure;
+    scene_render_settings_apply_environment(&settings, &state->env, &state->ibl);
     settings.debug_show_cascades = state->debug_show_cascades;
 
     // Where nothing (not even the skybox) is drawn: App.c's screen clear
@@ -1446,8 +1469,7 @@ static void on_frame(App* app, f32 dt)
     }
     else if (state->mode == RENDER_MODE_MATERIAL_GRID)
     {
-        if (state->selected_hdri != state->loaded_hdri)
-            load_selected_hdri(state, state->selected_hdri);
+        sync_hdri(state);
 
         world_update(&state->grid_world);
 
@@ -1463,8 +1485,7 @@ static void on_frame(App* app, f32 dt)
         if (state->selected_model != state->loaded_model)
             load_selected_model(state, state->selected_model);
 
-        if (state->selected_hdri != state->loaded_hdri)
-            load_selected_hdri(state, state->selected_hdri);
+        sync_hdri(state);
 
         sync_lit_world(state, time);
 

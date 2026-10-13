@@ -3,6 +3,7 @@
 #include "../Core/Defines.h"
 #include "../RHI/RHI.h"
 #include "../Scene/Camera.h"
+#include "../World/Environment.h"
 #include "../World/World.h"
 #include "IBL.h"
 #include "PostProcess.h"
@@ -42,6 +43,12 @@ typedef struct scene_render_settings
 
 // Sensible defaults: no IBL, skybox on, ambient 0.5, exposure 1, shadows on.
 scene_render_settings scene_render_settings_default(void);
+
+// Copies a scene's environment into `settings`: the lighting values, and
+// `ibl` as the IBL when env->use_ibl is set and `ibl` holds a baked HDRI
+// (may be NULL). Baking env->hdri into `ibl` is the caller's job.
+void scene_render_settings_apply_environment(scene_render_settings* settings, const scene_environment* env,
+                                             const ibl_environment* ibl);
 
 // What hot reload compares to notice a shader file changed: the size as
 // well as the mtime, because mtime only has one-second resolution and many

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Core/Defines.h"
+#include "../World/Environment.h"
 #include "../World/World.h"
 #include "History.h"
 
@@ -86,6 +87,12 @@ typedef struct command_context
     void*                   module_user;
 
     const char* scenes_dir;           // where scene.save/load/list work; NULL = assets/scenes
+
+    // Optional: the scene's environment (HDRI, exposure, ...), which the app
+    // owns and renders with. scene.save writes it into the file; a replacing
+    // scene.load reads the file's back into it (a merging load leaves it).
+    // Not covered by undo: undoing a load restores the entities only.
+    scene_environment* environment;
 
     uint32           batch_depth;      // internal: > 0 while a batch runs its commands
 } command_context;

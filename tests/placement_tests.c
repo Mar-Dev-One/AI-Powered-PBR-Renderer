@@ -2,11 +2,13 @@
 //
 // Headless tests for the high-level commands: place_model and entity.place
 // (sizes, rotations, on_ground, every relative_to side, materials, errors),
-// scene.save / scene.load / scene.list (round trip, names, undo), and
+// scene.save / scene.load / scene.list (round trip, names, undo, the
+// environment), and
 // application-registered host commands. Models are registered with
 // assets_add_model() as bounds only, so nothing touches the GPU.
 
 #include "Commands/Commands.h"
+#include "Core/FileIO.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -241,6 +243,46 @@ test_scene_files(void)
     CHECK(world_count(&g_world) == count);
 }
 
+// The environment travels with the scene: saved by scene.save, restored by a
+// replacing scene.load, left alone by a merging one, and a bad one fails the
+// load before the world is touched.
+static void
+test_scene_environment(void)
+{
+    scene_environment env = scene_environment_default();
+    snprintf(env.hdri, sizeof(env.hdri), "hdri/test.hdr");
+    env.exposure    = 2.5f;
+    env.show_skybox = false;
+    g_ctx.environment = &env;
+
+    CHECK(run("{\"cmd\":\"scene.save\",\"args\":{\"name\":\"lit_kitchen\"}}"));
+
+    env = scene_environment_default();
+    CHECK(run("{\"cmd\":\"scene.load\",\"args\":{\"name\":\"lit_kitchen\",\"replace\":false}}"));
+    CHECK(env.hdri[0] == '\0' && near(env.exposure, 1.0f));   // merging keeps the current one
+
+    CHECK(run("{\"cmd\":\"scene.load\",\"args\":{\"name\":\"lit_kitchen\"}}"));
+    CHECK(strcmp(env.hdri, "hdri/test.hdr") == 0 && near(env.exposure, 2.5f) && !env.show_skybox);
+
+    // A file from before environments existed loads and keeps the current one.
+    char path[1024];
+    snprintf(path, sizeof(path), "%s/old_style.json", TEST_SCENES_DIR);
+    CHECK(file_write_string(path, "{\"format\":\"pbr-scene\",\"version\":1,\"entities\":[{\"name\":\"lone\"}]}"));
+    CHECK(run("{\"cmd\":\"scene.load\",\"args\":{\"name\":\"old_style\"}}"));
+    CHECK(world_find(&g_world, "lone") != ENTITY_NULL && near(env.exposure, 2.5f));
+
+    // A bad environment fails the whole load and changes nothing.
+    snprintf(path, sizeof(path), "%s/bad_env.json", TEST_SCENES_DIR);
+    CHECK(file_write_string(path, "{\"format\":\"pbr-scene\",\"version\":1,\"environment\":{\"exposure\":-1},"
+                                  "\"entities\":[{\"name\":\"never\"}]}"));
+    CHECK(!run("{\"cmd\":\"scene.load\",\"args\":{\"name\":\"bad_env\"}}"));
+    CHECK(error_mentions("exposure"));
+    CHECK(world_find(&g_world, "lone") != ENTITY_NULL && world_find(&g_world, "never") == ENTITY_NULL);
+    CHECK(near(env.exposure, 2.5f));
+
+    g_ctx.environment = NULL;
+}
+
 // --- Host commands -----------------------------------------------------------
 
 static int g_exposure_calls;
@@ -315,6 +357,7 @@ main(void)
     test_entity_place();
     test_scene_files();
     test_host_commands();
+    test_scene_environment();   // last: it replaces the world
 
     cJSON_Delete(g_response);
     history_shutdown(&g_history, &g_world);

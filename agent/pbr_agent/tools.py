@@ -331,14 +331,16 @@ TOOLS: list[Tool] = [
     # --- Files ------------------------------------------------------------------------------
     Tool(
         "save_scene",
-        "Saves the whole scene under a name (letters, digits, '_' and '-').",
+        "Saves the whole scene -- entities and the environment (HDRI, exposure, ambient) -- under a "
+        "name (letters, digits, '_' and '-').",
         _schema({"name": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$"}}, ["name"]),
         "scene.save", example={"name": "tool_test"},
     ),
     Tool("list_scenes", "Names of the saved scenes.", _schema({}), "scene.list", read_only=True),
     Tool(
         "load_scene",
-        "Loads a saved scene, replacing the current one (or adding to it with replace=false).",
+        "Loads a saved scene, replacing the current one and its environment (or adding its entities "
+        "to the current scene with replace=false).",
         _schema({"name": {"type": "string"}, "replace": {"type": "boolean"}}, ["name"]),
         "scene.load", example={"name": "tool_test"},
     ),

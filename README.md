@@ -42,9 +42,10 @@ can be started from any directory.
 - **Testbed** (`build/testbed/Release/Testbed.exe`): the game runtime. It loads a scene saved by
   the editor and plays it, with no UI, console or command server:
   `Testbed [scene] [hdri]`, where `scene` is a name under `assets/scenes/` (default
-  `orrery_plaza`) or a path to a `.json` file, and `hdri` is a `.hdr` under `assets/`. It views
-  the scene through its first Camera entity; without one, left-drag orbits and the wheel zooms.
-  Esc quits.
+  `orrery_plaza`) or a path to a `.json` file, and `hdri` is a `.hdr` under `assets/` that
+  overrides the scene's own. The scene file carries its environment (HDRI, exposure, ambient
+  strength, skybox), so it looks as it did in the editor. It views the scene through its first
+  Camera entity; without one, left-drag orbits and the wheel zooms. Esc quits.
 
 ## Using the editor
 
@@ -78,7 +79,10 @@ Commands cover entities and components (`entity.create`, `component.set`, ...), 
 placement (`place_model`, `entity.place` relative to other entities), scene files (`scene.save`,
 `scene.load`, `scene.list`), undo/redo (`history.*`), batches, and app-level settings such as the
 camera and environment. `scene.describe` shows the current world. Saved scenes live in
-[assets/scenes/](assets/scenes/); two example scenes built by an AI are included.
+[assets/scenes/](assets/scenes/); two example scenes built by an AI are included. A saved scene
+holds the entities and the environment (HDRI, IBL and skybox switches, sky blur, exposure, ambient
+strength); loading it with `replace` restores both, while merging into the current scene adds the
+entities only.
 
 ## Building scenes with Claude
 

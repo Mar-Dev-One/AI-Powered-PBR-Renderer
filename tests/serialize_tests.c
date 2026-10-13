@@ -2,9 +2,10 @@
 //
 // Headless tests for World/Serialize.h: JSON output shape and rounding,
 // partial updates, all-or-nothing validation, error messages, enums,
-// material overrides, names, parents, and asset keys that never reach the
-// GPU (null and unknown built-ins).
+// material overrides, names, parents, asset keys that never reach the GPU
+// (null and unknown built-ins), and the scene environment.
 
+#include "World/Environment.h"
 #include "World/Serialize.h"
 #include "World/World.h"
 
@@ -270,6 +271,58 @@ test_world_order(asset_cache* assets)
     world_shutdown(&w);
 }
 
+// Scene environment: round trip, partial updates, null HDRI, and
+// all-or-nothing validation (ranges, types, paths outside assets/).
+static void
+test_environment(void)
+{
+    scene_environment env = scene_environment_default();
+    CHECK(env.hdri[0] == '\0' && env.use_ibl && env.show_skybox);
+
+    snprintf(env.hdri, sizeof(env.hdri), "hdri/sky.hdr");
+    env.exposure    = 1.3f;
+    env.show_skybox = false;
+
+    cJSON* json = serialize_environment(&env);
+    CHECK(strcmp(cJSON_GetObjectItem(json, "hdri")->valuestring, "hdri/sky.hdr") == 0);
+    CHECK(cJSON_GetObjectItem(json, "exposure")->valuedouble == 1.3);   // rounded, not 1.2999999523
+
+    scene_environment back = scene_environment_default();
+    CHECK(deserialize_environment(json, &back, g_error, sizeof(g_error)));
+    CHECK(strcmp(back.hdri, "hdri/sky.hdr") == 0);
+    CHECK(fabsf(back.exposure - 1.3f) < 1e-6f && !back.show_skybox && back.use_ibl);
+    cJSON_Delete(json);
+
+    // Omitted keys keep their values; null clears the HDRI.
+    cJSON* partial = cJSON_Parse("{\"hdri\": null, \"sky_blur\": 0.25}");
+    CHECK(deserialize_environment(partial, &back, g_error, sizeof(g_error)));
+    CHECK(back.hdri[0] == '\0' && fabsf(back.sky_blur - 0.25f) < 1e-6f && fabsf(back.exposure - 1.3f) < 1e-6f);
+    cJSON_Delete(partial);
+
+    // Rejected as a whole: nothing changes, and the error names the key.
+    const char* bad[] = {
+        "{\"exposure\": 0}",
+        "{\"exposure\": 2, \"ambient_strength\": 9}",
+        "{\"sky_blur\": \"high\"}",
+        "{\"use_ibl\": 1}",
+        "{\"hdri\": \"../../secrets.hdr\"}",
+        "{\"hdri\": \"C:/sky.hdr\"}",
+        "{\"hdri\": 3}",
+        "[]",
+    };
+    for (size_t i = 0; i < sizeof(bad) / sizeof(bad[0]); ++i)
+    {
+        scene_environment before = back;
+        cJSON*            fields = cJSON_Parse(bad[i]);
+        g_error[0] = '\0';
+        CHECK(!deserialize_environment(fields, &back, g_error, sizeof(g_error)));
+        CHECK(memcmp(&before, &back, sizeof(back)) == 0);
+        CHECK(error_mentions("environment"));
+        cJSON_Delete(fields);
+    }
+    CHECK(fabsf(back.exposure - 1.3f) < 1e-6f);
+}
+
 int
 main(void)
 {
@@ -282,6 +335,7 @@ main(void)
     test_material_overrides(&assets);
     test_names_and_parents(&assets);
     test_world_order(&assets);
+    test_environment();
 
     assets_shutdown(&assets);
 

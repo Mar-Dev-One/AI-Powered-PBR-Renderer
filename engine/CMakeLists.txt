@@ -33,6 +33,7 @@ add_library(PBR_Engine STATIC
     src/UI/CommandConsole.c
     src/UI/ChatPanel.c
     src/World/Serialize.c
+    src/World/Environment.c
     src/Commands/Commands.c
     src/Commands/History.c
     src/Commands/JsonRpc.c

@@ -26,6 +26,17 @@ scene_render_settings_default(void)
     };
 }
 
+void
+scene_render_settings_apply_environment(scene_render_settings* settings, const scene_environment* env,
+                                        const ibl_environment* ibl)
+{
+    settings->ibl              = env->use_ibl && ibl && ibl->irradiance ? ibl : NULL;
+    settings->show_skybox      = env->show_skybox;
+    settings->sky_blur         = env->sky_blur;
+    settings->ambient_strength = env->ambient_strength;
+    settings->exposure         = env->exposure;
+}
+
 // The constants pbr.vert/pbr.frag size their arrays with, generated from
 // the C definitions they have to agree with -- see the #error guards at the
 // top of both shaders.

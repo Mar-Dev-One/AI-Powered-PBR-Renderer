@@ -1310,6 +1310,8 @@ cmd_scene_save(command_context* ctx, const cJSON* args, cmd_output* out)
     cJSON* scene = serialize_world(ctx->w);
     cJSON_AddStringToObject(scene, "format", SCENE_FORMAT);
     cJSON_AddNumberToObject(scene, "version", SCENE_VERSION);
+    if (ctx->environment)
+        cJSON_AddItemToObject(scene, "environment", serialize_environment(ctx->environment));
 
     char* text = cJSON_Print(scene);
     b8    ok   = file_write_string(path, text);
@@ -1377,6 +1379,17 @@ cmd_scene_load(command_context* ctx, const cJSON* args, cmd_output* out)
         return fail(out, CMD_ERROR_INVALID_VALUE, "\"%s\" is not a scene file", name);
     }
 
+    // The environment is checked before anything changes, and only applied
+    // once the entities have loaded too.
+    char              error[640];
+    const cJSON*      env_json = cJSON_GetObjectItem(scene, "environment");
+    scene_environment env      = ctx->environment ? *ctx->environment : scene_environment_default();
+    if (replace && ctx->environment && env_json && !deserialize_environment(env_json, &env, error, sizeof(error)))
+    {
+        cJSON_Delete(scene);
+        return fail(out, CMD_ERROR_INVALID_VALUE, "%s", error);
+    }
+
     if (replace)
         world_clear(w);
 
@@ -1386,7 +1399,6 @@ cmd_scene_load(command_context* ctx, const cJSON* args, cmd_output* out)
         FATAL("commands: out of memory");
 
     uint32 loaded;
-    char   error[640];
     b8     ok = deserialize_scene(w, scene, created, &loaded, error, sizeof(error));
     cJSON_Delete(scene);
 
@@ -1395,6 +1407,9 @@ cmd_scene_load(command_context* ctx, const cJSON* args, cmd_output* out)
         free(created);
         return fail(out, CMD_ERROR_INVALID_VALUE, "%s", error);   // the dispatcher restores the world as it was
     }
+
+    if (replace && ctx->environment && env_json)
+        *ctx->environment = env;
 
     out->result = cJSON_CreateObject();
     cJSON* names = cJSON_AddArrayToObject(out->result, "entities");
@@ -1506,7 +1521,7 @@ static const cmd_def COMMANDS[] = {
                                                                                               ARGS(ARGS_PLACE_MODEL),      true,  cmd_place_model },
     { "entity.place",     "Moves an entity: onto the ground, on top of or beside another entity, or to a position",
                                                                                               ARGS(ARGS_ENTITY_PLACE),     true,  cmd_entity_place },
-    { "scene.save",       "Saves every entity to a named scene file",                       ARGS(ARGS_SCENE_NAME),       false, cmd_scene_save },
+    { "scene.save",       "Saves every entity and the environment to a named scene file",  ARGS(ARGS_SCENE_NAME),       false, cmd_scene_save },
     { "scene.load",       "Loads a saved scene, replacing or adding to the current one",    ARGS(ARGS_SCENE_LOAD),       true,  cmd_scene_load },
     { "scene.list",       "Names of the saved scenes",                                       NO_ARGS,                     false, cmd_scene_list },
     { "batch",            "Runs several commands as one all-or-nothing, single-undo change", ARGS(ARGS_BATCH),            false, cmd_batch },

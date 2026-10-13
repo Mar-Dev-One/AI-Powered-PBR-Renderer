@@ -7,8 +7,12 @@
 //   Testbed [scene] [hdri]
 //     scene  a name under assets/scenes/ ("orrery_plaza") or a path to a
 //            .json file; defaults to DEFAULT_SCENE
-//     hdri   a Radiance .hdr under assets/ for image-based lighting;
-//            defaults to DEFAULT_HDRI
+//     hdri   a Radiance .hdr under assets/ for image-based lighting,
+//            overriding the scene's own
+//
+// The scene file's "environment" (World/Environment.h) sets the HDRI,
+// exposure, ambient strength and skybox, as they were in the editor when it
+// was saved. Older files without one get the defaults with DEFAULT_HDRI.
 //
 // The view comes from the scene's first Camera entity. A scene without one
 // gets an orbit camera framing everything in it: left-drag to orbit, scroll
@@ -24,6 +28,7 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/SceneRenderer.h"
 #include "Scene/Camera.h"
+#include "World/Environment.h"
 #include "World/Serialize.h"
 #include "World/World.h"
 
@@ -49,8 +54,8 @@ typedef struct game_state
     asset_cache     assets;
     world           world;
     scene_renderer  renderer;
-    ibl_environment ibl;
-    b8              ibl_loaded;
+    scene_environment env;   // from the scene file; see World/Environment.h
+    ibl_environment   ibl;     // env.hdri baked; all zeroes if it couldn't be loaded
 
     // The scene's Camera entity, or ENTITY_NULL to use the orbit camera.
     entity_id scene_camera;
@@ -111,7 +116,6 @@ load_scene(game_state* state, const char* arg)
 
     char error[640];
     b8   ok = scene && deserialize_scene(&state->world, scene, NULL, NULL, error, sizeof(error));
-    cJSON_Delete(scene);
 
     if (!ok)
     {
@@ -123,6 +127,12 @@ load_scene(game_state* state, const char* arg)
         LOG_INFO("testbed: loaded '%s' (%u entities)\n", path, world_count(&state->world));
     }
 
+    // A bad environment doesn't stop the scene from playing: it keeps the defaults.
+    const cJSON* env = ok ? cJSON_GetObjectItem(scene, "environment") : NULL;
+    if (env && !deserialize_environment(env, &state->env, error, sizeof(error)))
+        LOG_WARN("testbed: '%s': %s -- using the default environment\n", path, error);
+
+    cJSON_Delete(scene);
     free(path);
     return ok;
 }
@@ -219,16 +229,24 @@ on_init(App* app)
     if (!scene_renderer_create(&state->renderer, size.width, size.height, CASCADE_COUNT, SHADOW_MAP_SIZE))
         FATAL("testbed: failed to create the scene renderer");
 
-    char* hdri_path   = asset_path(state->hdri_arg);
-    state->ibl_loaded = ibl_create(&state->ibl, hdri_path);
-    if (!state->ibl_loaded)
-        LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", hdri_path);
-    free(hdri_path);
+    state->env = scene_environment_default();
+    snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", DEFAULT_HDRI);
 
     assets_init(&state->assets);
     world_init(&state->world, &state->assets);
     load_scene(state, state->scene_arg);
     world_update(&state->world);
+
+    if (state->hdri_arg)
+        snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", state->hdri_arg);
+
+    if (state->env.hdri[0])
+    {
+        char* hdri_path = asset_path(state->env.hdri);
+        if (!ibl_create(&state->ibl, hdri_path))
+            LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", hdri_path);
+        free(hdri_path);
+    }
 
     const uint32 camera_mask = COMPONENT_BIT(COMPONENT_CAMERA);
     state->scene_camera = world_next(&state->world, ENTITY_NULL, camera_mask);
@@ -294,7 +312,7 @@ on_frame(App* app, f32 dt)
         orbit_camera_update(state, get_renderer()->drawing_window);
 
     scene_render_settings settings = scene_render_settings_default();
-    settings.ibl = state->ibl_loaded ? &state->ibl : NULL;
+    scene_render_settings_apply_environment(&settings, &state->env, &state->ibl);
 
     scene_renderer_draw(&state->renderer, &state->world, &state->cam, &settings);
 }
@@ -314,7 +332,7 @@ int main(int argc, char** argv)
 {
     game_state state = {
         .scene_arg = argc > 1 ? argv[1] : DEFAULT_SCENE,
-        .hdri_arg  = argc > 2 ? argv[2] : DEFAULT_HDRI,
+        .hdri_arg  = argc > 2 ? argv[2] : NULL,
     };
 
     App app = {
