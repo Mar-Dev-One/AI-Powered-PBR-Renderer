@@ -34,10 +34,19 @@ cmake --build build --config Release
 If you cloned without `--recursive`, run `git submodule update --init` first (GLFW, cglm and
 cimgui are submodules; the other dependencies are vendored in `engine/deps/`).
 
-Run the testbed from `build/testbed/` (`Release/Testbed.exe` with Visual Studio). The assets path
-is compiled in, so it can be started from any directory.
+This builds two apps on the same engine library. The assets path is compiled into both, so they
+can be started from any directory.
 
-## Using the testbed
+- **Editor** (`build/editor/Release/Editor.exe` with Visual Studio): the scene panels, command
+  console, command server and in-app chat described below.
+- **Testbed** (`build/testbed/Release/Testbed.exe`): the game runtime. It loads a scene saved by
+  the editor and plays it, with no UI, console or command server:
+  `Testbed [scene] [hdri]`, where `scene` is a name under `assets/scenes/` (default
+  `orrery_plaza`) or a path to a `.json` file, and `hdri` is a `.hdr` under `assets/`. It views
+  the scene through its first Camera entity; without one, left-drag orbits and the wheel zooms.
+  Esc quits.
+
+## Using the editor
 
 The **Scene** window switches between three modes:
 
@@ -73,7 +82,7 @@ camera and environment. `scene.describe` shows the current world. Saved scenes l
 
 ## Building scenes with Claude
 
-When the testbed starts, it opens a command server on `127.0.0.1` and writes how to reach it
+When the editor starts, it opens a command server on `127.0.0.1` and writes how to reach it
 (port and token) to `~/.pbr-renderer/server.json`. The `pbr-mcp` server in [agent/](agent/)
 connects to it and exposes the scene tools over MCP.
 
@@ -85,7 +94,7 @@ agent/.venv/bin/python -m pip install -e agent          # macOS / Linux
 claude mcp add pbr-renderer -- /path/to/PBR-Renderer/agent/.venv/Scripts/pbr-mcp.exe
 ```
 
-Then start the testbed and ask for something like *"put a table in the middle with a lamp on it,
+Then start the editor and ask for something like *"put a table in the middle with a lamp on it,
 light it warmly and show me"*. Claude can inspect the scene, place and edit entities, set lights,
 camera and environment, take screenshots, and save scenes.
 
@@ -94,9 +103,9 @@ from your own Python code.
 
 ### In-app chat
 
-The testbed's **Chat** window talks to the same tools without leaving the app. At launch the
-testbed starts the agent (`python -m pbr_agent.agent` from `agent/.venv`), which connects back
-through the command server. Set `ANTHROPIC_API_KEY` in the environment the testbed starts from
+The editor's **Chat** window talks to the same tools without leaving the app. At launch the
+editor starts the agent (`python -m pbr_agent.agent` from `agent/.venv`), which connects back
+through the command server. Set `ANTHROPIC_API_KEY` in the environment the editor starts from
 (or run `ant auth login`); without credentials the panel says so.
 
 Replies stream in, each tool call shows as a line you can expand, and **Stop** ends a turn early.
@@ -123,8 +132,8 @@ Both are converted to the same `model` / `material` / `mesh` types and drawn wit
 `assets/shaders/pbr.*`. Not supported yet: skinning and animation, morph targets, Draco/meshopt
 compression, `KHR_texture_transform`, and second UV sets.
 
-To add a model to the testbed's picker, put it in `assets/models/` and add it to `MODEL_PATHS` in
-[testbed/main.c](testbed/main.c). HDRIs work the same way: an equirectangular `.hdr` in
+To add a model to the editor's picker, put it in `assets/models/` and add it to `MODEL_PATHS` in
+[editor/main.c](editor/main.c). HDRIs work the same way: an equirectangular `.hdr` in
 `assets/hdri/`, listed in `HDRI_PATHS`. [Poly Haven](https://polyhaven.com/hdris) is a good
 source.
 
@@ -142,7 +151,8 @@ engine/src/
   Net/             localhost WebSocket command server
   Chat/            in-app chat session (turns, undo per turn, agent connection)
   UI/              ImGui layer, entity panel, command console, chat panel
-testbed/           the demo app
+editor/            the editor app (ImGui panels, console, command server, chat)
+testbed/           the game runtime (loads and plays a scene; no editor UI)
 assets/            shaders, models, HDRIs, textures, scenes
 agent/             pbr_agent Python package: MCP server and in-app chat agent
 tests/             headless C tests and end-to-end server tests

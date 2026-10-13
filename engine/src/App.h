@@ -4,10 +4,10 @@
 
 struct App;
 
-// All hooks are optional (may be NULL). Input hooks only fire for events
-// Dear ImGui did not claim (typing in a text box, scrolling a panel), so an
-// app never has to check ImGui's capture flags itself. Key and mouse codes
-// are GLFW's for now.
+// All hooks are optional (may be NULL). With use_imgui set, input hooks only
+// fire for events Dear ImGui did not claim (typing in a text box, scrolling a
+// panel), so an app never has to check ImGui's capture flags itself. Key and
+// mouse codes are GLFW's for now.
 
 // Once, after the window, GL context, RHI and ImGui exist -- create GPU
 // resources here.
@@ -43,6 +43,10 @@ typedef struct App
 
     void* user_data;             // optional, passed through to every hook via app->user_data
     b8 should_close;             // set this from a hook to exit run() without closing the window
+
+    // Dear ImGui (UI/ImGuiLayer.h) for tools like the editor. Off for a game
+    // runtime: ImGui is never initialised, so no ig*() / imgui_layer_*() calls.
+    b8 use_imgui;
 } App;
 
 

@@ -18,7 +18,7 @@ static void glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, i
     // Always forward releases: if ImGui grabbed focus between press and
     // release, swallowing the release would leave the app thinking the key
     // is still held.
-    if (action != GLFW_RELEASE && imgui_layer_wants_keyboard())
+    if (action != GLFW_RELEASE && g_app->use_imgui && imgui_layer_wants_keyboard())
         return;
 
     g_app->on_key(g_app, key, action, mods);
@@ -29,7 +29,7 @@ static void glfw_scroll_cb(GLFWwindow* window, double xoffset, double yoffset)
     if (!g_app || !g_app->on_scroll)
         return;
 
-    if (imgui_layer_wants_mouse())
+    if (g_app->use_imgui && imgui_layer_wants_mouse())
         return;
 
     g_app->on_scroll(g_app, xoffset, yoffset);
@@ -75,7 +75,8 @@ void run(App* app)
 
     // ImGui needs a live GL context + GLFW window, so it can only be set
     // up after init_renderer() above has created both.
-    imgui_layer_init(rend->drawing_window);
+    if (app->use_imgui)
+        imgui_layer_init(rend->drawing_window);
 
     if (app->on_init)
         app->on_init(app);
@@ -91,20 +92,23 @@ void run(App* app)
 
         renderer_clear(0.4f, 0.1f, 0.12f, 1.0f);
 
-        imgui_layer_new_frame();
+        if (app->use_imgui)
+            imgui_layer_new_frame();
 
         if (app->on_frame)
             app->on_frame(app, dt);
 
         // Draws on top of whatever on_frame just rendered, still before
         // the swap so it actually shows up on screen.
-        imgui_layer_render();
+        if (app->use_imgui)
+            imgui_layer_render();
 
         renderer_end_frame();
 
         // Must come after the swap above -- it makes the popped-out
         // windows' own GL contexts current to draw them.
-        imgui_layer_render_platform_windows();
+        if (app->use_imgui)
+            imgui_layer_render_platform_windows();
     }
 }
 
@@ -115,7 +119,8 @@ void terminate(App* app)
     if (app && app->on_shutdown)
         app->on_shutdown(app);
 
-    imgui_layer_shutdown();
+    if (app && app->use_imgui)
+        imgui_layer_shutdown();
     terminate_renderer();
 
     g_app = NULL;

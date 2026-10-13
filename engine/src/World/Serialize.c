@@ -538,3 +538,96 @@ deserialize_component(world* w, entity_id e, component_type type, const cJSON* f
 
     return true;
 }
+
+b8
+deserialize_scene(world* w, const cJSON* scene, entity_id* out_created, uint32* out_count,
+                  char* error, size_t error_size)
+{
+    if (out_count)
+        *out_count = 0;
+
+    const cJSON* format   = cJSON_GetObjectItem(scene, "format");
+    const cJSON* entities = cJSON_GetObjectItem(scene, "entities");
+    if (!cJSON_IsString(format) || strcmp(format->valuestring, SCENE_FORMAT) != 0 || !cJSON_IsArray(entities))
+    {
+        set_error(error, error_size, "not a scene file");
+        return false;
+    }
+
+    // Names in the file -> the entities made for them (names may change
+    // when merging into a world that already uses them).
+    uint32     count   = (uint32)cJSON_GetArraySize(entities);
+    entity_id* created = calloc(count ? count : 1, sizeof(*created));
+    if (!created)
+        FATAL("serialize: out of memory");
+
+    b8     ok    = true;
+    uint32 index = 0;
+    const cJSON* entity;
+    cJSON_ArrayForEach(entity, entities)
+    {
+        const char* entity_name = cJSON_GetStringValue(cJSON_GetObjectItem(entity, "name"));
+        entity_id   e           = world_create(w, entity_name);
+        created[index] = e;
+
+        // Parents come earlier in the file (serialize_world()'s order).
+        const char* parent_name = cJSON_GetStringValue(cJSON_GetObjectItem(entity, "parent"));
+        if (parent_name)
+        {
+            entity_id parent = ENTITY_NULL;
+            uint32    i      = 0;
+            const cJSON* earlier;
+            cJSON_ArrayForEach(earlier, entities)
+            {
+                if (i >= index)
+                    break;
+                const char* earlier_name = cJSON_GetStringValue(cJSON_GetObjectItem(earlier, "name"));
+                if (earlier_name && strcmp(earlier_name, parent_name) == 0)
+                    parent = created[i];
+                ++i;
+            }
+            if (parent == ENTITY_NULL)
+            {
+                set_error(error, error_size, "entity \"%s\": parent \"%s\" isn't defined before it",
+                          entity_name ? entity_name : "?", parent_name);
+                ok = false;
+                break;
+            }
+            world_set_parent(w, e, parent);
+        }
+
+        const cJSON* component;
+        cJSON_ArrayForEach(component, cJSON_GetObjectItem(entity, "components"))
+        {
+            // Name and Parent are the entity's "name" / "parent" keys, never components here.
+            const component_desc* c = reflect_component_by_name(component->string);
+            if (!c || c->type == COMPONENT_NAME || c->type == COMPONENT_PARENT)
+            {
+                set_error(error, error_size, "entity \"%s\": unknown component \"%s\"", world_name(w, e),
+                          component->string);
+                ok = false;
+                break;
+            }
+
+            char component_error[512];
+            if (!deserialize_component(w, e, c->type, component, component_error, sizeof(component_error)))
+            {
+                set_error(error, error_size, "entity \"%s\": %s", world_name(w, e), component_error);
+                ok = false;
+                break;
+            }
+        }
+        if (!ok)
+            break;
+
+        ++index;
+    }
+
+    if (out_created)
+        memcpy(out_created, created, index * sizeof(*created));
+    if (out_count)
+        *out_count = index;
+
+    free(created);
+    return ok;
+}

@@ -2,8 +2,8 @@
 engine's command table, and its example actually works against the engine.
 
 Engine-core tools run against ServerHost (headless). App tools (camera,
-environment, screenshot) exist only in the Testbed; they are checked live
-when the Testbed is running and skipped otherwise.
+environment, screenshot) exist only in the Editor; they are checked live
+when the Editor is running and skipped otherwise.
 """
 
 import base64
@@ -113,7 +113,7 @@ def _live_app_url():
         return None
 
 
-@unittest.skipUnless(_live_app_url(), "start the Testbed to check the app's tools live")
+@unittest.skipUnless(_live_app_url(), "start the Editor to check the app's tools live")
 class AppToolsLiveTests(unittest.IsolatedAsyncioTestCase):
     async def test_app_tools(self):
         async with EngineClient() as engine:

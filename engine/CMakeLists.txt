@@ -41,7 +41,7 @@ add_library(PBR_Engine STATIC
     deps/cjson/cJSON.c
 )
 
-# PUBLIC: consumers (testbed) #include headers like "App.h", "RHI/RHI.h",
+# PUBLIC: consumers (editor, testbed) #include headers like "App.h", "RHI/RHI.h",
 # "Core/Paths.h" straight from this root, same paths as before the split.
 # NOTE: this also exposes RHI/OpenGL/RHI_GL_Internal.h, which is meant to
 # stay backend-private -- that's a real header/include boundary this pass
@@ -56,7 +56,7 @@ add_subdirectory(deps/glad)
 add_subdirectory(deps/cglm)
 include(cmake/cimgui.cmake)
 
-# PUBLIC: Scene/Camera.h includes <cglm/cglm.h> directly, and testbed calls
+# PUBLIC: Scene/Camera.h includes <cglm/cglm.h> directly, and the editor calls
 # cimgui's ig*() functions directly, so both must be visible transitively.
 # glfw/glad are PUBLIC too, defensively, even though Platform/Window.h only
 # forward-declares GLFWwindow as an opaque type today.
@@ -85,7 +85,7 @@ target_include_directories(PBR_Engine PRIVATE deps/stb deps/fast_obj deps/cgltf)
 target_include_directories(PBR_Engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/deps/cjson)
 
 # PRIVATE: only Core/Paths.c reads this macro (asset_path() bakes it in at
-# runtime). testbed/main.c never references ASSETS_ROOT itself, so there's
+# runtime). The apps never reference ASSETS_ROOT itself, so there's
 # no need to leak this build-config detail -- or force it -- onto every
 # future consumer of PBR_Engine.
 target_compile_definitions(PBR_Engine PRIVATE

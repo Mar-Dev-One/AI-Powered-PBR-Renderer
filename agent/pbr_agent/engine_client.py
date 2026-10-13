@@ -105,7 +105,7 @@ def read_discovery(path: str | os.PathLike | None = None) -> dict:
         info = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         raise EngineNotRunning(
-            f"The PBR Renderer isn't running (no {path}). Start the app (the Testbed) and try again."
+            f"The PBR Renderer isn't running (no {path}). Start the app (the Editor) and try again."
         ) from None
     except (OSError, ValueError) as error:
         raise EngineNotRunning(f"Can't read {path}: {error}") from None

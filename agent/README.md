@@ -25,7 +25,7 @@ agent/.venv/bin/python -m pip install -e agent            # macOS / Linux
 
 ## Use from Claude
 
-Start the app (the Testbed) first, or at any time; the MCP server connects on the first tool
+Start the app (the Editor) first, or at any time; the MCP server connects on the first tool
 call. Both setups below run the console script `pbr-mcp` from the virtual environment. The path
 shown is this repository on Windows; adjust it to yours (`agent/.venv/bin/pbr-mcp` on macOS and
 Linux).
@@ -56,7 +56,7 @@ local server directly.
 
 ## The in-app chat agent
 
-The testbed starts `python -m pbr_agent.agent --exit-with-app` from this virtual environment at
+The editor starts `python -m pbr_agent.agent --exit-with-app` from this virtual environment at
 launch. The agent connects to the app's command server, claims the role `chat_agent`
 (`server.hello`), and then serves the **Chat** window:
 
@@ -76,7 +76,7 @@ profile. Options (or environment variables): `--model` (`PBR_AGENT_MODEL`, defau
 working on the agent:
 
 ```sh
-PBR_AGENT_AUTOSTART=0 build/testbed/Release/Testbed.exe     # the app, without its own agent
+PBR_AGENT_AUTOSTART=0 build/editor/Release/Editor.exe       # the app, without its own agent
 agent/.venv/Scripts/pbr-agent                               # this one instead
 ```
 

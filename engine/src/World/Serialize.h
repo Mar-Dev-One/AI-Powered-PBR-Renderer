@@ -42,3 +42,22 @@ cJSON* serialize_world(const world* w);
 // ({ "value": "new_name" } / { "parent": "table" }).
 b8 deserialize_component(world* w, entity_id e, component_type type, const cJSON* fields,
                          char* error, size_t error_size);
+
+// --- Scene files ---------------------------------------------------------------
+// A scene file is serialize_world()'s object plus "format": SCENE_FORMAT and
+// "version": SCENE_VERSION.
+
+#define SCENE_FORMAT  "pbr-scene"
+#define SCENE_VERSION 1
+
+// Adds the entities of `scene` (a parsed scene file) to `w`, alongside any
+// already there. A name already in use gets changed (see world_create()) and
+// parent references follow the change. If `out_created` isn't NULL it gets
+// each new entity in file order, so it needs room for the length of the
+// file's "entities" array; `out_count` (may be NULL) gets how many were made.
+//
+// Not all-or-nothing: on false, the entities made before the bad one stay in
+// `w` (the command layer's undo restores the world; a runtime clears it), and
+// `error` (may be NULL) names the entity and what is wrong with it.
+b8 deserialize_scene(world* w, const cJSON* scene, entity_id* out_created, uint32* out_count,
+                     char* error, size_t error_size);

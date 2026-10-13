@@ -94,7 +94,7 @@ class Tool:
     example: dict = field(default_factory=dict)        # a valid call; run by the tests
     build: Callable[[dict], dict] | None = None        # args -> command params (default: same names)
     read_only: bool = False                            # never changes the scene
-    app_command: bool = False                          # provided by the app (Testbed), not the engine core
+    app_command: bool = False                          # provided by the app (Editor), not the engine core
     returns_image: bool = False                        # result has base64 PNG "data" (view.screenshot)
 
     def to_command(self, args: dict | None) -> tuple[str, dict]:

@@ -1256,9 +1256,6 @@ cmd_entity_place(command_context* ctx, const cJSON* args, cmd_output* out)
 
 // --- Scene files ------------------------------------------------------------------
 
-#define SCENE_FORMAT  "pbr-scene"
-#define SCENE_VERSION 1
-
 // The scenes folder, created if needed. Caller frees.
 static char*
 scenes_directory(const command_context* ctx)
@@ -1383,84 +1380,29 @@ cmd_scene_load(command_context* ctx, const cJSON* args, cmd_output* out)
     if (replace)
         world_clear(w);
 
-    // Names in the file -> the entities made for them (names may change
-    // when merging into a scene that already uses them).
-    uint32     count     = (uint32)cJSON_GetArraySize(entities);
-    entity_id* created   = calloc(count ? count : 1, sizeof(*created));
+    uint32     count   = (uint32)cJSON_GetArraySize(entities);
+    entity_id* created = calloc(count ? count : 1, sizeof(*created));
     if (!created)
         FATAL("commands: out of memory");
 
-    out->result = cJSON_CreateObject();
-    cJSON* names = cJSON_AddArrayToObject(out->result, "entities");
-
-    b8     ok    = true;
-    uint32 index = 0;
-    const cJSON* entity;
-    cJSON_ArrayForEach(entity, entities)
-    {
-        const char* entity_name = cJSON_GetStringValue(cJSON_GetObjectItem(entity, "name"));
-        entity_id   e           = world_create(w, entity_name);
-        created[index] = e;
-
-        // Parents come earlier in the file (serialize_world()'s order).
-        const char* parent_name = cJSON_GetStringValue(cJSON_GetObjectItem(entity, "parent"));
-        if (parent_name)
-        {
-            entity_id parent = ENTITY_NULL;
-            uint32    i      = 0;
-            const cJSON* earlier;
-            cJSON_ArrayForEach(earlier, entities)
-            {
-                if (i >= index)
-                    break;
-                const char* earlier_name = cJSON_GetStringValue(cJSON_GetObjectItem(earlier, "name"));
-                if (earlier_name && strcmp(earlier_name, parent_name) == 0)
-                    parent = created[i];
-                ++i;
-            }
-            if (parent == ENTITY_NULL)
-            {
-                ok = fail(out, CMD_ERROR_INVALID_VALUE, "entity \"%s\": parent \"%s\" isn't defined before it",
-                          entity_name ? entity_name : "?", parent_name);
-                break;
-            }
-            world_set_parent(w, e, parent);
-        }
-
-        const cJSON* component;
-        cJSON_ArrayForEach(component, cJSON_GetObjectItem(entity, "components"))
-        {
-            component_type type;
-            char error[512];
-            if (!parse_component_name(component->string, &type, out))
-            {
-                ok = false;
-                break;
-            }
-            if (!deserialize_component(w, e, type, component, error, sizeof(error)))
-            {
-                ok = fail(out, CMD_ERROR_INVALID_VALUE, "entity \"%s\": %s", world_name(w, e), error);
-                break;
-            }
-        }
-        if (!ok)
-            break;
-
-        cJSON_AddItemToArray(names, cJSON_CreateString(world_name(w, e)));
-        ++index;
-    }
-
-    free(created);
+    uint32 loaded;
+    char   error[640];
+    b8     ok = deserialize_scene(w, scene, created, &loaded, error, sizeof(error));
     cJSON_Delete(scene);
 
     if (!ok)
     {
-        cJSON_Delete(out->result);
-        out->result = NULL;
-        return false;   // the dispatcher restores the world as it was
+        free(created);
+        return fail(out, CMD_ERROR_INVALID_VALUE, "%s", error);   // the dispatcher restores the world as it was
     }
 
-    cJSON_AddNumberToObject(out->result, "loaded", index);
+    out->result = cJSON_CreateObject();
+    cJSON* names = cJSON_AddArrayToObject(out->result, "entities");
+    for (uint32 i = 0; i < loaded; ++i)
+        cJSON_AddItemToArray(names, cJSON_CreateString(world_name(w, created[i])));
+    free(created);
+
+    cJSON_AddNumberToObject(out->result, "loaded", loaded);
     return true;
 }
 
