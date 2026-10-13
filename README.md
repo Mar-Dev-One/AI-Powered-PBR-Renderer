@@ -72,6 +72,14 @@ the **Entities** panel. The selection is outlined in orange with its name; light
 picked by clicking where they are. **F** frames the selection, **Esc** clears it (and quits when
 nothing is selected), and clicking empty space deselects.
 
+**Editing:** the **Inspector** shows the selected entity's name, parent and every component as
+editing fields — drags for numbers and vectors (within each field's range), color pickers,
+checkboxes, dropdowns for enums and models, and a checkbox per material override. **Add
+component...** adds a MeshRenderer, Light, Camera or Spin; the **X** on a component's header
+removes it; **Delete** removes the entity. Every edit runs as a command, exactly like the console
+or the agent: it is validated (a rejected value shows in red and changes nothing), reaches the
+live game, and is undoable — a whole drag is one step. **Ctrl+Z** / **Ctrl+Y** undo and redo.
+
 The lighting panel edits every light in the scene, plus ambient strength, exposure, the HDRI, IBL
 and the skybox.
 

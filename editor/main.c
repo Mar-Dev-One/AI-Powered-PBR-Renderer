@@ -33,6 +33,7 @@
 #include "UI/ChatPanel.h"
 #include "UI/CommandConsole.h"
 #include "UI/EntityPanel.h"
+#include "UI/Inspector.h"
 #include "UI/ImGuiLayer.h"
 #include "cimgui.h"
 
@@ -150,6 +151,7 @@ typedef struct demo_state
     command_context lit_commands;
     command_context grid_commands;
     command_console console;
+    inspector       inspector;      // the selected entity's fields; edits run as undoable commands
     b8              show_console;   // F1 toggles
 
     // Each world's on_change: the console log plus a "scene.changed" push to
@@ -565,7 +567,10 @@ on_world_change(void* user_data, const cJSON* event)
     struct world_listener* listener = user_data;
     demo_state*            state    = listener->state;
 
-    console_on_change(&state->console, event);
+    // The inspector's own edits show in its fields as they happen; logging
+    // each frame of a drag would flood the console. Clients still hear them.
+    if (!state->inspector.executing)
+        console_on_change(&state->console, event);
 
     if (state->server)
     {
@@ -1266,6 +1271,7 @@ on_init(App* app)
 
     // --- Commands + console ---------------------------------------------------
     console_init(&state->console);
+    inspector_init(&state->inspector);
     state->show_console = true;
 
     history_init(&state->lit_history);
@@ -1371,8 +1377,6 @@ static void on_resize(App* app, uint16 width, uint16 height)
 
 static void on_key(App* app, int key, int action, int mods)
 {
-    (void)mods;
-
     demo_state* state = (demo_state*)app->user_data;
 
     // Esc clears the selection first; with nothing selected it quits.
@@ -1383,6 +1387,24 @@ static void on_key(App* app, int key, int action, int mods)
             state->selected = ENTITY_NULL;
         else
             app->should_close = true;
+    }
+    // Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z): undo / redo in the world on screen,
+    // like history.undo / history.redo. Only reaches here when no text field
+    // has the keyboard (ImGui handles undo inside those itself).
+    if ((mods & GLFW_MOD_CONTROL) && (action == GLFW_PRESS || action == GLFW_REPEAT)
+        && (key == GLFW_KEY_Z || key == GLFW_KEY_Y))
+    {
+        b8 redo = key == GLFW_KEY_Y || (mods & GLFW_MOD_SHIFT);
+        command_context* ctx = active_commands(state);
+        inspector_finish_edit(&state->inspector, ctx);
+
+        char*       reply   = cmd_execute_text(ctx, redo ? "{\"cmd\":\"history.redo\"}" : "{\"cmd\":\"history.undo\"}");
+        cJSON*      parsed  = cJSON_Parse(reply);
+        const char* message = cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(parsed, "error"), "message"));
+        if (message)
+            console_info(&state->console, message);
+        cJSON_Delete(parsed);
+        cJSON_free(reply);
     }
     if (key == GLFW_KEY_F && action == GLFW_PRESS)
         frame_selection(state);
@@ -1755,6 +1777,7 @@ static void on_frame(App* app, f32 dt)
     command_context* active = active_commands(state);
     validate_selection(state);   // commands this frame may have removed it
     entity_panel_draw(active->w, "Entities", &state->selected, state->reveal_selection);
+    inspector_draw(&state->inspector, active, &state->selected, "Inspector");
     state->selection_world  = active->w;
     state->reveal_selection = false;
     if (state->show_console)
@@ -1782,6 +1805,8 @@ static void on_shutdown(App* app)
     process_destroy(state->agent_process);   // ...or is ended here
     process_destroy(state->game_process);    // the game started by F5 closes with the editor
     live_publisher_shutdown(&state->live);
+    inspector_finish_edit(&state->inspector, active_commands(state));   // an edit still open becomes its own step
+    inspector_shutdown(&state->inspector);
     console_shutdown(&state->console);
     history_shutdown(&state->lit_history, &state->lit_world);     // histories hold asset references too
     history_shutdown(&state->grid_history, &state->grid_world);

@@ -277,6 +277,45 @@ test_revisions_and_events(void)
     CHECK(g_ctx.revision == 2 && strcmp(g_last_source, "undo entity.create x") == 0);
 }
 
+// What the editor's Inspector does for a drag: history.begin on the first
+// change, a component.set every frame, history.commit on release -- the
+// whole drag must undo (and redo) as one step. Also: adding a component with
+// empty fields gives its defaults, and removing it is undoable too.
+static void
+test_inspector_drag_is_one_step(void)
+{
+    reset(true);
+    CHECK(run("{\"cmd\":\"entity.create\",\"args\":{\"name\":\"lamp\"}}"));
+    entity_id lamp = find("lamp");
+
+    CHECK(run("{\"cmd\":\"history.begin\",\"args\":{\"label\":\"edit lamp.Transform.position\"}}"));
+    for (int frame = 1; frame <= 10; ++frame)
+    {
+        char request[256];
+        snprintf(request, sizeof(request),
+                 "{\"cmd\":\"component.set\",\"args\":{\"entity\":\"lamp\",\"component\":\"Transform\","
+                 "\"fields\":{\"position\":[%d, 0, 0]}}}", frame);
+        CHECK(run(request));
+    }
+    CHECK(run("{\"cmd\":\"history.commit\"}"));
+    CHECK(world_transform(&g_world, lamp)->position[0] == 10.0f);
+
+    CHECK(run("{\"cmd\":\"history.undo\"}"));
+    CHECK(world_transform(&g_world, lamp)->position[0] == 0.0f);   // all ten frames at once
+    CHECK(run("{\"cmd\":\"history.redo\"}"));
+    CHECK(world_transform(&g_world, lamp)->position[0] == 10.0f);
+
+    // "Add component...": empty fields = the component's defaults.
+    CHECK(run("{\"cmd\":\"component.set\",\"args\":{\"entity\":\"lamp\",\"component\":\"Spin\",\"fields\":{}}}"));
+    CHECK(world_spin(&g_world, lamp) && world_spin(&g_world, lamp)->degrees_per_second[1] == 30.0f);
+
+    // The header's X, then Ctrl+Z.
+    CHECK(run("{\"cmd\":\"component.remove\",\"args\":{\"entity\":\"lamp\",\"component\":\"Spin\"}}"));
+    CHECK(!world_has(&g_world, lamp, COMPONENT_SPIN));
+    CHECK(run("{\"cmd\":\"history.undo\"}"));
+    CHECK(world_has(&g_world, lamp, COMPONENT_SPIN));
+}
+
 static void
 test_batch_is_one_event(void)
 {
@@ -336,6 +375,7 @@ main(void)
     test_transactions();
     test_batch_failure_changes_nothing();
     test_revisions_and_events();
+    test_inspector_drag_is_one_step();
     test_batch_is_one_event();
     test_without_history();
     test_step_limit();
