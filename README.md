@@ -80,6 +80,12 @@ removes it; **Delete** removes the entity. Every edit runs as a command, exactly
 or the agent: it is validated (a rejected value shows in red and changes nothing), reaches the
 live game, and is undoable — a whole drag is one step. **Ctrl+Z** / **Ctrl+Y** undo and redo.
 
+**Gizmo:** the selection gets move / rotate / scale handles in the view —
+**W** / **E** / **R** switch between them. The Scene panel has the **Local / World** toggle (scale
+always uses the object's own axes) and **Snap** with its step (meters, degrees or scale factor);
+holding **Ctrl** while dragging flips snapping. A drag is one undoable step, like an Inspector edit,
+and works on parented entities (the result is stored relative to the parent).
+
 The lighting panel edits every light in the scene, plus ambient strength, exposure, the HDRI, IBL
 and the skybox.
 

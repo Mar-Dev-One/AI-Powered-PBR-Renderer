@@ -33,6 +33,7 @@
 #include "UI/ChatPanel.h"
 #include "UI/CommandConsole.h"
 #include "UI/EntityPanel.h"
+#include "UI/Gizmo.h"
 #include "UI/Inspector.h"
 #include "UI/ImGuiLayer.h"
 #include "cimgui.h"
@@ -237,6 +238,22 @@ typedef struct demo_state
     b8           reveal_selection;   // picked in the view this frame: open the Entities tree to it
     f64          press_x;            // where the left button went down in the view
     f64          press_y;
+    b8           press_on_gizmo;     // that press began on a gizmo handle: neither orbit nor pick
+
+    // --- Gizmo (UI/Gizmo.h) -------------------------------------------------------
+    // Move / rotate / scale handles on the selection. W / E / R pick the
+    // operation; the Scene panel has the local/world toggle and snapping
+    // (Ctrl while dragging snaps too). Edits are component.set on Transform,
+    // one undo step per drag, like the Inspector.
+    gizmo_operation gizmo_op;
+    gizmo_space     gizmo_space;
+    b8              gizmo_snap;
+    f32             snap_move;        // meters
+    f32             snap_rotate;      // degrees
+    f32             snap_scale;       // scale factor step
+    b8              gizmo_hot;        // over or dragging a handle, as of last frame's draw
+    b8              gizmo_editing;    // a history group is open for the drag in progress
+    b8              gizmo_executing;  // inside one of the gizmo's own commands (not logged)
 } demo_state;
 
 static inline f32
@@ -283,10 +300,11 @@ orbit_camera_update(demo_state* state, window* wind)
     {
         if (!state->dragging)
         {
-            state->press_x = cursor_x;
-            state->press_y = cursor_y;
+            state->press_x        = cursor_x;
+            state->press_y        = cursor_y;
+            state->press_on_gizmo = state->gizmo_hot;
         }
-        else
+        else if (!state->press_on_gizmo)
         {
             const f32 sensitivity = 0.25f;
 
@@ -303,7 +321,7 @@ orbit_camera_update(demo_state* state, window* wind)
     {
         // Released after barely moving: a click, not an orbit -- select.
         const f64 click_slop = 4.0;   // pixels
-        if (state->dragging && !lmb_down && fabs(cursor_x - state->press_x) <= click_slop
+        if (state->dragging && !lmb_down && !state->press_on_gizmo && fabs(cursor_x - state->press_x) <= click_slop
             && fabs(cursor_y - state->press_y) <= click_slop)
             select_at(state, cursor_x, cursor_y);
 
@@ -569,7 +587,7 @@ on_world_change(void* user_data, const cJSON* event)
 
     // The inspector's own edits show in its fields as they happen; logging
     // each frame of a drag would flood the console. Clients still hear them.
-    if (!state->inspector.executing)
+    if (!state->inspector.executing && !state->gizmo_executing)
         console_on_change(&state->console, event);
 
     if (state->server)
@@ -1232,6 +1250,162 @@ frame_selection(demo_state* state)
     cJSON_Delete(args);
 }
 
+// --- Gizmo --------------------------------------------------------------------------
+
+// Runs {cmd, args} for the gizmo (takes `args`); false and a console line on failure.
+static b8
+gizmo_run(demo_state* state, command_context* ctx, const char* cmd, cJSON* args)
+{
+    cJSON* request = cJSON_CreateObject();
+    cJSON_AddStringToObject(request, "cmd", cmd);
+    cJSON_AddItemToObject(request, "args", args ? args : cJSON_CreateObject());
+
+    state->gizmo_executing = true;
+    cJSON* response = cmd_execute(ctx, request);
+    state->gizmo_executing = false;
+
+    b8 ok = cJSON_IsTrue(cJSON_GetObjectItem(response, "ok"));
+    if (!ok)
+    {
+        const char* message = cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(response, "error"), "message"));
+        console_info(&state->console, message ? message : "gizmo: edit failed");
+    }
+    cJSON_Delete(response);
+    cJSON_Delete(request);
+    return ok;
+}
+
+// Ends the drag's history group: the whole drag becomes one undo step.
+static void
+gizmo_finish_edit(demo_state* state, command_context* ctx)
+{
+    if (!state->gizmo_editing)
+        return;
+    state->gizmo_editing = false;
+    gizmo_run(state, ctx, "history.commit", NULL);
+}
+
+static cJSON*
+vec3_array(const f32* v)
+{
+    return cJSON_CreateFloatArray(v, 3);
+}
+
+// Draws the handles on the selection and turns a drag into Transform edits.
+// The gizmo works on the world matrix; the edit is the Transform that gives
+// it: local = inverse(parent world) * new world, decomposed back into
+// position / rotation_deg / scale (World/World.h transform_from_matrix()).
+static void
+draw_gizmo(demo_state* state)
+{
+    command_context* ctx = active_commands(state);
+    world*           w   = ctx->w;
+
+    if (state->selection_world != w || !world_is_alive(w, state->selected))
+    {
+        state->gizmo_hot = false;
+        gizmo_finish_edit(state, ctx);
+        return;
+    }
+    entity_id e = state->selected;
+
+    mat4 view, projection, model;
+    camera_get_view(&state->cam, view);
+    camera_get_projection(&state->cam, projection);
+    glm_mat4_copy((vec4*)world_matrix(w, e), model);
+
+    const f32  snap_values[] = { state->snap_move, state->snap_rotate, state->snap_scale };
+    const b8   snapping      = state->gizmo_snap != igGetIO_Nil()->KeyCtrl;   // Ctrl flips it while dragging
+    const f32* snap          = snapping ? &snap_values[state->gizmo_op] : NULL;
+
+    const ImGuiViewport* viewport    = igGetMainViewport();
+    const b8             interactive = !imgui_layer_wants_mouse() || gizmo_is_using();
+
+    b8 changed = gizmo_manipulate((const f32*)view, (const f32*)projection, state->gizmo_op, state->gizmo_space,
+                                  (f32*)model, snap, viewport->Pos.x, viewport->Pos.y, viewport->Size.x,
+                                  viewport->Size.y, igGetBackgroundDrawList((ImGuiViewport*)viewport), interactive);
+    state->gizmo_hot = gizmo_is_over() || gizmo_is_using();
+
+    if (changed)
+    {
+        // Back to the parent's space.
+        entity_id parent = world_parent(w, e);
+        mat4      local;
+        if (parent)
+        {
+            mat4 parent_inverse;
+            glm_mat4_inv((vec4*)world_matrix(w, parent), parent_inverse);
+            glm_mat4_mul(parent_inverse, model, local);
+        }
+        else
+        {
+            glm_mat4_copy(model, local);
+        }
+
+        c_transform t;
+        transform_from_matrix(local, &t);
+        for (int axis = 0; axis < 3; ++axis)
+            t.scale[axis] = glm_max(t.scale[axis], 0.0001f);   // Transform's smallest scale
+
+        static const char* const VERBS[] = { "move", "rotate", "scale" };
+        if (!state->gizmo_editing && ctx->history)
+        {
+            char   label[ENTITY_NAME_MAX + 16];
+            cJSON* args = cJSON_CreateObject();
+            snprintf(label, sizeof(label), "%s %s", VERBS[state->gizmo_op], world_name(w, e));
+            cJSON_AddStringToObject(args, "label", label);
+            state->gizmo_editing = gizmo_run(state, ctx, "history.begin", args);
+        }
+
+        // Only what this operation changes, so a move never nudges the
+        // rotation by a decomposition rounding error.
+        cJSON* fields = cJSON_CreateObject();
+        if (state->gizmo_op == GIZMO_TRANSLATE)
+            cJSON_AddItemToObject(fields, "position", vec3_array(t.position));
+        else if (state->gizmo_op == GIZMO_ROTATE)
+            cJSON_AddItemToObject(fields, "rotation_deg", vec3_array(t.rotation_deg));
+        else
+            cJSON_AddItemToObject(fields, "scale", vec3_array(t.scale));
+
+        cJSON* args = cJSON_CreateObject();
+        cJSON_AddStringToObject(args, "entity", world_name(w, e));
+        cJSON_AddStringToObject(args, "component", "Transform");
+        cJSON_AddItemToObject(args, "fields", fields);
+        gizmo_run(state, ctx, "component.set", args);
+        world_update(w);   // this frame's outline and panels see the new pose
+    }
+
+    if (state->gizmo_editing && !gizmo_is_using())
+        gizmo_finish_edit(state, ctx);
+}
+
+// The Scene panel's gizmo controls.
+static void
+draw_gizmo_controls(demo_state* state)
+{
+    igText("Gizmo (W / E / R)");
+    igRadioButton_IntPtr("Move", (int*)&state->gizmo_op, GIZMO_TRANSLATE);
+    igSameLine(0.0f, -1.0f);
+    igRadioButton_IntPtr("Rotate", (int*)&state->gizmo_op, GIZMO_ROTATE);
+    igSameLine(0.0f, -1.0f);
+    igRadioButton_IntPtr("Scale", (int*)&state->gizmo_op, GIZMO_SCALE);
+
+    igRadioButton_IntPtr("Local", (int*)&state->gizmo_space, GIZMO_LOCAL);
+    igSameLine(0.0f, -1.0f);
+    igRadioButton_IntPtr("World", (int*)&state->gizmo_space, GIZMO_WORLD);
+    if (state->gizmo_op == GIZMO_SCALE && igIsItemHovered(0))
+        igSetTooltip("Scale always follows the object's own axes");
+
+    igCheckbox("Snap (Ctrl flips)", &state->gizmo_snap);
+    if (state->gizmo_op == GIZMO_TRANSLATE)
+        igDragFloat("Step (m)", &state->snap_move, 0.01f, 0.01f, 10.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+    else if (state->gizmo_op == GIZMO_ROTATE)
+        igDragFloat("Step (deg)", &state->snap_rotate, 0.5f, 1.0f, 90.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
+    else
+        igDragFloat("Step", &state->snap_scale, 0.01f, 0.01f, 1.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+    igSeparator();
+}
+
 // Runs once from App.c's run(), after the GL context / RHI / ImGui exist.
 static void
 on_init(App* app)
@@ -1272,6 +1446,12 @@ on_init(App* app)
     // --- Commands + console ---------------------------------------------------
     console_init(&state->console);
     inspector_init(&state->inspector);
+
+    state->gizmo_op    = GIZMO_TRANSLATE;
+    state->gizmo_space = GIZMO_WORLD;
+    state->snap_move   = 0.25f;
+    state->snap_rotate = 15.0f;
+    state->snap_scale  = 0.1f;
     state->show_console = true;
 
     history_init(&state->lit_history);
@@ -1397,6 +1577,7 @@ static void on_key(App* app, int key, int action, int mods)
         b8 redo = key == GLFW_KEY_Y || (mods & GLFW_MOD_SHIFT);
         command_context* ctx = active_commands(state);
         inspector_finish_edit(&state->inspector, ctx);
+        gizmo_finish_edit(state, ctx);
 
         char*       reply   = cmd_execute_text(ctx, redo ? "{\"cmd\":\"history.redo\"}" : "{\"cmd\":\"history.undo\"}");
         cJSON*      parsed  = cJSON_Parse(reply);
@@ -1408,6 +1589,14 @@ static void on_key(App* app, int key, int action, int mods)
     }
     if (key == GLFW_KEY_F && action == GLFW_PRESS)
         frame_selection(state);
+
+    // W / E / R: the gizmo's move / rotate / scale (not mid-drag).
+    if (action == GLFW_PRESS && !(mods & GLFW_MOD_CONTROL) && !gizmo_is_using())
+    {
+        if (key == GLFW_KEY_W) state->gizmo_op = GIZMO_TRANSLATE;
+        if (key == GLFW_KEY_E) state->gizmo_op = GIZMO_ROTATE;
+        if (key == GLFW_KEY_R) state->gizmo_op = GIZMO_SCALE;
+    }
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
         state->show_console = !state->show_console;
     if (key == GLFW_KEY_F5 && action == GLFW_PRESS)
@@ -1658,6 +1847,7 @@ static void on_frame(App* app, f32 dt)
     watch_game(state);
 
     f32 time = (f32)window_get_time();
+    gizmo_begin_frame();
 
     if (state->mode == RENDER_MODE_MATERIAL_GRID)
     {
@@ -1691,6 +1881,9 @@ static void on_frame(App* app, f32 dt)
         spin_preview_end(&state->lit_world, &preview);
     }
 
+    // Handles on the selection, at its saved pose (after any Spin preview).
+    draw_gizmo(state);
+
     // App/on_frame runs between imgui_layer_new_frame() and
     // imgui_layer_render() (see App.c), so any ig*() calls here just work.
     // Fullscreen dockspace so ImGui windows can actually be dragged and
@@ -1709,6 +1902,8 @@ static void on_frame(App* app, f32 dt)
     if (state->game_note[0])
         igTextDisabled("%s", state->game_note);
     igSeparator();
+
+    draw_gizmo_controls(state);
 
     igText("Render Mode");
     igRadioButton_IntPtr("Lit Model", (int*)&state->mode, RENDER_MODE_LIT_MODEL);
@@ -1806,6 +2001,7 @@ static void on_shutdown(App* app)
     process_destroy(state->game_process);    // the game started by F5 closes with the editor
     live_publisher_shutdown(&state->live);
     inspector_finish_edit(&state->inspector, active_commands(state));   // an edit still open becomes its own step
+    gizmo_finish_edit(state, active_commands(state));
     inspector_shutdown(&state->inspector);
     console_shutdown(&state->console);
     history_shutdown(&state->lit_history, &state->lit_world);     // histories hold asset references too

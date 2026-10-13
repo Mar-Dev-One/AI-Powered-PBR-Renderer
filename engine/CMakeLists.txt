@@ -31,6 +31,7 @@ add_library(PBR_Engine STATIC
     src/UI/ImGuiLayer.c
     src/UI/EntityPanel.c
     src/UI/Inspector.c
+    src/UI/GizmoBridge.cpp
     src/UI/CommandConsole.c
     src/UI/ChatPanel.c
     src/World/Serialize.c

@@ -432,14 +432,52 @@ world_set_parent(world* w, entity_id child, entity_id parent)
 
 // --- Derived state --------------------------------------------------------------
 
-static void
-local_matrix(const c_transform* t, mat4 out)
+void
+transform_to_matrix(const c_transform* t, mat4 out)
 {
     glm_translate_make(out, (f32*)t->position);
     glm_rotate_y(out, glm_rad(t->rotation_deg[1]), out);
     glm_rotate_x(out, glm_rad(t->rotation_deg[0]), out);
     glm_rotate_z(out, glm_rad(t->rotation_deg[2]), out);
     glm_scale(out, (f32*)t->scale);
+}
+
+void
+transform_from_matrix(const mat4 m, c_transform* out)
+{
+    // Translation is the last column; scale the length of each basis column.
+    glm_vec3_copy((f32*)m[3], out->position);
+    for (int axis = 0; axis < 3; ++axis)
+        out->scale[axis] = glm_vec3_norm((f32*)m[axis]);
+
+    // The rotation R = Ry * Rx * Rz with scale divided out. cglm is
+    // column-major, so row i / column j is r[j][i]. Multiplying it out:
+    //   r(1,2) = -sin(pitch)
+    //   r(0,2) =  sin(yaw) cos(pitch),  r(2,2) = cos(yaw) cos(pitch)
+    //   r(1,0) =  cos(pitch) sin(roll), r(1,1) = cos(pitch) cos(roll)
+    vec3 r[3];
+    for (int axis = 0; axis < 3; ++axis)
+        glm_vec3_scale((f32*)m[axis], out->scale[axis] > 1e-12f ? 1.0f / out->scale[axis] : 0.0f, r[axis]);
+
+    f32 sin_pitch = glm_clamp(-r[2][1], -1.0f, 1.0f);
+    f32 pitch     = asinf(sin_pitch);
+    f32 yaw, roll;
+    if (fabsf(sin_pitch) < 0.99999f)
+    {
+        yaw  = atan2f(r[2][0], r[2][2]);
+        roll = atan2f(r[0][1], r[1][1]);
+    }
+    else
+    {
+        // Gimbal lock (pitch at +-90): yaw and roll turn about the same axis;
+        // put it all in yaw.
+        roll = 0.0f;
+        yaw  = atan2f(-r[0][2], r[0][0]);
+    }
+
+    out->rotation_deg[0] = glm_deg(pitch);
+    out->rotation_deg[1] = glm_deg(yaw);
+    out->rotation_deg[2] = glm_deg(roll);
 }
 
 // Computes slot `index`'s world matrix, resolving its parent first. Each
@@ -452,7 +490,7 @@ resolve(world* w, uint32 index)
         return;
 
     mat4 local;
-    local_matrix(&w->transforms[index], local);
+    transform_to_matrix(&w->transforms[index], local);
 
     uint32 parent_index = (w->masks[index] & COMPONENT_BIT(COMPONENT_PARENT))
         ? live_index(w, w->parents[index].parent)

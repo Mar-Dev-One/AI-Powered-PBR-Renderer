@@ -371,6 +371,56 @@ test_tick(asset_cache* assets)
     world_shutdown(&w);
 }
 
+// Gizmo support: transform_from_matrix() undoes transform_to_matrix() --
+// compared as matrices, since different Euler triples can give the same one.
+static b8
+same_matrix(const mat4 a, const mat4 b)
+{
+    for (int c = 0; c < 4; ++c)
+        for (int r = 0; r < 4; ++r)
+            if (fabsf(a[c][r] - b[c][r]) > 1e-4f)
+                return false;
+    return true;
+}
+
+static void
+test_transform_matrix_round_trip(void)
+{
+    const c_transform cases[] = {
+        { { 0, 0, 0 }, { 0, 0, 0 },       { 1, 1, 1 } },
+        { { 1, 2, 3 }, { 30, 45, 60 },    { 2, 0.5f, 3 } },
+        { { -4, 0, 9 }, { -80, 170, -120 }, { 0.1f, 0.1f, 0.1f } },
+        { { 0, 1, 0 }, { 90, 30, 0 },     { 1, 2, 1 } },     // gimbal lock: pitch +90
+        { { 0, 1, 0 }, { -90, 0, 45 },    { 1, 1, 1 } },     // gimbal lock: pitch -90
+    };
+
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i)
+    {
+        mat4 m, again;
+        transform_to_matrix(&cases[i], m);
+
+        c_transform back;
+        transform_from_matrix(m, &back);
+        transform_to_matrix(&back, again);
+        CHECK(same_matrix(m, again));
+
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            CHECK(fabsf(back.position[axis] - cases[i].position[axis]) < 1e-4f);
+            CHECK(fabsf(back.scale[axis] - cases[i].scale[axis]) < 1e-4f);
+            CHECK(back.rotation_deg[axis] >= -180.0001f && back.rotation_deg[axis] <= 180.0001f);
+        }
+    }
+
+    // Away from gimbal lock the angles themselves come back.
+    c_transform back;
+    mat4 m;
+    transform_to_matrix(&cases[1], m);
+    transform_from_matrix(m, &back);
+    CHECK(fabsf(back.rotation_deg[0] - 30.0f) < 1e-3f && fabsf(back.rotation_deg[1] - 45.0f) < 1e-3f
+          && fabsf(back.rotation_deg[2] - 60.0f) < 1e-3f);
+}
+
 // Selection support: a screen ray from the camera, and world_pick() taking
 // the nearest hit -- boxes by their bounds, lights by a marker sphere,
 // hidden entities and boxes around the ray's start ignored.
@@ -451,6 +501,7 @@ main(void)
     test_reflection(&assets);
     test_tick(&assets);
     test_pick(&assets);
+    test_transform_matrix_round_trip();
 
     assets_shutdown(&assets);
 

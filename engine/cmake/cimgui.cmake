@@ -6,8 +6,9 @@
 # exposed with C linkage (IMGUI_IMPL_API) so RHI/Window code never has to
 # touch C++.
 
-set(CIMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps/cimgui)
-set(IMGUI_DIR  ${CIMGUI_DIR}/imgui)
+set(CIMGUI_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/deps/cimgui)
+set(IMGUI_DIR    ${CIMGUI_DIR}/imgui)
+set(IMGUIZMO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps/ImGuizmo/src)
 
 add_library(cimgui STATIC
     ${CIMGUI_DIR}/cimgui.cpp
@@ -18,12 +19,16 @@ add_library(cimgui STATIC
     ${IMGUI_DIR}/imgui_demo.cpp
     ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
     ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+    # ImGuizmo (MIT, git submodule): the editor's move/rotate/scale handles.
+    # Built against this same ImGui; its C face is engine/src/UI/Gizmo.h.
+    ${IMGUIZMO_DIR}/ImGuizmo.cpp
 )
 
 target_include_directories(cimgui PUBLIC
     ${CIMGUI_DIR}
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
+    ${IMGUIZMO_DIR}
 )
 
 target_compile_definitions(cimgui PUBLIC

@@ -138,6 +138,14 @@ const vec4* world_matrix(const world* w, entity_id e);
 // MeshRenderer with a loaded model.
 b8 world_bounds(const world* w, entity_id e, vec3 out_min, vec3 out_max);
 
+// A Transform as a matrix and back: local = T * Ry * Rx * Rz * S (Euler
+// degrees applied yaw, pitch, roll -- see Components.h). transform_from_matrix()
+// is the exact inverse for any matrix a Transform can produce (no shear,
+// positive scale): rotation comes back with pitch in [-90, 90] and yaw/roll
+// in (-180, 180]. For gizmos, which hand back a whole matrix.
+void transform_to_matrix(const c_transform* t, mat4 out);
+void transform_from_matrix(const mat4 m, c_transform* out);
+
 // The entity a ray (origin + t * direction, t >= 0; direction normalized)
 // hits first, as of the last world_update(): a visible MeshRenderer by its
 // world bounds, or -- since they have no surface to click -- a Light or
