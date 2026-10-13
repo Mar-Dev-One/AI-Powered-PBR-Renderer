@@ -46,7 +46,7 @@ can be started from any directory.
   overrides the scene's own. The scene file carries its environment (HDRI, exposure, ambient
   strength, skybox), so it looks as it did in the editor. It views the scene through its first
   Camera entity; without one, the camera frames the scene's objects (not its ground plane),
-  left-drag orbits and the wheel zooms. The window is 1280 x 720 by default. The game runs the
+  left-drag orbits and the wheel zooms. The window is 1920 x 1080 by default. The game runs the
   scene's behaviours: a `Spin` component turns its entity at `degrees_per_second`. The editor
   previews the turning but keeps the authored pose in the scene, so what you save (and what the
   live link sends) is what you authored. The model viewer's **Spin** checkbox is such a component. Esc quits.

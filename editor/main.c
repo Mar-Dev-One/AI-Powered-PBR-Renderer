@@ -2022,6 +2022,8 @@ int main(void)
 
     App app = {
         .name = "PBR Renderer - Editor",
+        .width = 1920,     // Full HD
+        .height = 1080,
         .on_init = on_init,
         .on_frame = on_frame,
         .on_shutdown = on_shutdown,

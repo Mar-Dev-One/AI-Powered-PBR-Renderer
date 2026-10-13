@@ -9,7 +9,7 @@
 //                   a .json file; defaults to DEFAULT_SCENE
 //     hdri          a Radiance .hdr under assets/ for image-based lighting,
 //                   overriding the scene's own
-//     --width N     window size in pixels (default 1280 x 720; in fullscreen,
+//     --width N     window size in pixels (default 1920 x 1080; in fullscreen,
 //     --height N    the monitor's resolution unless given)
 //     --fullscreen  fullscreen on the primary monitor
 //     --live        follow the editor: play the scene it is editing
@@ -549,12 +549,12 @@ int main(int argc, char** argv)
         }
     }
 
-    // Windowed defaults to 1280 x 720; fullscreen to the monitor's own mode
+    // Windowed defaults to 1920 x 1080 (Full HD); fullscreen to the monitor's own mode
     // (Platform/Window.h), unless a size was given.
     if (!fullscreen)
     {
-        width  = width ? width : 1280;
-        height = height ? height : 720;
+        width  = width ? width : 1920;
+        height = height ? height : 1080;
     }
 
     App app = {
