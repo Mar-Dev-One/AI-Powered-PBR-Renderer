@@ -61,12 +61,11 @@ stays the source of truth. The game started by F5 closes with the editor; its ou
 
 ## Using the editor
 
-The **Scene** window switches between three modes:
+The **Scene** window switches between two modes:
 
 - **Lit Model**: a model viewer on a ground plane, with a model picker, spin, and a cascade debug
   view.
 - **Grid**: a metallic × roughness sphere grid, for checking IBL and the BRDF.
-- **Textured Cube**: a basic texture test.
 
 The lighting panel edits every light in the scene, plus ambient strength, exposure, the HDRI, IBL
 and the skybox.
