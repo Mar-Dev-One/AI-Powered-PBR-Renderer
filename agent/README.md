@@ -54,6 +54,36 @@ Then ask for a scene, e.g. "put a table in the middle with a lamp on it, light i
 show me". The claude.ai website only reaches remote MCP servers over HTTPS, so it can't use this
 local server directly.
 
+### Seeing Claude's tool calls in LangSmith
+
+With LangSmith tracing on (see [Tracing with LangSmith](#tracing-with-langsmith) for the install),
+every tool call Claude makes through `pbr-mcp` becomes a trace in the LangSmith project
+**pbr-mcp**: the tool, its arguments, the engine's result, screenshots as images, and failed calls
+marked as errors. Each trace carries the client's name (`claude-ai` for Claude Desktop) and a
+`thread_id` shared by one session's calls, and the tag `mcp`. Set `PBR_MCP_LANGSMITH_PROJECT` for
+another project.
+
+Only the calls are visible: Claude's prompts, reasoning and token use stay in Claude Desktop, since
+MCP sends a server nothing else. For whole traces, use the in-app chat agent.
+
+The server reads the settings from its environment. If `LANGSMITH_TRACING` and
+`LANGSMITH_API_KEY` are user environment variables, Claude Desktop passes them on once it's
+restarted; or set them in its config, next to the command:
+
+```json
+{
+  "mcpServers": {
+    "pbr-renderer": {
+      "command": "C:\\Dev\\My\\PBR-Renderer\\agent\\.venv\\Scripts\\pbr-mcp.exe",
+      "env": {
+        "LANGSMITH_TRACING": "true",
+        "LANGSMITH_API_KEY": "lsv2_..."
+      }
+    }
+  }
+}
+```
+
 ## The in-app chat agent
 
 The editor starts `python -m pbr_agent.agent --exit-with-app` from this virtual environment at

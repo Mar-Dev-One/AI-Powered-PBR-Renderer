@@ -25,6 +25,9 @@ from pbr_agent import tracing  # noqa: E402
 from pbr_agent.agent import ChatAgent, ModelReply  # noqa: E402
 from pbr_agent.engine_client import EngineError  # noqa: E402
 
+from pbr_agent.mcp_server import SceneServer  # noqa: E402
+import mcp_types as types  # noqa: E402
+
 from test_agent import ScriptedModel, text, tool_use  # noqa: E402
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"pixels" * 10
@@ -133,6 +136,36 @@ class TracingTests(unittest.IsolatedAsyncioTestCase):
         first = agent.thread_id
         agent._on_reset({})
         self.assertNotEqual(agent.thread_id, first)
+
+    async def test_mcp_tool_calls_are_traced_with_the_client(self):
+        server = SceneServer(StubEngine())
+        server.checked = True   # skip the commands.list check against the stub
+
+        class Ctx:   # what the low-level MCP server hands a handler: the client from the handshake
+            class session:
+                class client_params:
+                    client_info = types.Implementation(name="claude-ai", version="1.2.3")
+
+        with tracing.local():
+            shot = await server.call_tool(Ctx, types.CallToolRequestParams(name="screenshot", arguments={}))
+            shot_run = server.last_trace.run
+            failed = await server.call_tool(Ctx, types.CallToolRequestParams(name="get_entity",
+                                                                             arguments={"entity": "sofa"}))
+            failed_run = server.last_trace.run
+
+        self.assertFalse(shot.is_error)
+        self.assertEqual(shot_run.name, "screenshot")
+        self.assertEqual(shot_run.run_type, "tool")
+        self.assertEqual(shot_run.session_name, "pbr-mcp")
+        self.assertEqual(shot_run.metadata["client"], "claude-ai")
+        self.assertEqual(shot_run.metadata["thread_id"], server.session_id)
+        self.assertEqual(shot_run.attachments["screenshot"], ("image/png", PNG))
+        self.assertIn("4x2 screenshot", shot_run.outputs["output"])
+
+        self.assertTrue(failed.is_error)
+        self.assertEqual(failed_run.inputs["input"], {"entity": "sofa"})
+        self.assertIn("no entity named", failed_run.error)
+        self.assertEqual(failed_run.metadata["thread_id"], server.session_id)   # one session, one thread
 
     async def test_off_means_nothing_is_recorded(self):
         agent = ChatAgent(StubEngine(), ScriptedModel([text("Hi.")]))

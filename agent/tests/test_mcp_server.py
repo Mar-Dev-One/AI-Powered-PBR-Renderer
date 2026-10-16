@@ -4,12 +4,18 @@ Claude Code would, and drives a headless ServerHost through it.
 """
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 sys.dont_write_bytecode = True
+
+# The server runs as a child process and inherits this environment: keep the
+# developer's own LangSmith settings from uploading the tests' tool calls.
+os.environ["LANGSMITH_TRACING"] = "false"
+os.environ["LANGSMITH_TRACING_V2"] = "false"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import mcp_types as types  # noqa: E402

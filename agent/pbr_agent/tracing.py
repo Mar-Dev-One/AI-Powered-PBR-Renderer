@@ -72,17 +72,19 @@ class Span:
 
 @contextlib.asynccontextmanager
 async def span(name: str, run_type: str = "chain", *, inputs: dict | Callable[[], dict] | None = None,
-               metadata: dict | None = None, tags: list[str] | None = None) -> AsyncIterator[Span]:
+               metadata: dict | None = None, tags: list[str] | None = None,
+               project_name: str | None = None) -> AsyncIterator[Span]:
     """A run nested under the current one. `inputs` may be a function, only
-    called when tracing is on. An exception leaving the block (cancellation
-    included) marks the run as failed."""
+    called when tracing is on. `project_name` sends a root run to another
+    project than $LANGSMITH_PROJECT. An exception leaving the block
+    (cancellation included) marks the run as failed."""
     if not enabled():
         yield Span()
         return
     if callable(inputs):
         inputs = inputs()
     async with _run_helpers.trace(name, run_type, inputs=plain(inputs or {}), metadata=metadata,
-                                  tags=tags) as run:
+                                  tags=tags, project_name=project_name) as run:
         yield Span(run)
 
 

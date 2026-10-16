@@ -1,6 +1,6 @@
 {
 	"entities":	[{
-			"id":	2097152,
+			"id":	1048576,
 			"name":	"dock_lamp_light",
 			"parent":	null,
 			"components":	{
@@ -20,7 +20,7 @@
 				}
 			}
 		}, {
-			"id":	2097153,
+			"id":	1048577,
 			"name":	"dock_lamp",
 			"parent":	null,
 			"components":	{
@@ -38,7 +38,7 @@
 				}
 			}
 		}, {
-			"id":	2097154,
+			"id":	1048578,
 			"name":	"dock_lamp_post",
 			"parent":	null,
 			"components":	{
@@ -57,7 +57,7 @@
 				}
 			}
 		}, {
-			"id":	2097155,
+			"id":	1048579,
 			"name":	"dock_post_6",
 			"parent":	null,
 			"components":	{
@@ -75,7 +75,7 @@
 				}
 			}
 		}, {
-			"id":	2097156,
+			"id":	1048580,
 			"name":	"dock_post_5",
 			"parent":	null,
 			"components":	{
@@ -93,7 +93,7 @@
 				}
 			}
 		}, {
-			"id":	2097157,
+			"id":	1048581,
 			"name":	"dock_post_4",
 			"parent":	null,
 			"components":	{
@@ -111,7 +111,7 @@
 				}
 			}
 		}, {
-			"id":	2097158,
+			"id":	1048582,
 			"name":	"dock_post_3",
 			"parent":	null,
 			"components":	{
@@ -129,7 +129,7 @@
 				}
 			}
 		}, {
-			"id":	2097159,
+			"id":	1048583,
 			"name":	"dock_post_2",
 			"parent":	null,
 			"components":	{
@@ -147,7 +147,7 @@
 				}
 			}
 		}, {
-			"id":	2097160,
+			"id":	1048584,
 			"name":	"dock_post_1",
 			"parent":	null,
 			"components":	{
@@ -165,7 +165,7 @@
 				}
 			}
 		}, {
-			"id":	2097161,
+			"id":	1048585,
 			"name":	"dock_deck",
 			"parent":	null,
 			"components":	{
@@ -183,7 +183,7 @@
 				}
 			}
 		}, {
-			"id":	2097162,
+			"id":	1048586,
 			"name":	"promenade",
 			"parent":	null,
 			"components":	{
@@ -201,7 +201,7 @@
 				}
 			}
 		}, {
-			"id":	2097163,
+			"id":	1048587,
 			"name":	"beach",
 			"parent":	null,
 			"components":	{
@@ -219,7 +219,7 @@
 				}
 			}
 		}, {
-			"id":	2097164,
+			"id":	1048588,
 			"name":	"island",
 			"parent":	null,
 			"components":	{
@@ -237,7 +237,7 @@
 				}
 			}
 		}, {
-			"id":	2097165,
+			"id":	1048589,
 			"name":	"sea",
 			"parent":	null,
 			"components":	{
@@ -692,7 +692,7 @@
 				}
 			}
 		}, {
-			"id":	1048616,
+			"id":	1048614,
 			"name":	"house_1",
 			"parent":	null,
 			"components":	{
@@ -710,7 +710,7 @@
 				}
 			}
 		}, {
-			"id":	1048617,
+			"id":	1048615,
 			"name":	"house_1_roof",
 			"parent":	null,
 			"components":	{
@@ -728,7 +728,7 @@
 				}
 			}
 		}, {
-			"id":	1048618,
+			"id":	1048616,
 			"name":	"house_1_window_l",
 			"parent":	null,
 			"components":	{
@@ -746,7 +746,7 @@
 				}
 			}
 		}, {
-			"id":	1048619,
+			"id":	1048617,
 			"name":	"house_1_window_r",
 			"parent":	null,
 			"components":	{
@@ -764,7 +764,7 @@
 				}
 			}
 		}, {
-			"id":	1048620,
+			"id":	1048618,
 			"name":	"house_2",
 			"parent":	null,
 			"components":	{
@@ -782,7 +782,7 @@
 				}
 			}
 		}, {
-			"id":	1048621,
+			"id":	1048619,
 			"name":	"house_2_roof",
 			"parent":	null,
 			"components":	{
@@ -800,7 +800,7 @@
 				}
 			}
 		}, {
-			"id":	1048622,
+			"id":	1048620,
 			"name":	"house_2_window_l",
 			"parent":	null,
 			"components":	{
@@ -818,7 +818,7 @@
 				}
 			}
 		}, {
-			"id":	1048623,
+			"id":	1048621,
 			"name":	"house_2_window_r",
 			"parent":	null,
 			"components":	{
@@ -836,7 +836,7 @@
 				}
 			}
 		}, {
-			"id":	1048624,
+			"id":	1048622,
 			"name":	"house_3",
 			"parent":	null,
 			"components":	{
@@ -854,7 +854,7 @@
 				}
 			}
 		}, {
-			"id":	1048625,
+			"id":	1048623,
 			"name":	"house_3_roof",
 			"parent":	null,
 			"components":	{
@@ -872,7 +872,7 @@
 				}
 			}
 		}, {
-			"id":	1048626,
+			"id":	1048624,
 			"name":	"house_3_window_l",
 			"parent":	null,
 			"components":	{
@@ -890,7 +890,7 @@
 				}
 			}
 		}, {
-			"id":	1048627,
+			"id":	1048625,
 			"name":	"house_3_window_r",
 			"parent":	null,
 			"components":	{
@@ -908,7 +908,7 @@
 				}
 			}
 		}, {
-			"id":	1048628,
+			"id":	1048626,
 			"name":	"house_4",
 			"parent":	null,
 			"components":	{
@@ -926,7 +926,7 @@
 				}
 			}
 		}, {
-			"id":	1048629,
+			"id":	1048627,
 			"name":	"house_4_roof",
 			"parent":	null,
 			"components":	{
@@ -944,7 +944,7 @@
 				}
 			}
 		}, {
-			"id":	1048630,
+			"id":	1048628,
 			"name":	"house_4_window",
 			"parent":	null,
 			"components":	{
@@ -962,7 +962,7 @@
 				}
 			}
 		}, {
-			"id":	1048631,
+			"id":	1048629,
 			"name":	"house_5",
 			"parent":	null,
 			"components":	{
@@ -980,7 +980,7 @@
 				}
 			}
 		}, {
-			"id":	1048632,
+			"id":	1048630,
 			"name":	"house_5_roof",
 			"parent":	null,
 			"components":	{
@@ -998,7 +998,7 @@
 				}
 			}
 		}, {
-			"id":	1048633,
+			"id":	1048631,
 			"name":	"house_5_window_upper",
 			"parent":	null,
 			"components":	{
@@ -1016,7 +1016,7 @@
 				}
 			}
 		}, {
-			"id":	1048634,
+			"id":	1048632,
 			"name":	"house_6",
 			"parent":	null,
 			"components":	{
@@ -1034,7 +1034,7 @@
 				}
 			}
 		}, {
-			"id":	1048635,
+			"id":	1048633,
 			"name":	"house_6_roof",
 			"parent":	null,
 			"components":	{
@@ -1052,7 +1052,7 @@
 				}
 			}
 		}, {
-			"id":	1048636,
+			"id":	1048634,
 			"name":	"house_6_window",
 			"parent":	null,
 			"components":	{
@@ -1070,7 +1070,7 @@
 				}
 			}
 		}, {
-			"id":	1048637,
+			"id":	1048635,
 			"name":	"tree_1_trunk",
 			"parent":	null,
 			"components":	{
@@ -1088,7 +1088,7 @@
 				}
 			}
 		}, {
-			"id":	1048638,
+			"id":	1048636,
 			"name":	"tree_1_crown",
 			"parent":	null,
 			"components":	{
@@ -1106,7 +1106,7 @@
 				}
 			}
 		}, {
-			"id":	1048639,
+			"id":	1048637,
 			"name":	"tree_2_trunk",
 			"parent":	null,
 			"components":	{
@@ -1124,7 +1124,7 @@
 				}
 			}
 		}, {
-			"id":	1048640,
+			"id":	1048638,
 			"name":	"tree_2_crown",
 			"parent":	null,
 			"components":	{
@@ -1142,7 +1142,7 @@
 				}
 			}
 		}, {
-			"id":	1048641,
+			"id":	1048639,
 			"name":	"tree_3_trunk",
 			"parent":	null,
 			"components":	{
@@ -1160,7 +1160,7 @@
 				}
 			}
 		}, {
-			"id":	1048642,
+			"id":	1048640,
 			"name":	"tree_3_crown",
 			"parent":	null,
 			"components":	{
@@ -1178,7 +1178,7 @@
 				}
 			}
 		}, {
-			"id":	1048643,
+			"id":	1048641,
 			"name":	"tree_4_trunk",
 			"parent":	null,
 			"components":	{
@@ -1196,7 +1196,7 @@
 				}
 			}
 		}, {
-			"id":	1048644,
+			"id":	1048642,
 			"name":	"tree_4_crown",
 			"parent":	null,
 			"components":	{
@@ -1214,7 +1214,7 @@
 				}
 			}
 		}, {
-			"id":	1048645,
+			"id":	1048643,
 			"name":	"tree_5_trunk",
 			"parent":	null,
 			"components":	{
@@ -1232,7 +1232,7 @@
 				}
 			}
 		}, {
-			"id":	1048646,
+			"id":	1048644,
 			"name":	"tree_5_crown",
 			"parent":	null,
 			"components":	{
@@ -1250,7 +1250,7 @@
 				}
 			}
 		}, {
-			"id":	1048647,
+			"id":	1048645,
 			"name":	"tree_6_trunk",
 			"parent":	null,
 			"components":	{
@@ -1268,7 +1268,7 @@
 				}
 			}
 		}, {
-			"id":	1048648,
+			"id":	1048646,
 			"name":	"tree_6_crown",
 			"parent":	null,
 			"components":	{
@@ -1286,7 +1286,7 @@
 				}
 			}
 		}, {
-			"id":	1048649,
+			"id":	1048647,
 			"name":	"tree_7_trunk",
 			"parent":	null,
 			"components":	{
@@ -1304,7 +1304,7 @@
 				}
 			}
 		}, {
-			"id":	1048650,
+			"id":	1048648,
 			"name":	"tree_7_crown",
 			"parent":	null,
 			"components":	{
@@ -1322,7 +1322,7 @@
 				}
 			}
 		}, {
-			"id":	1048651,
+			"id":	1048649,
 			"name":	"tree_8_trunk",
 			"parent":	null,
 			"components":	{
@@ -1340,7 +1340,7 @@
 				}
 			}
 		}, {
-			"id":	1048652,
+			"id":	1048650,
 			"name":	"tree_8_crown",
 			"parent":	null,
 			"components":	{
@@ -1358,7 +1358,7 @@
 				}
 			}
 		}, {
-			"id":	1048653,
+			"id":	1048651,
 			"name":	"street_lamp_1_post",
 			"parent":	null,
 			"components":	{
@@ -1377,7 +1377,7 @@
 				}
 			}
 		}, {
-			"id":	1048654,
+			"id":	1048652,
 			"name":	"street_lamp_1",
 			"parent":	null,
 			"components":	{
@@ -1395,7 +1395,7 @@
 				}
 			}
 		}, {
-			"id":	1048655,
+			"id":	1048653,
 			"name":	"street_lamp_1_light",
 			"parent":	null,
 			"components":	{
@@ -1415,7 +1415,7 @@
 				}
 			}
 		}, {
-			"id":	1048656,
+			"id":	1048654,
 			"name":	"street_lamp_2_post",
 			"parent":	null,
 			"components":	{
@@ -1434,7 +1434,7 @@
 				}
 			}
 		}, {
-			"id":	1048657,
+			"id":	1048655,
 			"name":	"street_lamp_2",
 			"parent":	null,
 			"components":	{
@@ -1452,7 +1452,7 @@
 				}
 			}
 		}, {
-			"id":	1048658,
+			"id":	1048656,
 			"name":	"street_lamp_2_light",
 			"parent":	null,
 			"components":	{
@@ -1472,7 +1472,7 @@
 				}
 			}
 		}, {
-			"id":	1048659,
+			"id":	1048657,
 			"name":	"street_lamp_3_post",
 			"parent":	null,
 			"components":	{
@@ -1491,7 +1491,7 @@
 				}
 			}
 		}, {
-			"id":	1048660,
+			"id":	1048658,
 			"name":	"street_lamp_3",
 			"parent":	null,
 			"components":	{
@@ -1509,7 +1509,7 @@
 				}
 			}
 		}, {
-			"id":	1048661,
+			"id":	1048659,
 			"name":	"street_lamp_3_light",
 			"parent":	null,
 			"components":	{
@@ -1529,7 +1529,7 @@
 				}
 			}
 		}, {
-			"id":	1048662,
+			"id":	1048660,
 			"name":	"street_lamp_4_post",
 			"parent":	null,
 			"components":	{
@@ -1548,7 +1548,7 @@
 				}
 			}
 		}, {
-			"id":	1048663,
+			"id":	1048661,
 			"name":	"street_lamp_4",
 			"parent":	null,
 			"components":	{
@@ -1566,7 +1566,7 @@
 				}
 			}
 		}, {
-			"id":	1048664,
+			"id":	1048662,
 			"name":	"street_lamp_4_light",
 			"parent":	null,
 			"components":	{
@@ -1586,7 +1586,7 @@
 				}
 			}
 		}, {
-			"id":	1048665,
+			"id":	1048663,
 			"name":	"hill",
 			"parent":	null,
 			"components":	{
@@ -1604,7 +1604,7 @@
 				}
 			}
 		}, {
-			"id":	1048666,
+			"id":	1048664,
 			"name":	"windmill_tower_a",
 			"parent":	null,
 			"components":	{
@@ -1622,7 +1622,7 @@
 				}
 			}
 		}, {
-			"id":	1048667,
+			"id":	1048665,
 			"name":	"windmill_tower_b",
 			"parent":	null,
 			"components":	{
@@ -1640,7 +1640,7 @@
 				}
 			}
 		}, {
-			"id":	1048668,
+			"id":	1048666,
 			"name":	"windmill_cap",
 			"parent":	null,
 			"components":	{
@@ -1658,7 +1658,7 @@
 				}
 			}
 		}, {
-			"id":	1048669,
+			"id":	1048667,
 			"name":	"windmill_door",
 			"parent":	null,
 			"components":	{
@@ -1676,7 +1676,7 @@
 				}
 			}
 		}, {
-			"id":	1048670,
+			"id":	1048668,
 			"name":	"windmill_rotor",
 			"parent":	null,
 			"components":	{
@@ -1690,7 +1690,7 @@
 				}
 			}
 		}, {
-			"id":	1048671,
+			"id":	1048669,
 			"name":	"windmill_hub",
 			"parent":	"windmill_rotor",
 			"components":	{
@@ -1709,7 +1709,7 @@
 				}
 			}
 		}, {
-			"id":	1048672,
+			"id":	1048670,
 			"name":	"windmill_blades_v",
 			"parent":	"windmill_rotor",
 			"components":	{
@@ -1727,7 +1727,7 @@
 				}
 			}
 		}, {
-			"id":	1048673,
+			"id":	1048671,
 			"name":	"windmill_blades_h",
 			"parent":	"windmill_rotor",
 			"components":	{
@@ -1745,7 +1745,7 @@
 				}
 			}
 		}, {
-			"id":	1048674,
+			"id":	1048672,
 			"name":	"bay_route",
 			"parent":	null,
 			"components":	{
@@ -1759,7 +1759,7 @@
 				}
 			}
 		}, {
-			"id":	1048675,
+			"id":	1048673,
 			"name":	"cruising_boat_hull",
 			"parent":	"bay_route",
 			"components":	{
@@ -1777,7 +1777,7 @@
 				}
 			}
 		}, {
-			"id":	1048676,
+			"id":	1048674,
 			"name":	"cruising_boat_bow",
 			"parent":	"bay_route",
 			"components":	{
@@ -1795,7 +1795,7 @@
 				}
 			}
 		}, {
-			"id":	1048677,
+			"id":	1048675,
 			"name":	"cruising_boat_cabin",
 			"parent":	"bay_route",
 			"components":	{
@@ -1813,7 +1813,7 @@
 				}
 			}
 		}, {
-			"id":	1048678,
+			"id":	1048676,
 			"name":	"cruising_boat_lamp",
 			"parent":	"bay_route",
 			"components":	{
@@ -1831,7 +1831,7 @@
 				}
 			}
 		}, {
-			"id":	1048679,
+			"id":	1048677,
 			"name":	"cruising_boat_light",
 			"parent":	"bay_route",
 			"components":	{
@@ -1851,7 +1851,7 @@
 				}
 			}
 		}, {
-			"id":	1048680,
+			"id":	1048678,
 			"name":	"gull_flock_a",
 			"parent":	null,
 			"components":	{
@@ -1865,7 +1865,7 @@
 				}
 			}
 		}, {
-			"id":	1048681,
+			"id":	1048679,
 			"name":	"gull_1_body",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -1883,7 +1883,7 @@
 				}
 			}
 		}, {
-			"id":	1048682,
+			"id":	1048680,
 			"name":	"gull_1_wings",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -1901,7 +1901,7 @@
 				}
 			}
 		}, {
-			"id":	1048683,
+			"id":	1048681,
 			"name":	"gull_2_body",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -1919,7 +1919,7 @@
 				}
 			}
 		}, {
-			"id":	1048684,
+			"id":	1048682,
 			"name":	"gull_2_wings",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -1937,7 +1937,7 @@
 				}
 			}
 		}, {
-			"id":	1048685,
+			"id":	1048683,
 			"name":	"gull_3_body",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -1955,7 +1955,7 @@
 				}
 			}
 		}, {
-			"id":	1048686,
+			"id":	1048684,
 			"name":	"gull_3_wings",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -1973,7 +1973,7 @@
 				}
 			}
 		}, {
-			"id":	1048687,
+			"id":	1048685,
 			"name":	"gull_flock_b",
 			"parent":	null,
 			"components":	{
@@ -1987,7 +1987,7 @@
 				}
 			}
 		}, {
-			"id":	1048688,
+			"id":	1048686,
 			"name":	"gull_4_body",
 			"parent":	"gull_flock_b",
 			"components":	{
@@ -2005,7 +2005,7 @@
 				}
 			}
 		}, {
-			"id":	1048689,
+			"id":	1048687,
 			"name":	"gull_4_wings",
 			"parent":	"gull_flock_b",
 			"components":	{
@@ -2023,7 +2023,7 @@
 				}
 			}
 		}, {
-			"id":	1048690,
+			"id":	1048688,
 			"name":	"gull_5_body",
 			"parent":	"gull_flock_b",
 			"components":	{
@@ -2041,7 +2041,7 @@
 				}
 			}
 		}, {
-			"id":	1048691,
+			"id":	1048689,
 			"name":	"gull_5_wings",
 			"parent":	"gull_flock_b",
 			"components":	{
@@ -2059,7 +2059,7 @@
 				}
 			}
 		}, {
-			"id":	1048692,
+			"id":	1048690,
 			"name":	"sun",
 			"parent":	null,
 			"components":	{
@@ -2078,6 +2078,22 @@
 					"outer_cone_degrees":	30
 				}
 			}
+		}, {
+			"id":	1048691,
+			"name":	"cube",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.5, 5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
 		}],
 	"format":	"pbr-scene",
 	"version":	1,
@@ -2087,6 +2103,6 @@
 		"show_skybox":	true,
 		"sky_blur":	0,
 		"ambient_strength":	0.35,
-		"exposure":	0.95
+		"exposure":	1
 	}
 }

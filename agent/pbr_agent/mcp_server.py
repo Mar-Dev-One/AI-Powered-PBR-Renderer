@@ -10,13 +10,23 @@ so clearly if the app isn't there.
     python -m pbr_agent.mcp_server [--discovery PATH]
 
 Registering it: see agent/README.md.
+
+With LangSmith tracing on (pbr_agent.tracing; LANGSMITH_TRACING=true and
+LANGSMITH_API_KEY in the server's environment -- the "env" block of the
+client's MCP config), every tool call the client makes is a trace in the
+project "pbr-mcp" ($PBR_MCP_LANGSMITH_PROJECT to change it): the arguments,
+the result (screenshots attached as images) and whether it failed. The model's
+side -- its prompts, reasoning and tokens -- stays in the client: MCP only
+sends the server the calls. Calls of one client session share a thread_id.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import uuid
 
 import anyio
 import mcp_types as types
@@ -24,6 +34,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
 from . import __name__ as _package
+from . import tracing
 from .engine_client import EngineClient, EngineError, EngineNotRunning
 from .prompt import SCENE_INSTRUCTIONS
 from .tools import TOOLS, TOOLS_BY_NAME, check_against_engine
@@ -34,6 +45,9 @@ SCENE_RESOURCE_URI = "scene://current"
 
 # Tools that throw away work (undo still brings it back).
 DESTRUCTIVE_TOOLS = {"delete_entity", "clear_scene", "load_scene"}
+
+# Where the tool calls are traced, apart from the in-app agent's turns.
+DEFAULT_TRACE_PROJECT = "pbr-mcp"
 
 
 def _log(message: str) -> None:
@@ -65,6 +79,9 @@ class SceneServer:
     def __init__(self, engine: EngineClient):
         self.engine = engine
         self.checked = False
+        self.session_id = uuid.uuid4().hex   # the thread_id of this session's traces
+        self.trace_project = os.environ.get("PBR_MCP_LANGSMITH_PROJECT") or DEFAULT_TRACE_PROJECT
+        self.last_trace = tracing.Span()      # the last tool call's trace (a no-op span when tracing is off)
 
     async def _check_tools_once(self) -> None:
         """On first contact with the app: log any tool the app doesn't support."""
@@ -82,7 +99,28 @@ class SceneServer:
     async def list_tools(self, ctx, params) -> types.ListToolsResult:
         return types.ListToolsResult(tools=[_mcp_tool(tool) for tool in TOOLS])
 
+    def _trace_metadata(self, ctx) -> dict:
+        """Who is calling: the client's name and version from the MCP handshake
+        (the low-level server's request context holds them on its session)."""
+        session = getattr(ctx, "session", None)
+        client_info = getattr(getattr(session, "client_params", None), "client_info", None)
+        return {
+            "thread_id": self.session_id,
+            "client": getattr(client_info, "name", None),
+            "client_version": getattr(client_info, "version", None),
+        }
+
     async def call_tool(self, ctx, params: types.CallToolRequestParams) -> types.CallToolResult:
+        """One tool call from the client, traced as a tool run of its own."""
+        async with tracing.span(params.name, "tool", inputs={"input": params.arguments or {}},
+                                metadata=self._trace_metadata(ctx), tags=["mcp"],
+                                project_name=self.trace_project) as span:
+            self.last_trace = span
+            result = await self._call_tool(params)
+            _end_span(span, result)
+        return result
+
+    async def _call_tool(self, params: types.CallToolRequestParams) -> types.CallToolResult:
         tool = TOOLS_BY_NAME.get(params.name)
         if tool is None:
             return _error(f"Unknown tool '{params.name}'.")
@@ -136,6 +174,16 @@ class SceneServer:
         ])
 
 
+def _end_span(span: tracing.Span, result: types.CallToolResult) -> None:
+    text = "".join(c.text for c in result.content if isinstance(c, types.TextContent))
+    for content in result.content:
+        if isinstance(content, types.ImageContent):
+            png = tracing.png_from_base64(content.data)
+            if png:
+                span.attach("screenshot", "image/png", png)
+    span.end({"output": text}, error=text if result.is_error else None)
+
+
 def build_server(engine: EngineClient) -> Server:
     handlers = SceneServer(engine)
     return Server(
@@ -158,12 +206,23 @@ async def serve(discovery_path: str | None = None) -> None:
             await server.run(read_stream, write_stream, server.create_initialization_options())
     finally:
         await engine.close()
+        try:
+            tracing.shutdown()
+        except Exception as error:   # never keep the client waiting on us
+            _log(f"couldn't send the last traces to LangSmith: {error!r}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="MCP server for the PBR Renderer's scene.")
     parser.add_argument("--discovery", help="Path to the app's server.json (default: ~/.pbr-renderer/server.json)")
     args = parser.parse_args()
+
+    # As in the agent: a daemon upload thread can't hold the server open after
+    # the client closes it; serve() gives queued traces a few seconds to go out.
+    os.environ.setdefault("LANGSMITH_USE_DAEMON", "true")
+    if tracing.enabled():
+        project = os.environ.get("PBR_MCP_LANGSMITH_PROJECT") or DEFAULT_TRACE_PROJECT
+        _log(f"LangSmith tracing on: tool calls go to the project {project}")
     anyio.run(serve, args.discovery)
 
 
