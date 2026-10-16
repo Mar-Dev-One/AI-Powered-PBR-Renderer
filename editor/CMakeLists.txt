@@ -10,3 +10,6 @@ target_link_libraries(Editor PRIVATE PBR_Engine)
 # built whenever the editor is.
 add_dependencies(Editor Testbed)
 target_compile_definitions(Editor PRIVATE TESTBED_EXE="$<TARGET_FILE:Testbed>")
+
+# The chat agent's Python environment lives in the source tree (agent/README.md).
+target_compile_definitions(Editor PRIVATE AGENT_DIR="${CMAKE_SOURCE_DIR}/agent")

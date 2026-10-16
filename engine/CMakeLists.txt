@@ -80,7 +80,7 @@ endif()
 # stb_image, fast_obj and cgltf are single vendored headers (no
 # CMakeLists of their own, unlike the git-submodule deps above), needed only
 # by Core/Image.c, Scene/ModelObj.c and Scene/ModelGltf.c respectively --
-# all PRIVATE, same reasoning as the ASSETS_ROOT definition below
+# all PRIVATE, same reasoning as the DEV_*_ROOT definitions below
 # (implementation detail, not something consumers of PBR_Engine need to see).
 target_include_directories(PBR_Engine PRIVATE deps/stb deps/fast_obj deps/cgltf)
 
@@ -88,10 +88,12 @@ target_include_directories(PBR_Engine PRIVATE deps/stb deps/fast_obj deps/cgltf)
 # layer hand cJSON trees across the API.
 target_include_directories(PBR_Engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/deps/cjson)
 
-# PRIVATE: only Core/Paths.c reads this macro (asset_path() bakes it in at
-# runtime). The apps never reference ASSETS_ROOT itself, so there's
-# no need to leak this build-config detail -- or force it -- onto every
-# future consumer of PBR_Engine.
+# The development fallbacks for Core/Paths.h's two roots: the engine's data
+# (shaders) and the default project (assets/). At runtime an engine/ folder
+# next to the executable and --project <dir> take precedence, so a copied
+# build doesn't depend on this source tree. PRIVATE: only Core/Paths.c reads
+# them; the apps ask paths_engine_root() / paths_project_root().
 target_compile_definitions(PBR_Engine PRIVATE
-    ASSETS_ROOT="${CMAKE_SOURCE_DIR}/assets"
+    DEV_ENGINE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+    DEV_PROJECT_ROOT="${CMAKE_SOURCE_DIR}/assets"
 )

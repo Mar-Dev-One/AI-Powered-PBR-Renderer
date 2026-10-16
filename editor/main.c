@@ -549,7 +549,7 @@ sync_hdri(demo_state* state)
     if (!state->env.hdri[0])
         return;   // no HDRI: the hemisphere ambient light
 
-    char* path = asset_path(state->env.hdri);
+    char* path = project_path(state->env.hdri);
     if (!ibl_create(&state->ibl, path))
         LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", path);
 
@@ -992,7 +992,21 @@ static const cmd_host_command HOST_COMMANDS[] = {
 // The agent runs as "python -m pbr_agent.agent --exit-with-app" with the
 // Python from the agent's virtual environment (agent/README.md), or the one
 // PBR_AGENT_PYTHON names. It reads its API key from the environment it
-// inherits from the app, and logs to ~/.pbr-renderer/agent.log.
+// inherits from the app, and logs to ~/.pbr-renderer/agent.log. AGENT_DIR
+// (set by CMake) is agent/ in the source tree -- a development tool, not
+// part of any project.
+
+// "<directory>/<relative>", heap-allocated; caller frees.
+static char*
+join_path(const char* directory, const char* relative)
+{
+    size_t length = strlen(directory) + 1 + strlen(relative) + 1;
+    char*  path   = malloc(length);
+    if (!path)
+        FATAL("demo: out of memory");
+    snprintf(path, length, "%s/%s", directory, relative);
+    return path;
+}
 
 static void
 start_agent(demo_state* state)
@@ -1015,9 +1029,9 @@ start_agent(demo_state* state)
     else
     {
 #ifdef _WIN32
-        python = asset_path("../agent/.venv/Scripts/python.exe");
+        python = join_path(AGENT_DIR, ".venv/Scripts/python.exe");
 #else
-        python = asset_path("../agent/.venv/bin/python");
+        python = join_path(AGENT_DIR, ".venv/bin/python");
 #endif
     }
 
@@ -1057,7 +1071,9 @@ start_game(demo_state* state)
         return;
     }
 
-    const char* argv[] = { TESTBED_EXE, "--live", NULL };
+    // The same project, so the models and HDRIs the live scene names resolve
+    // to the same files.
+    const char* argv[] = { TESTBED_EXE, "--live", "--project", paths_project_root(), NULL };
     state->game_process = process_spawn(argv, state->game_log);
     snprintf(state->game_note, sizeof(state->game_note), state->game_process
              ? "Game running, following your edits." : "Could not start the game; see %s.", state->game_log);
@@ -1486,6 +1502,12 @@ on_init(App* app)
             .module_user          = &state->chat,
             .environment          = &state->env,
         };
+    }
+
+    {
+        char line[2200];
+        snprintf(line, sizeof(line), "Project: %s (engine data: %s)", paths_project_root(), paths_engine_root());
+        console_info(&state->console, line);
     }
 
     if (state->server)
@@ -2013,8 +2035,27 @@ static void on_shutdown(App* app)
     scene_renderer_destroy(&state->renderer);
 }
 
-int main(void)
+int main(int argc, char** argv)
 {
+    // --project <dir>: edit that folder's scenes, models and HDRIs instead of
+    // the source tree's assets/ (Core/Paths.h).
+    for (int i = 1; i < argc; ++i)
+    {
+        if (strcmp(argv[i], "--project") == 0 && i + 1 < argc)
+        {
+            if (!paths_set_project_root(argv[++i]))
+            {
+                fprintf(stderr, "--project: %s is not a folder\n", argv[i]);
+                return 1;
+            }
+        }
+        else
+        {
+            fprintf(stderr, "usage: Editor [--project <dir>]\n");
+            return 1;
+        }
+    }
+
     // GPU resources (renderer, IBL, models) can only be created after RHI
     // is initialized, which happens inside run() -- on_init creates them,
     // on_shutdown destroys them.

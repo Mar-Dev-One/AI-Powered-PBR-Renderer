@@ -633,7 +633,7 @@ visit_model_entry(const char* name, b8 is_directory, void* user_data)
     {
         // glTF models often come as a folder (model.gltf + .bin + textures).
         char subdir[512], prefix[512];
-        char* path = asset_path(key);
+        char* path = project_path(key);
         snprintf(subdir, sizeof(subdir), "%s", path);
         free(path);
         snprintf(prefix, sizeof(prefix), "%s/", key);
@@ -739,7 +739,7 @@ cmd_assets_list(command_context* ctx, const cJSON* args, cmd_output* out)
                             "1 unit across, centred on the origin; the plane lies on XZ facing +Y");
 
     model_listing listing = { cJSON_AddArrayToObject(out->result, "models"), "models/", 0 };
-    char* models_dir = asset_path("models");
+    char* models_dir = project_path("models");
     file_list_directory(models_dir, visit_model_entry, &listing);
     free(models_dir);
 
@@ -1271,7 +1271,7 @@ scenes_directory(const command_context* ctx)
     }
     else
     {
-        dir = asset_path("scenes");
+        dir = project_path("scenes");
     }
 
     file_make_directory(dir);

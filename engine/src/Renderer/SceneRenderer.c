@@ -53,11 +53,12 @@ scene_renderer_shader_defines(char* out, size_t size)
              (int)LIGHT_DIRECTIONAL, (int)LIGHT_POINT, (int)LIGHT_SPOT);
 }
 
-// An asset's modification time and size, or zeros if it can't be stat()ed.
+// A shader file's (under the engine root) modification time and size, or
+// zeros if it can't be stat()ed.
 static file_stamp
-asset_stamp(const char* relative_path)
+shader_stamp(const char* relative_path)
 {
-    char*       path  = asset_path(relative_path);
+    char*       path  = engine_path(relative_path);
     struct stat info;
     file_stamp  stamp = { 0, 0 };
 
@@ -83,8 +84,8 @@ build_pbr_shader(void)
     char defines[256];
     scene_renderer_shader_defines(defines, sizeof(defines));
 
-    char* vertex_path   = asset_path(PBR_VERTEX_PATH);
-    char* fragment_path = asset_path(PBR_FRAGMENT_PATH);
+    char* vertex_path   = engine_path(PBR_VERTEX_PATH);
+    char* fragment_path = engine_path(PBR_FRAGMENT_PATH);
 
     rhi_shader shader = rhi_shader_create_from_files_with_defines(vertex_path, fragment_path, defines);
 
@@ -100,8 +101,8 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
 {
     memset(r, 0, sizeof(*r));
 
-    r->vertex_stamp   = asset_stamp(PBR_VERTEX_PATH);
-    r->fragment_stamp = asset_stamp(PBR_FRAGMENT_PATH);
+    r->vertex_stamp   = shader_stamp(PBR_VERTEX_PATH);
+    r->fragment_stamp = shader_stamp(PBR_FRAGMENT_PATH);
 
     r->pbr_shader = build_pbr_shader();
     if (!r->pbr_shader)
@@ -286,8 +287,8 @@ scene_renderer_reload_shaders(scene_renderer* r)
 void
 scene_renderer_poll_hot_reload(scene_renderer* r)
 {
-    file_stamp vertex_stamp   = asset_stamp(PBR_VERTEX_PATH);
-    file_stamp fragment_stamp = asset_stamp(PBR_FRAGMENT_PATH);
+    file_stamp vertex_stamp   = shader_stamp(PBR_VERTEX_PATH);
+    file_stamp fragment_stamp = shader_stamp(PBR_FRAGMENT_PATH);
 
     if (stamp_equal(vertex_stamp, r->vertex_stamp) && stamp_equal(fragment_stamp, r->fragment_stamp))
         return;

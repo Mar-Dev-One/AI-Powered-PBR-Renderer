@@ -41,9 +41,10 @@ can be started from any directory.
   console, command server and in-app chat described below.
 - **Testbed** (`build/testbed/Release/Testbed.exe`): the game runtime. It loads a scene saved by
   the editor and plays it, with no UI, console or command server:
-  `Testbed [--width N] [--height N] [--fullscreen] [--live] [scene] [hdri]`, where `scene` is a name under `assets/scenes/` (default
-  `orrery_plaza`) or a path to a `.json` file, and `hdri` is a `.hdr` under `assets/` that
-  overrides the scene's own. The scene file carries its environment (HDRI, exposure, ambient
+  `Testbed [--width N] [--height N] [--fullscreen] [--live] [--project DIR] [scene] [hdri]`, where
+  `scene` is a name under the project's `scenes/` (default `orrery_plaza`) or a path to a `.json`
+  file, and `hdri` is a `.hdr` under the project that overrides the scene's own. The project is
+  `assets/` unless `--project` names another folder (the editor takes `--project` too). The scene file carries its environment (HDRI, exposure, ambient
   strength, skybox), so it looks as it did in the editor. It views the scene through its first
   Camera entity; without one, the camera frames the scene's objects (not its ground plane),
   left-drag orbits and the wheel zooms. The window is 1920 x 1080 by default. The game runs the
@@ -163,7 +164,7 @@ extension:
 | `.obj` (+ `.mtl`) | [fast_obj](https://github.com/thisistherk/fast_obj) | Vertices are welded; `Kd`/`Ke`/`Ns`/`d` and `map_Kd`/`map_Ke` become a PBR material. |
 
 Both are converted to the same `model` / `material` / `mesh` types and drawn with
-`assets/shaders/pbr.*`. Not supported yet: skinning and animation, morph targets, Draco/meshopt
+`engine/shaders/pbr.*`. Not supported yet: skinning and animation, morph targets, Draco/meshopt
 compression, `KHR_texture_transform`, and second UV sets.
 
 To add a model to the editor's picker, put it in `assets/models/` and add it to `MODEL_PATHS` in
@@ -186,8 +187,9 @@ engine/src/
   Chat/            in-app chat session (turns, undo per turn, agent connection)
   UI/              ImGui layer, entity panel, command console, chat panel
 editor/            the editor app (ImGui panels, console, command server, chat)
+engine/shaders/    the engine's GLSL shaders
 testbed/           the game runtime (loads and plays a scene; no editor UI)
-assets/            shaders, models, HDRIs, textures, scenes
+assets/            the default project: models, HDRIs, textures, scenes
 agent/             pbr_agent Python package: MCP server and in-app chat agent
 tests/             headless C tests and end-to-end server tests
 docs/              roadmap

@@ -73,8 +73,8 @@ static void face_view(uint32 face, mat4 out_view)
 
 static rhi_shader load_shader(const char* vertex, const char* fragment)
 {
-    char* vertex_path   = asset_path(vertex);
-    char* fragment_path = asset_path(fragment);
+    char* vertex_path   = engine_path(vertex);
+    char* fragment_path = engine_path(fragment);
 
     rhi_shader shader = rhi_shader_create_from_files(vertex_path, fragment_path);
 

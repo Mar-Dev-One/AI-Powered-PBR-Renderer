@@ -3,6 +3,11 @@ add_executable(WorldTests world_tests.c)
 target_link_libraries(WorldTests PRIVATE PBR_Engine)
 add_test(NAME WorldTests COMMAND WorldTests)
 
+add_executable(PathsTests paths_tests.c)
+target_link_libraries(PathsTests PRIVATE PBR_Engine)
+target_compile_definitions(PathsTests PRIVATE PATHS_TEST_DIR="${CMAKE_CURRENT_BINARY_DIR}/paths_project")
+add_test(NAME PathsTests COMMAND PathsTests)
+
 add_executable(SerializeTests serialize_tests.c)
 target_link_libraries(SerializeTests PRIVATE PBR_Engine)
 add_test(NAME SerializeTests COMMAND SerializeTests)

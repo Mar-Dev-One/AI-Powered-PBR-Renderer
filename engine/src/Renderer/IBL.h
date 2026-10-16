@@ -49,7 +49,7 @@ typedef struct ibl_environment
 } ibl_environment;
 
 // Bakes `hdr_path` (an absolute path to a Radiance .hdr, ideally a 2:1
-// equirectangular panorama; see Core/Paths.h asset_path()). Needs a live GL
+// equirectangular panorama; see Core/Paths.h project_path()). Needs a live GL
 // context, and leaves the viewport / render state as it found them.
 //
 // Returns false and leaves *ibl zeroed (safe to pass to ibl_destroy and
@@ -60,7 +60,7 @@ b8   ibl_create(ibl_environment* ibl, const char* hdr_path);
 // Safe on a zeroed / failed / already-destroyed environment.
 void ibl_destroy(ibl_environment* ibl);
 
-// Per-frame setup for the PBR shader (assets/shaders/pbr.frag): binds the
+// Per-frame setup for the PBR shader (engine/shaders/pbr.frag): binds the
 // irradiance, prefiltered and BRDF LUT maps to IBL_SLOT_* and sets its u_use_ibl,
 // u_irradiance_map, u_prefiltered_map, u_prefiltered_max_lod and u_brdf_lut uniforms.
 // Pass ibl = NULL (or a failed environment) to switch the shader back to its

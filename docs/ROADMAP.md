@@ -201,6 +201,80 @@ Next steps:
 - [ ] Split the build: a runtime library without ImGui/Chat/Net/Commands for the game, the editor
       on top (same `engine/` folder)
 
+## Projects, viewport panel and game export
+
+Goal: create a project, edit it in the editor, render the scene into an ImGui viewport panel with
+Play / Stop / Export on its toolbar, and export the game as a folder that runs on another machine.
+
+Blocker today: `ASSETS_ROOT` (`Core/Paths.h`) is an absolute path compiled into every binary, so
+the editor can't switch projects and an exported game only runs on the machine that built it.
+
+### Stage 1: Runtime paths (prerequisite for everything below)
+
+- [x] Set the asset root at startup (`paths_set_project_root()`) instead of at compile time; keep
+      `ASSETS_ROOT` only as the development fallback
+- [x] Split engine data (shaders, built-in textures) from project data (scenes, models, HDRIs):
+      two roots, `engine_path()` and `project_path()`. The engine root is found next to the
+      executable, so a copied folder still finds its shaders
+
+Status: done. `Core/Paths.h`: shaders moved to `engine/shaders/`; the engine root is
+`<exe dir>/engine` when it has `shaders/pbr.vert`, else the source tree (`DEV_ENGINE_ROOT`); the
+project root is `--project <dir>` (Editor and Testbed; F5 passes it on), else `assets/`
+(`DEV_PROJECT_ROOT`). `tests/paths_tests.c`. Checked by hand: a copied `Testbed.exe` with
+`engine/shaders/` beside it uses those shaders and the `--project` folder's files.
+Note for Stage 2: the asset cache is keyed by project-relative path, so switching projects in a
+running editor must clear it.
+
+### Stage 2: Projects
+
+- [ ] Project format: a folder with `project.json` (name, startup scene, window size, default
+      HDRI) plus `scenes/`, `models/`, `hdri/`, `textures/`
+- [ ] New project: create the folder skeleton, an empty startup scene (ground, sun, camera) and
+      `project.json`. Also an `editor.project.new` command, so the agent can do it
+- [ ] Open project: a File menu (New / Open / Recent), recent projects in `~/.pbr-renderer/`,
+      the project name in the window title; `Editor --project <dir>` on the command line
+- [ ] Edit within the project: the model and HDRI pickers list the project's files instead of the
+      hard-coded `MODEL_PATHS` / `HDRI_PATHS`; `scene.save/load/list` work in the project's
+      `scenes/`; the current scene's name in the UI
+- [ ] Save (Ctrl+S) / Save As, an unsaved-changes marker (from the revision counter), a prompt
+      on close or when switching scenes/projects
+- [ ] Import asset: copy a `.glb` / `.gltf` (with its files) / `.hdr` into the project
+- [ ] The current demo worlds (lit model, material grid) become scenes in a sample project
+
+### Stage 3: Viewport panel
+
+- [ ] Render the scene to an offscreen color texture and show it in a dockable ImGui "Viewport"
+      window (`igImage`); resize the render targets and the camera aspect to the panel, not the
+      window
+- [ ] Input from the panel: orbit, zoom, click-to-pick and the gizmo use panel-local coordinates
+      and only act while the panel is hovered (they use the main viewport today); the selection
+      outline is drawn in the panel
+- [ ] Toolbar along the panel's top: Play / Pause / Step / Stop, Export, and the gizmo
+      move/rotate/scale and local/world toggles (moved from the Scene panel)
+- [ ] Play from the toolbar runs the in-editor Play mode (see "Editor / runtime split" above:
+      copy the world, tick the copy, restore on Stop), with a coloured border on the panel while
+      playing. Options: view through the scene's Camera entity; play in a separate window
+      (today's F5 Testbed)
+
+### Stage 4: Game export
+
+- [ ] The runtime plays a project: `Testbed --project <dir>`, or with no arguments the
+      `project.json` next to the executable; opens the startup scene, window title and size from
+      the project
+- [ ] A shippable runtime: a Release build of the game, linked without the editor parts (needs
+      the runtime library split above), no console window on Windows (WIN32 subsystem), named
+      after the project. The editor finds a prebuilt one beside itself
+- [ ] Export (toolbar button and `editor.export` command): choose an output folder, then copy
+      the runtime executable and the DLLs it needs, the engine shaders, `project.json`, the
+      scenes, and only the assets those scenes reference (walk every MeshRenderer model and the
+      environment HDRI). Report the size and any missing files; refuse when a scene points
+      outside the project
+- [ ] Check the export: run the exported game headless on the startup scene and screenshot it
+      (reuses golden-image tests), so a broken export fails in the editor and not on a player's
+      machine
+- [ ] Later: zip the export; cache baked IBL maps in the export so the game doesn't bake at
+      startup; scene switching in the game (a component or a startup list)
+
 ## Feature roadmap
 
 ### Now: small, high value

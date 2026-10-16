@@ -6,7 +6,7 @@
 #include <cglm/cglm.h>
 
 // The one vertex layout every model loader (Model.h) and every lit shader
-// (assets/shaders/lit.*, pbr.*) agrees on. Add a new attribute here only if
+// (engine/shaders/lit.*, pbr.*) agrees on. Add a new attribute here only if
 // both sides are updated together -- mesh_create() below wires this exact
 // layout up to locations 0/1/2/3, matching the shaders'
 // `layout(location = N)` declarations.

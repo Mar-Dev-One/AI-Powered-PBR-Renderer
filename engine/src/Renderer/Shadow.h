@@ -73,7 +73,7 @@ void csm_update(csm_state* csm, const camera* cam, const vec3 light_dir, f32 lam
 // world_update() on `w` this frame.
 void csm_render(csm_state* csm, const world* w);
 
-// Per-frame setup for the PBR shader (assets/shaders/pbr.frag): binds each
+// Per-frame setup for the PBR shader (engine/shaders/pbr.frag): binds each
 // cascade's depth texture to CSM_SLOT_FIRST + i and sets u_cascade_count,
 // u_cascade_splits[], u_cascade_texel_sizes[] and u_light_view_projection[].
 // Call after csm_update() (and, for the frame's shadows to be current, after

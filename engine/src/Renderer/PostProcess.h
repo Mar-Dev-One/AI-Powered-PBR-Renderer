@@ -7,7 +7,7 @@
 // write linear, unclamped radiance into an RGBA16F framebuffer between
 // post_begin_scene() and post_end_scene(); post_end_scene() then draws one
 // fullscreen triangle to the default framebuffer that applies exposure, ACES
-// tone mapping and gamma (assets/shaders/tonemap.frag). Keeping tone mapping
+// tone mapping and gamma (engine/shaders/tonemap.frag). Keeping tone mapping
 // out of the per-object shaders means blended materials blend in linear HDR
 // space, and leaves a single place for later post effects (bloom, AA,
 // auto-exposure) to hook into.

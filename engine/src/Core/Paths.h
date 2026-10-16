@@ -2,19 +2,49 @@
 
 #include "Defines.h"
 
-// ASSETS_ROOT is injected by CMake as an absolute path to the assets/
-// folder (see target_compile_definitions in CmakeLists.txt), so asset
-// paths resolve correctly no matter what the process's working directory
-// is (IDE "run" buttons, ctest, double-clicking the binary, etc).
+// Where files are found at runtime. Two roots, chosen when the program runs
+// rather than baked in at compile time, so a copied or exported build still
+// finds its files:
 //
-// Falls back to a relative path if built outside that CMake target
-// (e.g. a stray translation unit compiled by hand) so this header never
-// hard-fails to compile.
-#ifndef ASSETS_ROOT
-#define ASSETS_ROOT "assets"
+//   engine root   the engine's own data: shaders/. The first that has
+//                 shaders/pbr.vert of
+//                   1. <executable's folder>/engine   (an exported game)
+//                   2. DEV_ENGINE_ROOT                (engine/ in the source tree)
+//
+//   project root  what a game is made of: scenes/, models/, hdri/,
+//                 textures/. Paths stored in scenes ("models/Avocado.glb",
+//                 "hdri/sky.hdr") are relative to it.
+//                   1. paths_set_project_root() (the apps' --project <dir>)
+//                   2. DEV_PROJECT_ROOT         (assets/ in the source tree)
+//
+// DEV_ENGINE_ROOT and DEV_PROJECT_ROOT are injected by CMake as absolute
+// source-tree paths: the development fallback, so builds run from any working
+// directory (IDE run buttons, ctest, double-clicking the binary). Code that
+// runs during development uses the source tree's shaders, so hot reload edits
+// the real files.
+//
+// Roots use '/' separators and have no trailing '/'.
+
+#ifndef DEV_ENGINE_ROOT
+#define DEV_ENGINE_ROOT "engine"
+#endif
+#ifndef DEV_PROJECT_ROOT
+#define DEV_PROJECT_ROOT "assets"
 #endif
 
-// Joins ASSETS_ROOT with `relative_path` (e.g. "shaders/basic.vert") into
-// a heap-allocated, NUL-terminated string. Caller owns the result and
-// must free() it.
-char* asset_path(const char* relative_path);
+const char* paths_engine_root(void);
+const char* paths_project_root(void);
+
+// Makes `directory` (absolute, or relative to the working directory) the
+// project root, stored absolute. False, and the root unchanged, if it isn't
+// an existing directory.
+b8 paths_set_project_root(const char* directory);
+
+// The folder holding the running executable; "" if it can't be found.
+const char* paths_executable_dir(void);
+
+// `relative_path` under the engine / project root (e.g. "shaders/pbr.vert",
+// "scenes/plaza.json"), heap-allocated. Caller owns the result and must
+// free() it.
+char* engine_path(const char* relative_path);
+char* project_path(const char* relative_path);

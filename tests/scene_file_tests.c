@@ -79,7 +79,7 @@ register_models(asset_cache* assets, const cJSON* entities, const char* scene_na
         }
         else
         {
-            char* path   = asset_path(key);
+            char* path   = project_path(key);
             b8    exists = file_exists(path);
             free(path);
             if (!exists)
@@ -186,7 +186,7 @@ check_scene(asset_cache* assets, const char* dir, const char* file_name)
 int
 main(void)
 {
-    char* dir = asset_path("scenes");
+    char* dir = project_path("scenes");
 
     scene_list list = { 0 };
     file_list_directory(dir, collect_scene, &list);

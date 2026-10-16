@@ -5,10 +5,12 @@
 // command server, no chat -- those are editor-only (editor/main.c).
 //
 //   Testbed [options] [scene] [hdri]
-//     scene         a name under assets/scenes/ ("orrery_plaza") or a path to
-//                   a .json file; defaults to DEFAULT_SCENE
-//     hdri          a Radiance .hdr under assets/ for image-based lighting,
-//                   overriding the scene's own
+//     scene         a name under the project's scenes/ ("orrery_plaza") or a
+//                   path to a .json file; defaults to DEFAULT_SCENE
+//     hdri          a Radiance .hdr under the project for image-based
+//                   lighting, overriding the scene's own
+//     --project D   play the project in folder D (scenes/, models/, hdri/;
+//                   Core/Paths.h) instead of the source tree's assets/
 //     --width N     window size in pixels (default 1920 x 1080; in fullscreen,
 //     --height N    the monitor's resolution unless given)
 //     --fullscreen  fullscreen on the primary monitor
@@ -101,7 +103,7 @@ clampf(f32 value, f32 lo, f32 hi)
 
 // --- Scene -----------------------------------------------------------------------
 
-// `arg` is a scene name under assets/scenes/ or a path to a .json file.
+// `arg` is a scene name under the project's scenes/ or a path to a .json file.
 // Caller frees.
 static char*
 resolve_scene_path(const char* arg)
@@ -118,7 +120,7 @@ resolve_scene_path(const char* arg)
 
     char relative[256];
     snprintf(relative, sizeof(relative), "scenes/%s.json", arg);
-    return asset_path(relative);
+    return project_path(relative);
 }
 
 // Replaces the world (and environment) with `scene`'s. `source` names it in
@@ -215,7 +217,7 @@ sync_hdri(game_state* state)
     if (!state->env.hdri[0])
         return;
 
-    char* path = asset_path(state->env.hdri);
+    char* path = project_path(state->env.hdri);
     if (!ibl_create(&state->ibl, path))
         LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", path);
     free(path);
@@ -347,6 +349,8 @@ on_init(App* app)
     game_state* state = (game_state*)app->user_data;
     window_size size  = window_get_size(get_renderer()->drawing_window);
     state->aspect     = size.height ? (f32)size.width / (f32)size.height : 1.0f;
+
+    LOG_INFO("testbed: project %s, engine data %s\n", paths_project_root(), paths_engine_root());
 
     if (!scene_renderer_create(&state->renderer, size.width, size.height, CASCADE_COUNT, SHADOW_MAP_SIZE))
         FATAL("testbed: failed to create the scene renderer");
@@ -483,10 +487,11 @@ parse_size(const char* text, uint16 max)
 static void
 print_usage(void)
 {
-    printf("usage: Testbed [--width N] [--height N] [--fullscreen] [--live] [scene] [hdri]\n"
-           "  --live follow the scene the editor is editing, live\n"
-           "  scene  name under assets/scenes/ or a path to a .json file (default %s)\n"
-           "  hdri   .hdr under assets/, overriding the scene's own\n", DEFAULT_SCENE);
+    printf("usage: Testbed [--width N] [--height N] [--fullscreen] [--live] [--project DIR] [scene] [hdri]\n"
+           "  --live     follow the scene the editor is editing, live\n"
+           "  --project  the project folder (default: the source tree's assets/)\n"
+           "  scene      name under the project's scenes/ or a path to a .json file (default %s)\n"
+           "  hdri       .hdr under the project, overriding the scene's own\n", DEFAULT_SCENE);
 }
 
 int main(int argc, char** argv)
@@ -508,6 +513,16 @@ int main(int argc, char** argv)
         else if (strcmp(arg, "--live") == 0)
         {
             state.live = true;
+        }
+        else if (strcmp(arg, "--project") == 0)
+        {
+            const char* dir = i + 1 < argc ? argv[++i] : NULL;
+            if (!dir || !paths_set_project_root(dir))
+            {
+                fprintf(stderr, "--project needs an existing folder\n");
+                print_usage();
+                return 1;
+            }
         }
         else if (strcmp(arg, "--width") == 0 || strcmp(arg, "--height") == 0)
         {

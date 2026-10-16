@@ -134,7 +134,7 @@ assets_load_model(asset_cache* cache, const char* relative_path)
     if (existing != ASSET_NONE)
         return existing;
 
-    char* path = asset_path(relative_path);
+    char* path = project_path(relative_path);
     model m    = model_load(path);
     free(path);
 

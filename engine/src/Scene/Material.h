@@ -4,7 +4,7 @@
 #include "../RHI/RHI.h"
 
 // A metallic-roughness PBR material -- the model glTF 2.0 uses, and what
-// the pbr.* shaders (assets/shaders/pbr.frag) consume. Loaders for other
+// the pbr.* shaders (engine/shaders/pbr.frag) consume. Loaders for other
 // formats (Wavefront .obj) convert whatever they have into this shape, so
 // there is exactly one material representation downstream.
 //
@@ -90,7 +90,7 @@ void material_init_default(material* m);
 // `flip_winding` is for instances whose transform mirrors the mesh
 // (negative determinant), which reverses triangle winding.
 //
-// Uniform contract (see assets/shaders/pbr.frag): u_base_color, u_metallic,
+// Uniform contract (see engine/shaders/pbr.frag): u_base_color, u_metallic,
 // u_roughness, u_emissive, u_normal_scale, u_occlusion_strength,
 // u_alpha_mode, u_alpha_cutoff, u_texture_mask (bit N set = slot N has a
 // texture) and the five sampler2Ds u_base_color_tex ... u_emissive_tex.
