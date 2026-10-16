@@ -544,7 +544,7 @@ int main(int argc, char** argv)
         .on_scroll   = on_scroll,
         .on_resize   = on_resize,
         .user_data   = &state,
-        .use_imgui   = false
+        .ui          = NULL
     };
 
     run(&app);

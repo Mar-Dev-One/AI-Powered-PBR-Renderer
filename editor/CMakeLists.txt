@@ -1,9 +1,9 @@
 # The editor: the scene panels, command console, chat with the AI agent and
-# the command server, on top of the same engine the game runtime (game/)
-# uses. It's the only app that turns on Dear ImGui (App.use_imgui).
+# the command server -- engine/'s PBR_Tools, on top of the PBR_Runtime the
+# game (game/) uses. It's the only app with a UI layer (App.ui = imgui_layer()).
 add_executable(Editor main.c SceneDocument.c PlaySession.c)
 
-target_link_libraries(Editor PRIVATE PBR_Engine)
+target_link_libraries(Editor PRIVATE PBR_Tools)
 
 # The chat agent's Python environment lives in the source tree (agent/README.md).
 target_compile_definitions(Editor PRIVATE AGENT_DIR="${CMAKE_SOURCE_DIR}/agent")

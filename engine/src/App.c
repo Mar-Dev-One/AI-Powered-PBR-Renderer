@@ -1,7 +1,6 @@
 #include "App.h"
 
 #include "Renderer/Renderer.h"
-#include "UI/ImGuiLayer.h"
 
 #include <GLFW/glfw3.h>
 
@@ -15,10 +14,10 @@ static void glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, i
     if (!g_app || !g_app->on_key)
         return;
 
-    // Always forward releases: if ImGui grabbed focus between press and
+    // Always forward releases: if the UI grabbed focus between press and
     // release, swallowing the release would leave the app thinking the key
     // is still held.
-    if (action != GLFW_RELEASE && g_app->use_imgui && imgui_layer_wants_keyboard())
+    if (action != GLFW_RELEASE && g_app->ui && g_app->ui->wants_keyboard())
         return;
 
     g_app->on_key(g_app, key, action, mods);
@@ -29,7 +28,7 @@ static void glfw_scroll_cb(GLFWwindow* window, double xoffset, double yoffset)
     if (!g_app || !g_app->on_scroll)
         return;
 
-    if (g_app->use_imgui && imgui_layer_wants_mouse())
+    if (g_app->ui && g_app->ui->wants_mouse())
         return;
 
     g_app->on_scroll(g_app, xoffset, yoffset);
@@ -67,18 +66,18 @@ void run(App* app)
 
     renderer rend = get_renderer();
 
-    // These MUST be registered before imgui_layer_init(). The ImGui GLFW
-    // backend saves whatever callback is already installed and chains to it
-    // (ImGui sees the event first, then ours). Registering after would
-    // replace ImGui's callback and break UI input.
+    // These MUST be registered before the UI layer's init(). Dear ImGui's
+    // GLFW backend saves whatever callback is already installed and chains
+    // to it (the UI sees the event first, then ours). Registering after
+    // would replace its callback and break UI input.
     window_set_key_callback(rend->drawing_window, glfw_key_cb);
     window_set_scroll_callback(rend->drawing_window, glfw_scroll_cb);
     window_set_resize_callback(rend->drawing_window, glfw_resize_cb);
 
-    // ImGui needs a live GL context + GLFW window, so it can only be set
-    // up after init_renderer() above has created both.
-    if (app->use_imgui)
-        imgui_layer_init(rend->drawing_window);
+    // The UI needs a live GL context + window, so it can only be set up
+    // after init_renderer() above has created both.
+    if (app->ui)
+        app->ui->init(rend->drawing_window);
 
     if (app->on_init)
         app->on_init(app);
@@ -101,23 +100,23 @@ void run(App* app)
 
         renderer_clear(0.4f, 0.1f, 0.12f, 1.0f);
 
-        if (app->use_imgui)
-            imgui_layer_new_frame();
+        if (app->ui)
+            app->ui->new_frame();
 
         if (app->on_frame)
             app->on_frame(app, dt);
 
         // Draws on top of whatever on_frame just rendered, still before
         // the swap so it actually shows up on screen.
-        if (app->use_imgui)
-            imgui_layer_render();
+        if (app->ui)
+            app->ui->render();
 
         renderer_end_frame();
 
         // Must come after the swap above -- it makes the popped-out
         // windows' own GL contexts current to draw them.
-        if (app->use_imgui)
-            imgui_layer_render_platform_windows();
+        if (app->ui)
+            app->ui->render_platform_windows();
     }
 }
 
@@ -128,8 +127,8 @@ void terminate(App* app)
     if (app && app->on_shutdown)
         app->on_shutdown(app);
 
-    if (app && app->use_imgui)
-        imgui_layer_shutdown();
+    if (app && app->ui)
+        app->ui->shutdown();
     terminate_renderer();
 
     g_app = NULL;

@@ -22,8 +22,8 @@ building the export.
    through the first Camera entity. A toolbar toggle to see what the player will see.
 4. **Exercise the in-app agent against the live Claude API.** Its loop is only tested with a
    scripted model (Phase 5).
-5. **Runtime library split** (Editor / runtime split below): the game stops linking ImGui, the
-   command layer and the server.
+5. **Trim the export's runtime DLLs.** Since the library split the game has no C++ code, so it
+   imports only `VCRUNTIME140.dll`; Export still copies all of `msvcp140*.dll` too.
 6. **Editor polish:** a native folder picker for New/Open Project, Import and Export (paths are
    typed today); an agent's `scene.save` should update the editor's saved state, so the title
    loses its `*`.
@@ -226,8 +226,9 @@ Next steps:
       ambient -- isn't World data and still has no undo.)
 - [ ] Optional, if a separate game window that follows edits is wanted again: the game connects
       to the command server as a client and applies `scene.changed` events incrementally
-- [ ] Split the build: a runtime library without ImGui/Chat/Net/Commands for the game, the editor
-      on top (same `engine/` folder). Still open: the exported `Game` links them, unused
+- [x] Split the build: `PBR_Runtime` (no ImGui/Chat/Net/Commands) for the game, `PBR_Tools` on
+      top of it for the editor, both from `engine/`. App reaches ImGui only through the
+      `App.ui` hook table. The Release game went from 1.75 MB to 552 KB
 
 ## Projects, viewport panel and game export
 

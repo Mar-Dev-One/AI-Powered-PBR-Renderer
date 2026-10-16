@@ -3103,7 +3103,7 @@ int main(int argc, char** argv)
         .on_close_request = on_close_request,
         .user_data        = &state,
         .should_close     = false,
-        .use_imgui        = true
+        .ui               = imgui_layer()
     };
 
     run(&app);

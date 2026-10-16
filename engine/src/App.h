@@ -1,13 +1,14 @@
 #pragma once
 
 #include "Core/Defines.h"
+#include "Platform/Window.h"
 
 struct App;
 
-// All hooks are optional (may be NULL). With use_imgui set, input hooks only
-// fire for events Dear ImGui did not claim (typing in a text box, scrolling a
-// panel), so an app never has to check ImGui's capture flags itself. Key and
-// mouse codes are GLFW's for now.
+// All hooks are optional (may be NULL). With a UI layer (App.ui), input
+// hooks only fire for events the UI did not claim (typing in a text box,
+// scrolling a panel), so an app never has to check its capture flags
+// itself. Key and mouse codes are GLFW's for now.
 
 // Once, after the window, GL context, RHI and ImGui exist -- create GPU
 // resources here.
@@ -35,6 +36,20 @@ typedef void (*app_resize_callback)(struct App* app, uint16 width, uint16 height
 // set should_close later. Without this hook the window just closes.
 typedef b8 (*app_close_request_callback)(struct App* app);
 
+// An immediate-mode UI drawn over every frame -- the editor's Dear ImGui
+// (UI/ImGuiLayer.h imgui_layer()). The runtime only calls these, so a game
+// built without one links no UI library at all. Every function is required.
+typedef struct app_ui_layer
+{
+    void (*init)(window* wind);           // after the window and GL context exist, before App.on_init
+    void (*shutdown)(void);               // after App.on_shutdown
+    void (*new_frame)(void);              // before App.on_frame
+    void (*render)(void);                 // after App.on_frame, before the buffer swap
+    void (*render_platform_windows)(void);   // after the swap: panels dragged out into their own OS windows
+    b8   (*wants_keyboard)(void);         // the UI claims this frame's keyboard / mouse events
+    b8   (*wants_mouse)(void);
+} app_ui_layer;
+
 typedef struct App
 {
     char* name;
@@ -57,9 +72,8 @@ typedef struct App
     b8     fullscreen;
     b8     hidden;    // a window that's never shown, for rendering offscreen only
 
-    // Dear ImGui (UI/ImGuiLayer.h) for tools like the editor. Off for a game
-    // runtime: ImGui is never initialised, so no ig*() / imgui_layer_*() calls.
-    b8 use_imgui;
+    // NULL for a game runtime; the editor's is UI/ImGuiLayer.h imgui_layer().
+    const app_ui_layer* ui;
 } App;
 
 

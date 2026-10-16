@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../App.h"
 #include "../Core/Defines.h"
 #include "../Platform/Window.h"
 
@@ -31,3 +32,7 @@ void imgui_layer_render_platform_windows(void);
 // input (e.g. drag-to-orbit) should check wants_mouse itself.
 b8 imgui_layer_wants_keyboard(void);
 b8 imgui_layer_wants_mouse(void);
+
+// All of the above as App's UI layer: set App.ui to this and run() calls
+// them at the right points of the frame.
+const app_ui_layer* imgui_layer(void);
