@@ -49,6 +49,9 @@
 #include "UI/ImGuiLayer.h"
 #include "cimgui.h"
 
+#include "PlaySession.h"
+#include "SceneDocument.h"
+
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -66,17 +69,6 @@
 // HDRIs the environment picker lists: the .hdr files in the project's hdri/
 // (and one folder level below it).
 #define HDRI_LIST_MAX 64
-
-// The Viewport toolbar's Play / Pause / Stop.
-typedef enum play_mode
-{
-    PLAY_STOPPED,   // editing
-    PLAY_RUNNING,   // the copy ticks every frame
-    PLAY_PAUSED     // the copy holds still; Step (F10) advances it one frame
-} play_mode;
-
-// One paused step's worth of game time.
-#define PLAY_STEP_SECONDS (1.0f / 60.0f)
 
 // Something that replaces the scene on screen, so it waits for an answer
 // to "save changes?" when there are any (see request()).
@@ -109,35 +101,18 @@ typedef struct editor_state
     project_settings project;
     project_recent   recent;
 
-    // --- The scene being edited ------------------------------------------------
-    // One World, the single source of truth: the inspector, gizmo, console
-    // and agent all change it through commands, so every change bumps
-    // commands.revision -- which is how unsaved changes are noticed.
-    // scene_name is the file it was opened from or saved to ("" = never
-    // saved); saved_revision / saved_env are what that file holds.
-    asset_cache       assets;
-    world             scene;
-    command_history   history;
-    command_context   commands;
-    char              scene_name[PROJECT_SCENE_MAX];
-    uint64            saved_revision;
-    scene_environment saved_env;
+    // --- The scene being edited (SceneDocument.h) ---------------------------------
+    // Its World, undo history, commands and environment, and whether it has
+    // unsaved changes.
+    asset_cache    assets;
+    scene_document doc;
 
-    // --- Play mode (the Viewport toolbar) -----------------------------------------
-    // Play makes play_world a world_copy() of the scene and runs the game's
-    // behaviours (world_tick()) on it in the Viewport. While it plays,
-    // everything that shows or edits "the scene on screen" -- the view,
-    // selection, gizmo, Inspector, Entities, console, command server, agent,
-    // Add -- works on the copy, through play_commands (the scene's context
-    // without its undo history). Stop throws the copy away, and the
-    // environment back to how it was: the edited scene never changed.
-    // Saving and opening act on the edited scene, so they stop play or wait.
-    play_mode         play;
-    world             play_world;
-    command_context   play_commands;
-    scene_environment play_saved_env;
-    f32               play_time;   // game seconds since Play
-    b8                play_step;   // advance one step next frame (while paused)
+    // --- Play mode (PlaySession.h, the Viewport toolbar) ---------------------------
+    // While it plays, everything that shows or edits "the scene on screen" --
+    // the view, selection, gizmo, Inspector, Entities, console, command
+    // server, agent, Add -- works on the copy (active_commands()). Saving and
+    // opening act on the edited scene, so they stop play or wait.
+    play_session play;
 
     command_console console;
     inspector       inspector;      // the selected entity's fields; edits run as undoable commands
@@ -280,7 +255,7 @@ clampf(f32 v, f32 lo, f32 hi)
 static command_context*
 active_commands(editor_state* state)
 {
-    return state->play != PLAY_STOPPED ? &state->play_commands : &state->commands;
+    return play_active_commands(&state->play, &state->doc);
 }
 
 static world*
@@ -362,17 +337,17 @@ view_input(editor_state* state)
 static void
 sync_hdri(editor_state* state)
 {
-    if (state->hdri_baked && strcmp(state->baked_hdri, state->env.hdri) == 0)
+    if (state->hdri_baked && strcmp(state->baked_hdri, state->doc.env.hdri) == 0)
         return;
 
     ibl_destroy(&state->ibl);
-    memcpy(state->baked_hdri, state->env.hdri, sizeof(state->baked_hdri));
+    memcpy(state->baked_hdri, state->doc.env.hdri, sizeof(state->baked_hdri));
     state->hdri_baked = true;
 
-    if (!state->env.hdri[0])
+    if (!state->doc.env.hdri[0])
         return;   // no HDRI: the hemisphere ambient light
 
-    char* path = project_path(state->env.hdri);
+    char* path = project_path(state->doc.env.hdri);
     if (!ibl_create(&state->ibl, path))
         LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", path);
 
@@ -450,7 +425,7 @@ on_world_change(void* user_data, const cJSON* event)
     if (state->server)
     {
         cJSON* params = cJSON_Duplicate(event, true);
-        cJSON_AddStringToObject(params, "world", state->play != PLAY_STOPPED ? "play" : "scene");
+        cJSON_AddStringToObject(params, "world", play_active(&state->play) ? "play" : "scene");
         server_notify(state->server, SERVER_CHANGE_NOTIFICATION, params);
         cJSON_Delete(params);
     }
@@ -517,14 +492,14 @@ host_environment_list(void* user_data, command_context* ctx, const cJSON* args, 
     for (uint32 i = 0; i < hdris.count; ++i)
         cJSON_AddItemToArray(list, cJSON_CreateString(hdris.paths[i]));
 
-    if (state->env.hdri[0])
-        cJSON_AddStringToObject(*out_result, "current", state->env.hdri);
+    if (state->doc.env.hdri[0])
+        cJSON_AddStringToObject(*out_result, "current", state->doc.env.hdri);
     else
         cJSON_AddNullToObject(*out_result, "current");
     cJSON_AddBoolToObject(*out_result, "hdri_loaded", state->ibl.irradiance != 0);
-    cJSON_AddBoolToObject(*out_result, "use_ibl", state->env.use_ibl);
-    cJSON_AddBoolToObject(*out_result, "show_skybox", state->env.show_skybox);
-    cJSON_AddItemToObject(*out_result, "sky_blur", number_json(state->env.sky_blur));
+    cJSON_AddBoolToObject(*out_result, "use_ibl", state->doc.env.use_ibl);
+    cJSON_AddBoolToObject(*out_result, "show_skybox", state->doc.env.show_skybox);
+    cJSON_AddItemToObject(*out_result, "sky_blur", number_json(state->doc.env.sky_blur));
     return true;
 }
 
@@ -567,15 +542,15 @@ host_environment_set(void* user_data, command_context* ctx, const cJSON* args, c
 
     if (found)
     {
-        snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", found);
+        snprintf(state->doc.env.hdri, sizeof(state->doc.env.hdri), "%s", found);
         sync_hdri(state);
     }
 
     const cJSON* use_ibl = cJSON_GetObjectItem(args, "use_ibl");
     const cJSON* skybox  = cJSON_GetObjectItem(args, "show_skybox");
-    if (cJSON_IsBool(use_ibl)) state->env.use_ibl     = cJSON_IsTrue(use_ibl);
-    if (cJSON_IsBool(skybox))  state->env.show_skybox = cJSON_IsTrue(skybox);
-    if (blur)                  state->env.sky_blur    = (f32)blur->valuedouble;
+    if (cJSON_IsBool(use_ibl)) state->doc.env.use_ibl     = cJSON_IsTrue(use_ibl);
+    if (cJSON_IsBool(skybox))  state->doc.env.show_skybox = cJSON_IsTrue(skybox);
+    if (blur)                  state->doc.env.sky_blur    = (f32)blur->valuedouble;
 
     return host_environment_list(user_data, ctx, NULL, out_result, error, error_size);
 }
@@ -590,8 +565,8 @@ host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
     cJSON_AddItemToObject(*out_result, "position", vec3_json(state->cam.position));
     cJSON_AddItemToObject(*out_result, "target", vec3_json(state->cam.target));
     cJSON_AddItemToObject(*out_result, "fov_degrees", number_json(state->cam.fov_degrees));
-    cJSON_AddItemToObject(*out_result, "exposure", number_json(state->env.exposure));
-    cJSON_AddItemToObject(*out_result, "ambient_strength", number_json(state->env.ambient_strength));
+    cJSON_AddItemToObject(*out_result, "exposure", number_json(state->doc.env.exposure));
+    cJSON_AddItemToObject(*out_result, "ambient_strength", number_json(state->doc.env.ambient_strength));
     return true;
 }
 
@@ -717,8 +692,8 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
         return false;
     }
 
-    if (exposure) state->env.exposure         = (f32)exposure->valuedouble;
-    if (ambient)  state->env.ambient_strength = (f32)ambient->valuedouble;
+    if (exposure) state->doc.env.exposure         = (f32)exposure->valuedouble;
+    if (ambient)  state->doc.env.ambient_strength = (f32)ambient->valuedouble;
     if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
 
     return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
@@ -814,7 +789,6 @@ host_view_screenshot(void* user_data, command_context* ctx, const cJSON* args, c
     return true;
 }
 
-static b8 scene_dirty(const editor_state* state);
 
 static b8
 host_project_info(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
@@ -826,11 +800,11 @@ host_project_info(void* user_data, command_context* ctx, const cJSON* args, cJSO
     cJSON_AddStringToObject(*out_result, "name", state->project.name);
     cJSON_AddStringToObject(*out_result, "folder", paths_project_root());
     cJSON_AddStringToObject(*out_result, "startup_scene", state->project.startup_scene);
-    if (state->scene_name[0])
-        cJSON_AddStringToObject(*out_result, "scene", state->scene_name);
+    if (state->doc.name[0])
+        cJSON_AddStringToObject(*out_result, "scene", state->doc.name);
     else
         cJSON_AddNullToObject(*out_result, "scene");
-    cJSON_AddBoolToObject(*out_result, "unsaved_changes", scene_dirty(state));
+    cJSON_AddBoolToObject(*out_result, "unsaved_changes", doc_dirty(&state->doc));
     return true;
 }
 
@@ -878,7 +852,7 @@ host_project_create(void* user_data, command_context* ctx, const cJSON* args, cJ
 
 static void play_start(editor_state* state);
 static void play_stop(editor_state* state);
-static void play_toggle_pause(editor_state* state);
+
 static b8   run_export(editor_state* state, const char* folder);
 static void default_export_location(const editor_state* state, char* out, size_t size);
 
@@ -929,12 +903,6 @@ static const cmd_arg ARGS_EXPORT[] = {
                                  "default Documents/PBR Exports/<project name>" },
 };
 
-static const char*
-play_mode_name(play_mode mode)
-{
-    return mode == PLAY_RUNNING ? "playing" : mode == PLAY_PAUSED ? "paused" : "stopped";
-}
-
 static b8
 host_play_status(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
@@ -942,8 +910,8 @@ host_play_status(void* user_data, command_context* ctx, const cJSON* args, cJSON
     editor_state* state = user_data;
 
     *out_result = cJSON_CreateObject();
-    cJSON_AddStringToObject(*out_result, "state", play_mode_name(state->play));
-    cJSON_AddItemToObject(*out_result, "time", number_json(state->play_time));
+    cJSON_AddStringToObject(*out_result, "state", play_mode_name(state->play.mode));
+    cJSON_AddItemToObject(*out_result, "time", number_json(state->play.time));
     return true;
 }
 
@@ -957,7 +925,7 @@ host_play_set(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
     if (action && strcmp(action, "play") == 0)
     {
         play_start(state);
-        if (state->play == PLAY_STOPPED)
+        if (!play_active(&state->play))
         {
             snprintf(error, error_size, "can't play while a chat turn is running");
             return false;
@@ -968,17 +936,17 @@ host_play_set(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
     else if (action && (strcmp(action, "pause") == 0 || strcmp(action, "resume") == 0))
     {
         b8 pause = action[0] == 'p';
-        if ((pause && state->play == PLAY_RUNNING) || (!pause && state->play == PLAY_PAUSED))
-            play_toggle_pause(state);
+        if ((pause && state->play.mode == PLAY_RUNNING) || (!pause && state->play.mode == PLAY_PAUSED))
+            play_toggle_pause(&state->play);
     }
     else if (action && strcmp(action, "step") == 0)
     {
-        if (state->play != PLAY_PAUSED)
+        if (state->play.mode != PLAY_PAUSED)
         {
             snprintf(error, error_size, "step works while paused; pause first");
             return false;
         }
-        state->play_step = true;
+        state->play.step = true;
     }
     else
     {
@@ -1421,7 +1389,7 @@ draw_gizmo(editor_state* state, ImDrawList* draw, b8 view_hovered, ImGuiID view_
 static void
 play_start(editor_state* state)
 {
-    if (state->play != PLAY_STOPPED)
+    if (play_active(&state->play))
         return;
     if (chat_busy(&state->chat))
     {
@@ -1429,26 +1397,10 @@ play_start(editor_state* state)
         return;
     }
 
-    inspector_finish_edit(&state->inspector, &state->commands);
-    gizmo_finish_edit(state, &state->commands);
+    inspector_finish_edit(&state->inspector, &state->doc.commands);
+    gizmo_finish_edit(state, &state->doc.commands);
 
-    world_copy(&state->play_world, &state->scene);
-
-    // The same commands and hooks, on the copy, without undo: what happens
-    // in Play is thrown away as a whole.
-    state->play_commands             = state->commands;
-    state->play_commands.w           = &state->play_world;
-    state->play_commands.history     = NULL;
-    state->play_commands.revision    = 0;
-    state->play_commands.batch_depth = 0;
-    state->play_commands.save_refused =
-        "the scene is playing, so what's on screen is Play's throwaway copy; stop first (play.set stop / Ctrl+P), "
-        "then save the edited scene";
-
-    state->play_saved_env = state->env;
-    state->play_time      = 0.0f;
-    state->play_step      = false;
-    state->play           = PLAY_RUNNING;   // same IDs in the copy: the selection carries over
+    play_begin(&state->play, &state->doc);   // same IDs in the copy: the selection carries over
 
     console_info(&state->console, "Playing. Changes made now are discarded on Stop (Ctrl+P).");
 }
@@ -1457,53 +1409,21 @@ play_start(editor_state* state)
 static void
 play_stop(editor_state* state)
 {
-    if (state->play == PLAY_STOPPED)
+    if (!play_active(&state->play))
         return;
 
-    inspector_finish_edit(&state->inspector, &state->play_commands);
-    gizmo_finish_edit(state, &state->play_commands);
-    if (chat_busy(&state->chat) && state->chat.turn_ctx == &state->play_commands)
+    inspector_finish_edit(&state->inspector, &state->play.commands);
+    gizmo_finish_edit(state, &state->play.commands);
+    if (chat_busy(&state->chat) && state->chat.turn_ctx == &state->play.commands)
         chat_stop(&state->chat);   // a turn started while playing; its world is going away
 
-    state->play = PLAY_STOPPED;
-    state->env  = state->play_saved_env;   // sync_hdri() re-bakes if Play changed the HDRI
-    world_shutdown(&state->play_world);
-    assets_collect_unused(&state->assets);   // models only the copy used (placed while playing)
+    play_end(&state->play, &state->doc);   // sync_hdri() re-bakes if Play changed the HDRI
     // The selection stays if it names something in the edited scene
     // (validate_selection() drops one made while playing).
 
     char line[96];
-    snprintf(line, sizeof(line), "Stopped after %.1f s of play; back to the edited scene.", (double)state->play_time);
+    snprintf(line, sizeof(line), "Stopped after %.1f s of play; back to the edited scene.", (double)state->play.time);
     console_info(&state->console, line);
-}
-
-static void
-play_toggle_pause(editor_state* state)
-{
-    if (state->play == PLAY_RUNNING)
-        state->play = PLAY_PAUSED;
-    else if (state->play == PLAY_PAUSED)
-        state->play = PLAY_RUNNING;
-}
-
-// This frame's game step: the frame time while running (capped like the
-// game's, so a stall doesn't fling things around), one fixed step if Step
-// asked for it while paused, else nothing.
-static void
-play_advance(editor_state* state, f32 dt)
-{
-    f32 step = 0.0f;
-    if (state->play == PLAY_RUNNING)
-        step = fminf(dt, 0.1f);
-    else if (state->play == PLAY_PAUSED && state->play_step)
-        step = PLAY_STEP_SECONDS;
-    state->play_step = false;
-
-    if (step > 0.0f)
-    {
-        world_tick(&state->play_world, step);
-        state->play_time += step;
-    }
 }
 
 // --- Export ---------------------------------------------------------------------------
@@ -1722,7 +1642,7 @@ toolbar_separator(void)
 static void
 draw_toolbar(editor_state* state)
 {
-    const b8 playing = state->play != PLAY_STOPPED;
+    const b8 playing = play_active(&state->play);
 
     if (!playing)
     {
@@ -1734,14 +1654,14 @@ draw_toolbar(editor_state* state)
     {
         play_stop(state);
     }
-    if (toolbar_button(state->play == PLAY_PAUSED ? "Resume" : "Pause", playing, "Ctrl+Shift+P"))
-        play_toggle_pause(state);
-    if (toolbar_button("Step", state->play == PLAY_PAUSED, "One frame forward (F10)"))
-        state->play_step = true;
+    if (toolbar_button(state->play.mode == PLAY_PAUSED ? "Resume" : "Pause", playing, "Ctrl+Shift+P"))
+        play_toggle_pause(&state->play);
+    if (toolbar_button("Step", state->play.mode == PLAY_PAUSED, "One frame forward (F10)"))
+        state->play.step = true;
     if (playing)
     {
-        igTextColored(state->play == PLAY_PAUSED ? (ImVec4_c){ 1.0f, 0.71f, 0.0f, 1.0f } : (ImVec4_c){ 0.31f, 0.78f, 0.31f, 1.0f },
-                      "%s %.1f s", state->play == PLAY_PAUSED ? "Paused" : "Playing", (double)state->play_time);
+        igTextColored(state->play.mode == PLAY_PAUSED ? (ImVec4_c){ 1.0f, 0.71f, 0.0f, 1.0f } : (ImVec4_c){ 0.31f, 0.78f, 0.31f, 1.0f },
+                      "%s %.1f s", state->play.mode == PLAY_PAUSED ? "Paused" : "Playing", (double)state->play.time);
         igSameLine(0.0f, -1.0f);
     }
     toolbar_separator();
@@ -1789,10 +1709,10 @@ draw_toolbar(editor_state* state)
 static void
 draw_play_frame(editor_state* state, ImDrawList* draw)
 {
-    if (state->play == PLAY_STOPPED)
+    if (!play_active(&state->play))
         return;
 
-    const ImU32 color = state->play == PLAY_PAUSED ? 0xFF00B4FF : 0xFF50C850;   // ABGR
+    const ImU32 color = state->play.mode == PLAY_PAUSED ? 0xFF00B4FF : 0xFF50C850;   // ABGR
     ImDrawList_AddRect(draw, (ImVec2_c){ state->view_x + 1.0f, state->view_y + 1.0f },
                        (ImVec2_c){ state->view_x + state->view_width - 1.0f, state->view_y + state->view_height - 1.0f },
                        color, 0.0f, 3.0f, 0);
@@ -1832,28 +1752,6 @@ run_command(editor_state* state, const char* cmd, cJSON* args)
 
 // --- Project and scene ------------------------------------------------------------------
 
-static b8
-environment_equal(const scene_environment* a, const scene_environment* b)
-{
-    return strcmp(a->hdri, b->hdri) == 0 && a->use_ibl == b->use_ibl && a->show_skybox == b->show_skybox
-        && a->sky_blur == b->sky_blur && a->ambient_strength == b->ambient_strength && a->exposure == b->exposure;
-}
-
-// Changes since the scene was opened or saved: any command that changed the
-// world (each bumps the revision, undo included), or the environment.
-static b8
-scene_dirty(const editor_state* state)
-{
-    return state->commands.revision != state->saved_revision || !environment_equal(&state->env, &state->saved_env);
-}
-
-static void
-mark_saved(editor_state* state)
-{
-    state->saved_revision = state->commands.revision;
-    state->saved_env      = state->env;
-}
-
 // "PBR Editor - Racing Game - main*"
 static void
 update_title(editor_state* state)
@@ -1861,7 +1759,7 @@ update_title(editor_state* state)
     static char last[PROJECT_NAME_MAX + PROJECT_SCENE_MAX + 64];
     char        title[sizeof(last)];
     snprintf(title, sizeof(title), "PBR Editor - %s - %s%s", state->project.name,
-             state->scene_name[0] ? state->scene_name : "untitled", scene_dirty(state) ? "*" : "");
+             state->doc.name[0] ? state->doc.name : "untitled", doc_dirty(&state->doc) ? "*" : "");
 
     if (strcmp(title, last) != 0)
     {
@@ -1878,23 +1776,13 @@ finish_edits(editor_state* state)
     gizmo_finish_edit(state, active_commands(state));
 }
 
-// A fresh undo history: steps from another scene mean nothing in this one.
-static void
-reset_history(editor_state* state)
-{
-    history_shutdown(&state->history, &state->scene);
-    history_init(&state->history);
-}
-
 // Tells the console and clients the scene was replaced wholesale (no
-// per-entity changes to list), with a new revision.
+// per-entity changes to list), as of `revision`.
 static void
-announce_replaced(editor_state* state, const char* source)
+announce_replaced(editor_state* state, uint64 revision, const char* source)
 {
-    ++state->commands.revision;
-
     cJSON* event = cJSON_CreateObject();
-    cJSON_AddNumberToObject(event, "revision", (double)state->commands.revision);
+    cJSON_AddNumberToObject(event, "revision", (double)revision);
     cJSON_AddStringToObject(event, "source", source);
     cJSON_AddArrayToObject(event, "changes");
     on_world_change(state, event);
@@ -1909,36 +1797,19 @@ replace_scene(editor_state* state, const cJSON* scene_json, const char* name, co
 {
     // A scene that names no HDRI gets the project's default, as in the game.
     char              error[640];
-    scene_environment env      = scene_environment_default();
-    const cJSON*      env_json = cJSON_GetObjectItem(scene_json, "environment");
-    snprintf(env.hdri, sizeof(env.hdri), "%s", state->project.default_hdri);
-    if (env_json && !deserialize_environment(env_json, &env, error, sizeof(error)))
+    world             next;
+    scene_environment env;
+    if (!doc_read(&state->doc, scene_json, state->project.default_hdri, &next, &env, error, sizeof(error)))
     {
         console_info(&state->console, error);
-        return false;
-    }
-
-    world next;
-    world_init(&next, &state->assets);
-    if (!deserialize_scene(&next, scene_json, NULL, NULL, error, sizeof(error)))
-    {
-        console_info(&state->console, error);
-        world_shutdown(&next);
         return false;
     }
 
     finish_edits(state);
-    reset_history(state);
-    world_shutdown(&state->scene);
-    state->scene = next;   // commands.w still points here
-    world_update(&state->scene);
-
-    state->env = env;
-    snprintf(state->scene_name, sizeof(state->scene_name), "%s", name);
+    uint64 revision = doc_replace(&state->doc, &next, &env, name);
     state->selected = ENTITY_NULL;
 
-    announce_replaced(state, source);
-    mark_saved(state);
+    announce_replaced(state, revision, source);
     frame_view(state, NULL);
     return true;
 }
@@ -1983,7 +1854,7 @@ new_scene(editor_state* state)
 static b8
 save_scene_as(editor_state* state, const char* name)
 {
-    if (state->play != PLAY_STOPPED)
+    if (play_active(&state->play))
     {
         snprintf(state->popup_error, sizeof(state->popup_error), "Stop playing first: what's on screen is Play's copy.");
         return false;
@@ -2006,8 +1877,7 @@ save_scene_as(editor_state* state, const char* name)
     }
     cJSON_Delete(result);
 
-    snprintf(state->scene_name, sizeof(state->scene_name), "%s", name);
-    mark_saved(state);
+    doc_mark_saved(&state->doc, name);
 
     char line[PROJECT_SCENE_MAX + 32];
     snprintf(line, sizeof(line), "Saved scene %s", name);
@@ -2019,14 +1889,14 @@ save_scene_as(editor_state* state, const char* name)
 static void
 save_scene(editor_state* state)
 {
-    if (state->play != PLAY_STOPPED)
+    if (play_active(&state->play))
     {
         console_info(&state->console, "Stop playing (Ctrl+P) to save: what's on screen is Play's copy.");
         return;
     }
-    if (state->scene_name[0])
+    if (state->doc.name[0])
     {
-        save_scene_as(state, state->scene_name);
+        save_scene_as(state, state->doc.name);
         return;
     }
     state->save_as_name[0] = '\0';
@@ -2054,9 +1924,9 @@ open_project(editor_state* state, const char* directory)
     // still cached as "models/tree.glb" would stand in for the new
     // project's file of that name.
     finish_edits(state);
-    reset_history(state);
+    doc_reset_history(&state->doc);
     reset_export(state);
-    world_clear(&state->scene);
+    world_clear(&state->doc.scene);
     assets_collect_unused(&state->assets);
     state->hdri_baked = false;   // "hdri/sky.hdr" may be another file now
 
@@ -2108,7 +1978,7 @@ request(editor_state* state, pending_action action, const char* arg)
         console_info(&state->console, "Wait for the chat turn to finish (or Stop it) before opening another scene.");
         return;
     }
-    if (!scene_dirty(state))
+    if (!doc_dirty(&state->doc))
     {
         perform(state, action, arg);
         return;
@@ -2293,7 +2163,7 @@ draw_scene_menu_items(editor_state* state)
     {
         if (!cJSON_IsString(name))
             continue;
-        b8 current = strcmp(name->valuestring, state->scene_name) == 0;
+        b8 current = strcmp(name->valuestring, state->doc.name) == 0;
         if (igMenuItem_Bool(name->valuestring, NULL, current, true))
             request(state, ACTION_OPEN_SCENE, name->valuestring);
     }
@@ -2348,9 +2218,9 @@ draw_main_menu(editor_state* state)
         }
         if (igMenuItem_Bool("Save", "Ctrl+S", false, true))
             save_scene(state);
-        if (igMenuItem_Bool("Save As...", NULL, false, state->play == PLAY_STOPPED))
+        if (igMenuItem_Bool("Save As...", NULL, false, !play_active(&state->play)))
         {
-            snprintf(state->save_as_name, sizeof(state->save_as_name), "%s", state->scene_name);
+            snprintf(state->save_as_name, sizeof(state->save_as_name), "%s", state->doc.name);
             state->popup_error[0] = '\0';
             state->open_popup     = POPUP_SAVE_AS;
         }
@@ -2413,15 +2283,15 @@ draw_unsaved_popup(editor_state* state)
     if (!igBeginPopupModal(POPUP_UNSAVED, NULL, ImGuiWindowFlags_AlwaysAutoResize))
         return;
 
-    igText("Save the changes to %s first?", state->scene_name[0] ? state->scene_name : "this untitled scene");
+    igText("Save the changes to %s first?", state->doc.name[0] ? state->doc.name : "this untitled scene");
     igSpacing();
 
     if (dialog_button("Save"))
     {
         igCloseCurrentPopup();
-        if (state->scene_name[0])
+        if (state->doc.name[0])
         {
-            if (save_scene_as(state, state->scene_name))
+            if (save_scene_as(state, state->doc.name))
                 perform(state, state->pending, state->pending_arg);
             state->pending = ACTION_NONE;
         }
@@ -2465,7 +2335,7 @@ draw_save_as_popup(editor_state* state)
     char relative[PROJECT_SCENE_MAX + 16];
     snprintf(relative, sizeof(relative), "scenes/%s.json", state->save_as_name);
     char* full = project_path(relative);
-    if (state->save_as_name[0] && strcmp(state->save_as_name, state->scene_name) != 0 && file_exists(full))
+    if (state->save_as_name[0] && strcmp(state->save_as_name, state->doc.name) != 0 && file_exists(full))
         igTextDisabled("Replaces the existing %s.", state->save_as_name);
     free(full);
 
@@ -2705,10 +2575,10 @@ draw_export_popup(editor_state* state)
     }
 
     // Only saved scenes go out.
-    if (scene_dirty(state))
+    if (doc_dirty(&state->doc))
     {
         igTextColored((ImVec4_c){ 1.0f, 0.71f, 0.0f, 1.0f }, "%s has unsaved changes, which won't be exported.",
-                      state->scene_name[0] ? state->scene_name : "This scene");
+                      state->doc.name[0] ? state->doc.name : "This scene");
         igSameLine(0.0f, -1.0f);
         if (igSmallButton("Save now"))
             save_scene(state);
@@ -2791,11 +2661,7 @@ on_init(App* app)
                                CASCADE_COUNT, SHADOW_MAP_SIZE))
         FATAL("editor: failed to create the scene renderer");
 
-    state->env       = scene_environment_default();
-    state->saved_env = state->env;
-
     assets_init(&state->assets);
-    world_init(&state->scene, &state->assets);
 
     console_init(&state->console);
     inspector_init(&state->inspector);
@@ -2808,8 +2674,6 @@ on_init(App* app)
     state->show_console = true;
     state->add_size     = 1.0f;
 
-    history_init(&state->history);
-
     state->server = server_start(NULL);
     chat_init(&state->chat, state->server);
     chat_panel_init(&state->chat_panel);
@@ -2817,9 +2681,7 @@ on_init(App* app)
     uint32                  chat_command_count;
     const cmd_host_command* chat_command_table = chat_commands(&chat_command_count);
 
-    state->commands = (command_context){
-        .w                    = &state->scene,
-        .history              = &state->history,
+    doc_init(&state->doc, &state->assets, (command_context){
         .on_change            = on_world_change,
         .on_change_user       = state,
         .host_commands        = HOST_COMMANDS,
@@ -2828,8 +2690,7 @@ on_init(App* app)
         .module_commands      = chat_command_table,
         .module_command_count = chat_command_count,
         .module_user          = &state->chat,
-        .environment          = &state->env,
-    };
+    });
 
     if (state->server)
     {
@@ -2883,7 +2744,7 @@ static b8
 on_close_request(App* app)
 {
     editor_state* state = (editor_state*)app->user_data;
-    if (!scene_dirty(state))
+    if (!doc_dirty(&state->doc))
         return true;
     request(state, ACTION_QUIT, NULL);
     return false;
@@ -2910,7 +2771,7 @@ static void on_key(App* app, int key, int action, int mods)
     // (ImGui handles undo inside those itself).
     // While playing there's nothing to undo: Stop drops it all.
     if ((mods & GLFW_MOD_CONTROL) && (action == GLFW_PRESS || action == GLFW_REPEAT)
-        && (key == GLFW_KEY_Z || key == GLFW_KEY_Y) && state->play != PLAY_STOPPED)
+        && (key == GLFW_KEY_Z || key == GLFW_KEY_Y) && play_active(&state->play))
     {
         if (action == GLFW_PRESS)
             console_info(&state->console, "No undo while playing: Stop (Ctrl+P) discards everything Play changed.");
@@ -2921,7 +2782,7 @@ static void on_key(App* app, int key, int action, int mods)
         b8 redo = key == GLFW_KEY_Y || (mods & GLFW_MOD_SHIFT);
         finish_edits(state);
 
-        char*       reply   = cmd_execute_text(&state->commands, redo ? "{\"cmd\":\"history.redo\"}" : "{\"cmd\":\"history.undo\"}");
+        char*       reply   = cmd_execute_text(&state->doc.commands, redo ? "{\"cmd\":\"history.redo\"}" : "{\"cmd\":\"history.undo\"}");
         cJSON*      parsed  = cJSON_Parse(reply);
         const char* message = cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(parsed, "error"), "message"));
         if (message)
@@ -2946,14 +2807,14 @@ static void on_key(App* app, int key, int action, int mods)
     if (key == GLFW_KEY_P && action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL))
     {
         if (mods & GLFW_MOD_SHIFT)
-            play_toggle_pause(state);
-        else if (state->play == PLAY_STOPPED)
+            play_toggle_pause(&state->play);
+        else if (!play_active(&state->play))
             play_start(state);
         else
             play_stop(state);
     }
-    if (key == GLFW_KEY_F10 && (action == GLFW_PRESS || action == GLFW_REPEAT) && state->play == PLAY_PAUSED)
-        state->play_step = true;
+    if (key == GLFW_KEY_F10 && (action == GLFW_PRESS || action == GLFW_REPEAT) && state->play.mode == PLAY_PAUSED)
+        state->play.step = true;
 }
 
 // Ambient, exposure and image-based lighting: the scene's environment, not
@@ -2962,19 +2823,19 @@ static void
 draw_environment_controls(editor_state* state)
 {
     igText("Environment");
-    igSliderFloat("Ambient", &state->env.ambient_strength, 0.0f, 2.0f, "%.2f", 0);
-    igSliderFloat("Exposure", &state->env.exposure, 0.1f, 4.0f, "%.2f", 0);
+    igSliderFloat("Ambient", &state->doc.env.ambient_strength, 0.0f, 2.0f, "%.2f", 0);
+    igSliderFloat("Exposure", &state->doc.env.exposure, 0.1f, 4.0f, "%.2f", 0);
 
-    if (igBeginCombo("HDRI", state->env.hdri[0] ? state->env.hdri : "(none)", 0))
+    if (igBeginCombo("HDRI", state->doc.env.hdri[0] ? state->doc.env.hdri : "(none)", 0))
     {
         hdri_list hdris;
         list_hdris(&hdris);
-        if (igSelectable_Bool("(none)", !state->env.hdri[0], 0, (ImVec2_c){ 0, 0 }))
-            state->env.hdri[0] = '\0';
+        if (igSelectable_Bool("(none)", !state->doc.env.hdri[0], 0, (ImVec2_c){ 0, 0 }))
+            state->doc.env.hdri[0] = '\0';
         for (uint32 i = 0; i < hdris.count; ++i)
         {
-            if (igSelectable_Bool(hdris.paths[i], strcmp(hdris.paths[i], state->env.hdri) == 0, 0, (ImVec2_c){ 0, 0 }))
-                snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", hdris.paths[i]);
+            if (igSelectable_Bool(hdris.paths[i], strcmp(hdris.paths[i], state->doc.env.hdri) == 0, 0, (ImVec2_c){ 0, 0 }))
+                snprintf(state->doc.env.hdri, sizeof(state->doc.env.hdri), "%s", hdris.paths[i]);
         }
         if (hdris.count == 0)
             igTextDisabled("(no .hdr in the project's hdri/)");
@@ -2983,13 +2844,13 @@ draw_environment_controls(editor_state* state)
 
     if (state->ibl.irradiance)
     {
-        igCheckbox("Use IBL", &state->env.use_ibl);
-        igCheckbox("Show skybox", &state->env.show_skybox);
-        igSliderFloat("Sky blur", &state->env.sky_blur, 0.0f, 1.0f, "%.2f", 0);
+        igCheckbox("Use IBL", &state->doc.env.use_ibl);
+        igCheckbox("Show skybox", &state->doc.env.show_skybox);
+        igSliderFloat("Sky blur", &state->doc.env.sky_blur, 0.0f, 1.0f, "%.2f", 0);
     }
-    else if (state->env.hdri[0])
+    else if (state->doc.env.hdri[0])
     {
-        igTextWrapped("Couldn't load %s; lit by the hemisphere ambient light.", state->env.hdri);
+        igTextWrapped("Couldn't load %s; lit by the hemisphere ambient light.", state->doc.env.hdri);
     }
     igSeparator();
 }
@@ -3064,7 +2925,7 @@ build_render_settings(const editor_state* state)
 {
     scene_render_settings settings = scene_render_settings_default();
 
-    scene_render_settings_apply_environment(&settings, &state->env, &state->ibl);
+    scene_render_settings_apply_environment(&settings, &state->doc.env, &state->ibl);
     settings.debug_show_cascades = state->debug_show_cascades;
 
     // Where nothing (not even the skybox) is drawn -- a scene without an
@@ -3148,7 +3009,7 @@ draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt)
     igPopStyleVar(1);
 
     // The game keeps running even when the panel is hidden behind a tab.
-    play_advance(state, dt);
+    play_advance(&state->play, dt);
 
     if (open)
     {
@@ -3194,7 +3055,7 @@ draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt)
     // the authored pose put back after the draw.
     world*       shown   = active_world(state);
     spin_preview preview = { 0 };
-    if (state->play == PLAY_STOPPED)
+    if (!play_active(&state->play))
         preview = spin_preview_begin(shown, (f32)window_get_time());
     world_update(shown);
 
@@ -3251,7 +3112,7 @@ static void on_frame(App* app, f32 dt)
 
     igText("%s", state->project.name);
     igTextDisabled("%s", paths_project_root());
-    igText("Scene: %s%s", state->scene_name[0] ? state->scene_name : "untitled", scene_dirty(state) ? " (unsaved)" : "");
+    igText("Scene: %s%s", state->doc.name[0] ? state->doc.name : "untitled", doc_dirty(&state->doc) ? " (unsaved)" : "");
     if (igButton("Save (Ctrl+S)", (ImVec2_c){ 0, 0 }))
         save_scene(state);
     igSeparator();
@@ -3296,8 +3157,7 @@ static void on_shutdown(App* app)
     finish_edits(state);                     // an edit still open becomes its own step
     inspector_shutdown(&state->inspector);
     console_shutdown(&state->console);
-    history_shutdown(&state->history, &state->scene);   // the history holds asset references too
-    world_shutdown(&state->scene);       // releases the scene's assets...
+    doc_shutdown(&state->doc);               // releases the scene's assets...
     assets_shutdown(&state->assets);     // ...then the models themselves
     ibl_destroy(&state->ibl);
     if (state->view_target)
