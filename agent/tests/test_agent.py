@@ -9,12 +9,19 @@ tests check what reaches the scene, the undo history and the conversation.
 
 import asyncio
 import copy
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 sys.dont_write_bytecode = True
+
+# The developer's own LangSmith settings must not reach these tests: test
+# turns would be uploaded to their project. Tracing tests turn it on in memory
+# only (pbr_agent.tracing.local()).
+os.environ["LANGSMITH_TRACING"] = "false"
+os.environ["LANGSMITH_TRACING_V2"] = "false"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pbr_agent import EngineClient, EngineError  # noqa: E402

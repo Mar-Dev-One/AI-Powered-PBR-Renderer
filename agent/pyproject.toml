@@ -16,6 +16,10 @@ dependencies = [
     "websockets>=17,<18",
 ]
 
+[project.optional-dependencies]
+# LangSmith tracing of the in-app agent (pbr_agent/tracing.py); off unless LANGSMITH_TRACING=true.
+tracing = ["langsmith>=0.14,<1"]
+
 [project.scripts]
 pbr-mcp = "pbr_agent.mcp_server:main"
 pbr-agent = "pbr_agent.agent:main"

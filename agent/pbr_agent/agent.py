@@ -31,9 +31,12 @@ import json
 import os
 import sys
 import time
+import uuid
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Protocol
 
+from . import settings as agent_settings
+from . import tracing
 from .engine_client import EngineClient, EngineError, EngineNotRunning
 from .prompt import IN_APP_INSTRUCTIONS, SCENE_INSTRUCTIONS
 from .tools import TOOLS, TOOLS_BY_NAME
@@ -91,6 +94,7 @@ class TurnError(Exception):
 class ModelReply:
     content: list          # the assistant message's content blocks, passed back unchanged
     stop_reason: str | None
+    usage: dict | None = None   # token counts in LangSmith's usage_metadata shape, when known
 
 
 TextCallback = Callable[[str], Awaitable[None]]
@@ -99,6 +103,7 @@ TextCallback = Callable[[str], Awaitable[None]]
 class Model(Protocol):
     name: str
     problem: str | None    # why it can't answer at all (e.g. no credentials); None = fine
+    provider_name: str     # for traces: "anthropic", "gemini", ...
 
     async def respond(self, messages: list, *, on_text: TextCallback, on_progress: TextCallback) -> ModelReply:
         """One model call. Streams the reply's text through on_text and its
@@ -127,6 +132,7 @@ class ClaudeModel:
         import anthropic
 
         self.name = name
+        self.provider_name = "anthropic"
         self.effort = effort
         self.client = anthropic.AsyncAnthropic()
         self.system = [{"type": "text", "text": SCENE_INSTRUCTIONS + IN_APP_INSTRUCTIONS}]
@@ -163,7 +169,7 @@ class ClaudeModel:
                     if note and note != INTERRUPTED_SENTINEL:
                         await on_progress(note)
             message = await stream.get_final_message()
-        return ModelReply(message.content, message.stop_reason)
+        return ModelReply(message.content, message.stop_reason, tracing.anthropic_usage(message.usage))
 
 
 def describe_error(error: Exception) -> str:
@@ -222,6 +228,8 @@ class ChatAgent:
         self.max_steps = max_steps
 
         self.messages: list[dict] = []   # the whole conversation, append-only
+        self.thread_id = uuid.uuid4().hex   # names the conversation in traces; New chat starts another
+        self.last_trace = tracing.Span()    # the last turn's trace (a no-op span when tracing is off)
         self._task: asyncio.Task | None = None
         self._turn = 0
         self._interrupted = False        # the last turn was stopped part-way
@@ -270,6 +278,7 @@ class ChatAgent:
         if self.busy:
             return
         self.messages = []
+        self.thread_id = uuid.uuid4().hex
         self._interrupted = False
         _log("conversation cleared")
 
@@ -278,9 +287,15 @@ class ChatAgent:
     async def _run_turn(self, turn: int, text: str, notes: str | None) -> None:
         self._turn = turn
         self._text = ""
+        self._reply = []
         _log(f"turn {turn}: {text[:120]!r}")
         try:
-            await self._converse(turn, text, notes)
+            async with tracing.span("chat turn", "chain", inputs={"text": text, "notes": notes, "turn": turn},
+                                    metadata={"thread_id": self.thread_id, "model": self.model.name,
+                                              "provider": getattr(self.model, "provider_name", None)}) as trace:
+                self.last_trace = trace
+                await self._converse(turn, text, notes)
+                trace.end({"reply": "".join(self._reply)})
             await self._post(turn, "done")
         except asyncio.CancelledError:
             self._interrupted = True     # the app already ended the turn
@@ -308,6 +323,7 @@ class ChatAgent:
         self.messages.append({"role": "user", "content": content})
 
         async def on_text(chunk: str) -> None:
+            self._reply.append(chunk)
             self._text += chunk
             if time.monotonic() - self._text_sent_at >= TEXT_FLUSH_SECONDS:
                 await self._flush_text(turn)
@@ -316,7 +332,7 @@ class ChatAgent:
             await self._post(turn, "progress", text=_for_display(note))
 
         for _ in range(self.max_steps):
-            reply = await self.model.respond(self.messages, on_text=on_text, on_progress=on_progress)
+            reply = await self._respond(on_text, on_progress)
             await self._flush_text(turn)
             self.messages.append({"role": "assistant", "content": reply.content})
 
@@ -349,9 +365,34 @@ class ChatAgent:
 
         raise TurnError(f"Stopped after {self.max_steps} steps without finishing. Ask again to continue.")
 
+    async def _respond(self, on_text: TextCallback, on_progress: TextCallback) -> ModelReply:
+        """One model call, traced as an llm run."""
+        model = self.model
+        inputs = lambda: tracing.model_inputs(getattr(model, "system", None), self.messages,
+                                              getattr(model, "tools", None))
+        async with tracing.span(model.name, "llm", inputs=inputs,
+                                metadata={"ls_provider": getattr(model, "provider_name", None), "ls_model_name": model.name}) as call:
+            reply = await model.respond(self.messages, on_text=on_text, on_progress=on_progress)
+            call.end({"content": tracing.plain(reply.content), "stop_reason": reply.stop_reason}, usage=reply.usage)
+        return reply
+
     async def _run_tool(self, turn: int, block: Any) -> dict:
+        """One tool call, traced as a tool run (a screenshot attached as a PNG)."""
         name, tool_id, args = _field(block, "name"), _field(block, "id"), _field(block, "input")
         args = args if isinstance(args, dict) else {}
+        async with tracing.span(name or "tool", "tool", inputs={"input": args}) as span:
+            result = await self._call_tool(turn, tool_id, name, args)
+            content = result["content"]
+            if isinstance(content, list):   # a screenshot: the image, then its caption
+                png = tracing.png_from_base64(content[0]["source"]["data"])
+                if png:
+                    span.attach("screenshot", "image/png", png)
+                span.end({"output": content[-1]["text"]})
+            else:
+                span.end({"output": content}, error=content if result.get("is_error") else None)
+        return result
+
+    async def _call_tool(self, turn: int, tool_id: str, name: str, args: dict) -> dict:
         await self._post(turn, "tool_call", id=tool_id, name=name, input=args)
 
         tool = None if name in EXCLUDED_TOOLS else TOOLS_BY_NAME.get(name)
@@ -450,30 +491,64 @@ async def serve(model: Model, *, discovery_path: str | None = None, exit_with_ap
     finally:
         agent.cancel_turn()
         await engine.close()
+        try:
+            tracing.shutdown()
+        except Exception as error:   # never keep the agent from exiting
+            _log(f"couldn't send the last traces to LangSmith: {error!r}")
+
+
+def _log_tracing() -> None:
+    wanted = os.environ.get("LANGSMITH_TRACING", os.environ.get("LANGSMITH_TRACING_V2", "")).lower() == "true"
+    if tracing.enabled():
+        _log(f"LangSmith tracing on (project {os.environ.get('LANGSMITH_PROJECT', 'default')})")
+    elif wanted:
+        _log("LANGSMITH_TRACING is set but the langsmith package isn't installed: "
+             "pip install -e agent[tracing] (see agent/README.md)")
+
+
+def make_model(settings: dict[str, agent_settings.Setting]) -> Model:
+    provider = settings["provider"].value
+    if provider == "claude":
+        return ClaudeModel(settings["model"].value or DEFAULT_MODEL, settings["effort"].value)
+    from .openai_model import OpenAICompatibleModel
+    return OpenAICompatibleModel(provider, settings["model"].value, base_url=settings["base_url"].value)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="The PBR Renderer's in-app chat agent.")
-    parser.add_argument("--provider", default=os.environ.get("PBR_AGENT_PROVIDER", "claude"),
-                        choices=["claude", "gemini", "ollama", "openai"],
-                        help="Model API (default claude, or $PBR_AGENT_PROVIDER); the others are "
-                             "OpenAI-compatible, see pbr_agent.openai_model")
-    parser.add_argument("--model", default=os.environ.get("PBR_AGENT_MODEL"),
-                        help=f"Model name (default {DEFAULT_MODEL} for Claude, or $PBR_AGENT_MODEL)")
-    parser.add_argument("--effort", default=os.environ.get("PBR_AGENT_EFFORT", DEFAULT_EFFORT),
-                        choices=["low", "medium", "high", "xhigh", "max"],
-                        help=f"How hard the model thinks (default {DEFAULT_EFFORT}, or $PBR_AGENT_EFFORT)")
+    settings_file = agent_settings.DEFAULT_SETTINGS_PATH
+    parser = argparse.ArgumentParser(
+        description="The PBR Renderer's in-app chat agent. Settings come from the command line, else the "
+                    f"environment ($PBR_AGENT_*), else {settings_file}, else the defaults (see pbr_agent.settings).")
+    parser.add_argument("--provider", choices=agent_settings.PROVIDERS,
+                        help="Model API (default claude); the others are OpenAI-compatible, see pbr_agent.openai_model")
+    parser.add_argument("--model", help=f"Model name (default {DEFAULT_MODEL} for Claude; each provider has its own)")
+    parser.add_argument("--effort", choices=agent_settings.EFFORTS,
+                        help=f"How hard the model thinks (default {DEFAULT_EFFORT})")
     parser.add_argument("--discovery", help="Path to the app's server.json (default: ~/.pbr-renderer/server.json)")
     parser.add_argument("--exit-with-app", action="store_true",
                         help="Exit when the app goes away (how the app starts it) instead of waiting for it")
     args = parser.parse_args()
+    command_line = {"provider": args.provider, "model": args.model, "effort": args.effort}
 
-    if args.provider == "claude":
-        model = ClaudeModel(args.model or DEFAULT_MODEL, args.effort)
-    else:
-        from .openai_model import OpenAICompatibleModel
-        model = OpenAICompatibleModel(args.provider, args.model)
+    # A broken settings file still lets the agent connect, so the chat panel
+    # can say what's wrong instead of the agent silently using another model.
+    settings_problem = None
+    try:
+        settings = agent_settings.resolve(command_line)
+    except agent_settings.SettingsError as error:
+        settings_problem = str(error)
+        settings = agent_settings.resolve(command_line, use_file=False, environ={})
 
+    model = make_model(settings)
+    if settings_problem:
+        model.problem = f"the agent's settings are broken -- {settings_problem}"
+    _log(f"provider {settings['provider'].value} (from {settings['provider'].source}), model {model.name}")
+
+    # LangSmith uploads on a background thread. As a daemon it can't keep this
+    # process alive retrying an unreachable server after the app has quit;
+    # serve() still gives queued traces tracing.FLUSH_SECONDS to go out.
+    os.environ.setdefault("LANGSMITH_USE_DAEMON", "true")
+    _log_tracing()
     try:
         sys.exit(asyncio.run(serve(model, discovery_path=args.discovery,
                                    exit_with_app=args.exit_with_app)))

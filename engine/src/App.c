@@ -59,7 +59,8 @@ void run(App* app)
         .resizable = true,
         .vsync = true,
         .fullscreen = app->fullscreen,
-        .hidden = app->hidden
+        .hidden = app->hidden,
+        .maximized = app->maximized
     };
 
     init_renderer(desc);

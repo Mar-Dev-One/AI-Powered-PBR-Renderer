@@ -12,6 +12,8 @@ typedef struct window_descriptor {
     b8          vsync;
     b8          fullscreen;   // on the primary monitor; width/height 0 = its current video mode
     b8          hidden;       // never shown: rendering offscreen only (a game's --check run)
+    b8          maximized;    // fills the screen's work area (all but the taskbar); width/height is
+                              // the size it restores to. Ignored when fullscreen.
 } window_descriptor;
 
 typedef struct window_size {

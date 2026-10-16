@@ -71,6 +71,7 @@ typedef struct App
     uint16 height;
     b8     fullscreen;
     b8     hidden;    // a window that's never shown, for rendering offscreen only
+    b8     maximized; // fills the screen but for the taskbar; width/height is the restored size
 
     // NULL for a game runtime; the editor's is UI/ImGuiLayer.h imgui_layer().
     const app_ui_layer* ui;

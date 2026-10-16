@@ -80,10 +80,30 @@ PBR_AGENT_AUTOSTART=0 build/editor/Release/Editor.exe       # the app, without i
 agent/.venv/Scripts/pbr-agent                               # this one instead
 ```
 
+### Settings file
+
+The model settings can also live in `~/.pbr-renderer/agent.json` (`%USERPROFILE%\.pbr-renderer`
+on Windows), which the agent reads every time it starts:
+
+```json
+{
+  "provider": "gemini",
+  "model": "gemini-3.8-flash"
+}
+```
+
+The keys are `provider`, `model`, `effort` and `base_url`. The command line wins over the
+environment variables (`PBR_AGENT_PROVIDER`, `PBR_AGENT_MODEL`, `PBR_AGENT_EFFORT`,
+`PBR_AGENT_BASE_URL`), which win over the file. The file is the dependable choice: the app starts
+the agent with its own environment, so a variable set after VS Code (or Explorer) started doesn't
+reach it until that restarts. `agent.log` names where the provider came from:
+`provider gemini (from C:\Users\you\.pbr-renderer\agent.json)`. A broken file is reported in the
+chat panel. API keys aren't read from the file; they stay in the environment.
+
 ### Without a Claude API key
 
-`--provider` (`PBR_AGENT_PROVIDER`) switches the chat to an OpenAI-compatible API
-(`pbr_agent/openai_model.py`); set it where the app is started, like the key:
+`--provider` (`PBR_AGENT_PROVIDER`, or `"provider"` in the settings file) switches the chat to an
+OpenAI-compatible API (`pbr_agent/openai_model.py`); its key is set where the app is started:
 
 | Provider | Setup | Default model (`PBR_AGENT_MODEL`) |
 |----------|-------|-----------------------------------|
@@ -98,6 +118,40 @@ rate-limited; a turn that hits the limit ends with an error, and asking again co
 Requests use streaming, adaptive thinking with progress notes (shown in the panel between tool
 calls), prompt caching, server-side clearing of old tool results (screenshots), and server-side
 refusal fallback (`fallbacks: "default"`).
+
+### Tracing with LangSmith
+
+The agent can record every chat turn in [LangSmith](https://smith.langchain.com): one trace per
+turn, holding each model call (the conversation so far, the reply, token usage) and each tool call
+(arguments, the engine's result, screenshots attached as images). Turns of one conversation share a
+`thread_id`, so LangSmith's Threads view shows them together; **New chat** starts a new thread. It
+works the same for every provider (token counts are recorded for Claude only).
+
+It's off unless set up. Install the extra:
+
+```sh
+agent/.venv/Scripts/python -m pip install -e "agent[tracing]"
+```
+
+On Python 3.15, where `zstandard` (a langsmith dependency) has no prebuilt package yet, install
+langsmith without it instead; traces are then uploaded uncompressed:
+
+```sh
+agent/.venv/Scripts/python -m pip install --no-deps "langsmith>=0.14,<1"
+agent/.venv/Scripts/python -m pip install anyio distro httpx2 orjson packaging pydantic requests requests-toolbelt sniffio typing-extensions uuid-utils xxhash
+```
+
+Then set these where the app is started, like the API key, and restart the app:
+
+```sh
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=lsv2_...           # from LangSmith: Settings -> API Keys
+LANGSMITH_PROJECT=pbr-agent          # optional; "default" otherwise
+```
+
+`~/.pbr-renderer/agent.log` says "LangSmith tracing on" when it is. Traces go to LangSmith's
+servers, prompts, scene contents and screenshots included. If LangSmith can't be reached, turns
+work as usual and the agent waits at most 5 seconds for queued traces when it exits.
 
 ## Use from Python
 

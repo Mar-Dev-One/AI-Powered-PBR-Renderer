@@ -24,6 +24,7 @@ window* window_create(window_descriptor desc)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, desc.resizable ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_VISIBLE, desc.hidden ? GLFW_FALSE : GLFW_TRUE);
+    glfwWindowHint(GLFW_MAXIMIZED, desc.maximized && !desc.fullscreen ? GLFW_TRUE : GLFW_FALSE);
 
     GLFWmonitor* monitor = NULL;
     if (desc.fullscreen)

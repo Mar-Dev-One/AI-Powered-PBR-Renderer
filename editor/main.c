@@ -3094,8 +3094,13 @@ int main(int argc, char** argv)
 
     App app = {
         .name             = "PBR Editor",
-        .width            = 1920,     // Full HD
-        .height           = 1080,
+        // Maximized: a fixed 1920 x 1080 window on a 1920 x 1080 screen ran
+        // under the taskbar, hiding the bottom of every docked panel -- where
+        // the Console's and the Chat's input boxes are. The size is what
+        // un-maximizing restores to.
+        .maximized        = true,
+        .width            = 1600,
+        .height           = 900,
         .on_init          = on_init,
         .on_frame         = on_frame,
         .on_shutdown      = on_shutdown,

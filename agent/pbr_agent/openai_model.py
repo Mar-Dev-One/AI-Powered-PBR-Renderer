@@ -153,6 +153,7 @@ class OpenAICompatibleModel:
 
         spec = PROVIDERS[provider]
         self.provider = spec
+        self.provider_name = spec.name
         self.name = name or spec.default_model
         base_url = base_url or os.environ.get("PBR_AGENT_BASE_URL") or spec.base_url
         api_key = api_key or os.environ.get("PBR_AGENT_API_KEY") or next(
