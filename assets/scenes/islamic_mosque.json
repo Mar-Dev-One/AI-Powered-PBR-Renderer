@@ -1,0 +1,1707 @@
+{
+	"entities":	[{
+			"id":	2097152,
+			"name":	"courtyard_floor",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.03, 10],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[24, 0.06, 15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.9, 0.88, 0.84],
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097153,
+			"name":	"wall_left",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-12, 1.75, 10],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.8, 3.5, 15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.86, 0.79, 0.66],
+					"material.roughness":	0.55
+				}
+			}
+		}, {
+			"id":	2097154,
+			"name":	"minaret_br_finial",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 17.75, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097155,
+			"name":	"minaret_br_spire",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 16, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 3.2, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	2097156,
+			"name":	"minaret_br_cap_ring",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 15.1, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 0.3, 1.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097157,
+			"name":	"minaret_br_balcony_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 12, -9.5],
+					"rotation_deg":	[0, 45, 0],
+					"scale":	[2.1, 0.35, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097158,
+			"name":	"minaret_br_balcony_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 12, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.1, 0.35, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097159,
+			"name":	"minaret_br_shaft_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 9, -9.5],
+					"rotation_deg":	[0, 45, 0],
+					"scale":	[1.3, 12, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097160,
+			"name":	"minaret_br_shaft_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 9, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 12, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097161,
+			"name":	"minaret_bl_finial",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 17.75, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097162,
+			"name":	"minaret_br_base",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 1.5, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 3, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.86, 0.79, 0.66],
+					"material.roughness":	0.55
+				}
+			}
+		}, {
+			"id":	2097163,
+			"name":	"minaret_bl_spire",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 16, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 3.2, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	2097164,
+			"name":	"minaret_bl_shaft_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 9, -9.5],
+					"rotation_deg":	[0, 45, 0],
+					"scale":	[1.3, 12, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097165,
+			"name":	"minaret_bl_cap_ring",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 15.1, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 0.3, 1.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097166,
+			"name":	"minaret_bl_balcony_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 12, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.1, 0.35, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097167,
+			"name":	"minaret_bl_balcony_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 12, -9.5],
+					"rotation_deg":	[0, 45, 0],
+					"scale":	[2.1, 0.35, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097168,
+			"name":	"minaret_fr_finial",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 17.75, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097169,
+			"name":	"minaret_bl_shaft_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 9, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 12, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097170,
+			"name":	"minaret_bl_base",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 1.5, -9.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 3, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.86, 0.79, 0.66],
+					"material.roughness":	0.55
+				}
+			}
+		}, {
+			"id":	2097171,
+			"name":	"minaret_fr_shaft_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 9, 1.5],
+					"rotation_deg":	[0, 45, 0],
+					"scale":	[1.3, 12, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097172,
+			"name":	"minaret_fr_spire",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 16, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 3.2, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	2097173,
+			"name":	"minaret_fr_cap_ring",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 15.1, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 0.3, 1.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097174,
+			"name":	"minaret_fr_balcony_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 12, 1.5],
+					"rotation_deg":	[0, 45, 0],
+					"scale":	[2.1, 0.35, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097175,
+			"name":	"minaret_fr_balcony_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 12, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.1, 0.35, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097176,
+			"name":	"minaret_fr_shaft_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 9, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 12, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097177,
+			"name":	"minaret_fr_base",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[9, 1.5, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 3, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.86, 0.79, 0.66],
+					"material.roughness":	0.55
+				}
+			}
+		}, {
+			"id":	2097178,
+			"name":	"minaret_fl_finial",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 17.75, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097179,
+			"name":	"minaret_fl_spire",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 16, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 3.2, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	2097180,
+			"name":	"minaret_fl_cap_ring",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 15.1, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 0.3, 1.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097181,
+			"name":	"minaret_fl_balcony_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 12, 1.5],
+					"rotation_deg":	[0, 45, 0],
+					"scale":	[2.1, 0.35, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097182,
+			"name":	"minaret_fl_balcony_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 12, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.1, 0.35, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	2097183,
+			"name":	"minaret_fl_shaft_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 9, 1.5],
+					"rotation_deg":	[0, 45, 0],
+					"scale":	[1.3, 12, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097184,
+			"name":	"minaret_fl_shaft_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 9, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 12, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097185,
+			"name":	"minaret_fl_base",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9, 1.5, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 3, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.86, 0.79, 0.66],
+					"material.roughness":	0.55
+				}
+			}
+		}, {
+			"id":	2097186,
+			"name":	"window_r2_arch",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6, 3.6, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.9, 1.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.05, 0.03, 0.02],
+					"material.emissive":	[1.2, 0.7, 0.25]
+				}
+			}
+		}, {
+			"id":	2097187,
+			"name":	"window_r2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6, 2.4, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.9, 2.4, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.05, 0.03, 0.02],
+					"material.emissive":	[1.2, 0.7, 0.25]
+				}
+			}
+		}, {
+			"id":	2097188,
+			"name":	"window_r1_arch",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.3, 3.6, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.9, 1.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.05, 0.03, 0.02],
+					"material.emissive":	[1.2, 0.7, 0.25]
+				}
+			}
+		}, {
+			"id":	2097189,
+			"name":	"window_r1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.3, 2.4, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.9, 2.4, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.05, 0.03, 0.02],
+					"material.emissive":	[1.2, 0.7, 0.25]
+				}
+			}
+		}, {
+			"id":	2097190,
+			"name":	"window_l2_arch",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-6, 3.6, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.9, 1.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.05, 0.03, 0.02],
+					"material.emissive":	[1.2, 0.7, 0.25]
+				}
+			}
+		}, {
+			"id":	2097191,
+			"name":	"window_l2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-6, 2.4, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.9, 2.4, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.05, 0.03, 0.02],
+					"material.emissive":	[1.2, 0.7, 0.25]
+				}
+			}
+		}, {
+			"id":	2097192,
+			"name":	"window_l1_arch",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.3, 3.6, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.9, 1.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.05, 0.03, 0.02],
+					"material.emissive":	[1.2, 0.7, 0.25]
+				}
+			}
+		}, {
+			"id":	2097193,
+			"name":	"window_l1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.3, 2.4, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.9, 2.4, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.05, 0.03, 0.02],
+					"material.emissive":	[1.2, 0.7, 0.25]
+				}
+			}
+		}, {
+			"id":	2097194,
+			"name":	"small_dome_br",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.8, 6.85, -6.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.1, 2.5, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	2097195,
+			"name":	"dome_finial_orb",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 12.5, -4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.28, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097196,
+			"name":	"small_drum_br",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.8, 6.55, -6.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 0.6, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097197,
+			"name":	"small_dome_bl",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.8, 6.85, -6.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.1, 2.5, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	2097198,
+			"name":	"small_drum_bl",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.8, 6.55, -6.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 0.6, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097199,
+			"name":	"small_dome_fr",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.8, 6.85, -1.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.1, 2.5, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	2097200,
+			"name":	"small_drum_fr",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.8, 6.55, -1.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 0.6, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097201,
+			"name":	"small_dome_fl",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.8, 6.85, -1.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.1, 2.5, 2.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	2097202,
+			"name":	"small_drum_fl",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.8, 6.55, -1.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 0.6, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097203,
+			"name":	"portal_step",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.1, 2.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[5, 0.2, 1.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097204,
+			"name":	"portal_arch_top",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 4.8, 2.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3, 3.4, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.05, 0.03, 0.02],
+					"material.roughness":	0.8,
+					"material.emissive":	[1.6, 0.9, 0.35]
+				}
+			}
+		}, {
+			"id":	2097205,
+			"name":	"portal_arch_opening",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.4, 2.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3, 4.8, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.05, 0.03, 0.02],
+					"material.roughness":	0.8,
+					"material.emissive":	[1.6, 0.9, 0.35]
+				}
+			}
+		}, {
+			"id":	2097206,
+			"name":	"portal_tile_panel",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 4.6, 2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[4.4, 7, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	2097207,
+			"name":	"portal_trim",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 8.45, 1.4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[5.9, 0.3, 1.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097208,
+			"name":	"portal",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 4.25, 1.4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[5.6, 8.5, 1.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097209,
+			"name":	"dome_finial_rod",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 12.3, -4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 1.2, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097210,
+			"name":	"dome_finial_base",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 11.6, -4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.45, 0.45, 0.45]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097211,
+			"name":	"main_dome",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 7.8, -4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[6.4, 7.4, 6.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	2097212,
+			"name":	"dome_drum_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 7, -4],
+					"rotation_deg":	[0, 45, 0],
+					"scale":	[6, 1.6, 6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097213,
+			"name":	"dome_drum_a",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 7, -4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[6, 1.6, 6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097214,
+			"name":	"hall_cornice",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 6.1, -4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[14.4, 0.3, 10.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	2097215,
+			"name":	"prayer_hall",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 3, -4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[14, 6, 10]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.86, 0.79, 0.66],
+					"material.roughness":	0.55
+				}
+			}
+		}, {
+			"id":	2097216,
+			"name":	"ground",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[200, 1, 200]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.55, 0.45, 0.32],
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	1048641,
+			"name":	"wall_right",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[12, 1.75, 10],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.8, 3.5, 15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.86, 0.79, 0.66],
+					"material.roughness":	0.55
+				}
+			}
+		}, {
+			"id":	1048642,
+			"name":	"wall_front_left",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-7.5, 1.75, 17.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[9.4, 3.5, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.86, 0.79, 0.66],
+					"material.roughness":	0.55
+				}
+			}
+		}, {
+			"id":	1048643,
+			"name":	"wall_front_right",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[7.5, 1.75, 17.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[9.4, 3.5, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.86, 0.79, 0.66],
+					"material.roughness":	0.55
+				}
+			}
+		}, {
+			"id":	1048644,
+			"name":	"gate_pillar_left",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3.1, 2.75, 17.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.2, 5.5, 1.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048645,
+			"name":	"gate_pillar_right",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.1, 2.75, 17.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.2, 5.5, 1.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048646,
+			"name":	"gate_lintel",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 5.7, 17.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[7.4, 1, 1.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048647,
+			"name":	"gate_trim",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 6.25, 17.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[7.6, 0.15, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048648,
+			"name":	"gate_dome",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 6.3, 17.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.8, 2.2, 1.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.36, 0.42],
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	1048649,
+			"name":	"gate_finial",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 7.5, 17.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.22, 0.22, 0.22]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048650,
+			"name":	"pool_rim",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.15, 10],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[5, 0.3, 9]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048651,
+			"name":	"pool_water",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.3, 10],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[4.4, 0.04, 8.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.02, 0.07, 0.1],
+					"material.metallic":	0,
+					"material.roughness":	0.02
+				}
+			}
+		}, {
+			"id":	1048652,
+			"name":	"fountain_basin",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.45, 10],
+					"rotation_deg":	[0, 45, 0],
+					"scale":	[1.1, 0.3, 1.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.91, 0.88],
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048653,
+			"name":	"fountain_orb",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.8, 10],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.45, 0.45, 0.45]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	1048654,
+			"name":	"portal_lamp",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 3.5, 4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.72, 0.4],
+					"intensity":	18,
+					"direction":	[0, -1, 0],
+					"range":	12,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048655,
+			"name":	"lantern_post_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 1.1, 6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 2.2, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.12, 0.08],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	1048656,
+			"name":	"lantern_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 2.4, 6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.35, 0.45, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.75, 0.4],
+					"material.emissive":	[8, 4.5, 1.6]
+				}
+			}
+		}, {
+			"id":	1048657,
+			"name":	"lantern_light_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 2.4, 6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.7, 0.4],
+					"intensity":	6,
+					"direction":	[0, -1, 0],
+					"range":	7,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048658,
+			"name":	"lantern_post_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5, 1.1, 6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 2.2, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.12, 0.08],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	1048659,
+			"name":	"lantern_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5, 2.4, 6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.35, 0.45, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.75, 0.4],
+					"material.emissive":	[8, 4.5, 1.6]
+				}
+			}
+		}, {
+			"id":	1048660,
+			"name":	"lantern_light_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5, 2.4, 6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.7, 0.4],
+					"intensity":	6,
+					"direction":	[0, -1, 0],
+					"range":	7,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048661,
+			"name":	"lantern_post_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 1.1, 14],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 2.2, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.12, 0.08],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	1048662,
+			"name":	"lantern_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 2.4, 14],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.35, 0.45, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.75, 0.4],
+					"material.emissive":	[8, 4.5, 1.6]
+				}
+			}
+		}, {
+			"id":	1048663,
+			"name":	"lantern_light_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 2.4, 14],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.7, 0.4],
+					"intensity":	6,
+					"direction":	[0, -1, 0],
+					"range":	7,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048664,
+			"name":	"lantern_post_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5, 1.1, 14],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 2.2, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.12, 0.08],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	1048665,
+			"name":	"lantern_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5, 2.4, 14],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.35, 0.45, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.75, 0.4],
+					"material.emissive":	[8, 4.5, 1.6]
+				}
+			}
+		}, {
+			"id":	1048666,
+			"name":	"lantern_light_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5, 2.4, 14],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.7, 0.4],
+					"intensity":	6,
+					"direction":	[0, -1, 0],
+					"range":	7,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048667,
+			"name":	"sun",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"directional",
+					"color":	[1, 0.78, 0.55],
+					"intensity":	2.2,
+					"direction":	[-0.55, -0.45, -0.7],
+					"range":	0,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}],
+	"format":	"pbr-scene",
+	"version":	1,
+	"environment":	{
+		"hdri":	"hdri/citrus_orchard_road_puresky_4k.hdr",
+		"use_ibl":	true,
+		"show_skybox":	true,
+		"sky_blur":	0,
+		"ambient_strength":	0.4,
+		"exposure":	0.75
+	}
+}

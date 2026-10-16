@@ -1,0 +1,5309 @@
+{
+	"entities":	[{
+			"id":	4194316,
+			"name":	"a2_rig",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.897, 0, -2.25],
+					"rotation_deg":	[0, 300, 0],
+					"scale":	[0.95, 0.95, 0.95]
+				}
+			}
+		}, {
+			"id":	3145728,
+			"name":	"a2_head",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.4, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.62, 0.72, 0.56]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	3145729,
+			"name":	"a2_neck",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.05, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.15, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	3145730,
+			"name":	"a2_hand_R",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.49, 1.38, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.13, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	3145731,
+			"name":	"a2_hand_L",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.49, 1.38, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.13, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	3145732,
+			"name":	"a2_arm_R",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.38, 1.15, 0],
+					"rotation_deg":	[0, 0, -25],
+					"scale":	[0.09, 0.5, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	3145733,
+			"name":	"a2_arm_L",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.38, 1.15, 0],
+					"rotation_deg":	[0, 0, 25],
+					"scale":	[0.09, 0.5, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	3145734,
+			"name":	"a2_belly",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.72, 0.19],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.18, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 0.5, 7]
+				}
+			}
+		}, {
+			"id":	3145735,
+			"name":	"a2_body",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.7, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 0.62, 0.42]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	3145736,
+			"name":	"a2_foot_R",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.12, 0.04, 0.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.08, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	4194313,
+			"name":	"a2_foot_L",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.12, 0.04, 0.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.08, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	4194314,
+			"name":	"a2_leg_R",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.12, 0.21, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.42, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	4194315,
+			"name":	"a2_leg_L",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.12, 0.21, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.42, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.006, 0.036, 0.033]
+				}
+			}
+		}, {
+			"id":	1048687,
+			"name":	"a2_eye_L",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.13, 1.43, 0.24],
+					"rotation_deg":	[0, 0, -25],
+					"scale":	[0.22, 0.12, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	1048688,
+			"name":	"a2_eye_R",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.13, 1.43, 0.24],
+					"rotation_deg":	[0, 0, 25],
+					"scale":	[0.22, 0.12, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	1048689,
+			"name":	"a2_ant_L",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.1, 1.86, 0],
+					"rotation_deg":	[0, 0, 15],
+					"scale":	[0.03, 0.32, 0.03]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048690,
+			"name":	"a2_ant_R",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.1, 1.86, 0],
+					"rotation_deg":	[0, 0, -15],
+					"scale":	[0.03, 0.32, 0.03]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.6, 0.55],
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048691,
+			"name":	"a2_tip_L",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.14, 2.03, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.09, 0.09, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 0.5, 7]
+				}
+			}
+		}, {
+			"id":	1048692,
+			"name":	"a2_tip_R",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.14, 2.03, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.09, 0.09, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 0.5, 7]
+				}
+			}
+		}, {
+			"id":	1048693,
+			"name":	"a2_halo",
+			"parent":	"a2_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, -240, 0]
+				}
+			}
+		}, {
+			"id":	1048694,
+			"name":	"a2_spark",
+			"parent":	"a2_halo",
+			"components":	{
+				"Transform":	{
+					"position":	[0.32, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 0.5, 7]
+				}
+			}
+		}, {
+			"id":	4194337,
+			"name":	"a1_rig",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.897, 0, 2.25],
+					"rotation_deg":	[0, 240, 0],
+					"scale":	[1.1, 1.1, 1.1]
+				}
+			}
+		}, {
+			"id":	4194318,
+			"name":	"a1_halo",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 200, 0]
+				}
+			}
+		}, {
+			"id":	4194317,
+			"name":	"a1_spark",
+			"parent":	"a1_halo",
+			"components":	{
+				"Transform":	{
+					"position":	[0.32, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[0.5, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194319,
+			"name":	"a1_tip_R",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.14, 2.03, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.09, 0.09, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[0.5, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194320,
+			"name":	"a1_tip_L",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.14, 2.03, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.09, 0.09, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[0.5, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194321,
+			"name":	"a1_ant_R",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.1, 1.86, 0],
+					"rotation_deg":	[0, 0, -15],
+					"scale":	[0.03, 0.32, 0.03]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	4194322,
+			"name":	"a1_ant_L",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.1, 1.86, 0],
+					"rotation_deg":	[0, 0, 15],
+					"scale":	[0.03, 0.32, 0.03]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	4194323,
+			"name":	"a1_eye_R",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.13, 1.43, 0.24],
+					"rotation_deg":	[0, 0, 25],
+					"scale":	[0.22, 0.12, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	4194324,
+			"name":	"a1_eye_L",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.13, 1.43, 0.24],
+					"rotation_deg":	[0, 0, -25],
+					"scale":	[0.22, 0.12, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	4194325,
+			"name":	"a1_head",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.4, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.62, 0.72, 0.56]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194326,
+			"name":	"a1_neck",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.05, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.15, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194327,
+			"name":	"a1_hand_R",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.49, 1.38, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.13, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194328,
+			"name":	"a1_hand_L",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.49, 1.38, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.13, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194329,
+			"name":	"a1_arm_R",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.38, 1.15, 0],
+					"rotation_deg":	[0, 0, -25],
+					"scale":	[0.09, 0.5, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194330,
+			"name":	"a1_arm_L",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.38, 1.15, 0],
+					"rotation_deg":	[0, 0, 25],
+					"scale":	[0.09, 0.5, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194331,
+			"name":	"a1_belly",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.72, 0.19],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.18, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[0.5, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194332,
+			"name":	"a1_body",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[3.94029e-08, 0.7, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 0.62, 0.42]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194333,
+			"name":	"a1_foot_R",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.12, 0.04, 0.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.08, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194334,
+			"name":	"a1_foot_L",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.12, 0.04, 0.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.08, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194335,
+			"name":	"a1_leg_R",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.12, 0.21, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.42, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194336,
+			"name":	"a1_leg_L",
+			"parent":	"a1_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.12, 0.21, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.42, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.75, 0.2],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.015, 0.045, 0.012]
+				}
+			}
+		}, {
+			"id":	4194338,
+			"name":	"planet_small",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[30, 34, -50],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[5, 5, 5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.2, 0.8, 0.8],
+					"material.roughness":	0.8,
+					"material.emissive":	[0.05, 0.3, 0.32]
+				}
+			}
+		}, {
+			"id":	4194344,
+			"name":	"planet_rig",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-20, 18, -48],
+					"rotation_deg":	[12, 0, 18],
+					"scale":	[0.75, 0.75, 0.75]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 5, 0]
+				}
+			}
+		}, {
+			"id":	4194340,
+			"name":	"moon_orbit",
+			"parent":	"planet_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 22, 0]
+				}
+			}
+		}, {
+			"id":	4194339,
+			"name":	"moon",
+			"parent":	"moon_orbit",
+			"components":	{
+				"Transform":	{
+					"position":	[13, 3, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.6, 2.6, 2.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.6, 0.62, 0.7],
+					"material.roughness":	1,
+					"material.emissive":	[0.12, 0.13, 0.16]
+				}
+			}
+		}, {
+			"id":	4194341,
+			"name":	"planet_ring_outer",
+			"parent":	"planet_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[32, 0.12, 32]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.8, 0.7, 0.55],
+					"material.roughness":	0.7,
+					"material.emissive":	[0.2, 0.16, 0.12]
+				}
+			}
+		}, {
+			"id":	4194342,
+			"name":	"planet_band",
+			"parent":	"planet_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.5, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[16.1, 2.2, 16.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.95, 0.7, 0.4],
+					"material.roughness":	0.9,
+					"material.emissive":	[0.3, 0.18, 0.08]
+				}
+			}
+		}, {
+			"id":	4194343,
+			"name":	"planet",
+			"parent":	"planet_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[16, 16, 16]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.85, 0.35, 0.12],
+					"material.roughness":	0.9,
+					"material.emissive":	[0.25, 0.07, 0.02]
+				}
+			}
+		}, {
+			"id":	4194367,
+			"name":	"stars",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	4194345,
+			"name":	"star_22",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[30, 49, 10],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194346,
+			"name":	"star_21",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-25, 49, -30],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 6, 5]
+				}
+			}
+		}, {
+			"id":	4194347,
+			"name":	"star_20",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[15, 49, -20],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194348,
+			"name":	"star_19",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-10, 49, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194349,
+			"name":	"star_18",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[38, 28, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.26, 0.26, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194350,
+			"name":	"star_17",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-20, 30, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.2, 0.2, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[5, 7, 9]
+				}
+			}
+		}, {
+			"id":	4194351,
+			"name":	"star_16",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[8, 15, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.16, 0.16, 0.16]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194352,
+			"name":	"star_15",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-38, 47, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.2, 0.2, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194353,
+			"name":	"star_14",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[27, 46, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.24, 0.24, 0.24]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194354,
+			"name":	"star_13",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-2, 23, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.16, 0.16, 0.16]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194355,
+			"name":	"star_12",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[32, 36, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.2, 0.2, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194356,
+			"name":	"star_11",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-48, 14, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.22, 0.22, 0.22]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[5, 7, 9]
+				}
+			}
+		}, {
+			"id":	4194357,
+			"name":	"star_10",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-14, 18, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.18, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194358,
+			"name":	"star_09",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[46, 19, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.2, 0.2, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194359,
+			"name":	"star_08",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[42, 44, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.32, 0.32, 0.32]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 6, 5]
+				}
+			}
+		}, {
+			"id":	4194360,
+			"name":	"star_07",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[21, 24, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.22, 0.22, 0.22]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194361,
+			"name":	"star_06",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[12, 41, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.28, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[5, 7, 9]
+				}
+			}
+		}, {
+			"id":	4194362,
+			"name":	"star_05",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[3, 33, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.2, 0.2, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194363,
+			"name":	"star_04",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-8, 44, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.35, 0.35, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194364,
+			"name":	"star_03",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-28, 41, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.25, 0.25, 0.25]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 6, 5]
+				}
+			}
+		}, {
+			"id":	4194365,
+			"name":	"star_02",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-35, 22, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.2, 0.2, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	4194366,
+			"name":	"star_01",
+			"parent":	"stars",
+			"components":	{
+				"Transform":	{
+					"position":	[-44, 38, -54],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[6, 6, 8]
+				}
+			}
+		}, {
+			"id":	3145792,
+			"name":	"sky_front",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 30, 55],
+					"rotation_deg":	[-90, 0, 0],
+					"scale":	[160, 1, 160]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0, 0, 0],
+					"material.metallic":	0,
+					"material.roughness":	1,
+					"material.emissive":	[0.008, 0.004, 0.022]
+				}
+			}
+		}, {
+			"id":	3145793,
+			"name":	"sky_top",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 50, 0],
+					"rotation_deg":	[180, 0, 0],
+					"scale":	[160, 1, 160]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0, 0, 0],
+					"material.metallic":	0,
+					"material.roughness":	1,
+					"material.emissive":	[0.008, 0.004, 0.022]
+				}
+			}
+		}, {
+			"id":	3145794,
+			"name":	"sky_right",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[55, 30, 0],
+					"rotation_deg":	[0, 0, 90],
+					"scale":	[160, 1, 160]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0, 0, 0],
+					"material.metallic":	0,
+					"material.roughness":	1,
+					"material.emissive":	[0.008, 0.004, 0.022]
+				}
+			}
+		}, {
+			"id":	4194371,
+			"name":	"sky_left",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-55, 30, 0],
+					"rotation_deg":	[0, 0, -90],
+					"scale":	[160, 1, 160]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0, 0, 0],
+					"material.metallic":	0,
+					"material.roughness":	1,
+					"material.emissive":	[0.008, 0.004, 0.022]
+				}
+			}
+		}, {
+			"id":	4194372,
+			"name":	"sky_back",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 30, -55],
+					"rotation_deg":	[90, 0, 0],
+					"scale":	[400, 1, 160]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0, 0, 0],
+					"material.metallic":	0,
+					"material.roughness":	1,
+					"material.emissive":	[0.008, 0.004, 0.022]
+				}
+			}
+		}, {
+			"id":	3145797,
+			"name":	"moonlight",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"directional",
+					"color":	[0.55, 0.5, 1],
+					"intensity":	1.2,
+					"direction":	[0.5, -0.6, -0.6],
+					"range":	0,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	3145811,
+			"name":	"cow_rig",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.8, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[18, 35, 27]
+				}
+			}
+		}, {
+			"id":	3145798,
+			"name":	"cow_tail",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.7, -0.05, 0],
+					"rotation_deg":	[0, 0, -30],
+					"scale":	[0.04, 0.5, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.1, 0.1]
+				}
+			}
+		}, {
+			"id":	3145799,
+			"name":	"cow_leg_BR",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.45, -0.5, 0.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.14, 0.45, 0.14]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.88]
+				}
+			}
+		}, {
+			"id":	3145800,
+			"name":	"cow_leg_BL",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.45, -0.5, -0.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.14, 0.45, 0.14]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.88]
+				}
+			}
+		}, {
+			"id":	3145801,
+			"name":	"cow_leg_FR",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.45, -0.5, 0.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.14, 0.45, 0.14]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.88]
+				}
+			}
+		}, {
+			"id":	3145802,
+			"name":	"cow_leg_FL",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.45, -0.5, -0.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.14, 0.45, 0.14]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.88]
+				}
+			}
+		}, {
+			"id":	3145803,
+			"name":	"cow_horn_R",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.8, 0.45, 0.15],
+					"rotation_deg":	[25, 0, 0],
+					"scale":	[0.06, 0.16, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.8, 0.6]
+				}
+			}
+		}, {
+			"id":	3145804,
+			"name":	"cow_horn_L",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.8, 0.45, -0.15],
+					"rotation_deg":	[-25, 0, 0],
+					"scale":	[0.06, 0.16, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.8, 0.6]
+				}
+			}
+		}, {
+			"id":	3145805,
+			"name":	"cow_snout",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[1.02, 0.12, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.2, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.55, 0.55],
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	3145806,
+			"name":	"cow_head",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.8, 0.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.4, 0.38, 0.38]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.88],
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	3145807,
+			"name":	"cow_patch_3",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.1, 0.29, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.35, 0.04, 0.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.03, 0.03],
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	3145808,
+			"name":	"cow_patch_2",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.3, 0.05, -0.29],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.45, 0.35, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.03, 0.03],
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	3145809,
+			"name":	"cow_patch_1",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.25, 0.1, 0.29],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.4, 0.3, 0.04]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.03, 0.03, 0.03],
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	3145810,
+			"name":	"cow_body",
+			"parent":	"cow_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.88],
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	3145812,
+			"name":	"beam_ground_glow",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.015, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3.4, 0.03, 3.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.3, 1, 0.6],
+					"material.emissive":	[0.1, 1, 0.4]
+				}
+			}
+		}, {
+			"id":	4194389,
+			"name":	"beam_rings_b",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, -85, 0]
+				}
+			}
+		}, {
+			"id":	1048722,
+			"name":	"bp_2a",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[1.201, 3.6, 0.498],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048723,
+			"name":	"bp_2b",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[0.498, 3.6, 1.201],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048724,
+			"name":	"bp_2c",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.498, 3.6, 1.201],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048725,
+			"name":	"bp_2d",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.201, 3.6, 0.498],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048726,
+			"name":	"bp_2e",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.201, 3.6, -0.498],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048727,
+			"name":	"bp_2f",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.498, 3.6, -1.201],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048728,
+			"name":	"bp_2g",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[0.498, 3.6, -1.201],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048729,
+			"name":	"bp_2h",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[1.201, 3.6, -0.498],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048738,
+			"name":	"bp_4a",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[1.756, 0.9, 0.728],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048739,
+			"name":	"bp_4b",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[0.728, 0.9, 1.756],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048740,
+			"name":	"bp_4c",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.728, 0.9, 1.756],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048741,
+			"name":	"bp_4d",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.756, 0.9, 0.728],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048742,
+			"name":	"bp_4e",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.756, 0.9, -0.728],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048743,
+			"name":	"bp_4f",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.728, 0.9, -1.756],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048744,
+			"name":	"bp_4g",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[0.728, 0.9, -1.756],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048745,
+			"name":	"bp_4h",
+			"parent":	"beam_rings_b",
+			"components":	{
+				"Transform":	{
+					"position":	[1.756, 0.9, -0.728],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	3145817,
+			"name":	"beam_rings",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 60, 0]
+				}
+			}
+		}, {
+			"id":	4194390,
+			"name":	"bp_1a",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[1, 4.8, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	4194391,
+			"name":	"bp_1b",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[0.707, 4.8, 0.707],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	4194392,
+			"name":	"bp_1c",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 4.8, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048717,
+			"name":	"bp_1d",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.707, 4.8, 0.707],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048718,
+			"name":	"bp_1e",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[-1, 4.8, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048719,
+			"name":	"bp_1f",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.707, 4.8, -0.707],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048720,
+			"name":	"bp_1g",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 4.8, -1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048721,
+			"name":	"bp_1h",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[0.707, 4.8, -0.707],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048730,
+			"name":	"bp_3a",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[1.6, 2.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048731,
+			"name":	"bp_3b",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[1.131, 2.2, 1.131],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048732,
+			"name":	"bp_3c",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.2, 1.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048733,
+			"name":	"bp_3d",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.131, 2.2, 1.131],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048734,
+			"name":	"bp_3e",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.6, 2.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048735,
+			"name":	"bp_3f",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.131, 2.2, -1.131],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048736,
+			"name":	"bp_3g",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.2, -1.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	1048737,
+			"name":	"bp_3h",
+			"parent":	"beam_rings",
+			"components":	{
+				"Transform":	{
+					"position":	[1.131, 2.2, -1.131],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.1, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 10, 4]
+				}
+			}
+		}, {
+			"id":	3145818,
+			"name":	"beam_light",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 5.4, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"spot",
+					"color":	[0.4, 1, 0.6],
+					"intensity":	120,
+					"direction":	[0, -1, 0],
+					"range":	12,
+					"inner_cone_degrees":	14,
+					"outer_cone_degrees":	24
+				}
+			}
+		}, {
+			"id":	3145837,
+			"name":	"ufo_rig",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 20, 0]
+				}
+			}
+		}, {
+			"id":	3145831,
+			"name":	"ufo_light_ring",
+			"parent":	"ufo_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, -90, 0]
+				}
+			}
+		}, {
+			"id":	4194395,
+			"name":	"ufo_lamp_12",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[2.99, 0, -1.725],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.2, 1],
+					"material.emissive":	[10, 0.5, 9]
+				}
+			}
+		}, {
+			"id":	3145820,
+			"name":	"ufo_lamp_11",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[1.725, 0, -2.99],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 1, 1],
+					"material.emissive":	[0.5, 8, 10]
+				}
+			}
+		}, {
+			"id":	3145821,
+			"name":	"ufo_lamp_10",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, -3.45],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.2],
+					"material.emissive":	[10, 6, 0.5]
+				}
+			}
+		}, {
+			"id":	3145822,
+			"name":	"ufo_lamp_09",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.725, 0, -2.99],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.2, 1],
+					"material.emissive":	[10, 0.5, 9]
+				}
+			}
+		}, {
+			"id":	3145823,
+			"name":	"ufo_lamp_08",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[-2.99, 0, -1.725],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 1, 1],
+					"material.emissive":	[0.5, 8, 10]
+				}
+			}
+		}, {
+			"id":	3145824,
+			"name":	"ufo_lamp_07",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[-3.45, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.2],
+					"material.emissive":	[10, 6, 0.5]
+				}
+			}
+		}, {
+			"id":	3145825,
+			"name":	"ufo_lamp_06",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[-2.99, 0, 1.725],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.2, 1],
+					"material.emissive":	[10, 0.5, 9]
+				}
+			}
+		}, {
+			"id":	3145826,
+			"name":	"ufo_lamp_05",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.725, 0, 2.99],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 1, 1],
+					"material.emissive":	[0.5, 8, 10]
+				}
+			}
+		}, {
+			"id":	3145827,
+			"name":	"ufo_lamp_04",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 3.45],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.2],
+					"material.emissive":	[10, 6, 0.5]
+				}
+			}
+		}, {
+			"id":	3145828,
+			"name":	"ufo_lamp_03",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[1.725, 0, 2.99],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.2, 1],
+					"material.emissive":	[10, 0.5, 9]
+				}
+			}
+		}, {
+			"id":	3145829,
+			"name":	"ufo_lamp_02",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[2.99, 0, 1.725],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 1, 1],
+					"material.emissive":	[0.5, 8, 10]
+				}
+			}
+		}, {
+			"id":	3145830,
+			"name":	"ufo_lamp_01",
+			"parent":	"ufo_light_ring",
+			"components":	{
+				"Transform":	{
+					"position":	[3.45, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.28, 0.2, 0.28]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.2],
+					"material.emissive":	[10, 6, 0.5]
+				}
+			}
+		}, {
+			"id":	3145832,
+			"name":	"ufo_beacon",
+			"parent":	"ufo_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.5, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 0.3, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.1, 0.1],
+					"material.emissive":	[12, 0.5, 0.3]
+				}
+			}
+		}, {
+			"id":	3145833,
+			"name":	"ufo_underglow",
+			"parent":	"ufo_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.33, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.6, 0.3, 2.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 1, 0.5],
+					"material.emissive":	[0.6, 8, 2.5]
+				}
+			}
+		}, {
+			"id":	3145834,
+			"name":	"ufo_collar",
+			"parent":	"ufo_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.25, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[4.4, 0.35, 4.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.26, 0.3],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	3145835,
+			"name":	"ufo_dome",
+			"parent":	"ufo_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.45, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3, 2, 3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 0.9, 0.85],
+					"material.metallic":	0,
+					"material.roughness":	0.05,
+					"material.emissive":	[0.05, 0.5, 0.45]
+				}
+			}
+		}, {
+			"id":	3145836,
+			"name":	"ufo_hull",
+			"parent":	"ufo_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[7, 0.9, 7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.62, 0.68],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	3145838,
+			"name":	"ground",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[120, 1, 120]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.09, 0.04, 0.12],
+					"material.metallic":	0,
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	1048695,
+			"name":	"a3_rig",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.25, 1.25, 1.25]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 70, 0]
+				}
+			}
+		}, {
+			"id":	1048696,
+			"name":	"a3_leg_L",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.12, 0.21, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.42, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048697,
+			"name":	"a3_leg_R",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.12, 0.21, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.42, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048698,
+			"name":	"a3_foot_L",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.12, 0.04, 0.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.08, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048699,
+			"name":	"a3_foot_R",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.12, 0.04, 0.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.08, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048700,
+			"name":	"a3_body",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.7, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 0.62, 0.42]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048701,
+			"name":	"a3_belly",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.72, 0.19],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.18, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 8, 2]
+				}
+			}
+		}, {
+			"id":	1048702,
+			"name":	"a3_arm_L",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.42, 0.85, 0],
+					"rotation_deg":	[0, 0, 80],
+					"scale":	[0.09, 0.5, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048703,
+			"name":	"a3_arm_R",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.42, 0.85, 0],
+					"rotation_deg":	[0, 0, -80],
+					"scale":	[0.09, 0.5, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048704,
+			"name":	"a3_hand_L",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.67, 0.89, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.13, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048705,
+			"name":	"a3_hand_R",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.67, 0.89, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.13, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048706,
+			"name":	"a3_neck",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.05, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.15, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048707,
+			"name":	"a3_head",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.4, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.62, 0.72, 0.56]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.027, 0.012, 0.042]
+				}
+			}
+		}, {
+			"id":	1048708,
+			"name":	"a3_eye_L",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.13, 1.43, 0.24],
+					"rotation_deg":	[0, 0, -25],
+					"scale":	[0.22, 0.12, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	1048709,
+			"name":	"a3_eye_R",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.13, 1.43, 0.24],
+					"rotation_deg":	[0, 0, 25],
+					"scale":	[0.22, 0.12, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	1048710,
+			"name":	"a3_eye_C",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.6, 0.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.12, 0.12, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	1048711,
+			"name":	"a3_ant_L",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.1, 1.86, 0],
+					"rotation_deg":	[0, 0, 15],
+					"scale":	[0.03, 0.32, 0.03]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048712,
+			"name":	"a3_ant_R",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.1, 1.86, 0],
+					"rotation_deg":	[0, 0, -15],
+					"scale":	[0.03, 0.32, 0.03]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.2, 0.7],
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048713,
+			"name":	"a3_tip_L",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.14, 2.03, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.09, 0.09, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 8, 2]
+				}
+			}
+		}, {
+			"id":	1048714,
+			"name":	"a3_tip_R",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.14, 2.03, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.09, 0.09, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 8, 2]
+				}
+			}
+		}, {
+			"id":	1048715,
+			"name":	"a3_halo",
+			"parent":	"a3_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 300, 0]
+				}
+			}
+		}, {
+			"id":	1048716,
+			"name":	"a3_spark",
+			"parent":	"a3_halo",
+			"components":	{
+				"Transform":	{
+					"position":	[0.32, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[1, 8, 2]
+				}
+			}
+		}, {
+			"id":	1048746,
+			"name":	"a4_rig",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3.897, 0, -2.25],
+					"rotation_deg":	[0, 60, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	1048747,
+			"name":	"a4_leg_L",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.12, 0.21, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.42, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048748,
+			"name":	"a4_leg_R",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.12, 0.21, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.42, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048749,
+			"name":	"a4_foot_L",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.12, 0.04, 0.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.08, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048750,
+			"name":	"a4_foot_R",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.12, 0.04, 0.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.08, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048751,
+			"name":	"a4_body",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.7, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 0.62, 0.42]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048752,
+			"name":	"a4_belly",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.72, 0.19],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.18, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[9, 4, 0.3]
+				}
+			}
+		}, {
+			"id":	1048753,
+			"name":	"a4_arm_L",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.38, 1.15, 0],
+					"rotation_deg":	[0, 0, 25],
+					"scale":	[0.09, 0.5, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048754,
+			"name":	"a4_arm_R",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.38, 1.15, 0],
+					"rotation_deg":	[0, 0, -25],
+					"scale":	[0.09, 0.5, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048755,
+			"name":	"a4_hand_L",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.49, 1.38, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.13, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048756,
+			"name":	"a4_hand_R",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.49, 1.38, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.13, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048757,
+			"name":	"a4_neck",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.05, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.15, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048758,
+			"name":	"a4_head",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.4, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.62, 0.72, 0.56]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.051, 0.009]
+				}
+			}
+		}, {
+			"id":	1048759,
+			"name":	"a4_eye_L",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.13, 1.43, 0.24],
+					"rotation_deg":	[0, 0, -25],
+					"scale":	[0.22, 0.12, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	1048760,
+			"name":	"a4_eye_R",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.13, 1.43, 0.24],
+					"rotation_deg":	[0, 0, 25],
+					"scale":	[0.22, 0.12, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	1048761,
+			"name":	"a4_ant_L",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.1, 1.86, 0],
+					"rotation_deg":	[0, 0, 15],
+					"scale":	[0.03, 0.32, 0.03]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048762,
+			"name":	"a4_ant_R",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.1, 1.86, 0],
+					"rotation_deg":	[0, 0, -15],
+					"scale":	[0.03, 0.32, 0.03]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.85, 0.15],
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048763,
+			"name":	"a4_tip_L",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.14, 2.03, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.09, 0.09, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[9, 4, 0.3]
+				}
+			}
+		}, {
+			"id":	1048764,
+			"name":	"a4_tip_R",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.14, 2.03, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.09, 0.09, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[9, 4, 0.3]
+				}
+			}
+		}, {
+			"id":	1048765,
+			"name":	"a4_halo",
+			"parent":	"a4_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 180, 0]
+				}
+			}
+		}, {
+			"id":	1048766,
+			"name":	"a4_spark",
+			"parent":	"a4_halo",
+			"components":	{
+				"Transform":	{
+					"position":	[0.32, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[9, 4, 0.3]
+				}
+			}
+		}, {
+			"id":	1048767,
+			"name":	"a5_rig",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3.897, 0, 2.25],
+					"rotation_deg":	[0, 120, 0],
+					"scale":	[0.85, 0.85, 0.85]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, -50, 0]
+				}
+			}
+		}, {
+			"id":	1048768,
+			"name":	"a5_leg_L",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.12, 0.21, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.42, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048769,
+			"name":	"a5_leg_R",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.12, 0.21, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.42, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048770,
+			"name":	"a5_foot_L",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.12, 0.04, 0.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.08, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048771,
+			"name":	"a5_foot_R",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.12, 0.04, 0.05],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.08, 0.26]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048772,
+			"name":	"a5_body",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.7, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 0.62, 0.42]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048773,
+			"name":	"a5_belly",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.72, 0.19],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.18, 0.06]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[0.5, 6, 8]
+				}
+			}
+		}, {
+			"id":	1048774,
+			"name":	"a5_arm_L",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.42, 0.85, 0],
+					"rotation_deg":	[0, 0, 80],
+					"scale":	[0.09, 0.5, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048775,
+			"name":	"a5_arm_R",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.42, 0.85, 0],
+					"rotation_deg":	[0, 0, -80],
+					"scale":	[0.09, 0.5, 0.09]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048776,
+			"name":	"a5_hand_L",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.67, 0.89, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.13, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048777,
+			"name":	"a5_hand_R",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.67, 0.89, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.13, 0.13, 0.13]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048778,
+			"name":	"a5_neck",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.05, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.1, 0.15, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048779,
+			"name":	"a5_head",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.45, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.75, 0.85, 0.65]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.6, 0.65],
+					"material.roughness":	0.35,
+					"material.emissive":	[0.033, 0.036, 0.039]
+				}
+			}
+		}, {
+			"id":	1048780,
+			"name":	"a5_eye_L",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.16, 1.45, 0.28],
+					"rotation_deg":	[0, 0, -30],
+					"scale":	[0.28, 0.14, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	1048781,
+			"name":	"a5_eye_R",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0.16, 1.45, 0.28],
+					"rotation_deg":	[0, 0, 30],
+					"scale":	[0.28, 0.14, 0.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.01, 0.01, 0.01],
+					"material.metallic":	0,
+					"material.roughness":	0.05
+				}
+			}
+		}, {
+			"id":	1048782,
+			"name":	"a5_halo",
+			"parent":	"a5_rig",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.1, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 260, 0]
+				}
+			}
+		}, {
+			"id":	1048783,
+			"name":	"a5_spark",
+			"parent":	"a5_halo",
+			"components":	{
+				"Transform":	{
+					"position":	[0.4, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 0.08, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[0.5, 6, 8]
+				}
+			}
+		}, {
+			"id":	1048784,
+			"name":	"a5_spark_2",
+			"parent":	"a5_halo",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.4, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 0.08, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[0.5, 6, 8]
+				}
+			}
+		}, {
+			"id":	1048785,
+			"name":	"crystals_A",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-8, 0, -3],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	1048786,
+			"name":	"cA_1",
+			"parent":	"crystals_A",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.2, 0],
+					"rotation_deg":	[0, 45, 8],
+					"scale":	[0.5, 2.6, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.2, 1],
+					"material.roughness":	0.1,
+					"material.emissive":	[2.5, 0.3, 3]
+				}
+			}
+		}, {
+			"id":	1048787,
+			"name":	"cA_2",
+			"parent":	"crystals_A",
+			"components":	{
+				"Transform":	{
+					"position":	[0.6, 0.7, 0.3],
+					"rotation_deg":	[20, 10, -30],
+					"scale":	[0.35, 1.7, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.2, 1],
+					"material.roughness":	0.1,
+					"material.emissive":	[2, 0.2, 2.6]
+				}
+			}
+		}, {
+			"id":	1048788,
+			"name":	"cA_3",
+			"parent":	"crystals_A",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.6, 0.6, 0.2],
+					"rotation_deg":	[-15, 30, 35],
+					"scale":	[0.3, 1.4, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.2, 1],
+					"material.roughness":	0.1,
+					"material.emissive":	[2, 0.2, 2.6]
+				}
+			}
+		}, {
+			"id":	1048789,
+			"name":	"cA_4",
+			"parent":	"crystals_A",
+			"components":	{
+				"Transform":	{
+					"position":	[0.1, 0.4, -0.6],
+					"rotation_deg":	[-40, 0, 10],
+					"scale":	[0.25, 1, 0.25]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.2, 1],
+					"material.roughness":	0.1,
+					"material.emissive":	[2.5, 0.3, 3]
+				}
+			}
+		}, {
+			"id":	1048790,
+			"name":	"cA_5",
+			"parent":	"crystals_A",
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 0.3, 0.8],
+					"rotation_deg":	[40, 60, 0],
+					"scale":	[0.2, 0.8, 0.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.2, 1],
+					"material.roughness":	0.1,
+					"material.emissive":	[2.5, 0.3, 3]
+				}
+			}
+		}, {
+			"id":	1048791,
+			"name":	"cA_light",
+			"parent":	"crystals_A",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.5, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[0.9, 0.3, 1],
+					"intensity":	25,
+					"direction":	[0, -1, 0],
+					"range":	9,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048792,
+			"name":	"crystals_B",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[8.5, 0, -4],
+					"rotation_deg":	[0, 70, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	1048793,
+			"name":	"cB_1",
+			"parent":	"crystals_B",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.5, 0],
+					"rotation_deg":	[0, 20, -6],
+					"scale":	[0.6, 3.2, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.9, 1],
+					"material.roughness":	0.1,
+					"material.emissive":	[0.2, 2.4, 3]
+				}
+			}
+		}, {
+			"id":	1048794,
+			"name":	"cB_2",
+			"parent":	"crystals_B",
+			"components":	{
+				"Transform":	{
+					"position":	[0.7, 0.8, 0],
+					"rotation_deg":	[0, 0, -32],
+					"scale":	[0.4, 1.9, 0.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.9, 1],
+					"material.roughness":	0.1,
+					"material.emissive":	[0.2, 2, 2.6]
+				}
+			}
+		}, {
+			"id":	1048795,
+			"name":	"cB_3",
+			"parent":	"crystals_B",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.7, 0.7, 0.2],
+					"rotation_deg":	[10, 0, 30],
+					"scale":	[0.35, 1.6, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.9, 1],
+					"material.roughness":	0.1,
+					"material.emissive":	[0.2, 2, 2.6]
+				}
+			}
+		}, {
+			"id":	1048796,
+			"name":	"cB_4",
+			"parent":	"crystals_B",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.5, 0.7],
+					"rotation_deg":	[35, 0, 0],
+					"scale":	[0.3, 1.2, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.9, 1],
+					"material.roughness":	0.1,
+					"material.emissive":	[0.2, 2.4, 3]
+				}
+			}
+		}, {
+			"id":	1048797,
+			"name":	"cB_5",
+			"parent":	"crystals_B",
+			"components":	{
+				"Transform":	{
+					"position":	[0.2, 0.45, -0.7],
+					"rotation_deg":	[-35, 20, 5],
+					"scale":	[0.3, 1.1, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.9, 1],
+					"material.roughness":	0.1,
+					"material.emissive":	[0.2, 2.4, 3]
+				}
+			}
+		}, {
+			"id":	1048798,
+			"name":	"cB_light",
+			"parent":	"crystals_B",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.6, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[0.3, 0.9, 1],
+					"intensity":	25,
+					"direction":	[0, -1, 0],
+					"range":	9,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048799,
+			"name":	"crystals_C",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-6.5, 0, 6],
+					"rotation_deg":	[0, 200, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				}
+			}
+		}, {
+			"id":	1048800,
+			"name":	"cC_1",
+			"parent":	"crystals_C",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.2, 0],
+					"rotation_deg":	[0, 45, 8],
+					"scale":	[0.5, 2.6, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.6, 0.1],
+					"material.roughness":	0.1,
+					"material.emissive":	[3, 1.2, 0.1]
+				}
+			}
+		}, {
+			"id":	1048801,
+			"name":	"cC_2",
+			"parent":	"crystals_C",
+			"components":	{
+				"Transform":	{
+					"position":	[0.6, 0.7, 0.3],
+					"rotation_deg":	[20, 10, -30],
+					"scale":	[0.35, 1.7, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.6, 0.1],
+					"material.roughness":	0.1,
+					"material.emissive":	[3, 1.2, 0.1]
+				}
+			}
+		}, {
+			"id":	1048802,
+			"name":	"cC_3",
+			"parent":	"crystals_C",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.6, 0.6, 0.2],
+					"rotation_deg":	[-15, 30, 35],
+					"scale":	[0.3, 1.4, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.6, 0.1],
+					"material.roughness":	0.1,
+					"material.emissive":	[3, 1.2, 0.1]
+				}
+			}
+		}, {
+			"id":	1048803,
+			"name":	"cC_light",
+			"parent":	"crystals_C",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.5, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.6, 0.2],
+					"intensity":	14,
+					"direction":	[0, -1, 0],
+					"range":	7,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048804,
+			"name":	"obelisk_L",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5.5, 0, -7],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	1048805,
+			"name":	"obL_base",
+			"parent":	"obelisk_L",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.8, 1.2, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.12, 0.2],
+					"material.metallic":	0.3,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	1048806,
+			"name":	"obL_rune",
+			"parent":	"obelisk_L",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.7, 0.405],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.7, 0.02]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 1, 0.6],
+					"material.emissive":	[0.6, 6, 2.5]
+				}
+			}
+		}, {
+			"id":	1048807,
+			"name":	"obL_gem",
+			"parent":	"obelisk_L",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.1, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 90, 0]
+				}
+			}
+		}, {
+			"id":	1048808,
+			"name":	"obL_gem_mesh",
+			"parent":	"obL_gem",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[45, 0, 45],
+					"scale":	[0.5, 0.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 1, 0.6],
+					"material.roughness":	0.05,
+					"material.emissive":	[0.8, 7, 3]
+				}
+			}
+		}, {
+			"id":	1048809,
+			"name":	"obL_light",
+			"parent":	"obelisk_L",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.1, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[0.3, 1, 0.6],
+					"intensity":	12,
+					"direction":	[0, -1, 0],
+					"range":	6,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048810,
+			"name":	"obelisk_R",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.5, 0, -7],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	1048811,
+			"name":	"obR_base",
+			"parent":	"obelisk_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.8, 1.2, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.12, 0.2],
+					"material.metallic":	0.3,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	1048812,
+			"name":	"obR_rune",
+			"parent":	"obelisk_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.7, 0.405],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.7, 0.02]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 1, 0.6],
+					"material.emissive":	[0.6, 6, 2.5]
+				}
+			}
+		}, {
+			"id":	1048813,
+			"name":	"obR_gem",
+			"parent":	"obelisk_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.1, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, -90, 0]
+				}
+			}
+		}, {
+			"id":	1048814,
+			"name":	"obR_gem_mesh",
+			"parent":	"obR_gem",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[45, 0, 45],
+					"scale":	[0.5, 0.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 1, 0.6],
+					"material.roughness":	0.05,
+					"material.emissive":	[0.8, 7, 3]
+				}
+			}
+		}, {
+			"id":	1048815,
+			"name":	"obR_light",
+			"parent":	"obelisk_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.1, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[0.3, 1, 0.6],
+					"intensity":	12,
+					"direction":	[0, -1, 0],
+					"range":	6,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048816,
+			"name":	"crater_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[7, 0, 4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3.2, 0.25, 3.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.14, 0.08, 0.18],
+					"material.roughness":	0.95
+				}
+			}
+		}, {
+			"id":	1048817,
+			"name":	"crater_1_pit",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[7, 0.06, 4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.3, 0.15, 2.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.05, 0.02, 0.07],
+					"material.roughness":	1
+				}
+			}
+		}, {
+			"id":	1048818,
+			"name":	"crater_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-11, 0, -9],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[5, 0.35, 5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.14, 0.08, 0.18],
+					"material.roughness":	0.95
+				}
+			}
+		}, {
+			"id":	1048819,
+			"name":	"crater_2_pit",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-11, 0.08, -9],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3.6, 0.22, 3.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.05, 0.02, 0.07],
+					"material.roughness":	1
+				}
+			}
+		}, {
+			"id":	1048820,
+			"name":	"rock_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3, 0.2, 7],
+					"rotation_deg":	[10, 30, 5],
+					"scale":	[0.9, 0.55, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.16, 0.25],
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	1048821,
+			"name":	"rock_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.5, 0.15, 7.5],
+					"rotation_deg":	[0, 70, 10],
+					"scale":	[0.6, 0.4, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.16, 0.25],
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	1048822,
+			"name":	"rock_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[10, 0.6, -1],
+					"rotation_deg":	[5, 15, -8],
+					"scale":	[2.2, 1.5, 1.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.16, 0.25],
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	1048823,
+			"name":	"rock_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-10, 0.8, 2],
+					"rotation_deg":	[-6, 40, 12],
+					"scale":	[2.6, 1.8, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.16, 0.25],
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	1048824,
+			"name":	"rock_5",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2, 1.5, -22],
+					"rotation_deg":	[0, 10, 4],
+					"scale":	[8, 3.5, 4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.17, 0.12, 0.22],
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	1048825,
+			"name":	"rock_6",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-14, 3.5, -18],
+					"rotation_deg":	[0, -20, -6],
+					"scale":	[10, 8, 5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.17, 0.12, 0.22],
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	1048826,
+			"name":	"rock_7",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[15, 4, -20],
+					"rotation_deg":	[0, 25, 8],
+					"scale":	[12, 9, 6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.17, 0.12, 0.22],
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	1048827,
+			"name":	"spire_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-20, 5, -25],
+					"rotation_deg":	[0, 0, 6],
+					"scale":	[2.2, 12, 2.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.14, 0.1, 0.2],
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	1048828,
+			"name":	"spire_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[24, 6, -28],
+					"rotation_deg":	[0, 0, -8],
+					"scale":	[3, 15, 3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.14, 0.1, 0.2],
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	1048829,
+			"name":	"fungi_R",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6, 0, 8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	1048830,
+			"name":	"fR_stem_1",
+			"parent":	"fungi_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 1.2, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.75, 0.9],
+					"material.emissive":	[0.05, 0.05, 0.1]
+				}
+			}
+		}, {
+			"id":	1048831,
+			"name":	"fR_cap_1",
+			"parent":	"fungi_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.15, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.1, 0.4, 1.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.5, 1],
+					"material.roughness":	0.4,
+					"material.emissive":	[0.2, 1.2, 3]
+				}
+			}
+		}, {
+			"id":	1048832,
+			"name":	"fR_stem_2",
+			"parent":	"fungi_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0.8, 0.35, 0.4],
+					"rotation_deg":	[0, 0, -10],
+					"scale":	[0.12, 0.7, 0.12]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.75, 0.9],
+					"material.emissive":	[0.05, 0.05, 0.1]
+				}
+			}
+		}, {
+			"id":	1048833,
+			"name":	"fR_cap_2",
+			"parent":	"fungi_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0.86, 0.68, 0.4],
+					"rotation_deg":	[0, 0, -10],
+					"scale":	[0.65, 0.25, 0.65]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.3, 0.8],
+					"material.roughness":	0.4,
+					"material.emissive":	[2.5, 0.3, 2]
+				}
+			}
+		}, {
+			"id":	1048834,
+			"name":	"fR_stem_3",
+			"parent":	"fungi_R",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.6, 0.45, 0.5],
+					"rotation_deg":	[8, 0, 12],
+					"scale":	[0.14, 0.9, 0.14]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.75, 0.9],
+					"material.emissive":	[0.05, 0.05, 0.1]
+				}
+			}
+		}, {
+			"id":	1048835,
+			"name":	"fR_cap_3",
+			"parent":	"fungi_R",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.69, 0.88, 0.56],
+					"rotation_deg":	[8, 0, 12],
+					"scale":	[0.8, 0.3, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.5, 1],
+					"material.roughness":	0.4,
+					"material.emissive":	[0.2, 1.2, 3]
+				}
+			}
+		}, {
+			"id":	1048836,
+			"name":	"fR_stem_4",
+			"parent":	"fungi_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 0.2, -0.7],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.08, 0.4, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.75, 0.9],
+					"material.emissive":	[0.05, 0.05, 0.1]
+				}
+			}
+		}, {
+			"id":	1048837,
+			"name":	"fR_cap_4",
+			"parent":	"fungi_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 0.4, -0.7],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.4, 0.16, 0.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 1, 0.5],
+					"material.roughness":	0.4,
+					"material.emissive":	[0.4, 3, 1]
+				}
+			}
+		}, {
+			"id":	1048838,
+			"name":	"fR_light",
+			"parent":	"fungi_R",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.6, 0.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[0.4, 0.6, 1],
+					"intensity":	10,
+					"direction":	[0, -1, 0],
+					"range":	6,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048839,
+			"name":	"fungi_L",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 0, 9.5],
+					"rotation_deg":	[0, 140, 0],
+					"scale":	[0.8, 0.8, 0.8]
+				}
+			}
+		}, {
+			"id":	1048840,
+			"name":	"fL_stem_1",
+			"parent":	"fungi_L",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 1.2, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.75, 0.9],
+					"material.emissive":	[0.05, 0.05, 0.1]
+				}
+			}
+		}, {
+			"id":	1048841,
+			"name":	"fL_cap_1",
+			"parent":	"fungi_L",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.15, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.1, 0.4, 1.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.3, 0.8],
+					"material.roughness":	0.4,
+					"material.emissive":	[2.5, 0.3, 2]
+				}
+			}
+		}, {
+			"id":	1048842,
+			"name":	"fL_stem_2",
+			"parent":	"fungi_L",
+			"components":	{
+				"Transform":	{
+					"position":	[0.8, 0.35, 0.4],
+					"rotation_deg":	[0, 0, -10],
+					"scale":	[0.12, 0.7, 0.12]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.75, 0.9],
+					"material.emissive":	[0.05, 0.05, 0.1]
+				}
+			}
+		}, {
+			"id":	1048843,
+			"name":	"fL_cap_2",
+			"parent":	"fungi_L",
+			"components":	{
+				"Transform":	{
+					"position":	[0.86, 0.68, 0.4],
+					"rotation_deg":	[0, 0, -10],
+					"scale":	[0.65, 0.25, 0.65]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 1, 0.5],
+					"material.roughness":	0.4,
+					"material.emissive":	[0.4, 3, 1]
+				}
+			}
+		}, {
+			"id":	1048844,
+			"name":	"fL_stem_3",
+			"parent":	"fungi_L",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.6, 0.45, 0.5],
+					"rotation_deg":	[8, 0, 12],
+					"scale":	[0.14, 0.9, 0.14]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.75, 0.9],
+					"material.emissive":	[0.05, 0.05, 0.1]
+				}
+			}
+		}, {
+			"id":	1048845,
+			"name":	"fL_cap_3",
+			"parent":	"fungi_L",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.69, 0.88, 0.56],
+					"rotation_deg":	[8, 0, 12],
+					"scale":	[0.8, 0.3, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.5, 1],
+					"material.roughness":	0.4,
+					"material.emissive":	[0.2, 1.2, 3]
+				}
+			}
+		}, {
+			"id":	1048846,
+			"name":	"fL_light",
+			"parent":	"fungi_L",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.6, 0.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.4, 0.8],
+					"intensity":	8,
+					"direction":	[0, -1, 0],
+					"range":	5,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048847,
+			"name":	"drone_orbit",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 6.2, 0],
+					"rotation_deg":	[8, 0, -6],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, -45, 0]
+				}
+			}
+		}, {
+			"id":	1048848,
+			"name":	"drone_1",
+			"parent":	"drone_orbit",
+			"components":	{
+				"Transform":	{
+					"position":	[6, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.18, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.7, 0.72, 0.8],
+					"material.metallic":	1,
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	1048849,
+			"name":	"drone_1_eye",
+			"parent":	"drone_orbit",
+			"components":	{
+				"Transform":	{
+					"position":	[6, -0.08, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.12, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.2, 0.2],
+					"material.emissive":	[10, 0.6, 0.4]
+				}
+			}
+		}, {
+			"id":	1048850,
+			"name":	"drone_2",
+			"parent":	"drone_orbit",
+			"components":	{
+				"Transform":	{
+					"position":	[-3, 0, 5.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.18, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.7, 0.72, 0.8],
+					"material.metallic":	1,
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	1048851,
+			"name":	"drone_2_eye",
+			"parent":	"drone_orbit",
+			"components":	{
+				"Transform":	{
+					"position":	[-3, -0.08, 5.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.12, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.2, 0.2],
+					"material.emissive":	[10, 0.6, 0.4]
+				}
+			}
+		}, {
+			"id":	1048852,
+			"name":	"drone_3",
+			"parent":	"drone_orbit",
+			"components":	{
+				"Transform":	{
+					"position":	[-3, 0, -5.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.18, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.7, 0.72, 0.8],
+					"material.metallic":	1,
+					"material.roughness":	0.2
+				}
+			}
+		}, {
+			"id":	1048853,
+			"name":	"drone_3_eye",
+			"parent":	"drone_orbit",
+			"components":	{
+				"Transform":	{
+					"position":	[-3, -0.08, -5.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.12, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.2, 0.2],
+					"material.emissive":	[10, 0.6, 0.4]
+				}
+			}
+		}, {
+			"id":	1048854,
+			"name":	"patrol_orbit",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 13, -6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 14, 0]
+				}
+			}
+		}, {
+			"id":	1048855,
+			"name":	"patrol_ship",
+			"parent":	"patrol_orbit",
+			"components":	{
+				"Transform":	{
+					"position":	[16, 0, 0],
+					"rotation_deg":	[0, 0, 12],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 120, 0]
+				}
+			}
+		}, {
+			"id":	1048856,
+			"name":	"patrol_hull",
+			"parent":	"patrol_ship",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.6, 0.4, 2.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.5, 0.45, 0.6],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048857,
+			"name":	"patrol_dome",
+			"parent":	"patrol_ship",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 0.7, 1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.4, 0.9],
+					"material.roughness":	0.05,
+					"material.emissive":	[1.5, 0.3, 1.3]
+				}
+			}
+		}, {
+			"id":	1048858,
+			"name":	"patrol_glow",
+			"parent":	"patrol_ship",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.15, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 0.12, 1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.5, 0.2],
+					"material.emissive":	[8, 3, 0.5]
+				}
+			}
+		}, {
+			"id":	1048859,
+			"name":	"patrol_lamp_a",
+			"parent":	"patrol_ship",
+			"components":	{
+				"Transform":	{
+					"position":	[1.3, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.15, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 8, 2]
+				}
+			}
+		}, {
+			"id":	1048860,
+			"name":	"patrol_lamp_b",
+			"parent":	"patrol_ship",
+			"components":	{
+				"Transform":	{
+					"position":	[-1.3, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.15, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 8, 2]
+				}
+			}
+		}, {
+			"id":	1048861,
+			"name":	"patrol_lamp_c",
+			"parent":	"patrol_ship",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 1.3],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.15, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 8, 2]
+				}
+			}
+		}, {
+			"id":	1048862,
+			"name":	"patrol_lamp_d",
+			"parent":	"patrol_ship",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, -1.3],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.15, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 1, 1],
+					"material.emissive":	[8, 8, 2]
+				}
+			}
+		}, {
+			"id":	1048863,
+			"name":	"pod",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-9.5, 0, -1],
+					"rotation_deg":	[0, 60, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	1048864,
+			"name":	"pod_shell",
+			"parent":	"pod",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.3, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2, 2.4, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.75, 0.75, 0.8],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048865,
+			"name":	"pod_hatch",
+			"parent":	"pod",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1, 0.95],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.8, 1.2, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.9, 0.5],
+					"material.emissive":	[5, 3.5, 1]
+				}
+			}
+		}, {
+			"id":	1048866,
+			"name":	"pod_ramp",
+			"parent":	"pod",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.22, 1.6],
+					"rotation_deg":	[22, 0, 0],
+					"scale":	[0.8, 0.05, 1.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.4, 0.4, 0.45],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	1048867,
+			"name":	"pod_leg_1",
+			"parent":	"pod",
+			"components":	{
+				"Transform":	{
+					"position":	[0.9, 0.3, -0.5],
+					"rotation_deg":	[0, 0, -25],
+					"scale":	[0.08, 0.7, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 0.3, 0.35],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	1048868,
+			"name":	"pod_leg_2",
+			"parent":	"pod",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.9, 0.3, -0.5],
+					"rotation_deg":	[0, 0, 25],
+					"scale":	[0.08, 0.7, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 0.3, 0.35],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	1048869,
+			"name":	"pod_beacon_spin",
+			"parent":	"pod",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.55, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 360, 0]
+				}
+			}
+		}, {
+			"id":	1048870,
+			"name":	"pod_beacon",
+			"parent":	"pod_beacon_spin",
+			"components":	{
+				"Transform":	{
+					"position":	[0.2, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.18, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.6, 0.1],
+					"material.emissive":	[12, 5, 0.5]
+				}
+			}
+		}, {
+			"id":	1048871,
+			"name":	"pod_light",
+			"parent":	"pod",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1, 2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.8, 0.4],
+					"intensity":	10,
+					"direction":	[0, -1, 0],
+					"range":	5,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}],
+	"format":	"pbr-scene",
+	"version":	1,
+	"environment":	{
+		"hdri":	"hdri/table_mountain_2_puresky_4k.hdr",
+		"use_ibl":	true,
+		"show_skybox":	false,
+		"sky_blur":	0,
+		"ambient_strength":	0.25,
+		"exposure":	1.1
+	}
+}

@@ -1,0 +1,1243 @@
+{
+	"entities":	[{
+			"id":	1048576,
+			"name":	"model_pivot",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[11, 1.4, -5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.4, 0.4, 0.4]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 45, 0]
+				}
+			}
+		}, {
+			"id":	1048577,
+			"name":	"model",
+			"parent":	"model_pivot",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.998482, 2.68848],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[31.7986, 31.7986, 31.7986]
+				},
+				"MeshRenderer":	{
+					"model":	"models/Avocado.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048578,
+			"name":	"ground",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[200, 1, 200]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.06, 0.065, 0.075],
+					"material.metallic":	0,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048579,
+			"name":	"key_light",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"directional",
+					"color":	[1, 0.8, 0.6],
+					"intensity":	1.6,
+					"direction":	[-0.5, -0.45, -0.74],
+					"range":	0,
+					"inner_cone_degrees":	0,
+					"outer_cone_degrees":	0
+				}
+			}
+		}, {
+			"id":	1048580,
+			"name":	"fill_light",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1.5, 1, 1.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[0.55, 0.7, 1],
+					"intensity":	0,
+					"direction":	[0, -1, 0],
+					"range":	8,
+					"inner_cone_degrees":	0,
+					"outer_cone_degrees":	0
+				}
+			}
+		}, {
+			"id":	1048581,
+			"name":	"spot_light",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-1.5, 2.5, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"spot",
+					"color":	[1, 0.75, 0.45],
+					"intensity":	0,
+					"direction":	[0.486664, -0.811107, -0.324443],
+					"range":	10,
+					"inner_cone_degrees":	12,
+					"outer_cone_degrees":	22
+				}
+			}
+		}, {
+			"id":	1048582,
+			"name":	"orrery_base",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.4, 0.4, 2.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048583,
+			"name":	"orrery_column",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 1.6, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	1,
+					"material.roughness":	0.08
+				}
+			}
+		}, {
+			"id":	1048584,
+			"name":	"sun",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.6, 0.2],
+					"material.roughness":	0.6,
+					"material.emissive":	[12, 5, 1.2]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 20, 0]
+				}
+			}
+		}, {
+			"id":	1048585,
+			"name":	"orbit_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 60, 0]
+				}
+			}
+		}, {
+			"id":	1048586,
+			"name":	"planet_1",
+			"parent":	"orbit_1",
+			"components":	{
+				"Transform":	{
+					"position":	[1.2, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.25, 0.25, 0.25]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.45, 1],
+					"material.metallic":	0.2,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048587,
+			"name":	"sun_light",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.7, 0.4],
+					"intensity":	25,
+					"direction":	[0, -1, 0],
+					"range":	14,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048588,
+			"name":	"orbit_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, -35, 0]
+				}
+			}
+		}, {
+			"id":	1048589,
+			"name":	"planet_2",
+			"parent":	"orbit_2",
+			"components":	{
+				"Transform":	{
+					"position":	[2.1, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.4, 0.4, 0.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.75, 0.18, 0.1],
+					"material.metallic":	0,
+					"material.roughness":	0.7
+				}
+			}
+		}, {
+			"id":	1048590,
+			"name":	"moon_orbit",
+			"parent":	"orbit_2",
+			"components":	{
+				"Transform":	{
+					"position":	[2.1, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 150, 0]
+				}
+			}
+		}, {
+			"id":	1048591,
+			"name":	"moon",
+			"parent":	"moon_orbit",
+			"components":	{
+				"Transform":	{
+					"position":	[0.45, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.12, 0.12, 0.12]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.8, 0.82],
+					"material.metallic":	0,
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	1048592,
+			"name":	"orbit_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.6, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 22, 0]
+				}
+			}
+		}, {
+			"id":	1048593,
+			"name":	"planet_3",
+			"parent":	"orbit_3",
+			"components":	{
+				"Transform":	{
+					"position":	[3.2, 0.3, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.62, 0.35],
+					"material.metallic":	0,
+					"material.roughness":	0.45
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 90, 0]
+				}
+			}
+		}, {
+			"id":	1048594,
+			"name":	"planet_3_ring",
+			"parent":	"orbit_3",
+			"components":	{
+				"Transform":	{
+					"position":	[3.2, 0.3, 0],
+					"rotation_deg":	[18, 0, 0],
+					"scale":	[1.25, 0.03, 1.25]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.8, 0.7],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048595,
+			"name":	"light_carousel",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, -40, 0]
+				}
+			}
+		}, {
+			"id":	1048596,
+			"name":	"magenta_light",
+			"parent":	"light_carousel",
+			"components":	{
+				"Transform":	{
+					"position":	[5, 1.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.15, 0.7],
+					"intensity":	12,
+					"direction":	[0, -1, 0],
+					"range":	7,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048597,
+			"name":	"magenta_bulb",
+			"parent":	"light_carousel",
+			"components":	{
+				"Transform":	{
+					"position":	[5, 1.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.18, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[1, 0.2, 0.7],
+					"material.emissive":	[20, 2, 12]
+				}
+			}
+		}, {
+			"id":	1048598,
+			"name":	"cyan_light",
+			"parent":	"light_carousel",
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 1.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[0.1, 0.85, 1],
+					"intensity":	12,
+					"direction":	[0, -1, 0],
+					"range":	7,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048599,
+			"name":	"cyan_bulb",
+			"parent":	"light_carousel",
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 1.2, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.18, 0.18, 0.18]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.2, 0.9, 1],
+					"material.emissive":	[2, 14, 20]
+				}
+			}
+		}, {
+			"id":	1048600,
+			"name":	"pillar_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6.47, 1.25, 2.68],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 2.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.84, 0.8],
+					"material.metallic":	0,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048601,
+			"name":	"pillar_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.68, 1.25, 6.47],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 2.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.84, 0.8],
+					"material.metallic":	0,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048602,
+			"name":	"pillar_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.68, 1.25, 6.47],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 2.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.84, 0.8],
+					"material.metallic":	0,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048603,
+			"name":	"pillar_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-6.47, 1.25, 2.68],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 2.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.84, 0.8],
+					"material.metallic":	0,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048604,
+			"name":	"pillar_5",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-6.47, 1.25, -2.68],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 2.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.84, 0.8],
+					"material.metallic":	0,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048605,
+			"name":	"pillar_6",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.68, 1.25, -6.47],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 2.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.84, 0.8],
+					"material.metallic":	0,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048606,
+			"name":	"pillar_7",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.68, 1.25, -6.47],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 2.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.84, 0.8],
+					"material.metallic":	0,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048607,
+			"name":	"pillar_8",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6.47, 1.25, -2.68],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 2.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.84, 0.8],
+					"material.metallic":	0,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048608,
+			"name":	"spinner_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6.47, 3.2, 2.68],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.2
+				},
+				"Spin":	{
+					"degrees_per_second":	[40, 90, 25]
+				}
+			}
+		}, {
+			"id":	1048609,
+			"name":	"spinner_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.68, 3.2, 6.47],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.64, 0.54],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				},
+				"Spin":	{
+					"degrees_per_second":	[-60, 45, 30]
+				}
+			}
+		}, {
+			"id":	1048610,
+			"name":	"spinner_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.68, 3.2, 6.47],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.1, 0.9, 0.4],
+					"material.roughness":	0.5,
+					"material.emissive":	[0.5, 6, 2]
+				},
+				"Spin":	{
+					"degrees_per_second":	[30, -80, 50]
+				}
+			}
+		}, {
+			"id":	1048611,
+			"name":	"spinner_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-6.47, 3.2, 2.68],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.97, 0.97, 0.97],
+					"material.metallic":	1,
+					"material.roughness":	0.05
+				},
+				"Spin":	{
+					"degrees_per_second":	[70, 30, -40]
+				}
+			}
+		}, {
+			"id":	1048612,
+			"name":	"spinner_5",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-6.47, 3.2, -2.68],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.77, 0.34],
+					"material.metallic":	1,
+					"material.roughness":	0.2
+				},
+				"Spin":	{
+					"degrees_per_second":	[-35, 120, 15]
+				}
+			}
+		}, {
+			"id":	1048613,
+			"name":	"spinner_6",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.68, 3.2, -6.47],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.6, 0.2, 1],
+					"material.roughness":	0.5,
+					"material.emissive":	[4, 1, 8]
+				},
+				"Spin":	{
+					"degrees_per_second":	[50, -50, 60]
+				}
+			}
+		}, {
+			"id":	1048614,
+			"name":	"spinner_7",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.68, 3.2, -6.47],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.64, 0.54],
+					"material.metallic":	1,
+					"material.roughness":	0.3
+				},
+				"Spin":	{
+					"degrees_per_second":	[20, 75, -70]
+				}
+			}
+		}, {
+			"id":	1048615,
+			"name":	"spinner_8",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6.47, 3.2, -2.68],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.97, 0.97, 0.97],
+					"material.metallic":	1,
+					"material.roughness":	0.05
+				},
+				"Spin":	{
+					"degrees_per_second":	[-45, -60, 35]
+				}
+			}
+		}, {
+			"id":	1048616,
+			"name":	"wheel_base",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.15, -13],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[3, 0.3, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.2, 0.22],
+					"material.metallic":	1,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	1048617,
+			"name":	"wheel_leg_front",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.75, -12.4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 5, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.75, 0.1, 0.1],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048618,
+			"name":	"wheel_leg_back",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.75, -13.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 5, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.75, 0.1, 0.1],
+					"material.metallic":	1,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048619,
+			"name":	"wheel_hub",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 5.2, -13],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 0, 18]
+				}
+			}
+		}, {
+			"id":	1048620,
+			"name":	"hub_core",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 1.4]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.95, 0.95],
+					"material.metallic":	1,
+					"material.roughness":	0.1
+				}
+			}
+		}, {
+			"id":	1048621,
+			"name":	"spoke_1",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[8, 0.12, 0.12]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.92],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048622,
+			"name":	"spoke_2",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 45],
+					"scale":	[8, 0.12, 0.12]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.92],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048623,
+			"name":	"spoke_3",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 90],
+					"scale":	[8, 0.12, 0.12]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.92],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048624,
+			"name":	"spoke_4",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 135],
+					"scale":	[8, 0.12, 0.12]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.9, 0.9, 0.92],
+					"material.metallic":	1,
+					"material.roughness":	0.25
+				}
+			}
+		}, {
+			"id":	1048625,
+			"name":	"cabin_1",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[4, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.7, 0.7, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.3, 0.2],
+					"material.roughness":	0.3,
+					"material.emissive":	[6, 1, 0.5]
+				}
+			}
+		}, {
+			"id":	1048626,
+			"name":	"cabin_2",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[2.83, 2.83, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.7, 0.7, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.2],
+					"material.roughness":	0.3,
+					"material.emissive":	[6, 4.5, 0.5]
+				}
+			}
+		}, {
+			"id":	1048627,
+			"name":	"cabin_3",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[0, 4, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.7, 0.7, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 1, 0.3],
+					"material.roughness":	0.3,
+					"material.emissive":	[1, 6, 1]
+				}
+			}
+		}, {
+			"id":	1048628,
+			"name":	"cabin_4",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[-2.83, 2.83, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.7, 0.7, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.8, 1],
+					"material.roughness":	0.3,
+					"material.emissive":	[0.5, 4, 6]
+				}
+			}
+		}, {
+			"id":	1048629,
+			"name":	"cabin_5",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[-4, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.7, 0.7, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 0.3, 1],
+					"material.roughness":	0.3,
+					"material.emissive":	[1, 1, 6]
+				}
+			}
+		}, {
+			"id":	1048630,
+			"name":	"cabin_6",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[-2.83, -2.83, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.7, 0.7, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.3, 1],
+					"material.roughness":	0.3,
+					"material.emissive":	[4, 1, 6]
+				}
+			}
+		}, {
+			"id":	1048631,
+			"name":	"cabin_7",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[0, -4, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.7, 0.7, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.3, 0.7],
+					"material.roughness":	0.3,
+					"material.emissive":	[6, 1, 3.5]
+				}
+			}
+		}, {
+			"id":	1048632,
+			"name":	"cabin_8",
+			"parent":	"wheel_hub",
+			"components":	{
+				"Transform":	{
+					"position":	[2.83, -2.83, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.7, 0.7, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.roughness":	0.3,
+					"material.emissive":	[5, 5, 5]
+				}
+			}
+		}, {
+			"id":	1048633,
+			"name":	"turntable_knight",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-8, 0.1, 8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.2, 0.2, 2.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.15, 0.17],
+					"material.metallic":	1,
+					"material.roughness":	0.2
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 30, 0]
+				}
+			}
+		}, {
+			"id":	1048635,
+			"name":	"turntable_statue",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[8, 0.1, 8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.2, 0.2, 2.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.15, 0.17],
+					"material.metallic":	1,
+					"material.roughness":	0.2
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, -25, 0]
+				}
+			}
+		}, {
+			"id":	1048636,
+			"name":	"statue",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[8.00144, 1.20105, 7.9991],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.05334, 1.05334, 1.05334]
+				},
+				"MeshRenderer":	{
+					"model":	"models/lord_krishna_statue_3d_model_free.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, -25, 0]
+				}
+			}
+		}, {
+			"id":	1048637,
+			"name":	"suzanne_plinth",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-11, 0.6, -5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1.2, 1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.84, 0.8],
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048638,
+			"name":	"suzanne",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-11, 2, -5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.6, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"models/suzanne.obj",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.97, 0.97, 0.97],
+					"material.metallic":	1,
+					"material.roughness":	0.05
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 60, 0]
+				}
+			}
+		}, {
+			"id":	1048639,
+			"name":	"avocado_plinth",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[11, 0.5, -5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.84, 0.8],
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048640,
+			"name":	"knight_pivot",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-8, 0, 8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 30, 0]
+				}
+			}
+		}, {
+			"id":	1048634,
+			"name":	"knight",
+			"parent":	"knight_pivot",
+			"components":	{
+				"Transform":	{
+					"position":	[-0.20372, 0.243724, -0.25486],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[26.1444, 26.1444, 26.1444]
+				},
+				"MeshRenderer":	{
+					"model":	"models/bulky_knight.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}],
+	"format":	"pbr-scene",
+	"version":	1,
+	"environment":	{
+		"hdri":	"hdri/table_mountain_2_puresky_4k.hdr",
+		"use_ibl":	true,
+		"show_skybox":	true,
+		"sky_blur":	0,
+		"ambient_strength":	0.5,
+		"exposure":	1
+	}
+}
