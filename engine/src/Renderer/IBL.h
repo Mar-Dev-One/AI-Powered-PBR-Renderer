@@ -2,6 +2,7 @@
 
 #include "../Core/Defines.h"
 #include "../RHI/RHI.h"
+#include "../World/Environment.h"
 
 #include <cglm/cglm.h>
 
@@ -59,6 +60,30 @@ b8   ibl_create(ibl_environment* ibl, const char* hdr_path);
 
 // Safe on a zeroed / failed / already-destroyed environment.
 void ibl_destroy(ibl_environment* ibl);
+
+// The environment a scene's HDRI setting (World/Environment.h's `hdri`)
+// bakes to, rebaked only when that setting changes -- baking takes a while.
+// A zeroed ibl_cache is empty and valid.
+typedef struct ibl_cache
+{
+    ibl_environment maps;                         // all zeroes when nothing is baked, or the bake failed
+    char            baked[ENVIRONMENT_HDRI_MAX];  // the setting `maps` was baked from
+    b8              valid;                        // false until the first sync, and after ibl_cache_invalidate()
+} ibl_cache;
+
+// Bakes `hdri` (a path under the project, "" = none) unless it's what the
+// cache already holds. A file that can't be loaded is logged and leaves
+// `maps` zeroed: the hemisphere ambient light, not a dead app.
+void ibl_cache_sync(ibl_cache* cache, const char* hdri);
+
+// Bakes again on the next sync, even for the same setting -- after switching
+// projects, where "hdri/sky.hdr" may name another file.
+void ibl_cache_invalidate(ibl_cache* cache);
+
+// The baked maps, or NULL if there are none.
+const ibl_environment* ibl_cache_maps(const ibl_cache* cache);
+
+void ibl_cache_destroy(ibl_cache* cache);
 
 // Per-frame setup for the PBR shader (engine/shaders/pbr.frag): binds the
 // irradiance, prefiltered and BRDF LUT maps to IBL_SLOT_* and sets its u_use_ibl,

@@ -5,6 +5,7 @@
 // ASSET_NONE (or none at all), so nothing touches the GPU and no window or
 // GL context is needed -- this runs anywhere ctest does.
 
+#include "Scene/OrbitCamera.h"
 #include "World/Reflect.h"
 #include "World/World.h"
 
@@ -545,6 +546,73 @@ test_pick(asset_cache* assets)
     world_shutdown(&w);
 }
 
+// world_framing_bounds(): visible boxes, leaving out a flat ground unless
+// it's all there is; and orbit_fit() backing off until those bounds fit.
+static void
+test_framing_bounds(asset_cache* assets)
+{
+    model box = { 0 };
+    glm_vec3_fill(box.bounds_min, -0.5f);
+    glm_vec3_fill(box.bounds_max,  0.5f);
+    asset_id box_id = assets_add_model(assets, "test:frame_box", box);
+
+    model ground = { 0 };
+    glm_vec3_copy((vec3){ -10.0f, 0.0f, -10.0f }, ground.bounds_min);
+    glm_vec3_copy((vec3){  10.0f, 0.0f,  10.0f }, ground.bounds_max);
+    asset_id ground_id = assets_add_model(assets, "test:frame_ground", ground);
+
+    world w;
+    world_init(&w, assets);
+    vec3 lo, hi;
+    world_update(&w);
+    CHECK(!world_framing_bounds(&w, lo, hi));   // nothing to frame
+
+    entity_id floor = world_create(&w, "floor");
+    world_add_mesh_renderer(&w, floor, ground_id);
+    world_update(&w);
+    CHECK(world_framing_bounds(&w, lo, hi));    // the ground alone still counts
+    CHECK(near(lo[0], -10.0f) && near(hi[0], 10.0f));
+
+    entity_id a = world_create(&w, "a");
+    entity_id b = world_create(&w, "b");
+    world_add_mesh_renderer(&w, a, box_id);
+    world_add_mesh_renderer(&w, b, box_id);
+    world_transform(&w, a)->position[0] = -2.0f;
+    world_transform(&w, b)->position[0] = 2.0f;
+    world_update(&w);
+    CHECK(world_framing_bounds(&w, lo, hi));    // the boxes, not the ground
+    CHECK(near(lo[0], -2.5f) && near(hi[0], 2.5f) && near(lo[1], -0.5f) && near(hi[1], 0.5f));
+
+    world_mesh_renderer(&w, b)->visible = false;
+    world_update(&w);
+    CHECK(world_framing_bounds(&w, lo, hi));    // hidden ones don't count
+    CHECK(near(hi[0], -1.5f));
+
+    // Fit: aimed at the middle, at radius / sin(fov / 2), keeping the angle.
+    camera cam;
+    camera_init(&cam, (vec3){ 0.0f, 0.0f, 10.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, 60.0f, 1.0f, 0.1f, 100.0f);
+    orbit_camera orbit = { .yaw = 90.0f, .pitch = 0.0f, .distance = 1.0f };
+    vec3 box_lo = { 1.0f, 1.0f, 1.0f }, box_hi = { 3.0f, 3.0f, 3.0f };
+    orbit_fit(&orbit, &cam, box_lo, box_hi, 1.0f);
+    f32 radius = sqrtf(3.0f);
+    CHECK(near(cam.target[0], 2.0f) && near(cam.target[1], 2.0f) && near(cam.target[2], 2.0f));
+    CHECK(near(orbit.distance, radius / 0.5f));
+    CHECK(near(cam.position[0], 2.0f + orbit.distance) && near(cam.position[2], 2.0f));   // yaw 90: from +X
+
+    // And back: the orbit read off the camera is the same orbit.
+    orbit_camera read;
+    orbit_from_camera(&read, &cam);
+    CHECK(near(read.yaw, 90.0f) && near(read.pitch, 0.0f) && near(read.distance, orbit.distance));
+
+    // A long drag down: the pitch stops short of the pole, as zoom stops at its limit.
+    orbit_drag(&orbit, &cam, 0.0f, 10000.0f);
+    CHECK(near(orbit.pitch, -ORBIT_PITCH_LIMIT));
+    orbit_zoom(&orbit, &cam, 1000.0f);
+    CHECK(near(orbit.distance, ORBIT_MIN_DISTANCE));
+
+    world_shutdown(&w);
+}
+
 int
 main(void)
 {
@@ -560,6 +628,7 @@ main(void)
     test_reflection(&assets);
     test_tick(&assets);
     test_pick(&assets);
+    test_framing_bounds(&assets);
     test_copy(&assets);
     test_transform_matrix_round_trip();
 

@@ -3,6 +3,8 @@
 #include "../Core/Image.h"
 #include "../Core/Paths.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // Face sizes of the baked maps. The environment is the source for the other
@@ -315,4 +317,44 @@ void ibl_draw_skybox(const ibl_environment* ibl, const mat4 view, const mat4 pro
     rhi_draw_indexed(ibl->cube_vertices, ibl->cube_indices, CUBE_INDEX_COUNT);
 
     rhi_set_render_state(rhi_render_state_default());
+}
+
+// --- ibl_cache -----------------------------------------------------------------
+
+void
+ibl_cache_sync(ibl_cache* cache, const char* hdri)
+{
+    if (cache->valid && strcmp(cache->baked, hdri) == 0)
+        return;
+
+    ibl_destroy(&cache->maps);
+    snprintf(cache->baked, sizeof(cache->baked), "%s", hdri);
+    cache->valid = true;
+
+    if (!hdri[0])
+        return;   // no HDRI: the hemisphere ambient light
+
+    char* path = project_path(hdri);
+    if (!ibl_create(&cache->maps, path))
+        LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", path);
+    free(path);
+}
+
+void
+ibl_cache_invalidate(ibl_cache* cache)
+{
+    cache->valid = false;
+}
+
+const ibl_environment*
+ibl_cache_maps(const ibl_cache* cache)
+{
+    return cache->maps.irradiance ? &cache->maps : NULL;
+}
+
+void
+ibl_cache_destroy(ibl_cache* cache)
+{
+    ibl_destroy(&cache->maps);
+    cache->valid = false;
 }

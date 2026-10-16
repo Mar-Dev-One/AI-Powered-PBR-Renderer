@@ -145,6 +145,14 @@ const vec4* world_matrix(const world* w, entity_id e);
 // MeshRenderer with a loaded model.
 b8 world_bounds(const world* w, entity_id e, vec3 out_min, vec3 out_max);
 
+// What a camera should frame to show the scene, as of the last
+// world_update(): the bounds of every visible MeshRenderer -- leaving out
+// flat ones (ground planes, floors: under WORLD_FLAT_RATIO as tall as they
+// are wide), which would shrink everything else to dots, unless they're all
+// there is. False if nothing visible has bounds.
+#define WORLD_FLAT_RATIO 0.02f
+b8 world_framing_bounds(const world* w, vec3 out_min, vec3 out_max);
+
 // A Transform as a matrix and back: local = T * Ry * Rx * Rz * S (Euler
 // degrees applied yaw, pitch, roll -- see Components.h). transform_from_matrix()
 // is the exact inverse for any matrix a Transform can produce (no shear,

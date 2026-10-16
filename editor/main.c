@@ -35,6 +35,7 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/SceneRenderer.h"
 #include "Scene/Camera.h"
+#include "Scene/OrbitCamera.h"
 #include "Scene/Model.h"
 #include "Assets/AssetCache.h"
 #include "World/Serialize.h"
@@ -141,17 +142,13 @@ typedef struct editor_state
     scene_renderer renderer;
     b8             debug_show_cascades;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
 
-    // --- Environment + image-based lighting -----------------------------------
-    // `env` (World/Environment.h) is the single source of truth for the HDRI,
-    // IBL / skybox switches, exposure and ambient strength: the GUI, the
+    // --- Image-based lighting -------------------------------------------------
+    // doc.env (World/Environment.h) is the single source of truth for the
+    // HDRI, IBL / skybox switches, exposure and ambient strength: the GUI, the
     // environment.set / render.set commands and opening a scene all write it,
-    // and saving stores it with the scene. `ibl` is env.hdri baked
-    // (Renderer/IBL.h), all zeroes when it couldn't be loaded; sync_hdri()
-    // re-bakes it whenever env.hdri changes.
-    scene_environment env;
-    ibl_environment   ibl;
-    char              baked_hdri[ENVIRONMENT_HDRI_MAX];   // what `ibl` was last baked from; the bake may have failed
-    b8                hdri_baked;                         // false until the first bake (and after switching projects)
+    // and saving stores it with the scene. `ibl` is doc.env.hdri baked
+    // (Renderer/IBL.h), re-baked when it changes.
+    ibl_cache ibl;
 
     // --- Viewport (the "Viewport" panel) ----------------------------------------
     // The scene renders into view_target, an RGBA8 texture exactly the
@@ -167,13 +164,8 @@ typedef struct editor_state
     f32             view_width;
     f32             view_height;
 
-    // Mouse-orbit camera control. The camera itself stays dumb (position +
-    // target, per Camera.h) -- yaw/pitch/distance live here, in the layer
-    // responsible for turning input into camera state, and position is
-    // recomputed from them every frame.
-    f32 orbit_yaw;
-    f32 orbit_pitch;
-    f32 orbit_distance;
+    // Mouse-orbit control of `cam` (Scene/OrbitCamera.h).
+    orbit_camera orbit;
 
     // --- Selection --------------------------------------------------------------
     // One entity of the scene. A short left click in the view picks
@@ -244,12 +236,6 @@ typedef struct editor_state
 #define POPUP_SETTINGS     "Project settings"
 #define POPUP_EXPORT       "Export game"
 
-static inline f32
-clampf(f32 v, f32 lo, f32 hi)
-{
-    return v < lo ? lo : (v > hi ? hi : v);
-}
-
 // The scene on screen and its commands: the edited scene, or its copy while
 // playing.
 static command_context*
@@ -262,25 +248,6 @@ static world*
 active_world(editor_state* state)
 {
     return active_commands(state)->w;
-}
-
-// Recomputes cam->position from state's yaw/pitch/distance, orbiting around
-// whatever cam->target currently is. Call after any yaw/pitch/distance
-// change; cam->target itself is untouched so this only ever orbits, never
-// pans.
-static void
-orbit_camera_apply(editor_state* state)
-{
-    f32 yaw_rad   = glm_rad(state->orbit_yaw);
-    f32 pitch_rad = glm_rad(state->orbit_pitch);
-
-    f32 x = state->orbit_distance * cosf(pitch_rad) * sinf(yaw_rad);
-    f32 y = state->orbit_distance * sinf(pitch_rad);
-    f32 z = state->orbit_distance * cosf(pitch_rad) * cosf(yaw_rad);
-
-    state->cam.position[0] = state->cam.target[0] + x;
-    state->cam.position[1] = state->cam.target[1] + y;
-    state->cam.position[2] = state->cam.target[2] + z;
 }
 
 static void select_at(editor_state* state, f32 x, f32 y);
@@ -304,12 +271,7 @@ view_input(editor_state* state)
 
     if (igIsItemActive() && !state->press_on_gizmo && (io->MouseDelta.x != 0.0f || io->MouseDelta.y != 0.0f))
     {
-        const f32 sensitivity = 0.25f;
-
-        state->orbit_yaw   += io->MouseDelta.x * sensitivity;
-        state->orbit_pitch += -io->MouseDelta.y * sensitivity;
-        state->orbit_pitch  = clampf(state->orbit_pitch, -89.0f, 89.0f);
-        orbit_camera_apply(state);
+        orbit_drag(&state->orbit, &state->cam, io->MouseDelta.x, io->MouseDelta.y);
     }
 
     // Released after barely moving: a click, not an orbit -- select.
@@ -318,40 +280,8 @@ view_input(editor_state* state)
         && fabsf(io->MousePos.y - state->press_y) <= click_slop)
         select_at(state, io->MousePos.x - state->view_x, io->MousePos.y - state->view_y);
 
-    // Wheel zoom by a share of the distance, so it feels the same close up
-    // and across a big scene, clamped so you can't zoom through the target
-    // or scroll off forever.
     if (igIsItemHovered(0) && io->MouseWheel != 0.0f)
-    {
-        const f32 zoom_speed = 0.1f;
-
-        state->orbit_distance -= io->MouseWheel * zoom_speed * state->orbit_distance;
-        state->orbit_distance  = clampf(state->orbit_distance, 0.5f, 500.0f);
-        orbit_camera_apply(state);
-    }
-}
-
-// Bakes env.hdri into state->ibl if it changed since the last bake -- picked
-// in the GUI, set by environment.set or brought in by opening a scene. A
-// missing/unreadable file leaves image-based lighting off, not the app dead.
-static void
-sync_hdri(editor_state* state)
-{
-    if (state->hdri_baked && strcmp(state->baked_hdri, state->doc.env.hdri) == 0)
-        return;
-
-    ibl_destroy(&state->ibl);
-    memcpy(state->baked_hdri, state->doc.env.hdri, sizeof(state->baked_hdri));
-    state->hdri_baked = true;
-
-    if (!state->doc.env.hdri[0])
-        return;   // no HDRI: the hemisphere ambient light
-
-    char* path = project_path(state->doc.env.hdri);
-    if (!ibl_create(&state->ibl, path))
-        LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", path);
-
-    free(path);
+        orbit_zoom(&state->orbit, &state->cam, io->MouseWheel);
 }
 
 // --- HDRI list ------------------------------------------------------------------
@@ -465,19 +395,6 @@ json_vec3(const cJSON* item, vec3 out)
     return true;
 }
 
-// Re-derives the orbit controls from the camera, so mouse orbiting carries
-// on from wherever a command put it.
-static void
-orbit_from_camera(editor_state* state)
-{
-    vec3 offset;
-    glm_vec3_sub(state->cam.position, state->cam.target, offset);
-
-    state->orbit_distance = glm_max(glm_vec3_norm(offset), 0.01f);
-    state->orbit_yaw      = glm_deg(atan2f(offset[0], offset[2]));
-    state->orbit_pitch    = glm_deg(asinf(glm_clamp(offset[1] / state->orbit_distance, -1.0f, 1.0f)));
-}
-
 static b8
 host_environment_list(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
@@ -496,7 +413,7 @@ host_environment_list(void* user_data, command_context* ctx, const cJSON* args, 
         cJSON_AddStringToObject(*out_result, "current", state->doc.env.hdri);
     else
         cJSON_AddNullToObject(*out_result, "current");
-    cJSON_AddBoolToObject(*out_result, "hdri_loaded", state->ibl.irradiance != 0);
+    cJSON_AddBoolToObject(*out_result, "hdri_loaded", ibl_cache_maps(&state->ibl) != NULL);
     cJSON_AddBoolToObject(*out_result, "use_ibl", state->doc.env.use_ibl);
     cJSON_AddBoolToObject(*out_result, "show_skybox", state->doc.env.show_skybox);
     cJSON_AddItemToObject(*out_result, "sky_blur", number_json(state->doc.env.sky_blur));
@@ -543,7 +460,7 @@ host_environment_set(void* user_data, command_context* ctx, const cJSON* args, c
     if (found)
     {
         snprintf(state->doc.env.hdri, sizeof(state->doc.env.hdri), "%s", found);
-        sync_hdri(state);
+        ibl_cache_sync(&state->ibl, state->doc.env.hdri);
     }
 
     const cJSON* use_ibl = cJSON_GetObjectItem(args, "use_ibl");
@@ -599,8 +516,8 @@ host_view_set_camera(void* user_data, command_context* ctx, const cJSON* args, c
 
     glm_vec3_copy(position, state->cam.position);
     glm_vec3_copy(target, state->cam.target);
-    orbit_from_camera(state);
-    orbit_camera_apply(state);
+    orbit_from_camera(&state->orbit, &state->cam);
+    orbit_apply(&state->orbit, &state->cam);
     return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
 }
 
@@ -636,27 +553,8 @@ host_view_frame(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     }
     else
     {
-        // Everything visible -- but not flat things (a ground plane) unless
-        // there's nothing else: a 20 m ground would shrink the scene's
-        // objects to dots. The same rule the game's camera uses.
-        const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
-        for (int pass = 0; pass < 2 && !any; ++pass)
-        {
-            b8 skip_flat = pass == 0;
-            for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
-            {
-                vec3 emin, emax;
-                if (!world_mesh_renderer(w, e)->visible || !world_bounds(w, e, emin, emax))
-                    continue;
-                f32 height = emax[1] - emin[1];
-                f32 width  = fmaxf(emax[0] - emin[0], emax[2] - emin[2]);
-                if (skip_flat && height < width * 0.02f)
-                    continue;
-                glm_vec3_minv(bmin, emin, bmin);
-                glm_vec3_maxv(bmax, emax, bmax);
-                any = true;
-            }
-        }
+        // Everything visible, framed as the game's camera frames it.
+        any = world_framing_bounds(w, bmin, bmax);
     }
 
     if (!any)
@@ -665,13 +563,7 @@ host_view_frame(void* user_data, command_context* ctx, const cJSON* args, cJSON*
         return false;
     }
 
-    vec3 center;
-    glm_vec3_center(bmin, bmax, center);
-    f32 radius = glm_max(glm_vec3_distance(bmin, bmax) * 0.5f, 0.05f);
-
-    glm_vec3_copy(center, state->cam.target);
-    state->orbit_distance = radius / sinf(glm_rad(state->cam.fov_degrees) * 0.5f) * 1.1f;
-    orbit_camera_apply(state);
+    orbit_fit(&state->orbit, &state->cam, bmin, bmax, 1.1f);
     return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
 }
 
@@ -1417,7 +1309,7 @@ play_stop(editor_state* state)
     if (chat_busy(&state->chat) && state->chat.turn_ctx == &state->play.commands)
         chat_stop(&state->chat);   // a turn started while playing; its world is going away
 
-    play_end(&state->play, &state->doc);   // sync_hdri() re-bakes if Play changed the HDRI
+    play_end(&state->play, &state->doc);   // the IBL re-bakes if Play changed the HDRI
     // The selection stays if it names something in the edited scene
     // (validate_selection() drops one made while playing).
 
@@ -1928,7 +1820,7 @@ open_project(editor_state* state, const char* directory)
     reset_export(state);
     world_clear(&state->doc.scene);
     assets_collect_unused(&state->assets);
-    state->hdri_baked = false;   // "hdri/sky.hdr" may be another file now
+    ibl_cache_invalidate(&state->ibl);   // "hdri/sky.hdr" may be another file now
 
     paths_set_project_root(directory);
     state->project = settings;
@@ -2085,11 +1977,11 @@ add_light(editor_state* state, const char* type)
 
 // A Camera entity seeing what the editor's view sees. Its -Z axis has to
 // point from the eye at the orbit target: with rotation Ry(yaw) * Rx(pitch)
-// that is pitch = -orbit_pitch, yaw = orbit_yaw.
+// that is pitch = -orbit.pitch, yaw = orbit.yaw.
 static void
 add_camera(editor_state* state)
 {
-    const f32 rotation[3] = { -state->orbit_pitch, state->orbit_yaw, 0.0f };
+    const f32 rotation[3] = { -state->orbit.pitch, state->orbit.yaw, 0.0f };
 
     cJSON* cam = cJSON_CreateObject();
     cJSON_AddNumberToObject(cam, "fov_degrees", state->cam.fov_degrees);
@@ -2721,7 +2613,7 @@ on_init(App* app)
 
     f32 aspect = (f32)framebuffer_size.width / (f32)framebuffer_size.height;
     camera_init(&state->cam, (vec3){ 4.0f, 3.0f, 6.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, 45.0f, aspect, 0.1f, 500.0f);
-    orbit_from_camera(state);
+    orbit_from_camera(&state->orbit, &state->cam);
 
     // The project main() checked, and its startup scene.
     char error[640];
@@ -2842,7 +2734,7 @@ draw_environment_controls(editor_state* state)
         igEndCombo();
     }
 
-    if (state->ibl.irradiance)
+    if (ibl_cache_maps(&state->ibl))
     {
         igCheckbox("Use IBL", &state->doc.env.use_ibl);
         igCheckbox("Show skybox", &state->doc.env.show_skybox);
@@ -2925,7 +2817,7 @@ build_render_settings(const editor_state* state)
 {
     scene_render_settings settings = scene_render_settings_default();
 
-    scene_render_settings_apply_environment(&settings, &state->doc.env, &state->ibl);
+    scene_render_settings_apply_environment(&settings, &state->doc.env, ibl_cache_maps(&state->ibl));
     settings.debug_show_cascades = state->debug_show_cascades;
 
     // Where nothing (not even the skybox) is drawn -- a scene without an
@@ -3095,7 +2987,7 @@ static void on_frame(App* app, f32 dt)
     watch_export_check(state);
 
     gizmo_begin_frame();
-    sync_hdri(state);
+    ibl_cache_sync(&state->ibl, state->doc.env.hdri);
 
     // App/on_frame runs between imgui_layer_new_frame() and
     // imgui_layer_render() (see App.c), so any ig*() calls here just work.
@@ -3159,7 +3051,7 @@ static void on_shutdown(App* app)
     console_shutdown(&state->console);
     doc_shutdown(&state->doc);               // releases the scene's assets...
     assets_shutdown(&state->assets);     // ...then the models themselves
-    ibl_destroy(&state->ibl);
+    ibl_cache_destroy(&state->ibl);
     if (state->view_target)
         rhi_framebuffer_destroy(state->view_target);
     reset_export(state);                     // ends a running check, frees its picture

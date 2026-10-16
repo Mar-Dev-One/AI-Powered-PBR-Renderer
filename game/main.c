@@ -54,6 +54,7 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/SceneRenderer.h"
 #include "Scene/Camera.h"
+#include "Scene/OrbitCamera.h"
 #include "World/Environment.h"
 #include "World/Serialize.h"
 #include "World/World.h"
@@ -93,9 +94,7 @@ typedef struct game_state
     world           world;
     scene_renderer  renderer;
     scene_environment env;   // from the scene file; see World/Environment.h
-    ibl_environment   ibl;     // env.hdri baked; all zeroes if it couldn't be loaded
-    char              baked_hdri[ENVIRONMENT_HDRI_MAX];   // what `ibl` was last baked from
-    b8                hdri_baked;                         // false until the first bake
+    ibl_cache         ibl;     // env.hdri baked
 
     // The scene's Camera entity, or ENTITY_NULL to use the orbit camera.
     entity_id scene_camera;
@@ -103,19 +102,11 @@ typedef struct game_state
     f32       aspect;
 
     // Orbit camera, for scenes without a Camera entity.
-    f32 orbit_yaw;
-    f32 orbit_pitch;
-    f32 orbit_distance;
+    orbit_camera orbit;
     f64 last_cursor_x;
     f64 last_cursor_y;
     b8  dragging;
 } game_state;
-
-static f32
-clampf(f32 value, f32 lo, f32 hi)
-{
-    return value < lo ? lo : (value > hi ? hi : value);
-}
 
 // --- Scene -----------------------------------------------------------------------
 
@@ -198,95 +189,24 @@ load_scene(game_state* state, const char* arg)
     return ok;
 }
 
-// Bakes env.hdri into `ibl` if it changed since the last bake. A missing
-// file leaves the hemisphere ambient light.
-static void
-sync_hdri(game_state* state)
-{
-    if (state->hdri_baked && strcmp(state->baked_hdri, state->env.hdri) == 0)
-        return;
-
-    ibl_destroy(&state->ibl);
-    memcpy(state->baked_hdri, state->env.hdri, sizeof(state->baked_hdri));
-    state->hdri_baked = true;
-
-    if (!state->env.hdri[0])
-        return;
-
-    char* path = project_path(state->env.hdri);
-    if (!ibl_create(&state->ibl, path))
-        LOG_WARN("No environment loaded from '%s' -- using the hemisphere ambient light\n", path);
-    free(path);
-}
-
 // --- Camera ----------------------------------------------------------------------
 
-static void
-orbit_camera_apply(game_state* state)
-{
-    f32 yaw_rad   = glm_rad(state->orbit_yaw);
-    f32 pitch_rad = glm_rad(state->orbit_pitch);
-
-    state->cam.position[0] = state->cam.target[0] + state->orbit_distance * cosf(pitch_rad) * sinf(yaw_rad);
-    state->cam.position[1] = state->cam.target[1] + state->orbit_distance * sinf(pitch_rad);
-    state->cam.position[2] = state->cam.target[2] + state->orbit_distance * cosf(pitch_rad) * cosf(yaw_rad);
-}
-
-// Grows [lo, hi] by every drawn entity's bounds; with `skip_flat`, leaves
-// out flat ones (ground planes, floors: under 2% as tall as they are wide),
-// which would otherwise set the framing on their own. False if none counted.
-static b8
-gather_bounds(const world* w, b8 skip_flat, vec3 lo, vec3 hi)
-{
-    b8 any = false;
-
-    const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
-    for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
-    {
-        const c_mesh_renderer* mr = world_mesh_renderer(w, e);
-        vec3 e_lo, e_hi;
-        if (!mr->visible || !world_bounds(w, e, e_lo, e_hi))
-            continue;
-
-        f32 height = e_hi[1] - e_lo[1];
-        f32 width  = fmaxf(e_hi[0] - e_lo[0], e_hi[2] - e_lo[2]);
-        if (skip_flat && height < width * 0.02f)
-            continue;
-
-        glm_vec3_minv(lo, e_lo, lo);
-        glm_vec3_maxv(hi, e_hi, hi);
-        any = true;
-    }
-    return any;
-}
-
-// Points the orbit camera at the middle of what's in the scene, far enough
-// back to see all of it. Needs world_update() first (world_bounds() reads it).
+// Points the orbit camera at the middle of what's in the scene
+// (World/World.h world_framing_bounds()), far enough back to see all of it.
+// Needs world_update() first.
 static void
 frame_scene(game_state* state)
 {
-    vec3 lo = { FLT_MAX, FLT_MAX, FLT_MAX };
-    vec3 hi = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+    vec3 lo = { -2.0f, 0.0f, 0.0f }, hi = { 2.0f, 0.0f, 0.0f };   // an empty scene: 2 m around the origin
+    world_framing_bounds(&state->world, lo, hi);
 
-    // Frame the objects, not the floor -- unless the floor is all there is.
-    b8 any = gather_bounds(&state->world, true, lo, hi) || gather_bounds(&state->world, false, lo, hi);
+    camera_init(&state->cam, (vec3){ 0.0f, 0.0f, 0.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, 45.0f, state->aspect, 0.1f, 100.0f);
+    state->orbit = (orbit_camera){ .yaw = 35.0f, .pitch = 25.0f };
+    orbit_fit(&state->orbit, &state->cam, lo, hi, 1.0f);
 
-    vec3 center = { 0.0f, 0.0f, 0.0f };
-    f32  radius = 2.0f;
-    if (any)
-    {
-        glm_vec3_center(lo, hi, center);
-        radius = glm_vec3_distance(lo, hi) * 0.5f;
-    }
-
-    // Far enough that a sphere of `radius` fits the 45 degree vertical FOV.
-    f32 distance = radius / sinf(glm_rad(45.0f * 0.5f));
-
-    camera_init(&state->cam, center, center, 45.0f, state->aspect, 0.1f, fmaxf(100.0f, distance * 4.0f));
-    state->orbit_yaw      = 35.0f;
-    state->orbit_pitch    = 25.0f;
-    state->orbit_distance = clampf(distance, 1.0f, 500.0f);
-    orbit_camera_apply(state);
+    state->cam.far_plane  = fmaxf(100.0f, state->orbit.distance * 4.0f);
+    state->orbit.distance = glm_clamp(state->orbit.distance, 1.0f, ORBIT_MAX_DISTANCE);
+    orbit_apply(&state->orbit, &state->cam);
 }
 
 // Left-drag orbits. Only for the orbit camera; a scene camera stays put.
@@ -299,14 +219,8 @@ orbit_camera_update(game_state* state, window* wind)
     if (window_is_mouse_button_down(wind, GLFW_MOUSE_BUTTON_LEFT))
     {
         if (state->dragging)
-        {
-            const f32 sensitivity = 0.25f;
-
-            state->orbit_yaw   += (f32)(cursor_x - state->last_cursor_x) * sensitivity;
-            state->orbit_pitch += (f32)(state->last_cursor_y - cursor_y) * sensitivity;
-            state->orbit_pitch  = clampf(state->orbit_pitch, -89.0f, 89.0f);
-            orbit_camera_apply(state);
-        }
+            orbit_drag(&state->orbit, &state->cam, (f32)(cursor_x - state->last_cursor_x),
+                       (f32)(cursor_y - state->last_cursor_y));
         state->dragging = true;
     }
     else
@@ -356,7 +270,7 @@ on_init(App* app)
 
     if (state->hdri_arg)
         snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", state->hdri_arg);
-    sync_hdri(state);
+    ibl_cache_sync(&state->ibl, state->env.hdri);
 
     choose_camera(state);
 }
@@ -393,8 +307,7 @@ on_scroll(App* app, f64 dx, f64 dy)
     if (state->scene_camera)
         return;
 
-    state->orbit_distance = clampf(state->orbit_distance - (f32)dy * 0.1f * state->orbit_distance, 1.0f, 500.0f);
-    orbit_camera_apply(state);
+    orbit_zoom(&state->orbit, &state->cam, (f32)dy);
 }
 
 // --check: the frame as a PNG at check_path. False (logged) if it can't be
@@ -447,7 +360,7 @@ on_frame(App* app, f32 dt)
         orbit_camera_update(state, get_renderer()->drawing_window);
 
     scene_render_settings settings = scene_render_settings_default();
-    scene_render_settings_apply_environment(&settings, &state->env, &state->ibl);
+    scene_render_settings_apply_environment(&settings, &state->env, ibl_cache_maps(&state->ibl));
 
     scene_renderer_draw(&state->renderer, &state->world, &state->cam, &settings);
 
@@ -465,7 +378,7 @@ on_shutdown(App* app)
 
     world_shutdown(&state->world);    // releases the world's assets...
     assets_shutdown(&state->assets);  // ...then the models themselves
-    ibl_destroy(&state->ibl);
+    ibl_cache_destroy(&state->ibl);
     scene_renderer_destroy(&state->renderer);
 }
 

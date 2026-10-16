@@ -624,6 +624,46 @@ world_bounds(const world* w, entity_id e, vec3 out_min, vec3 out_max)
     return true;
 }
 
+// Grows [lo, hi] by every visible MeshRenderer's bounds; with `skip_flat`,
+// leaves out flat ones. False if none counted.
+static b8
+grow_framing_bounds(const world* w, b8 skip_flat, vec3 lo, vec3 hi)
+{
+    b8 any = false;
+
+    const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
+    for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+    {
+        vec3 e_lo, e_hi;
+        if (!w->mesh_renderers[entity_slot(e)].visible || !world_bounds(w, e, e_lo, e_hi))
+            continue;
+
+        f32 height = e_hi[1] - e_lo[1];
+        f32 width  = fmaxf(e_hi[0] - e_lo[0], e_hi[2] - e_lo[2]);
+        if (skip_flat && height < width * WORLD_FLAT_RATIO)
+            continue;
+
+        glm_vec3_minv(lo, e_lo, lo);
+        glm_vec3_maxv(hi, e_hi, hi);
+        any = true;
+    }
+    return any;
+}
+
+b8
+world_framing_bounds(const world* w, vec3 out_min, vec3 out_max)
+{
+    vec3 lo = { FLT_MAX, FLT_MAX, FLT_MAX };
+    vec3 hi = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
+    if (!grow_framing_bounds(w, true, lo, hi) && !grow_framing_bounds(w, false, lo, hi))
+        return false;
+
+    glm_vec3_copy(lo, out_min);
+    glm_vec3_copy(hi, out_max);
+    return true;
+}
+
 // Slab test: the entry distance of the ray into [lo, hi], or -1 if it misses
 // or starts inside.
 static f32
