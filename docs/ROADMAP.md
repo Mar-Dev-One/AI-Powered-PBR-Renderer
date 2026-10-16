@@ -336,7 +336,7 @@ Status: done. `project_export()` (`Project/Project.h`, tested in `tests/project_
 `<Name>.exe`, the C++ runtime DLLs, `engine/shaders/`, `project.json`, every saved scene and only
 the models (with their .gltf/.obj files) and HDRIs they use; everything is checked first, and it
 refuses missing files, paths outside the project, an unsaved startup scene, and folders that
-aren't empty or an earlier export. `Game` target: `testbed/main.c` with `PBR_GAME_RUNTIME` -- no
+aren't empty or an earlier export. `Game` target: `game/main.c` (formerly `testbed/main.c`; `PBR_GAME_NO_CONSOLE` outside Debug) -- no
 console window, log in `log.txt` beside it; it finds `project.json` next to itself and takes the
 title and window size from it. The editor ships the Release `Game` when it's built (else the
 Debug one, with a warning), with the DLLs CMake's `InstallRequiredSystemLibraries` finds.

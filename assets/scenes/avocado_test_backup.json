@@ -1,0 +1,257 @@
+{
+	"entities":	[{
+			"id":	1048576,
+			"name":	"model_pivot",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 28.6479, 0]
+				}
+			}
+		}, {
+			"id":	1048577,
+			"name":	"model",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, -0.250109, -0.596946],
+					"rotation_deg":	[0, 0, -22.5],
+					"scale":	[31.7986, 31.7986, 31.7986]
+				},
+				"MeshRenderer":	{
+					"model":	"models/Avocado.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048578,
+			"name":	"ground",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, -1, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[8, 1, 8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	false,
+					"material.base_color":	[0.18, 0.18, 0.18],
+					"material.metallic":	0,
+					"material.roughness":	0.9
+				}
+			}
+		}, {
+			"id":	1048579,
+			"name":	"key_light",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"directional",
+					"color":	[1, 0.98, 0.92],
+					"intensity":	2.5,
+					"direction":	[-0.455842, -0.683764, -0.569803],
+					"range":	0,
+					"inner_cone_degrees":	0,
+					"outer_cone_degrees":	0
+				}
+			}
+		}, {
+			"id":	1048580,
+			"name":	"fill_light",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1.5, 1, 2.34661],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[0.55, 0.7, 1],
+					"intensity":	3,
+					"direction":	[0, -1, 0],
+					"range":	8,
+					"inner_cone_degrees":	0,
+					"outer_cone_degrees":	0
+				}
+			}
+		}, {
+			"id":	1048581,
+			"name":	"spot_light",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-1.5, 2.5, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"spot",
+					"color":	[1, 0.75, 0.45],
+					"intensity":	0,
+					"direction":	[0.486664, -0.811107, -0.324443],
+					"range":	10,
+					"inner_cone_degrees":	12,
+					"outer_cone_degrees":	22
+				}
+			}
+		}, {
+			"id":	1048582,
+			"name":	"empty",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.382102, 0, -1.49012e-08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	1048583,
+			"name":	"camera",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.75938, 1.70695, 3.56592],
+					"rotation_deg":	[-22.5885, 33.6901, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Camera":	{
+					"fov_degrees":	45,
+					"near_plane":	0.1,
+					"far_plane":	100
+				}
+			}
+		}, {
+			"id":	1048584,
+			"name":	"sun_light",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.382102, 0, -1.49012e-08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"directional",
+					"color":	[1, 1, 1],
+					"intensity":	2,
+					"direction":	[-0.4, -0.7, -0.5],
+					"range":	0,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048585,
+			"name":	"spot_light_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.382102, 2.5, -1.49012e-08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"spot",
+					"color":	[1, 1, 1],
+					"intensity":	10,
+					"direction":	[0, -1, 0],
+					"range":	10,
+					"inner_cone_degrees":	15,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048586,
+			"name":	"point_light",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.382102, 2.5, -1.49012e-08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 1, 1],
+					"intensity":	10,
+					"direction":	[0, -1, 0],
+					"range":	10,
+					"inner_cone_degrees":	20,
+					"outer_cone_degrees":	30
+				}
+			}
+		}, {
+			"id":	1048587,
+			"name":	"plane",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.382102, 0, -1.49012e-08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048588,
+			"name":	"sphere",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.382102, 0.5, 1.937],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048589,
+			"name":	"cube",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.382102, 0.5, -2.38687],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}],
+	"format":	"pbr-scene",
+	"version":	1,
+	"environment":	{
+		"hdri":	"hdri/citrus_orchard_road_puresky_4k.hdr",
+		"use_ibl":	true,
+		"show_skybox":	true,
+		"sky_blur":	0,
+		"ambient_strength":	0.5,
+		"exposure":	1
+	}
+}

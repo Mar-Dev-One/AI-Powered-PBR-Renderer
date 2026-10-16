@@ -1,6 +1,6 @@
 {
 	"entities":	[{
-			"id":	2097152,
+			"id":	1048576,
 			"name":	"dais_trim",
 			"parent":	null,
 			"components":	{
@@ -19,7 +19,7 @@
 				}
 			}
 		}, {
-			"id":	2097153,
+			"id":	1048577,
 			"name":	"pool_rim",
 			"parent":	null,
 			"components":	{
@@ -38,7 +38,7 @@
 				}
 			}
 		}, {
-			"id":	2097154,
+			"id":	1048578,
 			"name":	"dais",
 			"parent":	null,
 			"components":	{
@@ -57,7 +57,7 @@
 				}
 			}
 		}, {
-			"id":	2097155,
+			"id":	1048579,
 			"name":	"front_step",
 			"parent":	null,
 			"components":	{
@@ -76,7 +76,7 @@
 				}
 			}
 		}, {
-			"id":	2097156,
+			"id":	1048580,
 			"name":	"platform",
 			"parent":	null,
 			"components":	{
@@ -95,7 +95,7 @@
 				}
 			}
 		}, {
-			"id":	2097157,
+			"id":	1048581,
 			"name":	"ground",
 			"parent":	null,
 			"components":	{

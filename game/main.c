@@ -35,7 +35,8 @@
 //
 // The scene file's "environment" (World/Environment.h) sets the HDRI,
 // exposure, ambient strength and skybox, as they were in the editor when it
-// was saved. Older files without one get the defaults with DEFAULT_HDRI.
+// was saved. A scene that names no HDRI gets the project's default HDRI
+// (which an export copies), or DEFAULT_HDRI without a project.json.
 //
 // The view comes from the scene's first Camera entity. A scene without one
 // gets an orbit camera framing everything in it: left-drag to orbit, scroll
@@ -79,6 +80,7 @@ typedef struct game_state
 {
     const char* scene_arg;
     const char* hdri_arg;
+    const char* fallback_hdri;   // for a scene that names none ("" = the hemisphere ambient)
     b8          scene_loaded;
 
     // --check: where the picture goes, frames drawn so far, and the verdict
@@ -344,7 +346,7 @@ on_init(App* app)
         FATAL("game: failed to create the scene renderer");
 
     state->env = scene_environment_default();
-    snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", DEFAULT_HDRI);
+    snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", state->fallback_hdri);
 
     assets_init(&state->assets);
     world_init(&state->world, &state->assets);
@@ -495,12 +497,19 @@ log_to_file(void)
 {
     char path[1024];
     snprintf(path, sizeof(path), "%s/log.txt", paths_executable_dir());
-    if (freopen(path, "w", stdout))
-    {
+
+    // Emptied once, then both streams append: each write lands at the
+    // file's end, so stdout's info lines never overwrite stderr's errors
+    // (two "w" handles would each keep their own position).
+    FILE* empty = fopen(path, "w");
+    if (!empty)
+        return;
+    fclose(empty);
+
+    if (freopen(path, "a", stdout))
         setvbuf(stdout, NULL, _IONBF, 0);
-        if (freopen(path, "a", stderr))
-            setvbuf(stderr, NULL, _IONBF, 0);
-    }
+    if (freopen(path, "a", stderr))
+        setvbuf(stderr, NULL, _IONBF, 0);
 }
 #endif
 
@@ -596,6 +605,7 @@ int main(int argc, char** argv)
     b8 has_settings = project_exists(paths_project_root()) && project_read(paths_project_root(), &project, NULL, 0);
     if (!state.scene_arg)
         state.scene_arg = has_settings ? project.startup_scene : DEFAULT_SCENE;
+    state.fallback_hdri = has_settings ? project.default_hdri : DEFAULT_HDRI;
 
     // Windowed: the size given, else the project's, else 1920 x 1080 (a
     // check renders smaller: it's only a picture). Fullscreen: the monitor's

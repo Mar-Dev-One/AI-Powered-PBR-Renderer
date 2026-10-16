@@ -368,6 +368,31 @@ same_path(const char* a, const char* b)
     return *a == *b;
 }
 
+// True if `path` is `folder` or somewhere under it, compared as same_path()
+// does ('/' and '\' alike; case-insensitive on Windows).
+static b8
+path_within(const char* path, const char* folder)
+{
+    size_t length = strlen(folder);
+    while (length > 0 && (folder[length - 1] == '/' || folder[length - 1] == '\\'))
+        --length;
+    if (strlen(path) < length)
+        return false;
+
+    for (size_t i = 0; i < length; ++i)
+    {
+        char a = path[i] == '\\' ? '/' : path[i];
+        char b = folder[i] == '\\' ? '/' : folder[i];
+#ifdef _WIN32
+        a = (char)tolower((unsigned char)a);
+        b = (char)tolower((unsigned char)b);
+#endif
+        if (a != b)
+            return false;
+    }
+    return path[length] == '\0' || path[length] == '/' || path[length] == '\\';
+}
+
 void
 project_recent_load(project_recent* out, const char* file)
 {
@@ -747,9 +772,17 @@ project_import_asset(const char* project_dir, const char* source, char* out_key,
 // the project into the export, with the files a .gltf / .obj names.
 // `scene` names the scene file for the error message.
 static b8
-plan_project_asset(import_plan* plan, const char* project_dir, const char* out_dir, const char* relative,
+plan_project_asset(import_plan* plan, const char* project_dir, const char* out_dir, const char* scene_path,
                    const char* scene, char* error, size_t error_size)
 {
+    // "models\lamp\lamp.gltf" works on Windows too; the folder lookups below
+    // need '/'.
+    char relative[PROJECT_PATH_MAX];
+    snprintf(relative, sizeof(relative), "%s", scene_path);
+    for (char* c = relative; *c; ++c)
+        if (*c == '\\')
+            *c = '/';
+
     if (!relative_path_safe(relative))
         return fail(error, error_size, "%s uses \"%s\", which is outside the project; only files in the project "
                     "can be exported (File > Import Asset brings one in)", scene, relative);
@@ -893,10 +926,7 @@ project_export(const char* project_dir, const char* out_dir, const project_expor
 
     // Not into the project itself, and not over something that isn't an
     // earlier export (whose files get replaced).
-    size_t project_length = strlen(project_dir);
-    if (same_path(out_dir, project_dir)
-        || (strlen(out_dir) > project_length && strncmp(out_dir, project_dir, project_length) == 0
-            && (out_dir[project_length] == '/' || out_dir[project_length] == '\\')))
+    if (path_within(out_dir, project_dir))
         return fail(error, error_size, "export somewhere outside the project folder");
     if (file_exists(out_dir))
         return fail(error, error_size, "%s is a file, not a folder", out_dir);

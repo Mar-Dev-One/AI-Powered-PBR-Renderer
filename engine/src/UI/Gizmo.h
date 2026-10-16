@@ -30,9 +30,14 @@ void gizmo_begin_frame(void);
 // for every axis: meters for translate, degrees for rotate, a factor step for
 // scale. With `interactive` false the handles are drawn but ignore the mouse
 // (it's over a panel).
+//
+// `view_item` is the ImGui ID of an item covering the view to take its
+// mouse input (the editor's invisible button), or 0. ImGuizmo won't start a
+// drag while any item is hovered or active, which that item always is; it's
+// hidden from that check -- and only it -- so the handles still take clicks.
 b8 gizmo_manipulate(const f32 view[16], const f32 projection[16], gizmo_operation operation, gizmo_space space,
                     f32 matrix[16], const f32* snap, f32 x, f32 y, f32 width, f32 height, void* draw_list,
-                    b8 interactive);
+                    b8 interactive, uint32 view_item);
 
 // The mouse is over a handle (as of the last gizmo_manipulate()) -- a click
 // there belongs to the gizmo, not to camera orbit or picking.

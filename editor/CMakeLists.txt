@@ -9,13 +9,15 @@ target_link_libraries(Editor PRIVATE PBR_Engine)
 target_compile_definitions(Editor PRIVATE AGENT_DIR="${CMAKE_SOURCE_DIR}/agent")
 
 # Export (Project/Project.h project_export()) ships the Game executable.
-# Players need a Release build: GAME_RELEASE_EXE is where a multi-config
-# build (Visual Studio) puts it, and the editor uses it when it's there;
-# otherwise the Game of the editor's own configuration (GAME_EXE), with a
-# warning that it isn't for players.
+# Players need a non-Debug build. A non-Debug editor ships its own
+# configuration's Game (GAME_EXE). A Debug editor ships the Release Game
+# where a multi-config build (Visual Studio) puts it, GAME_RELEASE_EXE, if
+# it's been built -- warning when it's older than GAME_EXE -- else its own
+# Debug Game, with a warning that it isn't for players.
 add_dependencies(Editor Game)
 target_compile_definitions(Editor PRIVATE
     GAME_EXE="$<TARGET_FILE:Game>"
+    GAME_EXE_IS_DEBUG=$<CONFIG:Debug>
     GAME_RELEASE_EXE="$<TARGET_FILE_DIR:Game>/../Release/$<TARGET_FILE_NAME:Game>")
 
 # The C++ runtime DLLs a Release build needs on a PC that may not have them

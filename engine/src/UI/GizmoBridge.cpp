@@ -4,6 +4,7 @@
 // the engine's own sources: everything else reaches ImGui through cimgui.
 
 #include "imgui.h"
+#include "imgui_internal.h"   // ImGuiContext's hovered/active item, for view_item
 #include "ImGuizmo.h"
 
 extern "C" {
@@ -19,7 +20,7 @@ gizmo_begin_frame(void)
 extern "C" b8
 gizmo_manipulate(const f32 view[16], const f32 projection[16], gizmo_operation operation, gizmo_space space,
                  f32 matrix[16], const f32* snap, f32 x, f32 y, f32 width, f32 height, void* draw_list,
-                 b8 interactive)
+                 b8 interactive, uint32 view_item)
 {
     static const ImGuizmo::OPERATION OPERATIONS[] = { ImGuizmo::TRANSLATE, ImGuizmo::ROTATE, ImGuizmo::SCALE };
 
@@ -36,7 +37,28 @@ gizmo_manipulate(const f32 view[16], const f32 projection[16], gizmo_operation o
     // Scaling along world axes isn't meaningful for a rotated object.
     ImGuizmo::MODE mode = (space == GIZMO_WORLD && operation != GIZMO_SCALE) ? ImGuizmo::WORLD : ImGuizmo::LOCAL;
 
-    return ImGuizmo::Manipulate(view, projection, OPERATIONS[operation], mode, matrix, nullptr, snap ? snap3 : nullptr);
+    // ImGuizmo starts a drag only when no ImGui item is hovered or active
+    // (its CanActivate()). The view's own input item always is, so for this
+    // call it's taken out of ImGui's hovered/active state -- only when it's
+    // that item, so any other widget still blocks the gizmo -- and put back.
+    ImGuiContext& g          = *ImGui::GetCurrentContext();
+    const ImGuiID hovered    = g.HoveredId;
+    const ImGuiID hovered_pf = g.HoveredIdPreviousFrame;
+    const ImGuiID active     = g.ActiveId;
+    if (view_item)
+    {
+        if (g.HoveredId == view_item)              g.HoveredId = 0;
+        if (g.HoveredIdPreviousFrame == view_item) g.HoveredIdPreviousFrame = 0;
+        if (g.ActiveId == view_item)               g.ActiveId = 0;
+    }
+
+    b8 changed = ImGuizmo::Manipulate(view, projection, OPERATIONS[operation], mode, matrix, nullptr,
+                                      snap ? snap3 : nullptr);
+
+    g.HoveredId              = hovered;
+    g.HoveredIdPreviousFrame = hovered_pf;
+    g.ActiveId               = active;
+    return changed;
 }
 
 extern "C" b8

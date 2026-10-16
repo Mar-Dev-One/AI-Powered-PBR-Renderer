@@ -4,7 +4,7 @@
 // scenes at a time, with the entity inspector, the gizmo, the command
 // console, the command server other processes (MCP server, AI agent,
 // scripts) drive it through, and the in-app chat. The game runtime -- the
-// same engine with none of this -- is testbed/main.c.
+// same engine with none of this -- is game/main.c.
 //
 // Projects: File > New Project makes a folder with project.json, scenes/,
 // models/ and hdri/ (and a starter scene); File > Open Project / Recent
@@ -54,6 +54,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <GLFW/glfw3.h>
 
 // Resolution of *each* cascade's shadow map (Renderer/Shadow.h). Depth-only
@@ -87,6 +88,15 @@ typedef enum pending_action
     ACTION_OPEN_SCENE,     // pending_arg: the scene name
     ACTION_QUIT
 } pending_action;
+
+// The exported game's --check run.
+typedef enum export_check
+{
+    CHECK_NONE,      // no export yet (or it failed before the check)
+    CHECK_RUNNING,
+    CHECK_PASSED,
+    CHECK_FAILED     // any non-zero exit code, crashes included, or it couldn't start
+} export_check;
 
 typedef struct editor_state
 {
@@ -225,7 +235,8 @@ typedef struct editor_state
     b8                    export_ok;      // the last export succeeded (the check may still run)
     project_export_report export_report;
     process*              check_process;
-    int                   check_result;   // -1 = not run / running, 0 = passed, else the game's exit code
+    export_check          check;
+    int                   check_exit_code;   // the game's, once check is CHECK_FAILED
     rhi_texture           check_picture;
     char                  check_png[PROJECT_PATH_MAX];
 
@@ -888,8 +899,8 @@ host_export_status(void* user_data, command_context* ctx, const cJSON* args, cJS
         cJSON_AddNumberToObject(*out_result, "bytes", (double)state->export_report.bytes);
     }
     // The exported game's own check of its startup scene.
-    cJSON_AddStringToObject(*out_result, "check", state->check_process ? "running"
-                            : state->check_result == 0 ? "passed" : state->check_result > 0 ? "failed" : "none");
+    static const char* const CHECK_NAMES[] = { "none", "running", "passed", "failed" };
+    cJSON_AddStringToObject(*out_result, "check", CHECK_NAMES[state->check]);
     return true;
 }
 
@@ -1315,9 +1326,10 @@ vec3_array(const f32* v)
 // it: local = inverse(parent world) * new world, decomposed back into
 // position / rotation_deg / scale (World/World.h transform_from_matrix()).
 // Drawn into `draw`, the Viewport window's list; `view_hovered`: the mouse
-// is over the view.
+// is over the view; `view_item`: the ID of the view's input button, which
+// mustn't keep the handles from taking a click (UI/Gizmo.h).
 static void
-draw_gizmo(editor_state* state, ImDrawList* draw, b8 view_hovered)
+draw_gizmo(editor_state* state, ImDrawList* draw, b8 view_hovered, ImGuiID view_item)
 {
     command_context* ctx = active_commands(state);
     world*           w   = ctx->w;
@@ -1345,7 +1357,7 @@ draw_gizmo(editor_state* state, ImDrawList* draw, b8 view_hovered)
 
     b8 changed = gizmo_manipulate((const f32*)view, (const f32*)projection, state->gizmo_op, state->gizmo_space,
                                   (f32*)model, snap, state->view_x, state->view_y, state->view_width,
-                                  state->view_height, draw, interactive);
+                                  state->view_height, draw, interactive, view_item);
     state->gizmo_hot = gizmo_is_over() || gizmo_is_using();
 
     if (changed)
@@ -1502,13 +1514,34 @@ play_advance(editor_state* state, f32 dt)
 
 #define EXPORT_MAX_DLLS 16
 
-// The Game executable to ship; *out_release says whether it's a Release
-// build (the one for players).
-static const char*
-game_executable(b8* out_release)
+static int64
+modified_time(const char* path)
 {
+    struct stat info;
+    return stat(path, &info) == 0 ? (int64)info.st_mtime : 0;
+}
+
+// The Game executable to ship. *out_release: it's a non-Debug build (the
+// one for players). *out_stale (may be NULL): it's the separately built
+// Release game, older than this build's own Game -- probably missing the
+// latest engine changes.
+static const char*
+game_executable(b8* out_release, b8* out_stale)
+{
+    if (out_stale)
+        *out_stale = false;
+    if (!GAME_EXE_IS_DEBUG)
+    {
+        *out_release = true;   // this build's own Game is the player one
+        return GAME_EXE;
+    }
+
     *out_release = file_exists(GAME_RELEASE_EXE);
-    return *out_release ? GAME_RELEASE_EXE : GAME_EXE;
+    if (!*out_release)
+        return GAME_EXE;
+    if (out_stale)
+        *out_stale = modified_time(GAME_RELEASE_EXE) < modified_time(GAME_EXE);
+    return GAME_RELEASE_EXE;
 }
 
 // Splits GAME_RUNTIME_DLLS ('|'-separated) into `paths` (pointers into
@@ -1541,6 +1574,23 @@ default_export_location(const editor_state* state, char* out, size_t size)
     snprintf(out, size, "%s/PBR Exports/%s", projects, state->project.name);
 }
 
+// Forgets the last export -- its folder, status, check and picture, ending a
+// check still running -- when the project it belonged to closes (and at
+// shutdown), so the next export doesn't go to that project's folder.
+static void
+reset_export(editor_state* state)
+{
+    process_destroy(state->check_process);
+    state->check_process = NULL;
+    if (state->check_picture)
+        rhi_texture_destroy(state->check_picture);
+    state->check_picture    = NULL;
+    state->check            = CHECK_NONE;
+    state->export_ok        = false;
+    state->export_dir[0]    = '\0';
+    state->export_status[0] = '\0';
+}
+
 static void
 open_export_dialog(editor_state* state)
 {
@@ -1564,10 +1614,10 @@ run_export(editor_state* state, const char* folder)
         rhi_texture_destroy(state->check_picture);
         state->check_picture = NULL;
     }
-    state->check_result = -1;
+    state->check = CHECK_NONE;
 
     b8          release;
-    const char* game = game_executable(&release);
+    const char* game = game_executable(&release, NULL);
     char        dll_buffer[4096];
     const char* dlls[EXPORT_MAX_DLLS];
     uint32      dll_count = release ? runtime_dlls(dll_buffer, sizeof(dll_buffer), dlls) : 0;
@@ -1599,8 +1649,8 @@ run_export(editor_state* state, const char* folder)
     const char* argv[] = { state->export_report.executable, "--check", state->check_png, NULL };
     state->check_process = process_spawn(argv, log);
     free(log);
-    if (!state->check_process)
-        state->check_result = 1;
+    state->check           = state->check_process ? CHECK_RUNNING : CHECK_FAILED;
+    state->check_exit_code = -1;
     return true;
 }
 
@@ -1613,8 +1663,9 @@ watch_export_check(editor_state* state)
         return;
 
     process_destroy(state->check_process);
-    state->check_process = NULL;
-    state->check_result  = exit_code;
+    state->check_process   = NULL;
+    state->check           = exit_code == 0 ? CHECK_PASSED : CHECK_FAILED;
+    state->check_exit_code = exit_code;
     if (exit_code == 0 && file_exists(state->check_png))
         state->check_picture = rhi_texture_create_from_file(state->check_png, RHI_FILTER_LINEAR, RHI_WRAP_CLAMP_TO_EDGE, false);
 
@@ -1856,9 +1907,11 @@ announce_replaced(editor_state* state, const char* source)
 static b8
 replace_scene(editor_state* state, const cJSON* scene_json, const char* name, const char* source)
 {
+    // A scene that names no HDRI gets the project's default, as in the game.
     char              error[640];
     scene_environment env      = scene_environment_default();
     const cJSON*      env_json = cJSON_GetObjectItem(scene_json, "environment");
+    snprintf(env.hdri, sizeof(env.hdri), "%s", state->project.default_hdri);
     if (env_json && !deserialize_environment(env_json, &env, error, sizeof(error)))
     {
         console_info(&state->console, error);
@@ -2002,6 +2055,7 @@ open_project(editor_state* state, const char* directory)
     // project's file of that name.
     finish_edits(state);
     reset_history(state);
+    reset_export(state);
     world_clear(&state->scene);
     assets_collect_unused(&state->assets);
     state->hdri_baked = false;   // "hdri/sky.hdr" may be another file now
@@ -2629,9 +2683,17 @@ draw_export_popup(editor_state* state)
 
     // What it ships: a Release game runs anywhere; a Debug one needs Visual
     // Studio's debug runtime.
-    b8 release;
-    game_executable(&release);
-    if (release)
+    b8 release, stale;
+    game_executable(&release, &stale);
+    if (release && stale)
+    {
+        igPushTextWrapPos(480.0f);
+        igTextColored((ImVec4_c){ 1.0f, 0.71f, 0.0f, 1.0f },
+                      "Game: Release build, but older than this build of the engine, so it may miss recent "
+                      "changes. Rebuild it: cmake --build build --config Release --target Game");
+        igPopTextWrapPos();
+    }
+    else if (release)
         igTextDisabled("Game: Release build, with the C++ runtime DLLs.");
     else
     {
@@ -2679,14 +2741,14 @@ draw_export_popup(editor_state* state)
     // The game's own check, and what it rendered.
     if (state->export_ok)
     {
-        if (state->check_process)
+        if (state->check == CHECK_RUNNING)
             igTextDisabled("Checking: the exported game is loading its startup scene...");
-        else if (state->check_result == 0)
+        else if (state->check == CHECK_PASSED)
             igTextColored((ImVec4_c){ 0.31f, 0.78f, 0.31f, 1.0f }, "Check passed: the game loads and renders %s.",
                           state->project.startup_scene);
-        else if (state->check_result > 0)
+        else if (state->check == CHECK_FAILED)
             igTextColored((ImVec4_c){ 1.0f, 0.45f, 0.4f, 1.0f },
-                          "Check FAILED (exit code %d): see log.txt in the export folder (~/.pbr-renderer/export_check.log for a Debug game).", state->check_result);
+                          "Check FAILED (exit code %d): see log.txt in the export folder (~/.pbr-renderer/export_check.log for a Debug game).", state->check_exit_code);
 
         if (state->check_picture)
         {
@@ -2745,7 +2807,6 @@ on_init(App* app)
     state->snap_scale   = 0.1f;
     state->show_console = true;
     state->add_size     = 1.0f;
-    state->check_result = -1;
 
     history_init(&state->history);
 
@@ -3055,9 +3116,6 @@ fit_view_target(editor_state* state, uint16 width, uint16 height)
 
     if (state->view_target)
         rhi_framebuffer_destroy(state->view_target);
-    if (state->check_picture)
-        rhi_texture_destroy(state->check_picture);
-    process_destroy(state->check_process);
 
     rhi_framebuffer_attachment color = { .format = RHI_FORMAT_RGBA8 };
     state->view_target = rhi_framebuffer_create((rhi_framebuffer_desc){
@@ -3128,7 +3186,8 @@ draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt)
     // One item over the whole view, so ImGui hands it the mouse (and doesn't
     // drag the window around instead).
     igInvisibleButton("##view", (ImVec2_c){ state->view_width, state->view_height }, ImGuiButtonFlags_MouseButtonLeft);
-    b8 hovered = igIsItemHovered(0);
+    b8      hovered   = igIsItemHovered(0);
+    ImGuiID view_item = igGetItemID();
     view_input(state);
 
     // Playing, the copy really moves; editing, Spin is only previewed and
@@ -3154,7 +3213,7 @@ draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt)
     draw_play_frame(state, draw);
 
     // Handles on the selection, at its saved pose (after any Spin preview).
-    draw_gizmo(state, draw, hovered);
+    draw_gizmo(state, draw, hovered, view_item);
     igEnd();
 }
 
@@ -3243,6 +3302,7 @@ static void on_shutdown(App* app)
     ibl_destroy(&state->ibl);
     if (state->view_target)
         rhi_framebuffer_destroy(state->view_target);
+    reset_export(state);                     // ends a running check, frees its picture
     scene_renderer_destroy(&state->renderer);
 }
 

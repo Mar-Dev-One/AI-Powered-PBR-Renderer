@@ -398,6 +398,21 @@ test_export(void)
 
     CHECK(!project_export(project, ROOT "/Exporter/build", &options, &report, error, sizeof(error)));
     CHECK(strstr(error, "outside the project folder") != NULL);
+    char sneaky[1024];   // the same folder, spelled with '\' and a trailing separator
+    snprintf(sneaky, sizeof(sneaky), "%s/Exporter\\build\\", ROOT);
+    CHECK(!project_export(project, sneaky, &options, &report, error, sizeof(error)));
+    CHECK(strstr(error, "outside the project folder") != NULL);
+#ifdef _WIN32
+    snprintf(sneaky, sizeof(sneaky), "%s/EXPORTER/build", ROOT);   // Windows paths ignore case
+    CHECK(!project_export(project, sneaky, &options, &report, error, sizeof(error)));
+#endif
+
+    // A model path written with '\' (Windows-style) still brings its .gltf's files.
+    const char* slashes = ROOT "/slashes";
+    write_scene(ROOT "/Exporter/scenes/level4.json", "models\\\\lamp\\\\lamp.gltf", NULL);
+    CHECK(project_export(project, slashes, &options, &report, error, sizeof(error)));
+    CHECK(exists("%s/models/lamp/lamp.bin", slashes) && exists("%s/models/lamp/tex/shade.png", slashes));
+    remove(ROOT "/Exporter/scenes/level4.json");
 
     project_export_options no_game = { ROOT "/bin/Missing.exe", ROOT "/engine", NULL, 0 };
     CHECK(!project_export(project, fresh, &no_game, &report, error, sizeof(error)));

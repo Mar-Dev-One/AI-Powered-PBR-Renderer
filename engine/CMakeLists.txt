@@ -45,7 +45,7 @@ add_library(PBR_Engine STATIC
     deps/cjson/cJSON.c
 )
 
-# PUBLIC: consumers (editor, testbed) #include headers like "App.h", "RHI/RHI.h",
+# PUBLIC: consumers (editor, game) #include headers like "App.h", "RHI/RHI.h",
 # "Core/Paths.h" straight from this root, same paths as before the split.
 # NOTE: this also exposes RHI/OpenGL/RHI_GL_Internal.h, which is meant to
 # stay backend-private -- that's a real header/include boundary this pass
