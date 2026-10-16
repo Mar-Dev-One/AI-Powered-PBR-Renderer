@@ -108,6 +108,53 @@
 					"outer_cone_degrees":	22
 				}
 			}
+		}, {
+			"id":	1048582,
+			"name":	"camera",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.98335, 2.46343, -2.56975],
+					"rotation_deg":	[-41.8385, -159.06, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Camera":	{
+					"fov_degrees":	45,
+					"near_plane":	0.1,
+					"far_plane":	100
+				}
+			}
+		}, {
+			"id":	1048583,
+			"name":	"empty",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, -1.49012e-08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				}
+			}
+		}, {
+			"id":	1048584,
+			"name":	"spot_light_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.5, -1.49012e-08],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"spot",
+					"color":	[1, 1, 1],
+					"intensity":	10,
+					"direction":	[0, -1, 0],
+					"range":	10,
+					"inner_cone_degrees":	15,
+					"outer_cone_degrees":	30
+				}
+			}
 		}],
 	"format":	"pbr-scene",
 	"version":	1,

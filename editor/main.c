@@ -69,6 +69,17 @@
 // (and one folder level below it).
 #define HDRI_LIST_MAX 64
 
+// The Viewport toolbar's Play / Pause / Stop.
+typedef enum play_mode
+{
+    PLAY_STOPPED,   // editing
+    PLAY_RUNNING,   // the copy ticks every frame
+    PLAY_PAUSED     // the copy holds still; Step (F10) advances it one frame
+} play_mode;
+
+// One paused step's worth of game time.
+#define PLAY_STEP_SECONDS (1.0f / 60.0f)
+
 // Something that replaces the scene on screen, so it waits for an answer
 // to "save changes?" when there are any (see request()).
 typedef enum pending_action
@@ -104,6 +115,22 @@ typedef struct editor_state
     char              scene_name[PROJECT_SCENE_MAX];
     uint64            saved_revision;
     scene_environment saved_env;
+
+    // --- Play mode (the Viewport toolbar) -----------------------------------------
+    // Play makes play_world a world_copy() of the scene and runs the game's
+    // behaviours (world_tick()) on it in the Viewport. While it plays,
+    // everything that shows or edits "the scene on screen" -- the view,
+    // selection, gizmo, Inspector, Entities, console, command server, agent,
+    // Add -- works on the copy, through play_commands (the scene's context
+    // without its undo history). Stop throws the copy away, and the
+    // environment back to how it was: the edited scene never changed.
+    // Saving and opening act on the edited scene, so they stop play or wait.
+    play_mode         play;
+    world             play_world;
+    command_context   play_commands;
+    scene_environment play_saved_env;
+    f32               play_time;   // game seconds since Play
+    b8                play_step;   // advance one step next frame (while paused)
 
     command_console console;
     inspector       inspector;      // the selected entity's fields; edits run as undoable commands
@@ -150,6 +177,20 @@ typedef struct editor_state
     char              baked_hdri[ENVIRONMENT_HDRI_MAX];   // what `ibl` was last baked from; the bake may have failed
     b8                hdri_baked;                         // false until the first bake (and after switching projects)
 
+    // --- Viewport (the "Viewport" panel) ----------------------------------------
+    // The scene renders into view_target, an RGBA8 texture exactly the
+    // panel's size, which the panel shows; the camera's aspect follows it.
+    // view_x/y/width/height is that image's rectangle in ImGui screen
+    // coordinates (desktop pixels, since panels can leave the main window)
+    // as of this frame: picking, the outline and the gizmo all work in it.
+    rhi_framebuffer view_target;
+    uint16          view_target_width;
+    uint16          view_target_height;
+    f32             view_x;
+    f32             view_y;
+    f32             view_width;
+    f32             view_height;
+
     // Mouse-orbit camera control. The camera itself stays dumb (position +
     // target, per Camera.h) -- yaw/pitch/distance live here, in the layer
     // responsible for turning input into camera state, and position is
@@ -157,9 +198,6 @@ typedef struct editor_state
     f32 orbit_yaw;
     f32 orbit_pitch;
     f32 orbit_distance;
-    f64 last_cursor_x;
-    f64 last_cursor_y;
-    b8  dragging;
 
     // --- Selection --------------------------------------------------------------
     // One entity of the scene. A short left click in the view picks
@@ -167,8 +205,8 @@ typedef struct editor_state
     // shows it and can set it; F frames it; Esc clears it.
     entity_id selected;
     b8        reveal_selection;   // picked in the view this frame: open the Entities tree to it
-    f64       press_x;            // where the left button went down in the view
-    f64       press_y;
+    f32       press_x;            // where the left button went down in the view (screen coordinates)
+    f32       press_y;
     b8        press_on_gizmo;     // that press began on a gizmo handle: neither orbit nor pick
 
     // --- Gizmo (UI/Gizmo.h) -------------------------------------------------------
@@ -220,6 +258,20 @@ clampf(f32 v, f32 lo, f32 hi)
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
+// The scene on screen and its commands: the edited scene, or its copy while
+// playing.
+static command_context*
+active_commands(editor_state* state)
+{
+    return state->play != PLAY_STOPPED ? &state->play_commands : &state->commands;
+}
+
+static world*
+active_world(editor_state* state)
+{
+    return active_commands(state)->w;
+}
+
 // Recomputes cam->position from state's yaw/pitch/distance, orbiting around
 // whatever cam->target currently is. Call after any yaw/pitch/distance
 // change; cam->target itself is untouched so this only ever orbits, never
@@ -239,74 +291,52 @@ orbit_camera_apply(editor_state* state)
     state->cam.position[2] = state->cam.target[2] + z;
 }
 
-// Polls the left mouse button + cursor delta and turns it into orbit_yaw /
-// orbit_pitch. Polling (rather than a glfwSetCursorPosCallback) keeps this
-// self-contained in the editor layer. Goes through the window_* input
-// wrappers rather than GLFW directly.
-static void select_at(editor_state* state, f64 x, f64 y);
+static void select_at(editor_state* state, f32 x, f32 y);
 
+// The viewport's mouse: left-drag orbits, a short left click selects, the
+// wheel zooms. Reads the item just submitted -- the invisible button
+// covering the view -- so ImGui decides who owns the mouse: a press that
+// starts on the view keeps orbiting even when the drag leaves it, and a
+// press anywhere else never reaches here.
 static void
-orbit_camera_update(editor_state* state, window* wind)
+view_input(editor_state* state)
 {
-    f64 cursor_x, cursor_y;
-    window_get_cursor_pos(wind, &cursor_x, &cursor_y);
+    const ImGuiIO* io = igGetIO_Nil();
 
-    b8 lmb_down        = window_is_mouse_button_down(wind, GLFW_MOUSE_BUTTON_LEFT);
-    b8 imgui_has_mouse = imgui_layer_wants_mouse();
-
-    if (lmb_down && !imgui_has_mouse)
+    if (igIsItemActivated())
     {
-        if (!state->dragging)
-        {
-            state->press_x        = cursor_x;
-            state->press_y        = cursor_y;
-            state->press_on_gizmo = state->gizmo_hot;
-        }
-        else if (!state->press_on_gizmo)
-        {
-            const f32 sensitivity = 0.25f;
-
-            state->orbit_yaw   += (f32)(cursor_x - state->last_cursor_x) * sensitivity;
-            state->orbit_pitch += (f32)(state->last_cursor_y - cursor_y) * sensitivity;
-            state->orbit_pitch  = clampf(state->orbit_pitch, -89.0f, 89.0f);
-
-            orbit_camera_apply(state);
-        }
-
-        state->dragging = true;
-    }
-    else
-    {
-        // Released after barely moving: a click, not an orbit -- select.
-        const f64 click_slop = 4.0;   // pixels
-        if (state->dragging && !lmb_down && !state->press_on_gizmo && fabs(cursor_x - state->press_x) <= click_slop
-            && fabs(cursor_y - state->press_y) <= click_slop)
-            select_at(state, cursor_x, cursor_y);
-
-        state->dragging = false;
+        state->press_x        = io->MousePos.x;
+        state->press_y        = io->MousePos.y;
+        state->press_on_gizmo = state->gizmo_hot;
     }
 
-    state->last_cursor_x = cursor_x;
-    state->last_cursor_y = cursor_y;
-}
+    if (igIsItemActive() && !state->press_on_gizmo && (io->MouseDelta.x != 0.0f || io->MouseDelta.y != 0.0f))
+    {
+        const f32 sensitivity = 0.25f;
 
-// Mouse-wheel zoom: shrinks/grows orbit_distance by a share of itself, so
-// it feels the same close up and across a big scene, clamped so you can't
-// zoom through the target or scroll off forever. App.c only calls this for
-// scrolls ImGui didn't claim.
-static void
-on_scroll(App* app, f64 dx, f64 dy)
-{
-    (void)dx;
+        state->orbit_yaw   += io->MouseDelta.x * sensitivity;
+        state->orbit_pitch += -io->MouseDelta.y * sensitivity;
+        state->orbit_pitch  = clampf(state->orbit_pitch, -89.0f, 89.0f);
+        orbit_camera_apply(state);
+    }
 
-    editor_state* state = (editor_state*)app->user_data;
+    // Released after barely moving: a click, not an orbit -- select.
+    const f32 click_slop = 4.0f;   // pixels
+    if (igIsItemDeactivated() && !state->press_on_gizmo && fabsf(io->MousePos.x - state->press_x) <= click_slop
+        && fabsf(io->MousePos.y - state->press_y) <= click_slop)
+        select_at(state, io->MousePos.x - state->view_x, io->MousePos.y - state->view_y);
 
-    const f32 zoom_speed = 0.1f;
+    // Wheel zoom by a share of the distance, so it feels the same close up
+    // and across a big scene, clamped so you can't zoom through the target
+    // or scroll off forever.
+    if (igIsItemHovered(0) && io->MouseWheel != 0.0f)
+    {
+        const f32 zoom_speed = 0.1f;
 
-    state->orbit_distance -= (f32)dy * zoom_speed * state->orbit_distance;
-    state->orbit_distance  = clampf(state->orbit_distance, 0.5f, 500.0f);
-
-    orbit_camera_apply(state);
+        state->orbit_distance -= io->MouseWheel * zoom_speed * state->orbit_distance;
+        state->orbit_distance  = clampf(state->orbit_distance, 0.5f, 500.0f);
+        orbit_camera_apply(state);
+    }
 }
 
 // Bakes env.hdri into state->ibl if it changed since the last bake -- picked
@@ -403,7 +433,7 @@ on_world_change(void* user_data, const cJSON* event)
     if (state->server)
     {
         cJSON* params = cJSON_Duplicate(event, true);
-        cJSON_AddStringToObject(params, "world", "scene");
+        cJSON_AddStringToObject(params, "world", state->play != PLAY_STOPPED ? "play" : "scene");
         server_notify(state->server, SERVER_CHANGE_NOTIFICATION, params);
         cJSON_Delete(params);
     }
@@ -829,6 +859,74 @@ host_project_create(void* user_data, command_context* ctx, const cJSON* args, cJ
     return true;
 }
 
+static void play_start(editor_state* state);
+static void play_stop(editor_state* state);
+static void play_toggle_pause(editor_state* state);
+
+static const char*
+play_mode_name(play_mode mode)
+{
+    return mode == PLAY_RUNNING ? "playing" : mode == PLAY_PAUSED ? "paused" : "stopped";
+}
+
+static b8
+host_play_status(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    (void)ctx; (void)args; (void)error; (void)error_size;
+    editor_state* state = user_data;
+
+    *out_result = cJSON_CreateObject();
+    cJSON_AddStringToObject(*out_result, "state", play_mode_name(state->play));
+    cJSON_AddItemToObject(*out_result, "time", number_json(state->play_time));
+    return true;
+}
+
+// The Viewport toolbar's buttons, for scripts and the agent.
+static b8
+host_play_set(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    editor_state* state  = user_data;
+    const char*   action = cJSON_GetStringValue(cJSON_GetObjectItem(args, "action"));
+
+    if (action && strcmp(action, "play") == 0)
+    {
+        play_start(state);
+        if (state->play == PLAY_STOPPED)
+        {
+            snprintf(error, error_size, "can't play while a chat turn is running");
+            return false;
+        }
+    }
+    else if (action && strcmp(action, "stop") == 0)
+        play_stop(state);
+    else if (action && (strcmp(action, "pause") == 0 || strcmp(action, "resume") == 0))
+    {
+        b8 pause = action[0] == 'p';
+        if ((pause && state->play == PLAY_RUNNING) || (!pause && state->play == PLAY_PAUSED))
+            play_toggle_pause(state);
+    }
+    else if (action && strcmp(action, "step") == 0)
+    {
+        if (state->play != PLAY_PAUSED)
+        {
+            snprintf(error, error_size, "step works while paused; pause first");
+            return false;
+        }
+        state->play_step = true;
+    }
+    else
+    {
+        snprintf(error, error_size, "\"action\" must be \"play\", \"pause\", \"resume\", \"step\" or \"stop\"");
+        return false;
+    }
+    return host_play_status(user_data, ctx, NULL, out_result, error, error_size);
+}
+
+static const cmd_arg ARGS_PLAY_SET[] = {
+    { "action", "string", true, "\"play\" (run a copy of the scene), \"pause\", \"resume\", \"step\" (one frame, while "
+                                "paused) or \"stop\" (drop the copy, back to the edited scene)" },
+};
+
 static const cmd_arg ARGS_SCREENSHOT[] = {
     { "max_size", "number", false, "Longest side in pixels, 64-4096 (default 768); the window's size if smaller" },
 };
@@ -875,6 +973,10 @@ static const cmd_host_command HOST_COMMANDS[] = {
                                                                                                NULL, 0,                         false, host_project_info },
     { "project.create",   "Creates a new project folder with a starter scene (the user opens it in the editor)",
                                                                                                HOST_ARGS(ARGS_PROJECT_CREATE),  false, host_project_create },
+    { "play.set",         "Play mode: runs a throwaway copy of the scene (behaviours like Spin move); pause, step, stop",
+                                                                                               HOST_ARGS(ARGS_PLAY_SET),        false, host_play_set },
+    { "play.status",      "Whether the scene is playing, paused or stopped, and for how long it has played",
+                                                                                               NULL, 0,                         false, host_play_status },
 };
 
 #define HOST_COMMAND_COUNT ((uint32)(sizeof(HOST_COMMANDS) / sizeof(HOST_COMMANDS[0])))
@@ -1015,22 +1117,20 @@ watch_agent(editor_state* state)
 static void
 validate_selection(editor_state* state)
 {
-    if (!world_is_alive(&state->scene, state->selected))
+    if (!world_is_alive(active_world(state), state->selected))
         state->selected = ENTITY_NULL;
 }
 
-// A click in the view at window point (x, y): selects what's under it, or
-// clears the selection on empty space.
+// A click in the view at (x, y) pixels from its top-left corner: selects
+// what's under it, or clears the selection on empty space.
 static void
-select_at(editor_state* state, f64 x, f64 y)
+select_at(editor_state* state, f32 x, f32 y)
 {
-    const ImGuiViewport* viewport = igGetMainViewport();
-
     vec3 origin, direction;
-    camera_screen_ray(&state->cam, (f32)x, (f32)y, viewport->Size.x, viewport->Size.y, origin, direction);
+    camera_screen_ray(&state->cam, x, y, state->view_width, state->view_height, origin, direction);
 
     // Lights and cameras have nothing to click on: a 25 cm sphere stands in.
-    state->selected         = world_pick(&state->scene, origin, direction, 0.25f, NULL);
+    state->selected         = world_pick(active_world(state), origin, direction, 0.25f, NULL);
     state->reveal_selection = state->selected != ENTITY_NULL;
 }
 
@@ -1063,22 +1163,21 @@ selection_bounds(const world* w, entity_id e, vec3 lo, vec3 hi)
     return any;
 }
 
-// Outlines the selection over the scene: its bounding box (or a ring at its
-// position for a light, camera or empty), with its name. Drawn with ImGui's
-// background list -- above the 3D view, below every panel. Call after the
+// Outlines the selection over the view: its bounding box (or a ring at its
+// position for a light, camera or empty), with its name, into `draw` (the
+// Viewport window's list, so it stays inside the panel). Call after the
 // world was drawn, with the same pose (inside a Spin preview).
 static void
-draw_selection(editor_state* state)
+draw_selection(editor_state* state, ImDrawList* draw)
 {
-    const world* w = &state->scene;
+    const world* w = active_world(state);
     if (!world_is_alive(w, state->selected))
         return;
 
-    const ImGuiViewport* viewport = igGetMainViewport();
-    ImDrawList*          draw     = igGetBackgroundDrawList((ImGuiViewport*)viewport);
-    const f32            width    = viewport->Size.x;
-    const f32            height   = viewport->Size.y;
-    const ImU32          color    = 0xFF00AAFF;   // orange (ABGR)
+    const ImVec2_c origin = { state->view_x, state->view_y };
+    const f32      width  = state->view_width;
+    const f32      height = state->view_height;
+    const ImU32    color  = 0xFF00AAFF;   // orange (ABGR)
 
     entity_id e = state->selected;
     f32 label_x = 0.0f, label_y = FLT_MAX;
@@ -1111,8 +1210,8 @@ draw_selection(editor_state* state)
         {
             int a = EDGES[i][0], b = EDGES[i][1];
             if (visible[a] && visible[b])
-                ImDrawList_AddLine(draw, (ImVec2_c){ viewport->Pos.x + sx[a], viewport->Pos.y + sy[a] },
-                                   (ImVec2_c){ viewport->Pos.x + sx[b], viewport->Pos.y + sy[b] }, color, 2.0f);
+                ImDrawList_AddLine(draw, (ImVec2_c){ origin.x + sx[a], origin.y + sy[a] },
+                                   (ImVec2_c){ origin.x + sx[b], origin.y + sy[b] }, color, 2.0f);
         }
     }
     else
@@ -1121,7 +1220,7 @@ draw_selection(editor_state* state)
         f32 x, y;
         if (m && camera_world_to_screen(&state->cam, (vec3){ m[3][0], m[3][1], m[3][2] }, width, height, &x, &y))
         {
-            ImDrawList_AddCircle(draw, (ImVec2_c){ viewport->Pos.x + x, viewport->Pos.y + y }, 12.0f, color, 24, 2.0f);
+            ImDrawList_AddCircle(draw, (ImVec2_c){ origin.x + x, origin.y + y }, 12.0f, color, 24, 2.0f);
             label_x  = x;
             label_y  = y - 12.0f;
             labelled = true;
@@ -1131,7 +1230,7 @@ draw_selection(editor_state* state)
     if (labelled)
     {
         const char* name = world_name(w, e);
-        ImDrawList_AddText_Vec2(draw, (ImVec2_c){ viewport->Pos.x + label_x + 4.0f, viewport->Pos.y + label_y - 18.0f },
+        ImDrawList_AddText_Vec2(draw, (ImVec2_c){ origin.x + label_x + 4.0f, origin.y + label_y - 18.0f },
                                 color, name, NULL);
     }
 }
@@ -1147,7 +1246,7 @@ frame_view(editor_state* state, const char* entity)
 
     cJSON* result = NULL;
     char   error[256];
-    if (!host_view_frame(state, &state->commands, args, &result, error, sizeof(error)) && entity)
+    if (!host_view_frame(state, active_commands(state), args, &result, error, sizeof(error)) && entity)
         console_info(&state->console, error);
     cJSON_Delete(result);
     cJSON_Delete(args);
@@ -1159,7 +1258,7 @@ frame_selection(editor_state* state)
 {
     validate_selection(state);
     if (state->selected)
-        frame_view(state, world_name(&state->scene, state->selected));
+        frame_view(state, world_name(active_world(state), state->selected));
 }
 
 // --- Gizmo --------------------------------------------------------------------------
@@ -1207,10 +1306,12 @@ vec3_array(const f32* v)
 // The gizmo works on the world matrix; the edit is the Transform that gives
 // it: local = inverse(parent world) * new world, decomposed back into
 // position / rotation_deg / scale (World/World.h transform_from_matrix()).
+// Drawn into `draw`, the Viewport window's list; `view_hovered`: the mouse
+// is over the view.
 static void
-draw_gizmo(editor_state* state)
+draw_gizmo(editor_state* state, ImDrawList* draw, b8 view_hovered)
 {
-    command_context* ctx = &state->commands;
+    command_context* ctx = active_commands(state);
     world*           w   = ctx->w;
 
     if (!world_is_alive(w, state->selected))
@@ -1230,12 +1331,13 @@ draw_gizmo(editor_state* state)
     const b8   snapping      = state->gizmo_snap != igGetIO_Nil()->KeyCtrl;   // Ctrl flips it while dragging
     const f32* snap          = snapping ? &snap_values[state->gizmo_op] : NULL;
 
-    const ImGuiViewport* viewport    = igGetMainViewport();
-    const b8             interactive = !imgui_layer_wants_mouse() || gizmo_is_using();
+    // Live only while the mouse is over the view (or mid-drag); otherwise
+    // drawn but deaf, so a click on a panel in front never grabs a handle.
+    const b8 interactive = view_hovered || gizmo_is_using();
 
     b8 changed = gizmo_manipulate((const f32*)view, (const f32*)projection, state->gizmo_op, state->gizmo_space,
-                                  (f32*)model, snap, viewport->Pos.x, viewport->Pos.y, viewport->Size.x,
-                                  viewport->Size.y, igGetBackgroundDrawList((ImGuiViewport*)viewport), interactive);
+                                  (f32*)model, snap, state->view_x, state->view_y, state->view_width,
+                                  state->view_height, draw, interactive);
     state->gizmo_hot = gizmo_is_over() || gizmo_is_using();
 
     if (changed)
@@ -1291,31 +1393,199 @@ draw_gizmo(editor_state* state)
         gizmo_finish_edit(state, ctx);
 }
 
-// The Scene panel's gizmo controls.
+// --- Play mode ----------------------------------------------------------------------
+
+// Copies the scene and starts ticking the copy. Not while a chat turn runs:
+// its transaction is open on the edited scene, and its remaining tool calls
+// would land in the copy.
 static void
-draw_gizmo_controls(editor_state* state)
+play_start(editor_state* state)
 {
-    igText("Gizmo (W / E / R)");
+    if (state->play != PLAY_STOPPED)
+        return;
+    if (chat_busy(&state->chat))
+    {
+        console_info(&state->console, "Play: wait for the chat turn to finish (or Stop it) first.");
+        return;
+    }
+
+    inspector_finish_edit(&state->inspector, &state->commands);
+    gizmo_finish_edit(state, &state->commands);
+
+    world_copy(&state->play_world, &state->scene);
+
+    // The same commands and hooks, on the copy, without undo: what happens
+    // in Play is thrown away as a whole.
+    state->play_commands             = state->commands;
+    state->play_commands.w           = &state->play_world;
+    state->play_commands.history     = NULL;
+    state->play_commands.revision    = 0;
+    state->play_commands.batch_depth = 0;
+    state->play_commands.save_refused =
+        "the scene is playing, so what's on screen is Play's throwaway copy; stop first (play.set stop / Ctrl+P), "
+        "then save the edited scene";
+
+    state->play_saved_env = state->env;
+    state->play_time      = 0.0f;
+    state->play_step      = false;
+    state->play           = PLAY_RUNNING;   // same IDs in the copy: the selection carries over
+
+    console_info(&state->console, "Playing. Changes made now are discarded on Stop (Ctrl+P).");
+}
+
+// Throws the copy away and goes back to the edited scene.
+static void
+play_stop(editor_state* state)
+{
+    if (state->play == PLAY_STOPPED)
+        return;
+
+    inspector_finish_edit(&state->inspector, &state->play_commands);
+    gizmo_finish_edit(state, &state->play_commands);
+    if (chat_busy(&state->chat) && state->chat.turn_ctx == &state->play_commands)
+        chat_stop(&state->chat);   // a turn started while playing; its world is going away
+
+    state->play = PLAY_STOPPED;
+    state->env  = state->play_saved_env;   // sync_hdri() re-bakes if Play changed the HDRI
+    world_shutdown(&state->play_world);
+    assets_collect_unused(&state->assets);   // models only the copy used (placed while playing)
+    // The selection stays if it names something in the edited scene
+    // (validate_selection() drops one made while playing).
+
+    char line[96];
+    snprintf(line, sizeof(line), "Stopped after %.1f s of play; back to the edited scene.", (double)state->play_time);
+    console_info(&state->console, line);
+}
+
+static void
+play_toggle_pause(editor_state* state)
+{
+    if (state->play == PLAY_RUNNING)
+        state->play = PLAY_PAUSED;
+    else if (state->play == PLAY_PAUSED)
+        state->play = PLAY_RUNNING;
+}
+
+// This frame's game step: the frame time while running (capped like the
+// game's, so a stall doesn't fling things around), one fixed step if Step
+// asked for it while paused, else nothing.
+static void
+play_advance(editor_state* state, f32 dt)
+{
+    f32 step = 0.0f;
+    if (state->play == PLAY_RUNNING)
+        step = fminf(dt, 0.1f);
+    else if (state->play == PLAY_PAUSED && state->play_step)
+        step = PLAY_STEP_SECONDS;
+    state->play_step = false;
+
+    if (step > 0.0f)
+    {
+        world_tick(&state->play_world, step);
+        state->play_time += step;
+    }
+}
+
+// --- Viewport toolbar ---------------------------------------------------------------
+
+// A button that can be greyed out, with a tooltip saying why (or what it does).
+static b8
+toolbar_button(const char* label, b8 enabled, const char* tooltip)
+{
+    igBeginDisabled(!enabled);
+    b8 pressed = igButton(label, (ImVec2_c){ 0, 0 });
+    igEndDisabled();
+    if (tooltip && igIsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        igSetTooltip("%s", tooltip);
+    igSameLine(0.0f, -1.0f);
+    return pressed;
+}
+
+static void
+toolbar_separator(void)
+{
+    igTextDisabled("|");
+    igSameLine(0.0f, -1.0f);
+}
+
+// Along the Viewport's top: Play / Pause / Step / Stop, the gizmo's
+// operation, space and snapping, and Export.
+static void
+draw_toolbar(editor_state* state)
+{
+    const b8 playing = state->play != PLAY_STOPPED;
+
+    if (!playing)
+    {
+        b8 busy = chat_busy(&state->chat);
+        if (toolbar_button("Play", !busy, busy ? "A chat turn is running" : "Run the scene here (Ctrl+P)"))
+            play_start(state);
+    }
+    else if (toolbar_button("Stop", true, "Back to the edited scene; changes made while playing are dropped (Ctrl+P)"))
+    {
+        play_stop(state);
+    }
+    if (toolbar_button(state->play == PLAY_PAUSED ? "Resume" : "Pause", playing, "Ctrl+Shift+P"))
+        play_toggle_pause(state);
+    if (toolbar_button("Step", state->play == PLAY_PAUSED, "One frame forward (F10)"))
+        state->play_step = true;
+    if (playing)
+    {
+        igTextColored(state->play == PLAY_PAUSED ? (ImVec4_c){ 1.0f, 0.71f, 0.0f, 1.0f } : (ImVec4_c){ 0.31f, 0.78f, 0.31f, 1.0f },
+                      "%s %.1f s", state->play == PLAY_PAUSED ? "Paused" : "Playing", (double)state->play_time);
+        igSameLine(0.0f, -1.0f);
+    }
+    toolbar_separator();
+
     igRadioButton_IntPtr("Move", (int*)&state->gizmo_op, GIZMO_TRANSLATE);
+    if (igIsItemHovered(0)) igSetTooltip("W");
     igSameLine(0.0f, -1.0f);
     igRadioButton_IntPtr("Rotate", (int*)&state->gizmo_op, GIZMO_ROTATE);
+    if (igIsItemHovered(0)) igSetTooltip("E");
     igSameLine(0.0f, -1.0f);
     igRadioButton_IntPtr("Scale", (int*)&state->gizmo_op, GIZMO_SCALE);
+    if (igIsItemHovered(0)) igSetTooltip("R");
+    igSameLine(0.0f, -1.0f);
+    toolbar_separator();
 
     igRadioButton_IntPtr("Local", (int*)&state->gizmo_space, GIZMO_LOCAL);
     igSameLine(0.0f, -1.0f);
     igRadioButton_IntPtr("World", (int*)&state->gizmo_space, GIZMO_WORLD);
     if (state->gizmo_op == GIZMO_SCALE && igIsItemHovered(0))
         igSetTooltip("Scale always follows the object's own axes");
+    igSameLine(0.0f, -1.0f);
+    toolbar_separator();
 
-    igCheckbox("Snap (Ctrl flips)", &state->gizmo_snap);
+    igCheckbox("Snap", &state->gizmo_snap);
+    if (igIsItemHovered(0))
+        igSetTooltip("Ctrl while dragging flips it");
+    igSameLine(0.0f, -1.0f);
+    igSetNextItemWidth(70.0f);
     if (state->gizmo_op == GIZMO_TRANSLATE)
-        igDragFloat("Step (m)", &state->snap_move, 0.01f, 0.01f, 10.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+        igDragFloat("##step", &state->snap_move, 0.01f, 0.01f, 10.0f, "%.2f m", ImGuiSliderFlags_AlwaysClamp);
     else if (state->gizmo_op == GIZMO_ROTATE)
-        igDragFloat("Step (deg)", &state->snap_rotate, 0.5f, 1.0f, 90.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
+        igDragFloat("##step", &state->snap_rotate, 0.5f, 1.0f, 90.0f, "%.0f deg", ImGuiSliderFlags_AlwaysClamp);
     else
-        igDragFloat("Step", &state->snap_scale, 0.01f, 0.01f, 1.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
-    igSeparator();
+        igDragFloat("##step", &state->snap_scale, 0.01f, 0.01f, 1.0f, "x%.2f", ImGuiSliderFlags_AlwaysClamp);
+    igSameLine(0.0f, -1.0f);
+    toolbar_separator();
+
+    toolbar_button("Export", false, "Export the game: coming with Stage 4 (docs/ROADMAP.md)");
+    igNewLine();
+}
+
+// A frame around the view while playing -- green running, amber paused --
+// so a scene about to be thrown away is never mistaken for the edited one.
+static void
+draw_play_frame(editor_state* state, ImDrawList* draw)
+{
+    if (state->play == PLAY_STOPPED)
+        return;
+
+    const ImU32 color = state->play == PLAY_PAUSED ? 0xFF00B4FF : 0xFF50C850;   // ABGR
+    ImDrawList_AddRect(draw, (ImVec2_c){ state->view_x + 1.0f, state->view_y + 1.0f },
+                       (ImVec2_c){ state->view_x + state->view_width - 1.0f, state->view_y + state->view_height - 1.0f },
+                       color, 0.0f, 3.0f, 0);
 }
 
 // --- Running commands for the UI -------------------------------------------------------
@@ -1329,7 +1599,7 @@ run_command(editor_state* state, const char* cmd, cJSON* args)
     cJSON_AddStringToObject(request, "cmd", cmd);
     cJSON_AddItemToObject(request, "args", args ? args : cJSON_CreateObject());
 
-    cJSON* response = cmd_execute(&state->commands, request);
+    cJSON* response = cmd_execute(active_commands(state), request);
     cJSON_Delete(request);
 
     cJSON* result = NULL;
@@ -1394,8 +1664,8 @@ update_title(editor_state* state)
 static void
 finish_edits(editor_state* state)
 {
-    inspector_finish_edit(&state->inspector, &state->commands);
-    gizmo_finish_edit(state, &state->commands);
+    inspector_finish_edit(&state->inspector, active_commands(state));
+    gizmo_finish_edit(state, active_commands(state));
 }
 
 // A fresh undo history: steps from another scene mean nothing in this one.
@@ -1501,6 +1771,11 @@ new_scene(editor_state* state)
 static b8
 save_scene_as(editor_state* state, const char* name)
 {
+    if (state->play != PLAY_STOPPED)
+    {
+        snprintf(state->popup_error, sizeof(state->popup_error), "Stop playing first: what's on screen is Play's copy.");
+        return false;
+    }
     if (!project_scene_name_valid(name))
     {
         snprintf(state->popup_error, sizeof(state->popup_error),
@@ -1532,6 +1807,11 @@ save_scene_as(editor_state* state, const char* name)
 static void
 save_scene(editor_state* state)
 {
+    if (state->play != PLAY_STOPPED)
+    {
+        console_info(&state->console, "Stop playing (Ctrl+P) to save: what's on screen is Play's copy.");
+        return;
+    }
     if (state->scene_name[0])
     {
         save_scene_as(state, state->scene_name);
@@ -1607,6 +1887,10 @@ perform(editor_state* state, pending_action action, const char* arg)
 static void
 request(editor_state* state, pending_action action, const char* arg)
 {
+    // Each of these replaces the edited scene (or quits): Play's copy goes
+    // first, so "unsaved changes" means the edited scene's.
+    play_stop(state);
+
     if ((action == ACTION_NEW_SCENE || action == ACTION_OPEN_SCENE) && chat_busy(&state->chat))
     {
         console_info(&state->console, "Wait for the chat turn to finish (or Stop it) before opening another scene.");
@@ -1640,7 +1924,7 @@ select_result(editor_state* state, cJSON* result)
     const char* name = cJSON_GetStringValue(cJSON_GetObjectItem(result, "name"));
     if (name)
     {
-        state->selected         = world_find(&state->scene, name);
+        state->selected         = world_find(active_world(state), name);
         state->reveal_selection = true;
     }
     cJSON_Delete(result);
@@ -1852,7 +2136,7 @@ draw_main_menu(editor_state* state)
         }
         if (igMenuItem_Bool("Save", "Ctrl+S", false, true))
             save_scene(state);
-        if (igMenuItem_Bool("Save As...", NULL, false, true))
+        if (igMenuItem_Bool("Save As...", NULL, false, state->play == PLAY_STOPPED))
         {
             snprintf(state->save_as_name, sizeof(state->save_as_name), "%s", state->scene_name);
             state->popup_error[0] = '\0';
@@ -2275,7 +2559,6 @@ on_init(App* app)
     f32 aspect = (f32)framebuffer_size.width / (f32)framebuffer_size.height;
     camera_init(&state->cam, (vec3){ 4.0f, 3.0f, 6.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, 45.0f, aspect, 0.1f, 500.0f);
     orbit_from_camera(state);
-    state->dragging = false;
 
     // The project main() checked, and its startup scene.
     char error[640];
@@ -2291,20 +2574,6 @@ on_init(App* app)
 
     if (!open_scene(state, state->project.startup_scene))
         new_scene(state);
-}
-
-// The GL viewport is already updated by App.c before this runs; the
-// projection matrix needs the same treatment or the scene will stretch.
-static void on_resize(App* app, uint16 width, uint16 height)
-{
-    editor_state* state = (editor_state*)app->user_data;
-
-    // 0x0 while minimized -- would make the aspect NaN/inf.
-    if (width == 0 || height == 0)
-        return;
-
-    camera_set_aspect(&state->cam, (f32)width / (f32)height);
-    scene_renderer_resize(&state->renderer, width, height);
 }
 
 // The window's close button: ask about unsaved changes first.
@@ -2337,7 +2606,14 @@ static void on_key(App* app, int key, int action, int mods)
     // Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z): undo / redo, like history.undo /
     // history.redo. Only reaches here when no text field has the keyboard
     // (ImGui handles undo inside those itself).
+    // While playing there's nothing to undo: Stop drops it all.
     if ((mods & GLFW_MOD_CONTROL) && (action == GLFW_PRESS || action == GLFW_REPEAT)
+        && (key == GLFW_KEY_Z || key == GLFW_KEY_Y) && state->play != PLAY_STOPPED)
+    {
+        if (action == GLFW_PRESS)
+            console_info(&state->console, "No undo while playing: Stop (Ctrl+P) discards everything Play changed.");
+    }
+    else if ((mods & GLFW_MOD_CONTROL) && (action == GLFW_PRESS || action == GLFW_REPEAT)
         && (key == GLFW_KEY_Z || key == GLFW_KEY_Y))
     {
         b8 redo = key == GLFW_KEY_Y || (mods & GLFW_MOD_SHIFT);
@@ -2365,6 +2641,19 @@ static void on_key(App* app, int key, int action, int mods)
         state->show_console = !state->show_console;
     if (key == GLFW_KEY_F5 && action == GLFW_PRESS)
         start_game(state);
+
+    // Ctrl+P: Play / Stop; Ctrl+Shift+P: pause / resume; F10: one step while paused.
+    if (key == GLFW_KEY_P && action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL))
+    {
+        if (mods & GLFW_MOD_SHIFT)
+            play_toggle_pause(state);
+        else if (state->play == PLAY_STOPPED)
+            play_start(state);
+        else
+            play_stop(state);
+    }
+    if (key == GLFW_KEY_F10 && (action == GLFW_PRESS || action == GLFW_REPEAT) && state->play == PLAY_PAUSED)
+        state->play_step = true;
 }
 
 // Ambient, exposure and image-based lighting: the scene's environment, not
@@ -2485,25 +2774,159 @@ build_render_settings(const editor_state* state)
     return settings;
 }
 
+// The panels' first-run arrangement, when the dockspace has never been
+// split (no imgui.ini yet): Scene on the left, Entities over the Inspector
+// on the right, Console and Chat along the bottom, the Viewport in the
+// middle. After that, ImGui remembers whatever the user makes of it.
+static void
+default_layout(ImGuiID dockspace)
+{
+    const ImGuiDockNode* node = igDockBuilderGetNode(dockspace);
+    if (node && (node->ChildNodes[0] || node->Windows.Size > 0))
+        return;
+
+    igDockBuilderRemoveNode(dockspace);
+    igDockBuilderAddNode(dockspace, ImGuiDockNodeFlags_DockSpace);
+    igDockBuilderSetNodeSize(dockspace, igGetMainViewport()->WorkSize);
+
+    ImGuiID center = dockspace, left, right, right_bottom, bottom;
+    left   = igDockBuilderSplitNode(center, ImGuiDir_Left, 0.20f, NULL, &center);
+    right  = igDockBuilderSplitNode(center, ImGuiDir_Right, 0.25f, NULL, &center);
+    bottom = igDockBuilderSplitNode(center, ImGuiDir_Down, 0.28f, NULL, &center);
+    right  = igDockBuilderSplitNode(right, ImGuiDir_Up, 0.40f, NULL, &right_bottom);
+
+    igDockBuilderDockWindow("Scene", left);
+    igDockBuilderDockWindow("Entities", right);
+    igDockBuilderDockWindow("Inspector", right_bottom);
+    igDockBuilderDockWindow("Console (F1)", bottom);
+    igDockBuilderDockWindow("Chat", bottom);
+    igDockBuilderDockWindow("Viewport", center);
+    igDockBuilderFinish(dockspace);
+}
+
+// (Re)makes the view's render target at `width` x `height`, with the scene
+// renderer's HDR target and the camera's aspect to match. A no-op if the
+// size is unchanged.
+static void
+fit_view_target(editor_state* state, uint16 width, uint16 height)
+{
+    if (state->view_target && state->view_target_width == width && state->view_target_height == height)
+        return;
+
+    if (state->view_target)
+        rhi_framebuffer_destroy(state->view_target);
+
+    rhi_framebuffer_attachment color = { .format = RHI_FORMAT_RGBA8 };
+    state->view_target = rhi_framebuffer_create((rhi_framebuffer_desc){
+        .width                  = width,
+        .height                 = height,
+        .color_attachments      = &color,
+        .color_attachment_count = 1,
+    });
+    state->view_target_width  = width;
+    state->view_target_height = height;
+
+    scene_renderer_resize(&state->renderer, width, height);
+    camera_set_aspect(&state->cam, (f32)width / (f32)height);
+}
+
+// The "Viewport" panel: the toolbar, then the scene on screen (the copy
+// while playing, ticked by `dt`) rendered at the panel's size into
+// view_target and shown as an image, with the selection outline and the
+// gizmo on top and the mouse controls (view_input()) over it. Docked into
+// the main area the first time.
+static void
+draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt)
+{
+    igSetNextWindowDockID(dockspace, ImGuiCond_FirstUseEver);
+    igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, (ImVec2_c){ 0.0f, 0.0f });
+    // NoNavInputs: with the view focused, keys stay shortcuts (W/E/R, F,
+    // Ctrl+Z ...) instead of moving ImGui's keyboard focus.
+    b8 open = igBegin("Viewport", NULL, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
+                                        | ImGuiWindowFlags_NoNavInputs);
+    igPopStyleVar(1);
+
+    // The game keeps running even when the panel is hidden behind a tab.
+    play_advance(state, dt);
+
+    if (open)
+    {
+        // The toolbar gets the padding the image doesn't.
+        ImVec2_c start = igGetCursorScreenPos();
+        igSetCursorScreenPos((ImVec2_c){ start.x + 6.0f, start.y + 4.0f });
+        igBeginGroup();
+        draw_toolbar(state);
+        igEndGroup();
+        ImVec2_c after = igGetCursorScreenPos();
+        igSetCursorScreenPos((ImVec2_c){ start.x, after.y + 2.0f });
+    }
+
+    ImVec2_c pos  = igGetCursorScreenPos();
+    ImVec2_c size = igGetContentRegionAvail();
+    if (!open || size.x < 1.0f || size.y < 1.0f)
+    {
+        // Hidden behind another tab, collapsed, or no room yet (the first
+        // frame of a new layout): nothing to draw or drag. The empty item
+        // closes the line the cursor was moved to, as ImGui requires.
+        state->gizmo_hot = false;
+        gizmo_finish_edit(state, active_commands(state));
+        if (open)
+            igDummy((ImVec2_c){ 0.0f, 0.0f });
+        igEnd();
+        return;
+    }
+
+    state->view_x      = pos.x;
+    state->view_y      = pos.y;
+    state->view_width  = floorf(size.x);
+    state->view_height = floorf(size.y);
+    fit_view_target(state, (uint16)state->view_width, (uint16)state->view_height);
+
+    // One item over the whole view, so ImGui hands it the mouse (and doesn't
+    // drag the window around instead).
+    igInvisibleButton("##view", (ImVec2_c){ state->view_width, state->view_height }, ImGuiButtonFlags_MouseButtonLeft);
+    b8 hovered = igIsItemHovered(0);
+    view_input(state);
+
+    // Playing, the copy really moves; editing, Spin is only previewed and
+    // the authored pose put back after the draw.
+    world*       shown   = active_world(state);
+    spin_preview preview = { 0 };
+    if (state->play == PLAY_STOPPED)
+        preview = spin_preview_begin(shown, (f32)window_get_time());
+    world_update(shown);
+
+    scene_render_settings settings = build_render_settings(state);
+    scene_renderer_draw_to(&state->renderer, shown, &state->cam, &settings, state->view_target);
+
+    // GL's rows run bottom-up: flip V.
+    ImDrawList*    draw    = igGetWindowDrawList();
+    rhi_texture    color   = rhi_framebuffer_get_color_texture(state->view_target, 0);
+    ImTextureRef_c texture = { NULL, (ImTextureID)rhi_texture_native_handle(color) };
+    ImDrawList_AddImage(draw, texture, pos, (ImVec2_c){ pos.x + state->view_width, pos.y + state->view_height },
+                        (ImVec2_c){ 0.0f, 1.0f }, (ImVec2_c){ 1.0f, 0.0f }, 0xFFFFFFFF);
+
+    draw_selection(state, draw);
+    spin_preview_end(shown, &preview);
+    draw_play_frame(state, draw);
+
+    // Handles on the selection, at its saved pose (after any Spin preview).
+    draw_gizmo(state, draw, hovered);
+    igEnd();
+}
+
 static void on_frame(App* app, f32 dt)
 {
-    (void)dt;
-
     editor_state* state = (editor_state*)app->user_data;
-    window*       wind  = get_renderer()->drawing_window;
 
-    // Left-drag to orbit the camera around the target. Must run after
-    // imgui_layer_new_frame() (WantCaptureMouse needs this frame's ImGui
-    // state) which App.c already guarantees by calling it before on_frame.
     validate_selection(state);
-    orbit_camera_update(state, wind);
 
     // Picks up edits to pbr.vert/pbr.frag saved while the app runs.
     scene_renderer_poll_hot_reload(&state->renderer);
 
     // Requests from other processes -- before rendering, so their changes
     // show this same frame.
-    server_poll(state->server, &state->commands);
+    server_poll(state->server, active_commands(state));
     chat_poll(&state->chat);
     watch_agent(state);
     watch_game(state);
@@ -2511,23 +2934,16 @@ static void on_frame(App* app, f32 dt)
     gizmo_begin_frame();
     sync_hdri(state);
 
-    spin_preview preview = spin_preview_begin(&state->scene, (f32)window_get_time());
-    world_update(&state->scene);
-
-    scene_render_settings settings = build_render_settings(state);
-    scene_renderer_draw(&state->renderer, &state->scene, &state->cam, &settings);
-    draw_selection(state);
-    spin_preview_end(&state->scene, &preview);
-
-    // Handles on the selection, at its saved pose (after any Spin preview).
-    draw_gizmo(state);
-
     // App/on_frame runs between imgui_layer_new_frame() and
     // imgui_layer_render() (see App.c), so any ig*() calls here just work.
     // The menu bar first, so the dockspace fits under it. dockspace_id=0
-    // auto-generates an ID; NULL viewport = the main viewport.
+    // auto-generates an ID; NULL viewport = the main viewport. The scene
+    // lives in the Viewport panel, so the dockspace draws its own
+    // background where no panel is.
     draw_main_menu(state);
-    igDockSpaceOverViewport(0, NULL, ImGuiDockNodeFlags_PassthruCentralNode, NULL);
+    ImGuiID dockspace = igDockSpaceOverViewport(0, NULL, 0, NULL);
+    default_layout(dockspace);
+    draw_viewport(state, dockspace, dt);
 
     igBegin("Scene", NULL, 0);
 
@@ -2548,7 +2964,6 @@ static void on_frame(App* app, f32 dt)
         igTextDisabled("%s", state->game_note);
     igSeparator();
 
-    draw_gizmo_controls(state);
     draw_add_controls(state);
     draw_environment_controls(state);
 
@@ -2556,13 +2971,14 @@ static void on_frame(App* app, f32 dt)
 
     // Every entity and component of the scene, and the command console for it.
     validate_selection(state);   // commands this frame may have removed it
-    entity_panel_draw(&state->scene, "Entities", &state->selected, state->reveal_selection);
-    inspector_draw(&state->inspector, &state->commands, &state->selected, "Inspector");
+    command_context* active = active_commands(state);
+    entity_panel_draw(active->w, "Entities", &state->selected, state->reveal_selection);
+    inspector_draw(&state->inspector, active, &state->selected, "Inspector");
     state->reveal_selection = false;
     if (state->show_console)
-        console_draw(&state->console, &state->commands, "Console (F1)");
+        console_draw(&state->console, active, "Console (F1)");
 
-    if (chat_panel_draw(&state->chat_panel, &state->chat, &state->commands, "Chat", state->agent_note) == CHAT_PANEL_START_AGENT
+    if (chat_panel_draw(&state->chat_panel, &state->chat, active, "Chat", state->agent_note) == CHAT_PANEL_START_AGENT
         && state->server)
         start_agent(state);
 
@@ -2570,10 +2986,13 @@ static void on_frame(App* app, f32 dt)
     update_title(state);
 
     // Whatever changed this frame -- panels, console, agent -- goes to the
-    // live scene file, for a game running with --live.
+    // live scene file, for a game running with --live. Not while playing:
+    // Play's copy and environment are thrown away, so the game shouldn't
+    // follow them (it catches up on Stop).
     // TODO: re-serializes the whole world to detect a change; to be replaced
-    // by an in-editor Play mode / incremental sync (World/LiveScene.h).
-    live_publisher_publish(&state->live, &state->scene, &state->env, window_get_time(), 0.1);
+    // by incremental sync over the command server (World/LiveScene.h).
+    if (state->play == PLAY_STOPPED)
+        live_publisher_publish(&state->live, &state->scene, &state->env, window_get_time(), 0.1);
 }
 
 // Runs from terminate(), before the GL context goes away.
@@ -2581,6 +3000,7 @@ static void on_shutdown(App* app)
 {
     editor_state* state = (editor_state*)app->user_data;
 
+    play_stop(state);                        // the copy holds asset references too
     chat_shutdown(&state->chat);             // closes a running turn's transaction
     server_stop(state->server);              // the agent (--exit-with-app) leaves when its connection closes...
     process_destroy(state->agent_process);   // ...or is ended here
@@ -2593,6 +3013,8 @@ static void on_shutdown(App* app)
     world_shutdown(&state->scene);       // releases the scene's assets...
     assets_shutdown(&state->assets);     // ...then the models themselves
     ibl_destroy(&state->ibl);
+    if (state->view_target)
+        rhi_framebuffer_destroy(state->view_target);
     scene_renderer_destroy(&state->renderer);
 }
 
@@ -2638,8 +3060,6 @@ int main(int argc, char** argv)
         .on_frame         = on_frame,
         .on_shutdown      = on_shutdown,
         .on_key           = on_key,
-        .on_scroll        = on_scroll,
-        .on_resize        = on_resize,
         .on_close_request = on_close_request,
         .user_data        = &state,
         .should_close     = false,

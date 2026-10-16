@@ -86,7 +86,11 @@ typedef struct command_context
     uint32                  module_command_count;
     void*                   module_user;
 
-    const char* scenes_dir;           // where scene.save/load/list work; NULL = assets/scenes
+    const char* scenes_dir;           // where scene.save/load/list work; NULL = the project's scenes/
+
+    // Optional: when set, scene.save refuses with this message -- for a
+    // world that must never reach a file (the editor's Play copy).
+    const char* save_refused;
 
     // Optional: the scene's environment (HDRI, exposure, ...), which the app
     // owns and renders with. scene.save writes it into the file; a replacing

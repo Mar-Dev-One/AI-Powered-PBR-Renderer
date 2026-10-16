@@ -1302,6 +1302,9 @@ scene_path(const command_context* ctx, const char* name, char* out_path, size_t 
 static b8
 cmd_scene_save(command_context* ctx, const cJSON* args, cmd_output* out)
 {
+    if (ctx->save_refused)
+        return fail(out, CMD_ERROR_CONFLICT, "%s", ctx->save_refused);
+
     const char* name;
     char        path[1024];
     if (!arg_string(args, "name", true, &name, out) || !scene_path(ctx, name, path, sizeof(path), out))

@@ -61,6 +61,13 @@ void world_init(world* w, asset_cache* assets);
 // Destroys every entity (releasing their assets) and frees the storage.
 void world_shutdown(world* w);
 
+// Makes `dst` (uninitialized, or shut down) an exact copy of `src`: same
+// slots, generations and free list, so every entity ID names the same
+// entity in both, and the next world_create() hands out the same ID in
+// each. Shares src's asset cache and retains every model the copy uses.
+// For the editor's Play mode, which ticks a copy and throws it away.
+void world_copy(world* dst, const world* src);
+
 // --- Entities ---------------------------------------------------------------
 
 // New entity with a Name and an identity Transform (scale 1). `name` may be

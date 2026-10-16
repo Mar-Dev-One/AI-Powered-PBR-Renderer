@@ -108,6 +108,51 @@ world_shutdown(world* w)
     memset(w, 0, sizeof(*w));
 }
 
+static void*
+copy_array(const void* array, uint32 capacity, size_t element_size)
+{
+    void* copy = grow_array(NULL, capacity, element_size);
+    memcpy(copy, array, (size_t)capacity * element_size);
+    return copy;
+}
+
+void
+world_copy(world* dst, const world* src)
+{
+    world_init(dst, src->assets);
+    if (src->capacity == 0)
+        return;
+
+    dst->capacity      = src->capacity;
+    dst->free_count    = src->free_count;
+    dst->alive_count   = src->alive_count;
+    dst->current_stamp = src->current_stamp;
+
+    #define COPY(field) dst->field = copy_array(src->field, src->capacity, sizeof(*src->field))
+    COPY(generations);
+    COPY(masks);
+    COPY(free_list);
+    COPY(names);
+    COPY(transforms);
+    COPY(parents);
+    COPY(mesh_renderers);
+    COPY(lights);
+    COPY(cameras);
+    COPY(spins);
+    COPY(world_matrices);
+    COPY(bounds_min);
+    COPY(bounds_max);
+    COPY(update_stamps);
+    #undef COPY
+
+    // The copy holds its own references, released by its world_shutdown().
+    for (uint32 i = 0; i < dst->capacity; ++i)
+    {
+        if ((dst->masks[i] & WORLD_ALIVE_BIT) && (dst->masks[i] & COMPONENT_BIT(COMPONENT_MESH_RENDERER)))
+            assets_retain(dst->assets, dst->mesh_renderers[i].model);
+    }
+}
+
 // --- Names --------------------------------------------------------------------
 
 // Index of the live entity called `name`, other than `except_index`, or

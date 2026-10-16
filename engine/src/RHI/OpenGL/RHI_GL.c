@@ -103,6 +103,7 @@ void rhi_gl_get_backend(rhi_backend_api* out_api)
     out_api->shader_set_float = gl_shader_set_float;
 
     out_api->texture_bind = gl_texture_bind;
+    out_api->texture_native_handle = gl_texture_native_handle;
     out_api->texture_create = gl_texture_create;
     out_api->texture_destroy = gl_texture_destroy;
 

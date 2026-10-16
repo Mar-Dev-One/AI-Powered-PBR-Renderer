@@ -192,8 +192,9 @@ F5 in the editor starts `Testbed --live`, which follows the editor through a sha
 
 Next steps:
 
-- [ ] In-editor Play mode: Play copies the world and ticks the copy in the viewport, Stop restores
+- [x] In-editor Play mode: Play copies the world and ticks the copy in the viewport, Stop restores
       the edited world; pause and step. Becomes the main way to test while editing
+      (done with the Viewport toolbar, Stage 3 below)
 - [ ] Panels edit through commands (so every edit is an undoable change event), instead of
       writing components directly
 - [ ] Separate-process live editing by incremental changes over the command server (the game
@@ -255,18 +256,37 @@ doesn't update the editor's saved state, so the title can still show `*` after i
 
 ### Stage 3: Viewport panel
 
-- [ ] Render the scene to an offscreen color texture and show it in a dockable ImGui "Viewport"
+- [x] Render the scene to an offscreen color texture and show it in a dockable ImGui "Viewport"
       window (`igImage`); resize the render targets and the camera aspect to the panel, not the
       window
-- [ ] Input from the panel: orbit, zoom, click-to-pick and the gizmo use panel-local coordinates
+- [x] Input from the panel: orbit, zoom, click-to-pick and the gizmo use panel-local coordinates
       and only act while the panel is hovered (they use the main viewport today); the selection
       outline is drawn in the panel
-- [ ] Toolbar along the panel's top: Play / Pause / Step / Stop, Export, and the gizmo
+
+Status (items 1-2): done. `scene_renderer_draw_to()` renders into the editor's `view_target`
+(RGBA8, the panel's exact size; `rhi_texture_native_handle()` hands it to ImGui), shown in the
+"Viewport" window, docked into the main area on first run. Mouse input reads ImGui's state over
+an invisible button covering the view (`view_input()`): drag orbits, a short click picks, the
+wheel zooms; the outline and gizmo draw into the panel's draw list. The window has
+`NoNavInputs`, so shortcuts keep working with the view focused. `view.screenshot` now renders at
+the panel's size.
+- [x] Toolbar along the panel's top: Play / Pause / Step / Stop, Export, and the gizmo
       move/rotate/scale and local/world toggles (moved from the Scene panel)
-- [ ] Play from the toolbar runs the in-editor Play mode (see "Editor / runtime split" above:
+- [x] Play from the toolbar runs the in-editor Play mode (see "Editor / runtime split" above:
       copy the world, tick the copy, restore on Stop), with a coloured border on the panel while
       playing. Options: view through the scene's Camera entity; play in a separate window
       (today's F5 Testbed)
+
+Status (items 3-4): done. `world_copy()` (exact copy, same IDs; `tests/world_tests.c`). Toolbar:
+Play/Stop (Ctrl+P), Pause/Resume (Ctrl+Shift+P), Step (F10), the play clock, gizmo
+operation/space/snap, Export (disabled until Stage 4). While playing everything on screen --
+view, selection, gizmo, Inspector, Entities, console, server, agent, Add -- works on the copy
+(no undo); Stop drops it and the environment changes made meanwhile. Saving is refused
+(`command_context.save_refused`, also for the agent and scripts); opening a scene or project
+stops play first; Play waits while a chat turn runs. `play.set` / `play.status` commands and a
+`set_play` tool. First run without an imgui.ini gets a default layout (`default_layout()`).
+Not yet: viewing through the scene's Camera entity while playing (the editor camera stays).
+Separate-window play is still F5.
 
 ### Stage 4: Game export
 

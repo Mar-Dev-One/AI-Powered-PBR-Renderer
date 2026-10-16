@@ -150,6 +150,11 @@ void gl_texture_bind(rhi_texture texture, uint32 slot)
     glBindTexture(texture->target, texture->handle);
 }
 
+uint64 gl_texture_native_handle(rhi_texture texture)
+{
+    return texture->handle;
+}
+
 void gl_texture_destroy(rhi_texture texture)
 {
     if (!texture)

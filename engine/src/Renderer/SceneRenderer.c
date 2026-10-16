@@ -232,6 +232,16 @@ scene_renderer_draw(scene_renderer* r, const world* w, const camera* cam,
     scene_renderer_end(r, settings);
 }
 
+void
+scene_renderer_draw_to(scene_renderer* r, const world* w, const camera* cam,
+                       const scene_render_settings* settings, rhi_framebuffer target)
+{
+    rhi_shader shader = scene_renderer_begin(r, w, cam, settings);
+    scene_renderer_draw_world(w, shader);
+    post_end_scene_to(&r->post, settings->exposure, target);
+    rhi_framebuffer_bind_default();
+}
+
 uint8*
 scene_renderer_capture(scene_renderer* r, const world* w, const camera* cam,
                        const scene_render_settings* settings, uint16* out_width, uint16* out_height)
@@ -252,7 +262,7 @@ scene_renderer_capture(scene_renderer* r, const world* w, const camera* cam,
 
     rhi_shader shader = scene_renderer_begin(r, w, cam, settings);
     scene_renderer_draw_world(w, shader);
-    post_end_scene_to(&r->post, settings->exposure, target);   // leaves `target` bound
+    post_end_scene_to(&r->post, settings->exposure, target);   // leaves `target` bound, to read
 
     uint8* pixels = malloc((size_t)width * height * 4);
     if (!pixels)

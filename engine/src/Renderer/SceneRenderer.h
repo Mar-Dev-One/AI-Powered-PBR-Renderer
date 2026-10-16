@@ -92,6 +92,13 @@ void scene_renderer_draw_world(const world* w, rhi_shader shader);
 // Tone-maps the HDR target onto the default framebuffer.
 void scene_renderer_end(scene_renderer* r, const scene_render_settings* settings);
 
+// The whole frame, like scene_renderer_draw(), tone-mapped into `target`
+// (an RGBA8 framebuffer the size of the scene target, see
+// scene_renderer_resize()) instead of the screen -- for a view shown inside
+// a UI panel. Binds the default framebuffer again afterwards.
+void scene_renderer_draw_to(scene_renderer* r, const world* w, const camera* cam,
+                            const scene_render_settings* settings, rhi_framebuffer target);
+
 // Renders the frame -- exactly what scene_renderer_draw() shows, without
 // anything drawn on top such as UI -- into an offscreen buffer and reads it
 // back: tightly packed RGBA8, rows bottom-up (row 0 = bottom). The size is

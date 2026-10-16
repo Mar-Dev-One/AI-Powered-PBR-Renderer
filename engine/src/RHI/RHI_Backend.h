@@ -34,6 +34,7 @@ typedef struct rhi_backend_api
     void       (*shader_set_float)(rhi_shader shader, const char* name, f32 value);
 
     void (*texture_bind)(rhi_texture texture, uint32 slot);
+    uint64 (*texture_native_handle)(rhi_texture texture);
     rhi_texture (*texture_create)(rhi_texture_desc desc);
     void        (*texture_destroy)(rhi_texture texture);
 

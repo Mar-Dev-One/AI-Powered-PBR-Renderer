@@ -137,6 +137,7 @@ void window_set_title(window* wind, const char* title)
 {
     strncpy(wind->title, title, WINDOW_TITLE_MAX_LEN - 1);
     wind->title[WINDOW_TITLE_MAX_LEN - 1] = '\0';
+    glfwSetWindowTitle(wind->handle, wind->title);
 }
 
 

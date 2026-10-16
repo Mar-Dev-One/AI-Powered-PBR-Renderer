@@ -192,6 +192,10 @@ rhi_texture rhi_texture_create_from_file(const char* path,
                                           b8 generate_mipmaps);
 
 void        rhi_texture_bind(rhi_texture texture, uint32 slot);
+// The backend's own name for the texture (an OpenGL texture object), for
+// handing it to code that draws with the backend directly -- Dear ImGui's
+// renderer, to show a render target in a panel. 0 for NULL.
+uint64      rhi_texture_native_handle(rhi_texture texture);
 void        rhi_texture_destroy(rhi_texture texture);
 
 // --- Cubemaps -------------------------------------------------------------

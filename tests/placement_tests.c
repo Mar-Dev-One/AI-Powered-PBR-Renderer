@@ -218,6 +218,14 @@ test_scene_files(void)
     // Path tricks are refused.
     CHECK(!run("{\"cmd\":\"scene.save\",\"args\":{\"name\":\"../evil\"}}"));
     CHECK(error_mentions("only contain letters"));
+
+    // A context that must not save (the editor's Play copy) says why, and
+    // writes nothing.
+    g_ctx.save_refused = "the scene is playing";
+    CHECK(!run("{\"cmd\":\"scene.save\",\"args\":{\"name\":\"refused\"}}"));
+    CHECK(error_mentions("the scene is playing"));
+    CHECK(!file_exists(TEST_SCENES_DIR "/refused.json"));
+    g_ctx.save_refused = NULL;
     CHECK(!run("{\"cmd\":\"scene.load\",\"args\":{\"name\":\"nope\"}}"));
     CHECK(error_mentions("no saved scene"));
 

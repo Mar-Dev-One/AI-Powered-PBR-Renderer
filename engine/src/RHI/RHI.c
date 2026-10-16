@@ -138,6 +138,11 @@ void rhi_texture_bind(rhi_texture texture, uint32 slot)
     backend.texture_bind(texture, slot);
 }
 
+uint64 rhi_texture_native_handle(rhi_texture texture)
+{
+    return texture ? backend.texture_native_handle(texture) : 0;
+}
+
 rhi_texture rhi_texture_create(rhi_texture_desc desc)
 {
     return backend.texture_create(desc);

@@ -346,6 +346,15 @@ TOOLS: list[Tool] = [
         "scene.load", example={"name": "tool_test"},
     ),
 
+    Tool(
+        "set_play",
+        "Play mode: 'play' runs a throwaway copy of the scene so behaviours (Spin) move -- check "
+        "them with a screenshot; 'pause', 'resume', 'step' (one frame, while paused); 'stop' drops "
+        "the copy and returns to the edited scene. Saving is refused while playing.",
+        _schema({"action": {"type": "string", "enum": ["play", "pause", "resume", "step", "stop"]}}, ["action"]),
+        "play.set", example={"action": "stop"}, app_command=True,
+    ),
+
     # --- Project ------------------------------------------------------------------------------
     Tool(
         "project_info",

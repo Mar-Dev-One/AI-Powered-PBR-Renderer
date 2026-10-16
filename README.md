@@ -84,6 +84,17 @@ The **Scene** window's **Add** section puts a model from the project, a cube, sp
 centre of the view, on the ground. Its **Environment** section sets ambient strength, exposure,
 the HDRI (from the project's `hdri/`), IBL, the skybox and its blur.
 
+**Viewport:** the scene is drawn in the **Viewport** panel, docked in the middle the first time;
+like any panel it can be resized, re-docked or pulled out into its own window, and the image
+always matches its size. Orbit, zoom, picking and the gizmo work inside it. Its toolbar holds
+Play / Pause / Step, the gizmo's mode, space and snapping, and Export (coming with game export).
+
+**Play:** **Play** (Ctrl+P) runs a copy of the scene in the Viewport — Spin components turn — with
+a green border (amber while paused; Ctrl+Shift+P pauses, F10 steps one frame). While playing
+you can still select, inspect and move things, and the agent works on the copy too; **Stop**
+throws the copy away, environment changes included, and the edited scene is exactly as it was.
+There's no undo while playing, and saving waits until you stop.
+
 **Selecting:** click an object in the view (a short click; dragging still orbits) or its name in
 the **Entities** panel. The selection is outlined in orange with its name; lights and cameras are
 picked by clicking where they are. **F** frames the selection, **Esc** clears it (and quits when
@@ -98,7 +109,7 @@ or the agent: it is validated (a rejected value shows in red and changes nothing
 live game, and is undoable — a whole drag is one step. **Ctrl+Z** / **Ctrl+Y** undo and redo.
 
 **Gizmo:** the selection gets move / rotate / scale handles in the view —
-**W** / **E** / **R** switch between them. The Scene panel has the **Local / World** toggle (scale
+**W** / **E** / **R** switch between them. The Viewport toolbar has the **Local / World** toggle (scale
 always uses the object's own axes) and **Snap** with its step (meters, degrees or scale factor);
 holding **Ctrl** while dragging flips snapping. A drag is one undoable step, like an Inspector edit,
 and works on parented entities (the result is stored relative to the parent).
@@ -110,6 +121,7 @@ Lights are edited like any entity: select one and change it in the Inspector.
 | Left mouse drag | Orbit the camera |
 | Mouse wheel | Zoom |
 | Ctrl+S | Save the scene |
+| Ctrl+P / Ctrl+Shift+P / F10 | Play or stop / pause or resume / step one frame |
 | F1 | Command console |
 | F5 | Play the scene in the Testbed, following edits |
 | Chat window | Ask the AI agent to build or change the scene |

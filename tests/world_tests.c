@@ -371,6 +371,65 @@ test_tick(asset_cache* assets)
     world_shutdown(&w);
 }
 
+// Play mode support: world_copy() gives an independent copy with the same
+// IDs, holding its own references to the models it uses.
+static void
+test_copy(asset_cache* assets)
+{
+    model box = { 0 };
+    glm_vec3_fill(box.bounds_min, -0.5f);
+    glm_vec3_fill(box.bounds_max,  0.5f);
+    asset_id box_id = assets_add_model(assets, "test:copy_box", box);
+
+    world src;
+    world_init(&src, assets);
+    entity_id pivot = world_create(&src, "pivot");
+    entity_id child = world_create(&src, "child");
+    entity_id gone  = world_create(&src, "gone");
+    world_set_parent(&src, child, pivot);
+    world_add_mesh_renderer(&src, child, box_id);
+    world_add_spin(&src, pivot, (vec3){ 0.0f, 90.0f, 0.0f });
+    world_destroy(&src, gone);
+    world_update(&src);
+
+    world dst;
+    world_copy(&dst, &src);
+    CHECK(world_count(&dst) == 2);
+    CHECK(world_is_alive(&dst, pivot) && world_is_alive(&dst, child) && !world_is_alive(&dst, gone));
+    CHECK(world_parent(&dst, child) == pivot);
+    CHECK(world_find(&dst, "child") == child);
+    CHECK(world_mesh_renderer(&dst, child)->model == box_id);
+
+    // Same free list: both hand out the same next ID (the slot "gone" left).
+    CHECK(world_create(&src, "next") == world_create(&dst, "next"));
+
+    // Independent: ticking the copy leaves the original as it was.
+    world_tick(&dst, 1.0f);
+    CHECK(near(world_transform(&dst, pivot)->rotation_deg[1], 90.0f));
+    CHECK(near(world_transform(&src, pivot)->rotation_deg[1], 0.0f));
+    world_destroy(&dst, child);
+    CHECK(world_is_alive(&src, child));
+
+    // The original going away doesn't free a model the copy uses.
+    entity_id user = world_create(&dst, "user");
+    world_add_mesh_renderer(&dst, user, box_id);
+    world_shutdown(&src);
+    assets_collect_unused(assets);
+    CHECK(assets_is_valid(assets, box_id));
+
+    world_shutdown(&dst);
+    assets_collect_unused(assets);
+    CHECK(!assets_is_valid(assets, box_id));
+
+    // An empty world copies too.
+    world empty, empty_copy;
+    world_init(&empty, assets);
+    world_copy(&empty_copy, &empty);
+    CHECK(world_count(&empty_copy) == 0 && world_create(&empty_copy, "a") != ENTITY_NULL);
+    world_shutdown(&empty_copy);
+    world_shutdown(&empty);
+}
+
 // Gizmo support: transform_from_matrix() undoes transform_to_matrix() --
 // compared as matrices, since different Euler triples can give the same one.
 static b8
@@ -501,6 +560,7 @@ main(void)
     test_reflection(&assets);
     test_tick(&assets);
     test_pick(&assets);
+    test_copy(&assets);
     test_transform_matrix_round_trip();
 
     assets_shutdown(&assets);

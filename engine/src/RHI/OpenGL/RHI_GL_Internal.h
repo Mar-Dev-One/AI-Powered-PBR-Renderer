@@ -89,6 +89,7 @@ void       gl_shader_set_float(rhi_shader shader, const char* name, f32 value);
 // --- RHI_GL_Texture.c ---------------------------------------------------
 rhi_texture gl_texture_create(rhi_texture_desc desc);
 void        gl_texture_bind(rhi_texture texture, uint32 slot);
+uint64      gl_texture_native_handle(rhi_texture texture);
 void        gl_texture_destroy(rhi_texture texture);
 rhi_texture gl_cubemap_create(rhi_cubemap_desc desc);
 void        gl_cubemap_generate_mipmaps(rhi_texture cubemap);
