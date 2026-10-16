@@ -55,6 +55,7 @@ typedef struct App
     uint16 width;
     uint16 height;
     b8     fullscreen;
+    b8     hidden;    // a window that's never shown, for rendering offscreen only
 
     // Dear ImGui (UI/ImGuiLayer.h) for tools like the editor. Off for a game
     // runtime: ImGui is never initialised, so no ig*() / imgui_layer_*() calls.

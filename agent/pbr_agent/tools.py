@@ -372,6 +372,20 @@ TOOLS: list[Tool] = [
         }, ["name"]),
         "project.create", example={"name": "My Game"}, app_command=True, live_example=False,
     ),
+    Tool(
+        "export_game",
+        "Exports the project as a folder a player can run (the game, its saved scenes and only the "
+        "models and HDRIs they use). Only saved scenes go out: save first. The exported game then "
+        "checks itself in the background -- see export_status.",
+        _schema({"folder": {"type": "string", "description": "Where to put it; default Documents/PBR Exports/<project>."}}),
+        "project.export", example={}, app_command=True, live_example=False,
+    ),
+    Tool(
+        "export_status",
+        "The last export: its folder and size, and whether the exported game's own check (loading and "
+        "rendering its startup scene) passed, failed or is still running.",
+        _schema({}), "project.export_status", read_only=True, app_command=True,
+    ),
 ]
 
 TOOLS_BY_NAME: dict[str, Tool] = {tool.name: tool for tool in TOOLS}

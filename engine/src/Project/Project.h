@@ -108,3 +108,43 @@ void project_recent_add(project_recent* list, const char* directory, const char*
 // project) nothing changed and `error` says why.
 b8 project_import_asset(const char* project_dir, const char* source, char* out_key, size_t key_size,
                         char* error, size_t error_size);
+
+// --- Exporting the game -------------------------------------------------------------
+// An export is a folder a player can run, on its own:
+//
+//   <out>/<project name>.exe       the game (options->runtime_exe, renamed)
+//   <out>/*.dll                    options->extra_files (the C++ runtime)
+//   <out>/engine/shaders/          the engine's shaders (Core/Paths.h looks there)
+//   <out>/project.json, scenes/    the project's settings and every saved scene
+//   <out>/models/..., hdri/...     only what those scenes use: each MeshRenderer
+//                                  model (with the files a .gltf / .obj names),
+//                                  each environment HDRI, the default HDRI
+//   <out>/.pbr-export              marks the folder as an export
+//
+// The game finds its project next to itself, so double-clicking the .exe
+// plays the startup scene. Saved scenes only: unsaved edits aren't in it.
+
+typedef struct project_export_options
+{
+    const char*        runtime_exe;   // the game executable to ship
+    const char*        engine_dir;    // the engine root; its shaders/ are copied
+    const char* const* extra_files;   // copied next to the game (may be NULL)
+    uint32             extra_count;
+} project_export_options;
+
+typedef struct project_export_report
+{
+    char   executable[PROJECT_PATH_MAX];   // the exported game
+    uint32 files;                          // copied, the executable included
+    uint32 scenes;
+    uint64 bytes;
+} project_export_report;
+
+// Exports the project in `project_dir` into `out_dir`: a new or empty
+// folder, or an earlier export (its files are replaced; files it no longer
+// needs stay). Everything is checked before anything is copied; on false
+// (`error` says why: a scene uses a file that's missing or outside the
+// project, the startup scene isn't saved, `out_dir` holds other files or is
+// inside the project) nothing was copied.
+b8 project_export(const char* project_dir, const char* out_dir, const project_export_options* options,
+                  project_export_report* report, char* error, size_t error_size);

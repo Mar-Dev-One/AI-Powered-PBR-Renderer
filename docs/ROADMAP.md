@@ -4,6 +4,33 @@ Two tracks: the **AI scene builder** (describe a scene in chat, from Claude Desk
 chat panel inside the app, and have it built) and the **renderer/editor features** around it.
 The AI track drives the order; renderer features slot in where they help it.
 
+_Updated 2026-10-16._ Where things stand: the AI scene builder (Phases 1-5) works from Claude
+Desktop/Code and from the in-app chat. The editor opens projects, edits their scenes in a Viewport
+panel, plays them in place, and exports a game a player can run (Stages 1-4 below).
+
+## Next up
+
+In rough priority order: the open items from the sections below, plus what came up while
+building the export.
+
+1. **Try an export on a PC without Visual Studio.** Everything says it runs (its dependencies are
+   Windows' own DLLs plus the copied C++ runtime), but it has only been run on the build machine.
+2. **Errors a player can see.** The exported game has no console, so a `FATAL` (no OpenGL 4.6, a
+   broken startup scene) just closes it, with the reason only in `log.txt`. Show a message box,
+   and stop writing terminal color codes into `log.txt`.
+3. **Play through the scene's camera.** Play keeps the editor's orbit camera; the game looks
+   through the first Camera entity. A toolbar toggle to see what the player will see.
+4. **Exercise the in-app agent against the live Claude API.** Its loop is only tested with a
+   scripted model (Phase 5).
+5. **Runtime library split** (Editor / runtime split below): the game stops linking ImGui, the
+   command layer and the server.
+6. **Editor polish:** a native folder picker for New/Open Project, Import and Export (paths are
+   typed today); an agent's `scene.save` should update the editor's saved state, so the title
+   loses its `*`.
+7. **Phase 6** of the AI track: asset catalog, verify loop, `fetch_asset`.
+8. **Export, later:** zip it, cache baked IBL maps so the game doesn't bake at startup, scene
+   switching in the game, a pixel comparison in the export check.
+
 ## Done
 
 - [x] Multi-light shading: directional/point/spot in `pbr.frag` (`Renderer/Lighting.h`)
@@ -75,7 +102,8 @@ mid-frame is safe.
 
 Status: done. `World/` (World, Components, Reflect), `Assets/AssetCache`, built-in cube/sphere/plane,
 per-entity material overrides, read-only `UI/EntityPanel`, headless `tests/world_tests.c` (ctest).
-Lit Model and Grid render as before; the ground is now a regular entity.
+Lit Model and Grid render as before; the ground is now a regular entity. (Since Stage 2 both are
+scene files in the sample project: `model_viewer`, `material_grid`.)
 
 ### Phase 2: Command layer (in-engine, no networking) — done
 
@@ -126,7 +154,8 @@ Tested end to end with a stdlib-only Python client (`tests/server_test.py`).
 **Done when:** "add a red sphere left of the avocado" in Claude Desktop appears in the running app.
 
 Status: done (in `agent/`). `EngineClient` (async, discovery with stale-pid check, safe
-reconnect), `tools.py` (24 tools, examples run against the engine as a drift test),
+reconnect), `tools.py` (24 tools then; 30 now, 11 of them editor-only: camera, environment,
+screenshot, project, play, export -- examples run against the engine as a drift test),
 `prompt.py` (shared instructions), `mcp_server.py` / `pbr-mcp` on MCP SDK 2.x (low-level Server,
 stdio, screenshots as images, `scene://current`). Verified end to end through a real MCP client
 against the running Testbed. Registration: `agent/README.md`.
@@ -148,8 +177,6 @@ against the running Testbed. Registration: `agent/README.md`.
 - The app spawns the Python sidecar (path from config) and shows "agent offline" if it isn't
   running. API keys stay in the sidecar's environment.
 
- ### ^^^^ Done ^^^^
-
 **Done when:** the same request works from both front-ends, and each one sees the other's changes
 live.
 
@@ -166,8 +193,9 @@ progress notes between tool calls. Tested end to end against `ServerHost` with a
 
 1. **Asset catalog** `assets/catalog.json`: ID, description, tags, real-world size in meters,
    up axis, pivot. Normalize to meters on import.
-2. **Placement helpers in C:** `on_ground`, `relative_to` (left/right/front/behind/on_top), placement
-   without overlaps, "frame all" for the camera.
+2. ~~**Placement helpers in C:** `on_ground`, `relative_to` (left/right/front/behind/on_top), placement
+   without overlaps, "frame all" for the camera.~~ Done: `place_model` / `entity.place`
+   (`on_ground`, `relative_to` with a gap and no overlap) and `view.frame`.
 3. **Verify loop:** screenshot after multi-step turns, then check for floating objects, overlaps,
    darkness and objects out of frame. This is where LangGraph starts to pay off
    (plan → build → verify → fix); before it, a plain tool-use loop is enough.
@@ -178,13 +206,15 @@ progress notes between tool calls. Tested end to end against `ServerHost` with a
 
 ## Editor / runtime split
 
-The editor (`editor/`) and the game runtime (`testbed/`) are separate apps on one engine library.
-Scenes carry their environment, and `Spin` components run only in the game (`world_tick()`).
+The editor (`editor/`) and the game runtime (`testbed/`, built as `Testbed` for development and
+`Game` for export) are separate apps on one engine library. Scenes carry their environment, and
+`Spin` components run in the game (`world_tick()`) and in the editor's Play mode.
 
 ### Live link: first version, to replace
 
 F5 in the editor starts `Testbed --live`, which follows the editor through a shared scene file
-(`World/LiveScene.h`). It works, but it is a stopgap:
+(`World/LiveScene.h`). In-editor Play now covers most testing, so this matters less. It works,
+but it is a stopgap:
 
 - Whole-world sync: every edit re-serializes and reloads every entity (cost grows with the scene)
 - The game's runtime state is rebuilt on every edit; only `Spin` poses are kept, matched by name
@@ -195,20 +225,22 @@ Next steps:
 - [x] In-editor Play mode: Play copies the world and ticks the copy in the viewport, Stop restores
       the edited world; pause and step. Becomes the main way to test while editing
       (done with the Viewport toolbar, Stage 3 below)
-- [ ] Panels edit through commands (so every edit is an undoable change event), instead of
-      writing components directly
+- [x] Panels edit through commands (so every edit is an undoable change event), instead of
+      writing components directly (the Inspector, gizmo and Add do; the Scene panel's direct
+      light and model controls went away in Stage 2. The environment -- HDRI, exposure,
+      ambient -- isn't World data and still has no undo.)
 - [ ] Separate-process live editing by incremental changes over the command server (the game
       connects as a client and applies `scene.changed` events), replacing the file link
 - [ ] Split the build: a runtime library without ImGui/Chat/Net/Commands for the game, the editor
-      on top (same `engine/` folder)
+      on top (same `engine/` folder). Still open: the exported `Game` links them, unused
 
 ## Projects, viewport panel and game export
 
 Goal: create a project, edit it in the editor, render the scene into an ImGui viewport panel with
 Play / Stop / Export on its toolbar, and export the game as a folder that runs on another machine.
 
-Blocker today: `ASSETS_ROOT` (`Core/Paths.h`) is an absolute path compiled into every binary, so
-the editor can't switch projects and an exported game only runs on the machine that built it.
+All four stages are done; what's left of them is in **Next up** at the top. (The original
+blocker -- `ASSETS_ROOT`, an absolute path compiled into every binary -- went in Stage 1.)
 
 ### Stage 1: Runtime paths (prerequisite for everything below)
 
@@ -279,7 +311,7 @@ the panel's size.
 
 Status (items 3-4): done. `world_copy()` (exact copy, same IDs; `tests/world_tests.c`). Toolbar:
 Play/Stop (Ctrl+P), Pause/Resume (Ctrl+Shift+P), Step (F10), the play clock, gizmo
-operation/space/snap, Export (disabled until Stage 4). While playing everything on screen --
+operation/space/snap, Export (enabled in Stage 4). While playing everything on screen --
 view, selection, gizmo, Inspector, Entities, console, server, agent, Add -- works on the copy
 (no undo); Stop drops it and the environment changes made meanwhile. Saving is refused
 (`command_context.save_refused`, also for the agent and scripts); opening a scene or project
@@ -290,20 +322,35 @@ Separate-window play is still F5.
 
 ### Stage 4: Game export
 
-- [ ] The runtime plays a project: `Testbed --project <dir>`, or with no arguments the
+- [x] The runtime plays a project: `Testbed --project <dir>`, or with no arguments the
       `project.json` next to the executable; opens the startup scene, window title and size from
       the project
-- [ ] A shippable runtime: a Release build of the game, linked without the editor parts (needs
-      the runtime library split above), no console window on Windows (WIN32 subsystem), named
-      after the project. The editor finds a prebuilt one beside itself
-- [ ] Export (toolbar button and `editor.export` command): choose an output folder, then copy
+- [x] A shippable runtime: a Release build of the game, no console window on Windows (WIN32
+      subsystem), named after the project. The editor finds a prebuilt one beside itself
+- [ ] ...linked without the editor parts (needs the runtime library split above)
+- [x] Export (toolbar button and `editor.export` command): choose an output folder, then copy
       the runtime executable and the DLLs it needs, the engine shaders, `project.json`, the
       scenes, and only the assets those scenes reference (walk every MeshRenderer model and the
       environment HDRI). Report the size and any missing files; refuse when a scene points
       outside the project
-- [ ] Check the export: run the exported game headless on the startup scene and screenshot it
+- [x] Check the export: run the exported game headless on the startup scene and screenshot it
       (reuses golden-image tests), so a broken export fails in the editor and not on a player's
       machine
+
+Status: done. `project_export()` (`Project/Project.h`, tested in `tests/project_tests.c`) writes
+`<Name>.exe`, the C++ runtime DLLs, `engine/shaders/`, `project.json`, every saved scene and only
+the models (with their .gltf/.obj files) and HDRIs they use; everything is checked first, and it
+refuses missing files, paths outside the project, an unsaved startup scene, and folders that
+aren't empty or an earlier export. `Game` target: `testbed/main.c` with `PBR_GAME_RUNTIME` -- no
+console window, log in `log.txt` beside it; it finds `project.json` next to itself and takes the
+title and window size from it. The editor ships the Release `Game` when it's built (else the
+Debug one, with a warning), with the DLLs CMake's `InstallRequiredSystemLibraries` finds.
+`--check PNG`: the exported game renders its startup scene in a hidden window and exits 0/1; the
+Export dialog runs it in the background and shows the picture. Toolbar Export, File > Export
+Game, `project.export` / `project.export_status` commands and tools.
+Not done: the runtime library split (the game still links ImGui, the command layer and the
+server code, unused: the Release game is 1.7 MB); a pixel comparison against saved golden
+images (the check only proves the scene loads and renders); scene switching in the game.
 - [ ] Later: zip the export; cache baked IBL maps in the export so the game doesn't bake at
       startup; scene switching in the game (a component or a startup list)
 
@@ -321,16 +368,17 @@ Separate-window play is still F5.
 
 ### With the ECS / AI work
 
-- [ ] Mouse picking (enables "make *this* red")
-- [ ] Gizmos ([ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo)): move, rotate and scale what
-      the AI placed
-- [ ] Outliner and inspector panels (driven by the reflection table)
+- [x] Mouse picking (enables "make *this* red"): click in the Viewport (`world_pick()`)
+- [x] Gizmos ([ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo)): move, rotate and scale what
+      the AI placed (W/E/R, local/world, snapping, one undo step per drag)
+- [x] Outliner and inspector panels (driven by the reflection table): Entities and Inspector
 - [ ] Asset browser with thumbnails, from the catalog
 - [ ] Fly camera alongside the orbit camera
 - [ ] Frustum culling (from `Bounds`)
 - [ ] Instancing for repeated assets
 - [ ] Transparency sorting across all entities, not just within one model
-- [ ] AI: selection and camera context sent automatically to the in-app agent
+- [ ] AI: selection and camera context sent automatically to the in-app agent (picking now
+      exists, so "make *this* red" just needs the selection passed along)
 - [ ] AI: lighting presets `set_lighting_mood("sunset")` (sun, color, HDRI, exposure)
 - [ ] AI: scene templates (studio, outdoor daylight, product shot)
 - [ ] AI: camera shots (close-up, wide, rule-of-thirds framing)

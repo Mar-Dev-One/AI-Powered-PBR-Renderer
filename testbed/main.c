@@ -19,6 +19,19 @@
 //                   (World/LiveScene.h) and pick up every edit as it happens,
 //                   instead of loading `scene` once. F5 in the editor starts
 //                   the game this way.
+//     --check PNG   load the scene in a hidden window, render a few frames,
+//                   save the picture to PNG and exit: 0 if the scene loaded
+//                   and rendered, 1 if not. The editor checks every export
+//                   this way.
+//
+// The project: --project, else a project.json next to the executable (an
+// exported game, Project/Project.h project_export()), else the source tree's
+// assets/. Its project.json names the startup scene, and the window's title
+// and size.
+//
+// Built twice: Testbed (a console program, for development: its log shows
+// in the terminal) and Game (PBR_GAME_RUNTIME: no console window, the log
+// goes to log.txt next to it) -- the executable an export ships.
 //
 // The game runs the scene's behaviours (World/World.h world_tick(): Spin
 // components turn their entities); the editor only previews them, keeping
@@ -36,6 +49,7 @@
 #include "Assets/AssetCache.h"
 #include "Core/Defines.h"
 #include "Core/FileIO.h"
+#include "Core/Image.h"
 #include "Core/Paths.h"
 #include "Platform/Window.h"
 #include "Project/Project.h"
@@ -65,10 +79,21 @@
 #define SHADOW_MAP_SIZE 2048
 #define CASCADE_COUNT   4
 
+// --check renders this many frames (the shadows and IBL settle) before the
+// picture is taken.
+#define CHECK_FRAMES 3
+
 typedef struct game_state
 {
     const char* scene_arg;
     const char* hdri_arg;
+    b8          scene_loaded;
+
+    // --check: where the picture goes, frames drawn so far, and the verdict
+    // main() returns.
+    const char* check_path;
+    uint32      check_frames;
+    b8          check_passed;
 
     asset_cache     assets;
     world           world;
@@ -369,14 +394,14 @@ on_init(App* app)
         live_watcher_init(&state->watcher, NULL);
         cJSON* scene = live_watcher_poll(&state->watcher, 0.0, 0.0);
         if (scene)
-            apply_scene(state, scene, state->watcher.path, false);
+            state->scene_loaded = apply_scene(state, scene, state->watcher.path, false);
         else
             LOG_INFO("testbed: waiting for the editor (%s)\n", state->watcher.path);
         cJSON_Delete(scene);
     }
     else
     {
-        load_scene(state, state->scene_arg);
+        state->scene_loaded = load_scene(state, state->scene_arg);
     }
     world_update(&state->world);
 
@@ -423,6 +448,36 @@ on_scroll(App* app, f64 dx, f64 dy)
     orbit_camera_apply(state);
 }
 
+// --check: the frame as a PNG at check_path. False (logged) if it can't be
+// rendered or written.
+static b8
+save_check_picture(game_state* state, const scene_render_settings* settings)
+{
+    uint16 width, height;
+    uint8* rgba = scene_renderer_capture(&state->renderer, &state->world, &state->cam, settings, &width, &height);
+    if (!rgba)
+    {
+        LOG_ERROR("check: nothing was rendered\n");
+        return false;
+    }
+
+    size_t png_size = 0;
+    uint8* png      = image_encode_png(rgba, width, height, 4, &png_size);
+    free(rgba);
+
+    FILE* file = png ? fopen(state->check_path, "wb") : NULL;
+    b8    ok   = file && fwrite(png, 1, png_size, file) == png_size;
+    if (file)
+        ok = fclose(file) == 0 && ok;
+    free(png);
+
+    if (ok)
+        LOG_INFO("check: %s\n", state->check_path);
+    else
+        LOG_ERROR("check: couldn't write %s\n", state->check_path);
+    return ok;
+}
+
 static void
 on_frame(App* app, f32 dt)
 {
@@ -462,6 +517,12 @@ on_frame(App* app, f32 dt)
     scene_render_settings_apply_environment(&settings, &state->env, &state->ibl);
 
     scene_renderer_draw(&state->renderer, &state->world, &state->cam, &settings);
+
+    if (state->check_path && ++state->check_frames >= CHECK_FRAMES)
+    {
+        state->check_passed = state->scene_loaded && save_check_picture(state, &settings);
+        app->should_close   = true;
+    }
 }
 
 static void
@@ -489,22 +550,45 @@ parse_size(const char* text, uint16 max)
 static void
 print_usage(void)
 {
-    printf("usage: Testbed [--width N] [--height N] [--fullscreen] [--live] [--project DIR] [scene] [hdri]\n"
+    printf("usage: Testbed [--width N] [--height N] [--fullscreen] [--live] [--project DIR] [--check PNG] [scene] [hdri]\n"
            "  --live     follow the scene the editor is editing, live\n"
-           "  --project  the project folder (default: the source tree's assets/)\n"
+           "  --project  the project folder (default: one next to the program, else the source tree's assets/)\n"
+           "  --check    render the scene once, hidden, into PNG and exit (0 = it loaded and rendered)\n"
            "  scene      name under the project's scenes/ or a path to a .json file\n"
            "             (default: the project's startup scene, else %s)\n"
            "  hdri       .hdr under the project, overriding the scene's own\n", DEFAULT_SCENE);
 }
 
+#ifdef PBR_GAME_RUNTIME
+// The game has no console: its log goes to log.txt beside it (replaced each
+// run), which is where to look when a player reports a problem.
+static void
+log_to_file(void)
+{
+    char path[1024];
+    snprintf(path, sizeof(path), "%s/log.txt", paths_executable_dir());
+    if (freopen(path, "w", stdout))
+    {
+        setvbuf(stdout, NULL, _IONBF, 0);
+        if (freopen(path, "a", stderr))
+            setvbuf(stderr, NULL, _IONBF, 0);
+    }
+}
+#endif
+
 int main(int argc, char** argv)
 {
+#ifdef PBR_GAME_RUNTIME
+    log_to_file();
+#endif
+
     game_state state = { 0 };
 
-    uint16 width      = 0;
-    uint16 height     = 0;
-    b8     fullscreen = false;
-    int    positional = 0;
+    uint16 width       = 0;
+    uint16 height      = 0;
+    b8     fullscreen  = false;
+    b8     has_project = false;
+    int    positional  = 0;
 
     for (int i = 1; i < argc; ++i)
     {
@@ -523,6 +607,17 @@ int main(int argc, char** argv)
             if (!dir || !paths_set_project_root(dir))
             {
                 fprintf(stderr, "--project needs an existing folder\n");
+                print_usage();
+                return 1;
+            }
+            has_project = true;
+        }
+        else if (strcmp(arg, "--check") == 0)
+        {
+            state.check_path = i + 1 < argc ? argv[++i] : NULL;
+            if (!state.check_path)
+            {
+                fprintf(stderr, "--check needs the PNG file to write\n");
                 print_usage();
                 return 1;
             }
@@ -567,25 +662,31 @@ int main(int argc, char** argv)
         }
     }
 
-    // No scene named: the one the project starts with.
-    static project_settings project;
-    if (!state.scene_arg)
-    {
-        state.scene_arg = DEFAULT_SCENE;
-        if (project_exists(paths_project_root()) && project_read(paths_project_root(), &project, NULL, 0))
-            state.scene_arg = project.startup_scene;
-    }
+    // An exported game: its project is the folder it sits in.
+    if (!has_project && project_exists(paths_executable_dir()))
+        paths_set_project_root(paths_executable_dir());
 
-    // Windowed defaults to 1920 x 1080 (Full HD); fullscreen to the monitor's own mode
-    // (Platform/Window.h), unless a size was given.
+    // The project names the startup scene (when no scene is given), the
+    // window's title and its size.
+    static project_settings project;
+    b8 has_settings = project_exists(paths_project_root()) && project_read(paths_project_root(), &project, NULL, 0);
+    if (!state.scene_arg)
+        state.scene_arg = has_settings ? project.startup_scene : DEFAULT_SCENE;
+
+    // Windowed: the size given, else the project's, else 1920 x 1080 (a
+    // check renders smaller: it's only a picture). Fullscreen: the monitor's
+    // own mode (Platform/Window.h) unless a size was given.
     if (!fullscreen)
     {
-        width  = width ? width : 1920;
-        height = height ? height : 1080;
+        uint16 default_width  = state.check_path ? 960 : has_settings ? project.window_width : 1920;
+        uint16 default_height = state.check_path ? 540 : has_settings ? project.window_height : 1080;
+        width  = width ? width : default_width;
+        height = height ? height : default_height;
     }
 
     App app = {
-        .name        = state.live ? "PBR Renderer (live from the editor)" : "PBR Renderer",
+        .name        = state.live ? "PBR Renderer (live from the editor)" : has_settings ? project.name : "PBR Renderer",
+        .hidden      = state.check_path != NULL,
         .width       = width,
         .height      = height,
         .fullscreen  = fullscreen,
@@ -602,5 +703,7 @@ int main(int argc, char** argv)
     run(&app);
     terminate(&app);
 
+    if (state.check_path)
+        return state.check_passed ? 0 : 1;
     return 0;
 }

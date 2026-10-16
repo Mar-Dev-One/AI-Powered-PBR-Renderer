@@ -60,6 +60,19 @@ from the panels, the console or the agent — within a fraction of a second, whi
 stays the source of truth. The game started by F5 closes with the editor; its output goes to
 `~/.pbr-renderer/game.log`.
 
+**Exporting a game.** **Export** (Viewport toolbar, or File > Export Game) makes a folder a player
+can run: `<project name>.exe`, the C++ runtime DLLs it needs, the engine's shaders, `project.json`,
+every saved scene, and only the models and HDRIs those scenes use. Double-clicking the `.exe`
+plays the startup scene in a window titled and sized from Project Settings; its log goes to
+`log.txt` beside it. Only saved scenes are exported. After copying, the editor runs the exported
+game once in a hidden window (`--check`) and shows what it rendered, so a broken export shows up
+in the editor rather than on a player's PC. Build the Release game first so the export runs on PCs
+without Visual Studio (the dialog warns otherwise):
+
+```sh
+cmake --build build --config Release --target Game
+```
+
 ## Using the editor
 
 **Projects.** The editor works on a project: a folder with a `project.json` (name, startup scene,

@@ -1,5 +1,6 @@
 #include "Project.h"
 
+#include "../Assets/AssetCache.h"
 #include "../Core/FileIO.h"
 #include "../Core/Paths.h"
 #include "../World/Serialize.h"
@@ -9,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #define PROJECT_DEFAULT_SCENE "main"
 
@@ -427,31 +429,47 @@ project_recent_add(project_recent* list, const char* directory, const char* file
 
 // --- Importing assets ---------------------------------------------------------------
 
-#define IMPORT_MAX_FILES 256
-
-// The files one import copies: source -> destination, both absolute.
+// The files an import or export copies: source -> destination, both full
+// paths, each destination once. Checked in full before anything is copied.
 typedef struct import_plan
 {
     char   (*sources)[PROJECT_PATH_MAX];
     char   (*destinations)[PROJECT_PATH_MAX];
     uint32 count;
+    uint32 capacity;
 } import_plan;
 
 static b8
 plan_add(import_plan* plan, const char* source, const char* destination, char* error, size_t error_size)
 {
+    (void)error; (void)error_size;
     for (uint32 i = 0; i < plan->count; ++i)
     {
         if (same_path(plan->destinations[i], destination))
-            return true;   // named twice (two images sharing a file)
+            return true;   // named twice (two images sharing a file, two scenes using a model)
     }
-    if (plan->count >= IMPORT_MAX_FILES)
-        return fail(error, error_size, "the model names more than %d files", IMPORT_MAX_FILES);
+
+    if (plan->count == plan->capacity)
+    {
+        plan->capacity     = plan->capacity ? plan->capacity * 2 : 64;
+        plan->sources      = realloc(plan->sources, sizeof(*plan->sources) * plan->capacity);
+        plan->destinations = realloc(plan->destinations, sizeof(*plan->destinations) * plan->capacity);
+        if (!plan->sources || !plan->destinations)
+            FATAL("project: out of memory");
+    }
 
     snprintf(plan->sources[plan->count], PROJECT_PATH_MAX, "%s", source);
     snprintf(plan->destinations[plan->count], PROJECT_PATH_MAX, "%s", destination);
     ++plan->count;
     return true;
+}
+
+static void
+plan_free(import_plan* plan)
+{
+    free(plan->sources);
+    free(plan->destinations);
+    *plan = (import_plan){ 0 };
 }
 
 // "a%20b.png" -> "a b.png" (glTF URIs are percent-encoded).
@@ -636,6 +654,28 @@ make_parent(const char* path)
     return file_make_directories(folder);
 }
 
+static uint64
+file_size(const char* path)
+{
+    struct stat info;
+    return stat(path, &info) == 0 ? (uint64)info.st_size : 0;
+}
+
+// Copies every file of the plan, making folders as needed, and adds the
+// bytes copied to *out_bytes (may be NULL).
+static b8
+plan_copy(const import_plan* plan, uint64* out_bytes, char* error, size_t error_size)
+{
+    for (uint32 i = 0; i < plan->count; ++i)
+    {
+        if (!make_parent(plan->destinations[i]) || !file_copy(plan->sources[i], plan->destinations[i]))
+            return fail(error, error_size, "could not copy %s to %s", plan->sources[i], plan->destinations[i]);
+        if (out_bytes)
+            *out_bytes += file_size(plan->destinations[i]);
+    }
+    return true;
+}
+
 b8
 project_import_asset(const char* project_dir, const char* source, char* out_key, size_t key_size,
                      char* error, size_t error_size)
@@ -681,12 +721,7 @@ project_import_asset(const char* project_dir, const char* source, char* out_key,
         return fail(error, error_size, "the project already has %s; rename the file to import it again", key);
 
     import_plan plan = { 0 };
-    plan.sources      = malloc(sizeof(*plan.sources) * IMPORT_MAX_FILES);
-    plan.destinations = malloc(sizeof(*plan.destinations) * IMPORT_MAX_FILES);
-    if (!plan.sources || !plan.destinations)
-        FATAL("project: out of memory");
-
-    char destination_dir[PROJECT_PATH_MAX];
+    char        destination_dir[PROJECT_PATH_MAX];
     snprintf(destination_dir, sizeof(destination_dir), "%s/models/%s", project_dir, stem);
 
     b8 ok = plan_add(&plan, source_path, destination, error, error_size);
@@ -696,17 +731,241 @@ project_import_asset(const char* project_dir, const char* source, char* out_key,
         ok = plan_obj(&plan, source_path, source_dir, destination_dir, file_name, error, error_size);
 
     // Everything checked; now copy.
-    for (uint32 i = 0; ok && i < plan.count; ++i)
-    {
-        ok = make_parent(plan.destinations[i]) && file_copy(plan.sources[i], plan.destinations[i]);
-        if (!ok)
-            fail(error, error_size, "could not copy %s to %s", plan.sources[i], plan.destinations[i]);
-    }
-
-    free(plan.sources);
-    free(plan.destinations);
+    ok = ok && plan_copy(&plan, NULL, error, error_size);
+    plan_free(&plan);
 
     if (ok && out_key)
         snprintf(out_key, key_size, "%s", key);
+    return ok;
+}
+
+// --- Exporting the game --------------------------------------------------------------
+
+#define EXPORT_MARKER ".pbr-export"
+
+// Plans `relative` (a path a scene uses, e.g. "models/lamp/lamp.gltf") from
+// the project into the export, with the files a .gltf / .obj names.
+// `scene` names the scene file for the error message.
+static b8
+plan_project_asset(import_plan* plan, const char* project_dir, const char* out_dir, const char* relative,
+                   const char* scene, char* error, size_t error_size)
+{
+    if (!relative_path_safe(relative))
+        return fail(error, error_size, "%s uses \"%s\", which is outside the project; only files in the project "
+                    "can be exported (File > Import Asset brings one in)", scene, relative);
+
+    char source[PROJECT_PATH_MAX], destination[PROJECT_PATH_MAX];
+    snprintf(source, sizeof(source), "%s/%s", project_dir, relative);
+    snprintf(destination, sizeof(destination), "%s/%s", out_dir, relative);
+    if (!file_exists(source))
+        return fail(error, error_size, "%s uses \"%s\", which isn't in the project (%s)", scene, relative, source);
+
+    if (!plan_add(plan, source, destination, error, error_size))
+        return false;
+
+    // Its folder, both sides, and its name: what plan_gltf() / plan_obj() work from.
+    char source_dir[PROJECT_PATH_MAX], destination_dir[PROJECT_PATH_MAX];
+    snprintf(source_dir, sizeof(source_dir), "%s", source);
+    snprintf(destination_dir, sizeof(destination_dir), "%s", destination);
+    *strrchr(source_dir, '/')      = '\0';
+    *strrchr(destination_dir, '/') = '\0';
+    const char* file_name = strrchr(source, '/') + 1;
+
+    if (has_extension(file_name, ".gltf"))
+        return plan_gltf(plan, source, source_dir, destination_dir, file_name, error, error_size);
+    if (has_extension(file_name, ".obj"))
+        return plan_obj(plan, source, source_dir, destination_dir, file_name, error, error_size);
+    return true;
+}
+
+typedef struct export_scan
+{
+    import_plan* plan;
+    const char*  project_dir;
+    const char*  out_dir;
+    char*        error;
+    size_t       error_size;
+    b8           ok;
+    uint32       scenes;
+} export_scan;
+
+// One scene file: itself, every model its MeshRenderers use, its HDRI.
+static void
+visit_export_scene(const char* name, b8 is_directory, void* user_data)
+{
+    export_scan* scan   = user_data;
+    size_t       length = strlen(name);
+    if (!scan->ok || is_directory || length < 6 || strcmp(name + length - 5, ".json") != 0)
+        return;
+
+    char relative[PROJECT_PATH_MAX], source[PROJECT_PATH_MAX], destination[PROJECT_PATH_MAX];
+    snprintf(relative, sizeof(relative), "scenes/%s", name);
+    snprintf(source, sizeof(source), "%s/%s", scan->project_dir, relative);
+    snprintf(destination, sizeof(destination), "%s/%s", scan->out_dir, relative);
+
+    char*  text  = file_read_to_string(source);
+    cJSON* scene = text ? cJSON_Parse(text) : NULL;
+    free(text);
+    if (!cJSON_IsArray(cJSON_GetObjectItem(scene, "entities")))
+    {
+        cJSON_Delete(scene);
+        scan->ok = fail(scan->error, scan->error_size, "%s isn't a readable scene file", relative);
+        return;
+    }
+
+    b8 ok = plan_add(scan->plan, source, destination, scan->error, scan->error_size);
+
+    const cJSON* entity;
+    cJSON_ArrayForEach(entity, cJSON_GetObjectItem(scene, "entities"))
+    {
+        const cJSON* mesh  = cJSON_GetObjectItem(cJSON_GetObjectItem(entity, "components"), "MeshRenderer");
+        const char*  model = cJSON_GetStringValue(cJSON_GetObjectItem(mesh, "model"));
+        if (ok && model && !assets_is_builtin_key(model))
+            ok = plan_project_asset(scan->plan, scan->project_dir, scan->out_dir, model, relative, scan->error, scan->error_size);
+    }
+
+    const char* hdri = cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(scene, "environment"), "hdri"));
+    if (ok && hdri && hdri[0])
+        ok = plan_project_asset(scan->plan, scan->project_dir, scan->out_dir, hdri, relative, scan->error, scan->error_size);
+
+    cJSON_Delete(scene);
+    scan->ok = ok;
+    ++scan->scenes;
+}
+
+static void
+visit_marker_check(const char* name, b8 is_directory, void* user_data)
+{
+    (void)is_directory;
+    uint32* counts = user_data;
+    ++counts[0];
+    if (strcmp(name, EXPORT_MARKER) == 0)
+        ++counts[1];
+}
+
+typedef struct shader_scan
+{
+    import_plan* plan;
+    const char*  from;
+    const char*  to;
+} shader_scan;
+
+static void
+visit_shader(const char* name, b8 is_directory, void* user_data)
+{
+    shader_scan* scan = user_data;
+    if (is_directory)
+        return;
+    char source[PROJECT_PATH_MAX], destination[PROJECT_PATH_MAX];
+    snprintf(source, sizeof(source), "%s/%s", scan->from, name);
+    snprintf(destination, sizeof(destination), "%s/%s", scan->to, name);
+    plan_add(scan->plan, source, destination, NULL, 0);
+}
+
+// The last part of a path ("C:/x/vcruntime140.dll" -> "vcruntime140.dll").
+static const char*
+base_name(const char* path)
+{
+    const char* slash     = strrchr(path, '/');
+    const char* backslash = strrchr(path, '\\');
+    if (backslash && (!slash || backslash > slash))
+        slash = backslash;
+    return slash ? slash + 1 : path;
+}
+
+b8
+project_export(const char* project_dir, const char* out_dir, const project_export_options* options,
+               project_export_report* report, char* error, size_t error_size)
+{
+    memset(report, 0, sizeof(*report));
+
+    project_settings settings;
+    if (!project_read(project_dir, &settings, error, error_size))
+        return false;
+    if (!options->runtime_exe || !file_exists(options->runtime_exe))
+        return fail(error, error_size, "no game executable at %s; build the Game target",
+                    options->runtime_exe ? options->runtime_exe : "(none given)");
+
+    char shaders_dir[PROJECT_PATH_MAX];
+    snprintf(shaders_dir, sizeof(shaders_dir), "%s/shaders", options->engine_dir ? options->engine_dir : "");
+    if (!file_is_directory(shaders_dir))
+        return fail(error, error_size, "no engine shaders at %s", shaders_dir);
+
+    // Not into the project itself, and not over something that isn't an
+    // earlier export (whose files get replaced).
+    size_t project_length = strlen(project_dir);
+    if (same_path(out_dir, project_dir)
+        || (strlen(out_dir) > project_length && strncmp(out_dir, project_dir, project_length) == 0
+            && (out_dir[project_length] == '/' || out_dir[project_length] == '\\')))
+        return fail(error, error_size, "export somewhere outside the project folder");
+    if (file_exists(out_dir))
+        return fail(error, error_size, "%s is a file, not a folder", out_dir);
+    uint32 counts[2] = { 0, 0 };   // entries, markers
+    if (file_is_directory(out_dir))
+        file_list_directory(out_dir, visit_marker_check, counts);
+    if (counts[0] > 0 && counts[1] == 0)
+        return fail(error, error_size, "%s already has files in it that aren't an earlier export; pick an empty or new folder",
+                    out_dir);
+
+    import_plan plan = { 0 };
+    char        source[PROJECT_PATH_MAX], destination[PROJECT_PATH_MAX];
+
+    // The game, named after the project, and the libraries it needs.
+    snprintf(report->executable, sizeof(report->executable), "%s/%s.exe", out_dir, settings.name);
+    plan_add(&plan, options->runtime_exe, report->executable, NULL, 0);
+    for (uint32 i = 0; i < options->extra_count; ++i)
+    {
+        if (!file_exists(options->extra_files[i]))
+        {
+            plan_free(&plan);
+            return fail(error, error_size, "missing %s, which the game needs next to it", options->extra_files[i]);
+        }
+        snprintf(destination, sizeof(destination), "%s/%s", out_dir, base_name(options->extra_files[i]));
+        plan_add(&plan, options->extra_files[i], destination, NULL, 0);
+    }
+
+    // The engine's shaders, where the game looks for them (Core/Paths.h).
+    snprintf(destination, sizeof(destination), "%s/engine/shaders", out_dir);
+    shader_scan shaders = { &plan, shaders_dir, destination };
+    file_list_directory(shaders_dir, visit_shader, &shaders);
+
+    // The project: its settings, every scene, and what the scenes use.
+    snprintf(source, sizeof(source), "%s/%s", project_dir, PROJECT_FILE);
+    snprintf(destination, sizeof(destination), "%s/%s", out_dir, PROJECT_FILE);
+    plan_add(&plan, source, destination, NULL, 0);
+
+    export_scan scan = { &plan, project_dir, out_dir, error, error_size, true, 0 };
+    snprintf(source, sizeof(source), "%s/scenes", project_dir);
+    file_list_directory(source, visit_export_scene, &scan);
+    b8 ok = scan.ok;
+
+    char startup[PROJECT_PATH_MAX];
+    snprintf(startup, sizeof(startup), "%s/scenes/%s.json", project_dir, settings.startup_scene);
+    if (ok && !file_exists(startup))
+        ok = fail(error, error_size, "the startup scene \"%s\" isn't saved (Project Settings picks it)", settings.startup_scene);
+    if (ok && settings.default_hdri[0])
+        ok = plan_project_asset(&plan, project_dir, out_dir, settings.default_hdri, PROJECT_FILE, error, error_size);
+
+    // Everything found and checked: copy it, then mark the folder as an export.
+    if (ok && !file_make_directories(out_dir))
+        ok = fail(error, error_size, "could not create %s", out_dir);
+    ok = ok && plan_copy(&plan, &report->bytes, error, error_size);
+    if (ok)
+    {
+        report->files  = plan.count;
+        report->scenes = scan.scenes;
+
+        cJSON* marker = cJSON_CreateObject();
+        cJSON_AddStringToObject(marker, "project", settings.name);
+        cJSON_AddStringToObject(marker, "from", project_dir);
+        cJSON_AddNumberToObject(marker, "files", plan.count);
+        char* text = cJSON_Print(marker);
+        snprintf(destination, sizeof(destination), "%s/%s", out_dir, EXPORT_MARKER);
+        file_write_string(destination, text);
+        cJSON_free(text);
+        cJSON_Delete(marker);
+    }
+
+    plan_free(&plan);
     return ok;
 }

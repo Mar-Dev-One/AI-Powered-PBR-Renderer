@@ -305,6 +305,106 @@ test_import(void)
     CHECK(!project_import_asset(project, ROOT "/src/nope.glb", key, sizeof(key), error, sizeof(error)));
 }
 
+// A scene file whose one entity uses `model` (NULL = none) and whose
+// environment uses `hdri` (NULL = none).
+static void
+write_scene(const char* path, const char* model, const char* hdri)
+{
+    char text[1024];
+    snprintf(text, sizeof(text),
+             "{\"format\": \"pbr-scene\", \"version\": 1, \"entities\": [{\"name\": \"thing\", \"parent\": null, "
+             "\"components\": {\"MeshRenderer\": {\"model\": %s%s%s}}}], \"environment\": {\"hdri\": %s%s%s}}",
+             model ? "\"" : "", model ? model : "null", model ? "\"" : "",
+             hdri ? "\"" : "", hdri ? hdri : "null", hdri ? "\"" : "");
+    write(path, text);
+}
+
+static void
+test_export(void)
+{
+    char error[512];
+    const char* project = ROOT "/Exporter";
+    const char* out     = ROOT "/exported";
+    CHECK(project_create(project, "Exporter", error, sizeof(error)));
+
+    // What the editor would hand over: a game executable, the engine's
+    // shaders and a runtime DLL.
+    write(ROOT "/bin/Game.exe", "MZ game");
+    write(ROOT "/bin/vcruntime140.dll", "MZ dll");
+    write(ROOT "/engine/shaders/pbr.vert", "glsl");
+    write(ROOT "/engine/shaders/pbr.frag", "glsl");
+    const char* dlls[] = { ROOT "/bin/vcruntime140.dll" };
+    project_export_options options = { ROOT "/bin/Game.exe", ROOT "/engine", dlls, 1 };
+
+    // Assets: two used (one a .gltf with a buffer and a texture), one not.
+    write(ROOT "/Exporter/models/chair.glb", "glb");
+    write(ROOT "/Exporter/models/unused.glb", "glb");
+    write(ROOT "/Exporter/models/lamp/lamp.gltf",
+          "{\"buffers\": [{\"uri\": \"lamp.bin\"}], \"images\": [{\"uri\": \"tex/shade.png\"}]}");
+    write(ROOT "/Exporter/models/lamp/lamp.bin", "bin");
+    write(ROOT "/Exporter/models/lamp/tex/shade.png", "png");
+    write(ROOT "/Exporter/hdri/sky.hdr", "hdr");
+    write_scene(ROOT "/Exporter/scenes/level2.json", "models/lamp/lamp.gltf", "hdri/sky.hdr");
+    write_scene(ROOT "/Exporter/scenes/level3.json", "models/chair.glb", NULL);
+
+    project_export_report report;
+    CHECK(project_export(project, out, &options, &report, error, sizeof(error)));
+    CHECK(strcmp(report.executable, ROOT "/exported/Exporter.exe") == 0);
+    CHECK(report.scenes == 3);   // main (the starter scene) + level2 + level3
+    CHECK(report.bytes > 0);
+    CHECK(exists("%s/Exporter.exe", out));
+    CHECK(exists("%s/vcruntime140.dll", out));
+    CHECK(exists("%s/engine/shaders/pbr.vert", out) && exists("%s/engine/shaders/pbr.frag", out));
+    CHECK(exists("%s/project.json", out));
+    CHECK(exists("%s/scenes/main.json", out) && exists("%s/scenes/level2.json", out));
+    CHECK(exists("%s/models/chair.glb", out));
+    CHECK(exists("%s/models/lamp/lamp.gltf", out) && exists("%s/models/lamp/lamp.bin", out));
+    CHECK(exists("%s/models/lamp/tex/shade.png", out));
+    CHECK(exists("%s/hdri/sky.hdr", out));
+    CHECK(!exists("%s/models/unused.glb", out));   // no scene uses it
+    CHECK(exists("%s/.pbr-export", out));
+
+    // The export is a project the game can open by itself.
+    project_settings settings;
+    CHECK(project_read(out, &settings, error, sizeof(error)) && strcmp(settings.name, "Exporter") == 0);
+
+    // Again into the same folder: an earlier export is replaced.
+    CHECK(project_export(project, out, &options, &report, error, sizeof(error)));
+
+    // Refusals, each leaving the target untouched.
+    const char* fresh = ROOT "/fresh";
+    write_scene(ROOT "/Exporter/scenes/broken.json", "models/missing.glb", NULL);
+    CHECK(!project_export(project, fresh, &options, &report, error, sizeof(error)));
+    CHECK(strstr(error, "missing.glb") != NULL && strstr(error, "broken") != NULL);
+    CHECK(!file_is_directory(fresh));
+
+    write_scene(ROOT "/Exporter/scenes/broken.json", "../outside.glb", NULL);
+    CHECK(!project_export(project, fresh, &options, &report, error, sizeof(error)));
+    CHECK(strstr(error, "outside the project") != NULL);
+    remove(ROOT "/Exporter/scenes/broken.json");
+
+    project_settings s;
+    CHECK(project_read(project, &s, error, sizeof(error)));
+    snprintf(s.startup_scene, sizeof(s.startup_scene), "never_saved");
+    CHECK(project_write(project, &s, error, sizeof(error)));
+    CHECK(!project_export(project, fresh, &options, &report, error, sizeof(error)));
+    CHECK(strstr(error, "never_saved") != NULL);
+    snprintf(s.startup_scene, sizeof(s.startup_scene), "main");
+    CHECK(project_write(project, &s, error, sizeof(error)));
+
+    write(ROOT "/occupied/notes.txt", "mine");
+    CHECK(!project_export(project, ROOT "/occupied", &options, &report, error, sizeof(error)));
+    CHECK(strstr(error, "aren't an earlier export") != NULL);
+
+    CHECK(!project_export(project, ROOT "/Exporter/build", &options, &report, error, sizeof(error)));
+    CHECK(strstr(error, "outside the project folder") != NULL);
+
+    project_export_options no_game = { ROOT "/bin/Missing.exe", ROOT "/engine", NULL, 0 };
+    CHECK(!project_export(project, fresh, &no_game, &report, error, sizeof(error)));
+    CHECK(strstr(error, "Game target") != NULL);
+    CHECK(!file_is_directory(fresh));
+}
+
 int
 main(void)
 {
@@ -319,6 +419,7 @@ main(void)
     test_settings_round_trip();
     test_recent();
     test_import();
+    test_export();
 
     assets_shutdown(&assets);
     remove_tree(ROOT);

@@ -1,6 +1,6 @@
 {
 	"entities":	[{
-			"id":	3145732,
+			"id":	1048576,
 			"name":	"cone_1",
 			"parent":	null,
 			"components":	{
@@ -19,7 +19,7 @@
 				}
 			}
 		}, {
-			"id":	3145733,
+			"id":	1048577,
 			"name":	"cone_0_stripe",
 			"parent":	null,
 			"components":	{
@@ -38,7 +38,7 @@
 				}
 			}
 		}, {
-			"id":	2097173,
+			"id":	1048578,
 			"name":	"cone_1_stripe",
 			"parent":	null,
 			"components":	{
@@ -57,7 +57,7 @@
 				}
 			}
 		}, {
-			"id":	2097175,
+			"id":	1048579,
 			"name":	"cone_2",
 			"parent":	null,
 			"components":	{
@@ -76,7 +76,7 @@
 				}
 			}
 		}, {
-			"id":	2097176,
+			"id":	1048580,
 			"name":	"cone_3_stripe",
 			"parent":	null,
 			"components":	{
@@ -95,7 +95,7 @@
 				}
 			}
 		}, {
-			"id":	2097177,
+			"id":	1048581,
 			"name":	"cone_3",
 			"parent":	null,
 			"components":	{
@@ -114,7 +114,7 @@
 				}
 			}
 		}, {
-			"id":	2097178,
+			"id":	1048582,
 			"name":	"cone_2_stripe",
 			"parent":	null,
 			"components":	{
@@ -133,7 +133,7 @@
 				}
 			}
 		}, {
-			"id":	2097179,
+			"id":	1048583,
 			"name":	"cone_0",
 			"parent":	null,
 			"components":	{
@@ -152,7 +152,7 @@
 				}
 			}
 		}, {
-			"id":	2097180,
+			"id":	1048584,
 			"name":	"barrier_post_8",
 			"parent":	null,
 			"components":	{
@@ -171,7 +171,7 @@
 				}
 			}
 		}, {
-			"id":	2097181,
+			"id":	1048585,
 			"name":	"barrier_bar_7",
 			"parent":	null,
 			"components":	{
@@ -190,7 +190,7 @@
 				}
 			}
 		}, {
-			"id":	2097182,
+			"id":	1048586,
 			"name":	"barrier_post_7",
 			"parent":	null,
 			"components":	{
@@ -209,7 +209,7 @@
 				}
 			}
 		}, {
-			"id":	2097183,
+			"id":	1048587,
 			"name":	"barrier_bar_2",
 			"parent":	null,
 			"components":	{
@@ -228,7 +228,7 @@
 				}
 			}
 		}, {
-			"id":	2097184,
+			"id":	1048588,
 			"name":	"barrier_bar_6",
 			"parent":	null,
 			"components":	{
@@ -247,7 +247,7 @@
 				}
 			}
 		}, {
-			"id":	2097185,
+			"id":	1048589,
 			"name":	"barrier_post_6",
 			"parent":	null,
 			"components":	{
@@ -266,7 +266,7 @@
 				}
 			}
 		}, {
-			"id":	2097186,
+			"id":	1048590,
 			"name":	"barrier_bar_5",
 			"parent":	null,
 			"components":	{
@@ -285,7 +285,7 @@
 				}
 			}
 		}, {
-			"id":	2097187,
+			"id":	1048591,
 			"name":	"barrier_post_5",
 			"parent":	null,
 			"components":	{
@@ -304,7 +304,7 @@
 				}
 			}
 		}, {
-			"id":	2097188,
+			"id":	1048592,
 			"name":	"barrier_bar_4",
 			"parent":	null,
 			"components":	{
@@ -323,7 +323,7 @@
 				}
 			}
 		}, {
-			"id":	2097189,
+			"id":	1048593,
 			"name":	"barrier_post_4",
 			"parent":	null,
 			"components":	{
@@ -342,7 +342,7 @@
 				}
 			}
 		}, {
-			"id":	2097190,
+			"id":	1048594,
 			"name":	"barrier_bar_3",
 			"parent":	null,
 			"components":	{
@@ -361,7 +361,7 @@
 				}
 			}
 		}, {
-			"id":	2097191,
+			"id":	1048595,
 			"name":	"barrier_post_3",
 			"parent":	null,
 			"components":	{
@@ -380,7 +380,7 @@
 				}
 			}
 		}, {
-			"id":	2097192,
+			"id":	1048596,
 			"name":	"barrier_post_2",
 			"parent":	null,
 			"components":	{
@@ -399,7 +399,7 @@
 				}
 			}
 		}, {
-			"id":	2097193,
+			"id":	1048597,
 			"name":	"barrier_bar_1",
 			"parent":	null,
 			"components":	{
@@ -418,7 +418,7 @@
 				}
 			}
 		}, {
-			"id":	2097194,
+			"id":	1048598,
 			"name":	"barrier_post_1",
 			"parent":	null,
 			"components":	{
@@ -437,7 +437,7 @@
 				}
 			}
 		}, {
-			"id":	2097195,
+			"id":	1048599,
 			"name":	"barrier_bar_0",
 			"parent":	null,
 			"components":	{
@@ -456,7 +456,7 @@
 				}
 			}
 		}, {
-			"id":	2097196,
+			"id":	1048600,
 			"name":	"barrier_post_0",
 			"parent":	null,
 			"components":	{
@@ -475,7 +475,7 @@
 				}
 			}
 		}, {
-			"id":	2097197,
+			"id":	1048601,
 			"name":	"sand_pile",
 			"parent":	null,
 			"components":	{
@@ -494,7 +494,7 @@
 				}
 			}
 		}, {
-			"id":	2097198,
+			"id":	1048602,
 			"name":	"pipe_4",
 			"parent":	null,
 			"components":	{
@@ -513,7 +513,7 @@
 				}
 			}
 		}, {
-			"id":	2097199,
+			"id":	1048603,
 			"name":	"pipe_3",
 			"parent":	null,
 			"components":	{
@@ -532,7 +532,7 @@
 				}
 			}
 		}, {
-			"id":	2097200,
+			"id":	1048604,
 			"name":	"pipe_2",
 			"parent":	null,
 			"components":	{
@@ -551,7 +551,7 @@
 				}
 			}
 		}, {
-			"id":	2097201,
+			"id":	1048605,
 			"name":	"pipe_1",
 			"parent":	null,
 			"components":	{
@@ -570,7 +570,7 @@
 				}
 			}
 		}, {
-			"id":	2097202,
+			"id":	1048606,
 			"name":	"pipe_0",
 			"parent":	null,
 			"components":	{
@@ -589,7 +589,7 @@
 				}
 			}
 		}, {
-			"id":	2097203,
+			"id":	1048607,
 			"name":	"site_office_door",
 			"parent":	null,
 			"components":	{
@@ -608,7 +608,7 @@
 				}
 			}
 		}, {
-			"id":	2097204,
+			"id":	1048608,
 			"name":	"site_office_window",
 			"parent":	null,
 			"components":	{
@@ -627,7 +627,7 @@
 				}
 			}
 		}, {
-			"id":	2097205,
+			"id":	1048609,
 			"name":	"site_office",
 			"parent":	null,
 			"components":	{
@@ -646,7 +646,7 @@
 				}
 			}
 		}, {
-			"id":	2097217,
+			"id":	1048610,
 			"name":	"worker_b",
 			"parent":	null,
 			"components":	{
@@ -657,7 +657,7 @@
 				}
 			}
 		}, {
-			"id":	2097207,
+			"id":	1048611,
 			"name":	"worker_b_arm_r",
 			"parent":	"worker_b",
 			"components":	{
@@ -668,7 +668,7 @@
 				}
 			}
 		}, {
-			"id":	2097206,
+			"id":	1048612,
 			"name":	"worker_b_arm_r_mesh",
 			"parent":	"worker_b_arm_r",
 			"components":	{
@@ -687,7 +687,7 @@
 				}
 			}
 		}, {
-			"id":	2097209,
+			"id":	1048613,
 			"name":	"worker_b_leg_r",
 			"parent":	"worker_b",
 			"components":	{
@@ -698,7 +698,7 @@
 				}
 			}
 		}, {
-			"id":	2097208,
+			"id":	1048614,
 			"name":	"worker_b_leg_r_mesh",
 			"parent":	"worker_b_leg_r",
 			"components":	{
@@ -717,7 +717,7 @@
 				}
 			}
 		}, {
-			"id":	2097211,
+			"id":	1048615,
 			"name":	"worker_b_arm_l",
 			"parent":	"worker_b",
 			"components":	{
@@ -728,7 +728,7 @@
 				}
 			}
 		}, {
-			"id":	2097210,
+			"id":	1048616,
 			"name":	"worker_b_arm_l_mesh",
 			"parent":	"worker_b_arm_l",
 			"components":	{
@@ -747,7 +747,7 @@
 				}
 			}
 		}, {
-			"id":	2097213,
+			"id":	1048617,
 			"name":	"worker_b_leg_l",
 			"parent":	"worker_b",
 			"components":	{
@@ -758,7 +758,7 @@
 				}
 			}
 		}, {
-			"id":	2097212,
+			"id":	1048618,
 			"name":	"worker_b_leg_l_mesh",
 			"parent":	"worker_b_leg_l",
 			"components":	{
@@ -777,7 +777,7 @@
 				}
 			}
 		}, {
-			"id":	2097214,
+			"id":	1048619,
 			"name":	"worker_b_helmet",
 			"parent":	"worker_b",
 			"components":	{
@@ -796,7 +796,7 @@
 				}
 			}
 		}, {
-			"id":	2097215,
+			"id":	1048620,
 			"name":	"worker_b_head",
 			"parent":	"worker_b",
 			"components":	{
@@ -815,7 +815,7 @@
 				}
 			}
 		}, {
-			"id":	2097216,
+			"id":	1048621,
 			"name":	"worker_b_torso",
 			"parent":	"worker_b",
 			"components":	{
@@ -834,7 +834,7 @@
 				}
 			}
 		}, {
-			"id":	2097229,
+			"id":	1048622,
 			"name":	"worker_a",
 			"parent":	null,
 			"components":	{
@@ -845,7 +845,7 @@
 				}
 			}
 		}, {
-			"id":	2097219,
+			"id":	1048623,
 			"name":	"worker_a_arm_r",
 			"parent":	"worker_a",
 			"components":	{
@@ -856,7 +856,7 @@
 				}
 			}
 		}, {
-			"id":	2097218,
+			"id":	1048624,
 			"name":	"worker_a_arm_r_mesh",
 			"parent":	"worker_a_arm_r",
 			"components":	{
@@ -875,7 +875,7 @@
 				}
 			}
 		}, {
-			"id":	2097221,
+			"id":	1048625,
 			"name":	"worker_a_leg_r",
 			"parent":	"worker_a",
 			"components":	{
@@ -886,7 +886,7 @@
 				}
 			}
 		}, {
-			"id":	2097220,
+			"id":	1048626,
 			"name":	"worker_a_leg_r_mesh",
 			"parent":	"worker_a_leg_r",
 			"components":	{
@@ -905,7 +905,7 @@
 				}
 			}
 		}, {
-			"id":	2097223,
+			"id":	1048627,
 			"name":	"worker_a_arm_l",
 			"parent":	"worker_a",
 			"components":	{
@@ -916,7 +916,7 @@
 				}
 			}
 		}, {
-			"id":	2097222,
+			"id":	1048628,
 			"name":	"worker_a_arm_l_mesh",
 			"parent":	"worker_a_arm_l",
 			"components":	{
@@ -935,7 +935,7 @@
 				}
 			}
 		}, {
-			"id":	2097225,
+			"id":	1048629,
 			"name":	"worker_a_leg_l",
 			"parent":	"worker_a",
 			"components":	{
@@ -946,7 +946,7 @@
 				}
 			}
 		}, {
-			"id":	2097224,
+			"id":	1048630,
 			"name":	"worker_a_leg_l_mesh",
 			"parent":	"worker_a_leg_l",
 			"components":	{
@@ -965,7 +965,7 @@
 				}
 			}
 		}, {
-			"id":	2097226,
+			"id":	1048631,
 			"name":	"worker_a_helmet",
 			"parent":	"worker_a",
 			"components":	{
@@ -984,7 +984,7 @@
 				}
 			}
 		}, {
-			"id":	2097227,
+			"id":	1048632,
 			"name":	"worker_a_head",
 			"parent":	"worker_a",
 			"components":	{
@@ -1003,7 +1003,7 @@
 				}
 			}
 		}, {
-			"id":	2097228,
+			"id":	1048633,
 			"name":	"worker_a_torso",
 			"parent":	"worker_a",
 			"components":	{
@@ -1022,7 +1022,7 @@
 				}
 			}
 		}, {
-			"id":	2097246,
+			"id":	1048634,
 			"name":	"mixer",
 			"parent":	null,
 			"components":	{
@@ -1033,7 +1033,7 @@
 				}
 			}
 		}, {
-			"id":	2097230,
+			"id":	1048635,
 			"name":	"mixer_beacon",
 			"parent":	"mixer",
 			"components":	{
@@ -1062,7 +1062,7 @@
 				}
 			}
 		}, {
-			"id":	2097237,
+			"id":	1048636,
 			"name":	"mixer_drum_mount",
 			"parent":	"mixer",
 			"components":	{
@@ -1073,7 +1073,7 @@
 				}
 			}
 		}, {
-			"id":	2097236,
+			"id":	1048637,
 			"name":	"mixer_drum",
 			"parent":	"mixer_drum_mount",
 			"components":	{
@@ -1084,7 +1084,7 @@
 				}
 			}
 		}, {
-			"id":	2097231,
+			"id":	1048638,
 			"name":	"mixer_drum_fin_3",
 			"parent":	"mixer_drum",
 			"components":	{
@@ -1103,7 +1103,7 @@
 				}
 			}
 		}, {
-			"id":	2097232,
+			"id":	1048639,
 			"name":	"mixer_drum_fin_2",
 			"parent":	"mixer_drum",
 			"components":	{
@@ -1122,7 +1122,7 @@
 				}
 			}
 		}, {
-			"id":	2097233,
+			"id":	1048640,
 			"name":	"mixer_drum_shell",
 			"parent":	"mixer_drum",
 			"components":	{
@@ -1141,7 +1141,7 @@
 				}
 			}
 		}, {
-			"id":	2097234,
+			"id":	1048641,
 			"name":	"mixer_drum_fin_1",
 			"parent":	"mixer_drum",
 			"components":	{
@@ -1160,7 +1160,7 @@
 				}
 			}
 		}, {
-			"id":	2097235,
+			"id":	1048642,
 			"name":	"mixer_drum_fin_0",
 			"parent":	"mixer_drum",
 			"components":	{
@@ -1179,7 +1179,7 @@
 				}
 			}
 		}, {
-			"id":	2097238,
+			"id":	1048643,
 			"name":	"mixer_wheel_2_r",
 			"parent":	"mixer",
 			"components":	{
@@ -1198,7 +1198,7 @@
 				}
 			}
 		}, {
-			"id":	2097239,
+			"id":	1048644,
 			"name":	"mixer_wheel_2_l",
 			"parent":	"mixer",
 			"components":	{
@@ -1217,7 +1217,7 @@
 				}
 			}
 		}, {
-			"id":	2097240,
+			"id":	1048645,
 			"name":	"mixer_wheel_1_r",
 			"parent":	"mixer",
 			"components":	{
@@ -1236,7 +1236,7 @@
 				}
 			}
 		}, {
-			"id":	2097241,
+			"id":	1048646,
 			"name":	"mixer_wheel_0_r",
 			"parent":	"mixer",
 			"components":	{
@@ -1255,7 +1255,7 @@
 				}
 			}
 		}, {
-			"id":	2097242,
+			"id":	1048647,
 			"name":	"mixer_wheel_1_l",
 			"parent":	"mixer",
 			"components":	{
@@ -1274,7 +1274,7 @@
 				}
 			}
 		}, {
-			"id":	2097243,
+			"id":	1048648,
 			"name":	"mixer_windscreen",
 			"parent":	"mixer",
 			"components":	{
@@ -1293,7 +1293,7 @@
 				}
 			}
 		}, {
-			"id":	2097244,
+			"id":	1048649,
 			"name":	"mixer_wheel_0_l",
 			"parent":	"mixer",
 			"components":	{
@@ -1312,7 +1312,7 @@
 				}
 			}
 		}, {
-			"id":	2097245,
+			"id":	1048650,
 			"name":	"mixer_cab",
 			"parent":	"mixer",
 			"components":	{
@@ -1331,7 +1331,7 @@
 				}
 			}
 		}, {
-			"id":	2097247,
+			"id":	1048651,
 			"name":	"mixer_chassis",
 			"parent":	"mixer",
 			"components":	{
@@ -1350,7 +1350,7 @@
 				}
 			}
 		}, {
-			"id":	2097248,
+			"id":	1048652,
 			"name":	"trench",
 			"parent":	null,
 			"components":	{
@@ -1369,7 +1369,7 @@
 				}
 			}
 		}, {
-			"id":	2097249,
+			"id":	1048653,
 			"name":	"spoil_heap",
 			"parent":	null,
 			"components":	{
@@ -1388,7 +1388,7 @@
 				}
 			}
 		}, {
-			"id":	2097250,
+			"id":	1048654,
 			"name":	"crane_brace_4_3",
 			"parent":	null,
 			"components":	{
@@ -1407,7 +1407,7 @@
 				}
 			}
 		}, {
-			"id":	2097256,
+			"id":	1048655,
 			"name":	"crane_brace_5_0",
 			"parent":	null,
 			"components":	{
@@ -1426,7 +1426,7 @@
 				}
 			}
 		}, {
-			"id":	2097265,
+			"id":	1048656,
 			"name":	"scaffold_deck_1",
 			"parent":	null,
 			"components":	{
@@ -1445,7 +1445,7 @@
 				}
 			}
 		}, {
-			"id":	2097266,
+			"id":	1048657,
 			"name":	"excavator",
 			"parent":	null,
 			"components":	{
@@ -1456,7 +1456,7 @@
 				}
 			}
 		}, {
-			"id":	2097260,
+			"id":	1048658,
 			"name":	"excavator_cab",
 			"parent":	"excavator",
 			"components":	{
@@ -1467,7 +1467,7 @@
 				}
 			}
 		}, {
-			"id":	2097257,
+			"id":	1048659,
 			"name":	"excavator_boom",
 			"parent":	"excavator_cab",
 			"components":	{
@@ -1478,7 +1478,7 @@
 				}
 			}
 		}, {
-			"id":	2097254,
+			"id":	1048660,
 			"name":	"excavator_stick",
 			"parent":	"excavator_boom",
 			"components":	{
@@ -1489,7 +1489,7 @@
 				}
 			}
 		}, {
-			"id":	2097252,
+			"id":	1048661,
 			"name":	"excavator_bucket",
 			"parent":	"excavator_stick",
 			"components":	{
@@ -1500,7 +1500,7 @@
 				}
 			}
 		}, {
-			"id":	2097251,
+			"id":	1048662,
 			"name":	"excavator_bucket_shell",
 			"parent":	"excavator_bucket",
 			"components":	{
@@ -1519,7 +1519,7 @@
 				}
 			}
 		}, {
-			"id":	2097253,
+			"id":	1048663,
 			"name":	"excavator_stick_arm",
 			"parent":	"excavator_stick",
 			"components":	{
@@ -1538,7 +1538,7 @@
 				}
 			}
 		}, {
-			"id":	2097255,
+			"id":	1048664,
 			"name":	"excavator_boom_arm",
 			"parent":	"excavator_boom",
 			"components":	{
@@ -1557,7 +1557,7 @@
 				}
 			}
 		}, {
-			"id":	2097258,
+			"id":	1048665,
 			"name":	"excavator_counterweight",
 			"parent":	"excavator_cab",
 			"components":	{
@@ -1576,7 +1576,7 @@
 				}
 			}
 		}, {
-			"id":	2097259,
+			"id":	1048666,
 			"name":	"excavator_glass",
 			"parent":	"excavator_cab",
 			"components":	{
@@ -1595,7 +1595,7 @@
 				}
 			}
 		}, {
-			"id":	2097261,
+			"id":	1048667,
 			"name":	"excavator_cabin",
 			"parent":	"excavator_cab",
 			"components":	{
@@ -1614,7 +1614,7 @@
 				}
 			}
 		}, {
-			"id":	2097262,
+			"id":	1048668,
 			"name":	"excavator_body",
 			"parent":	"excavator_cab",
 			"components":	{
@@ -1633,7 +1633,7 @@
 				}
 			}
 		}, {
-			"id":	2097263,
+			"id":	1048669,
 			"name":	"excavator_track_r",
 			"parent":	"excavator",
 			"components":	{
@@ -1652,7 +1652,7 @@
 				}
 			}
 		}, {
-			"id":	2097264,
+			"id":	1048670,
 			"name":	"excavator_track_l",
 			"parent":	"excavator",
 			"components":	{
@@ -1671,7 +1671,7 @@
 				}
 			}
 		}, {
-			"id":	2097267,
+			"id":	1048671,
 			"name":	"scaffold_rail_1",
 			"parent":	null,
 			"components":	{
@@ -1690,7 +1690,7 @@
 				}
 			}
 		}, {
-			"id":	2097268,
+			"id":	1048672,
 			"name":	"scaffold_rail_0",
 			"parent":	null,
 			"components":	{
@@ -1709,7 +1709,7 @@
 				}
 			}
 		}, {
-			"id":	2097269,
+			"id":	1048673,
 			"name":	"scaffold_deck_0",
 			"parent":	null,
 			"components":	{
@@ -1728,7 +1728,7 @@
 				}
 			}
 		}, {
-			"id":	2097270,
+			"id":	1048674,
 			"name":	"scaffold_pole_2_b",
 			"parent":	null,
 			"components":	{
@@ -1747,7 +1747,7 @@
 				}
 			}
 		}, {
-			"id":	2097271,
+			"id":	1048675,
 			"name":	"scaffold_pole_3_b",
 			"parent":	null,
 			"components":	{
@@ -1766,7 +1766,7 @@
 				}
 			}
 		}, {
-			"id":	2097272,
+			"id":	1048676,
 			"name":	"scaffold_pole_3_a",
 			"parent":	null,
 			"components":	{
@@ -1785,7 +1785,7 @@
 				}
 			}
 		}, {
-			"id":	2097273,
+			"id":	1048677,
 			"name":	"scaffold_pole_2_a",
 			"parent":	null,
 			"components":	{
@@ -1804,7 +1804,7 @@
 				}
 			}
 		}, {
-			"id":	2097274,
+			"id":	1048678,
 			"name":	"scaffold_pole_1_b",
 			"parent":	null,
 			"components":	{
@@ -1823,7 +1823,7 @@
 				}
 			}
 		}, {
-			"id":	2097275,
+			"id":	1048679,
 			"name":	"scaffold_pole_0_a",
 			"parent":	null,
 			"components":	{
@@ -1842,7 +1842,7 @@
 				}
 			}
 		}, {
-			"id":	2097276,
+			"id":	1048680,
 			"name":	"scaffold_pole_1_a",
 			"parent":	null,
 			"components":	{
@@ -1861,7 +1861,7 @@
 				}
 			}
 		}, {
-			"id":	2097277,
+			"id":	1048681,
 			"name":	"scaffold_pole_0_b",
 			"parent":	null,
 			"components":	{
@@ -1880,7 +1880,7 @@
 				}
 			}
 		}, {
-			"id":	2097278,
+			"id":	1048682,
 			"name":	"crane_hook",
 			"parent":	null,
 			"components":	{
@@ -1899,7 +1899,7 @@
 				}
 			}
 		}, {
-			"id":	2097279,
+			"id":	1048683,
 			"name":	"crane_cable",
 			"parent":	null,
 			"components":	{
@@ -1918,7 +1918,7 @@
 				}
 			}
 		}, {
-			"id":	2097290,
+			"id":	1048684,
 			"name":	"crane_brace_6_2",
 			"parent":	null,
 			"components":	{
@@ -1937,7 +1937,7 @@
 				}
 			}
 		}, {
-			"id":	2097291,
+			"id":	1048685,
 			"name":	"crane_slew",
 			"parent":	null,
 			"components":	{
@@ -1948,7 +1948,7 @@
 				}
 			}
 		}, {
-			"id":	2097280,
+			"id":	1048686,
 			"name":	"crane_tie_back",
 			"parent":	"crane_slew",
 			"components":	{
@@ -1967,7 +1967,7 @@
 				}
 			}
 		}, {
-			"id":	2097281,
+			"id":	1048687,
 			"name":	"crane_trolley",
 			"parent":	"crane_slew",
 			"components":	{
@@ -1986,7 +1986,7 @@
 				}
 			}
 		}, {
-			"id":	2097282,
+			"id":	1048688,
 			"name":	"crane_tip_light",
 			"parent":	"crane_slew",
 			"components":	{
@@ -2006,7 +2006,7 @@
 				}
 			}
 		}, {
-			"id":	2097283,
+			"id":	1048689,
 			"name":	"crane_tie_front",
 			"parent":	"crane_slew",
 			"components":	{
@@ -2025,7 +2025,7 @@
 				}
 			}
 		}, {
-			"id":	2097284,
+			"id":	1048690,
 			"name":	"crane_apex",
 			"parent":	"crane_slew",
 			"components":	{
@@ -2044,7 +2044,7 @@
 				}
 			}
 		}, {
-			"id":	2097285,
+			"id":	1048691,
 			"name":	"crane_counterweight",
 			"parent":	"crane_slew",
 			"components":	{
@@ -2063,7 +2063,7 @@
 				}
 			}
 		}, {
-			"id":	2097286,
+			"id":	1048692,
 			"name":	"crane_cab_glass",
 			"parent":	"crane_slew",
 			"components":	{
@@ -2082,7 +2082,7 @@
 				}
 			}
 		}, {
-			"id":	2097287,
+			"id":	1048693,
 			"name":	"crane_cab",
 			"parent":	"crane_slew",
 			"components":	{
@@ -2101,7 +2101,7 @@
 				}
 			}
 		}, {
-			"id":	2097288,
+			"id":	1048694,
 			"name":	"crane_counter_jib",
 			"parent":	"crane_slew",
 			"components":	{
@@ -2120,7 +2120,7 @@
 				}
 			}
 		}, {
-			"id":	2097289,
+			"id":	1048695,
 			"name":	"crane_jib",
 			"parent":	"crane_slew",
 			"components":	{
@@ -2139,7 +2139,7 @@
 				}
 			}
 		}, {
-			"id":	2097292,
+			"id":	1048696,
 			"name":	"crane_brace_6_3",
 			"parent":	null,
 			"components":	{
@@ -2158,7 +2158,7 @@
 				}
 			}
 		}, {
-			"id":	2097293,
+			"id":	1048697,
 			"name":	"crane_brace_6_1",
 			"parent":	null,
 			"components":	{
@@ -2177,7 +2177,7 @@
 				}
 			}
 		}, {
-			"id":	2097294,
+			"id":	1048698,
 			"name":	"crane_brace_6_0",
 			"parent":	null,
 			"components":	{
@@ -2196,7 +2196,7 @@
 				}
 			}
 		}, {
-			"id":	2097295,
+			"id":	1048699,
 			"name":	"crane_brace_5_1",
 			"parent":	null,
 			"components":	{
@@ -2215,7 +2215,7 @@
 				}
 			}
 		}, {
-			"id":	2097296,
+			"id":	1048700,
 			"name":	"crane_brace_5_3",
 			"parent":	null,
 			"components":	{
@@ -2234,7 +2234,7 @@
 				}
 			}
 		}, {
-			"id":	2097297,
+			"id":	1048701,
 			"name":	"crane_brace_5_2",
 			"parent":	null,
 			"components":	{
@@ -2253,7 +2253,7 @@
 				}
 			}
 		}, {
-			"id":	2097298,
+			"id":	1048702,
 			"name":	"crane_brace_4_2",
 			"parent":	null,
 			"components":	{
@@ -2272,7 +2272,7 @@
 				}
 			}
 		}, {
-			"id":	2097299,
+			"id":	1048703,
 			"name":	"block_38",
 			"parent":	null,
 			"components":	{
@@ -2291,7 +2291,7 @@
 				}
 			}
 		}, {
-			"id":	2097300,
+			"id":	1048704,
 			"name":	"crane_brace_4_1",
 			"parent":	null,
 			"components":	{
@@ -2310,7 +2310,7 @@
 				}
 			}
 		}, {
-			"id":	2097301,
+			"id":	1048705,
 			"name":	"crane_brace_4_0",
 			"parent":	null,
 			"components":	{
@@ -2329,7 +2329,7 @@
 				}
 			}
 		}, {
-			"id":	2097302,
+			"id":	1048706,
 			"name":	"crane_brace_3_3",
 			"parent":	null,
 			"components":	{
@@ -2348,7 +2348,7 @@
 				}
 			}
 		}, {
-			"id":	2097303,
+			"id":	1048707,
 			"name":	"crane_brace_3_2",
 			"parent":	null,
 			"components":	{
@@ -2367,7 +2367,7 @@
 				}
 			}
 		}, {
-			"id":	2097304,
+			"id":	1048708,
 			"name":	"crane_brace_3_1",
 			"parent":	null,
 			"components":	{
@@ -2386,7 +2386,7 @@
 				}
 			}
 		}, {
-			"id":	2097305,
+			"id":	1048709,
 			"name":	"crane_brace_3_0",
 			"parent":	null,
 			"components":	{
@@ -2405,7 +2405,7 @@
 				}
 			}
 		}, {
-			"id":	2097306,
+			"id":	1048710,
 			"name":	"crane_brace_2_3",
 			"parent":	null,
 			"components":	{
@@ -2424,7 +2424,7 @@
 				}
 			}
 		}, {
-			"id":	2097307,
+			"id":	1048711,
 			"name":	"crane_brace_2_2",
 			"parent":	null,
 			"components":	{
@@ -2443,7 +2443,7 @@
 				}
 			}
 		}, {
-			"id":	2097308,
+			"id":	1048712,
 			"name":	"crane_brace_2_1",
 			"parent":	null,
 			"components":	{
@@ -2462,7 +2462,7 @@
 				}
 			}
 		}, {
-			"id":	2097309,
+			"id":	1048713,
 			"name":	"crane_brace_2_0",
 			"parent":	null,
 			"components":	{
@@ -2481,7 +2481,7 @@
 				}
 			}
 		}, {
-			"id":	2097310,
+			"id":	1048714,
 			"name":	"crane_brace_1_3",
 			"parent":	null,
 			"components":	{
@@ -2500,7 +2500,7 @@
 				}
 			}
 		}, {
-			"id":	2097311,
+			"id":	1048715,
 			"name":	"crane_brace_1_2",
 			"parent":	null,
 			"components":	{
@@ -2519,7 +2519,7 @@
 				}
 			}
 		}, {
-			"id":	2097312,
+			"id":	1048716,
 			"name":	"crane_brace_1_1",
 			"parent":	null,
 			"components":	{
@@ -2538,7 +2538,7 @@
 				}
 			}
 		}, {
-			"id":	2097313,
+			"id":	1048717,
 			"name":	"crane_brace_1_0",
 			"parent":	null,
 			"components":	{
@@ -2557,7 +2557,7 @@
 				}
 			}
 		}, {
-			"id":	2097314,
+			"id":	1048718,
 			"name":	"crane_brace_0_3",
 			"parent":	null,
 			"components":	{
@@ -2576,7 +2576,7 @@
 				}
 			}
 		}, {
-			"id":	2097315,
+			"id":	1048719,
 			"name":	"crane_brace_0_2",
 			"parent":	null,
 			"components":	{
@@ -2595,7 +2595,7 @@
 				}
 			}
 		}, {
-			"id":	2097316,
+			"id":	1048720,
 			"name":	"crane_brace_0_1",
 			"parent":	null,
 			"components":	{
@@ -2614,7 +2614,7 @@
 				}
 			}
 		}, {
-			"id":	2097317,
+			"id":	1048721,
 			"name":	"crane_brace_0_0",
 			"parent":	null,
 			"components":	{
@@ -2633,7 +2633,7 @@
 				}
 			}
 		}, {
-			"id":	2097318,
+			"id":	1048722,
 			"name":	"crane_mast_3",
 			"parent":	null,
 			"components":	{
@@ -2652,7 +2652,7 @@
 				}
 			}
 		}, {
-			"id":	2097319,
+			"id":	1048723,
 			"name":	"crane_mast_2",
 			"parent":	null,
 			"components":	{
@@ -2671,7 +2671,7 @@
 				}
 			}
 		}, {
-			"id":	2097320,
+			"id":	1048724,
 			"name":	"crane_mast_1",
 			"parent":	null,
 			"components":	{
@@ -2690,7 +2690,7 @@
 				}
 			}
 		}, {
-			"id":	2097321,
+			"id":	1048725,
 			"name":	"crane_mast_0",
 			"parent":	null,
 			"components":	{
@@ -2709,7 +2709,7 @@
 				}
 			}
 		}, {
-			"id":	2097322,
+			"id":	1048726,
 			"name":	"crane_footing",
 			"parent":	null,
 			"components":	{
@@ -2728,7 +2728,7 @@
 				}
 			}
 		}, {
-			"id":	2097323,
+			"id":	1048727,
 			"name":	"block_50",
 			"parent":	null,
 			"components":	{
@@ -2747,7 +2747,7 @@
 				}
 			}
 		}, {
-			"id":	2097324,
+			"id":	1048728,
 			"name":	"block_49",
 			"parent":	null,
 			"components":	{
@@ -2766,7 +2766,7 @@
 				}
 			}
 		}, {
-			"id":	2097325,
+			"id":	1048729,
 			"name":	"block_48",
 			"parent":	null,
 			"components":	{
@@ -2785,7 +2785,7 @@
 				}
 			}
 		}, {
-			"id":	2097326,
+			"id":	1048730,
 			"name":	"block_47",
 			"parent":	null,
 			"components":	{
@@ -2804,7 +2804,7 @@
 				}
 			}
 		}, {
-			"id":	2097327,
+			"id":	1048731,
 			"name":	"block_46",
 			"parent":	null,
 			"components":	{
@@ -2823,7 +2823,7 @@
 				}
 			}
 		}, {
-			"id":	2097328,
+			"id":	1048732,
 			"name":	"block_45",
 			"parent":	null,
 			"components":	{
@@ -2842,7 +2842,7 @@
 				}
 			}
 		}, {
-			"id":	2097329,
+			"id":	1048733,
 			"name":	"block_44",
 			"parent":	null,
 			"components":	{
@@ -2861,7 +2861,7 @@
 				}
 			}
 		}, {
-			"id":	2097330,
+			"id":	1048734,
 			"name":	"block_43",
 			"parent":	null,
 			"components":	{
@@ -2880,7 +2880,7 @@
 				}
 			}
 		}, {
-			"id":	2097331,
+			"id":	1048735,
 			"name":	"block_42",
 			"parent":	null,
 			"components":	{
@@ -2899,7 +2899,7 @@
 				}
 			}
 		}, {
-			"id":	2097332,
+			"id":	1048736,
 			"name":	"block_41",
 			"parent":	null,
 			"components":	{
@@ -2918,7 +2918,7 @@
 				}
 			}
 		}, {
-			"id":	2097333,
+			"id":	1048737,
 			"name":	"block_40",
 			"parent":	null,
 			"components":	{
@@ -2937,7 +2937,7 @@
 				}
 			}
 		}, {
-			"id":	2097334,
+			"id":	1048738,
 			"name":	"block_39",
 			"parent":	null,
 			"components":	{
@@ -2956,7 +2956,7 @@
 				}
 			}
 		}, {
-			"id":	2097335,
+			"id":	1048739,
 			"name":	"block_37",
 			"parent":	null,
 			"components":	{
@@ -2975,7 +2975,7 @@
 				}
 			}
 		}, {
-			"id":	2097336,
+			"id":	1048740,
 			"name":	"block_36",
 			"parent":	null,
 			"components":	{
@@ -2994,7 +2994,7 @@
 				}
 			}
 		}, {
-			"id":	2097337,
+			"id":	1048741,
 			"name":	"block_35",
 			"parent":	null,
 			"components":	{
@@ -3013,7 +3013,7 @@
 				}
 			}
 		}, {
-			"id":	2097338,
+			"id":	1048742,
 			"name":	"block_34",
 			"parent":	null,
 			"components":	{
@@ -3032,7 +3032,7 @@
 				}
 			}
 		}, {
-			"id":	2097339,
+			"id":	1048743,
 			"name":	"block_33",
 			"parent":	null,
 			"components":	{
@@ -3051,7 +3051,7 @@
 				}
 			}
 		}, {
-			"id":	2097340,
+			"id":	1048744,
 			"name":	"block_32",
 			"parent":	null,
 			"components":	{
@@ -3070,7 +3070,7 @@
 				}
 			}
 		}, {
-			"id":	2097341,
+			"id":	1048745,
 			"name":	"block_31",
 			"parent":	null,
 			"components":	{
@@ -3089,7 +3089,7 @@
 				}
 			}
 		}, {
-			"id":	2097342,
+			"id":	1048746,
 			"name":	"block_30",
 			"parent":	null,
 			"components":	{
@@ -3108,7 +3108,7 @@
 				}
 			}
 		}, {
-			"id":	2097343,
+			"id":	1048747,
 			"name":	"block_29",
 			"parent":	null,
 			"components":	{
@@ -3127,7 +3127,7 @@
 				}
 			}
 		}, {
-			"id":	2097344,
+			"id":	1048748,
 			"name":	"block_28",
 			"parent":	null,
 			"components":	{
@@ -3146,7 +3146,7 @@
 				}
 			}
 		}, {
-			"id":	2097345,
+			"id":	1048749,
 			"name":	"block_27",
 			"parent":	null,
 			"components":	{
@@ -3165,7 +3165,7 @@
 				}
 			}
 		}, {
-			"id":	2097346,
+			"id":	1048750,
 			"name":	"block_26",
 			"parent":	null,
 			"components":	{
@@ -3184,7 +3184,7 @@
 				}
 			}
 		}, {
-			"id":	2097347,
+			"id":	1048751,
 			"name":	"block_25",
 			"parent":	null,
 			"components":	{
@@ -3203,7 +3203,7 @@
 				}
 			}
 		}, {
-			"id":	2097348,
+			"id":	1048752,
 			"name":	"block_24",
 			"parent":	null,
 			"components":	{
@@ -3222,7 +3222,7 @@
 				}
 			}
 		}, {
-			"id":	2097349,
+			"id":	1048753,
 			"name":	"block_23",
 			"parent":	null,
 			"components":	{
@@ -3241,7 +3241,7 @@
 				}
 			}
 		}, {
-			"id":	2097350,
+			"id":	1048754,
 			"name":	"block_22",
 			"parent":	null,
 			"components":	{
@@ -3260,7 +3260,7 @@
 				}
 			}
 		}, {
-			"id":	2097351,
+			"id":	1048755,
 			"name":	"block_21",
 			"parent":	null,
 			"components":	{
@@ -3279,7 +3279,7 @@
 				}
 			}
 		}, {
-			"id":	2097352,
+			"id":	1048756,
 			"name":	"block_20",
 			"parent":	null,
 			"components":	{
@@ -3298,7 +3298,7 @@
 				}
 			}
 		}, {
-			"id":	2097353,
+			"id":	1048757,
 			"name":	"block_19",
 			"parent":	null,
 			"components":	{
@@ -3317,7 +3317,7 @@
 				}
 			}
 		}, {
-			"id":	2097354,
+			"id":	1048758,
 			"name":	"block_18",
 			"parent":	null,
 			"components":	{
@@ -3336,7 +3336,7 @@
 				}
 			}
 		}, {
-			"id":	2097355,
+			"id":	1048759,
 			"name":	"block_17",
 			"parent":	null,
 			"components":	{
@@ -3355,7 +3355,7 @@
 				}
 			}
 		}, {
-			"id":	2097356,
+			"id":	1048760,
 			"name":	"block_16",
 			"parent":	null,
 			"components":	{
@@ -3374,7 +3374,7 @@
 				}
 			}
 		}, {
-			"id":	2097357,
+			"id":	1048761,
 			"name":	"block_15",
 			"parent":	null,
 			"components":	{
@@ -3393,7 +3393,7 @@
 				}
 			}
 		}, {
-			"id":	2097358,
+			"id":	1048762,
 			"name":	"block_14",
 			"parent":	null,
 			"components":	{
@@ -3412,7 +3412,7 @@
 				}
 			}
 		}, {
-			"id":	2097359,
+			"id":	1048763,
 			"name":	"block_13",
 			"parent":	null,
 			"components":	{
@@ -3431,7 +3431,7 @@
 				}
 			}
 		}, {
-			"id":	2097360,
+			"id":	1048764,
 			"name":	"block_12",
 			"parent":	null,
 			"components":	{
@@ -3450,7 +3450,7 @@
 				}
 			}
 		}, {
-			"id":	2097361,
+			"id":	1048765,
 			"name":	"block_11",
 			"parent":	null,
 			"components":	{
@@ -3469,7 +3469,7 @@
 				}
 			}
 		}, {
-			"id":	2097362,
+			"id":	1048766,
 			"name":	"block_10",
 			"parent":	null,
 			"components":	{
@@ -3488,7 +3488,7 @@
 				}
 			}
 		}, {
-			"id":	2097363,
+			"id":	1048767,
 			"name":	"block_09",
 			"parent":	null,
 			"components":	{
@@ -3507,7 +3507,7 @@
 				}
 			}
 		}, {
-			"id":	2097364,
+			"id":	1048768,
 			"name":	"block_08",
 			"parent":	null,
 			"components":	{
@@ -3526,7 +3526,7 @@
 				}
 			}
 		}, {
-			"id":	2097365,
+			"id":	1048769,
 			"name":	"block_07",
 			"parent":	null,
 			"components":	{
@@ -3545,7 +3545,7 @@
 				}
 			}
 		}, {
-			"id":	2097366,
+			"id":	1048770,
 			"name":	"block_06",
 			"parent":	null,
 			"components":	{
@@ -3564,7 +3564,7 @@
 				}
 			}
 		}, {
-			"id":	2097367,
+			"id":	1048771,
 			"name":	"block_05",
 			"parent":	null,
 			"components":	{
@@ -3583,7 +3583,7 @@
 				}
 			}
 		}, {
-			"id":	2097368,
+			"id":	1048772,
 			"name":	"block_04",
 			"parent":	null,
 			"components":	{
@@ -3602,7 +3602,7 @@
 				}
 			}
 		}, {
-			"id":	2097369,
+			"id":	1048773,
 			"name":	"block_03",
 			"parent":	null,
 			"components":	{
@@ -3621,7 +3621,7 @@
 				}
 			}
 		}, {
-			"id":	2097370,
+			"id":	1048774,
 			"name":	"block_02",
 			"parent":	null,
 			"components":	{
@@ -3640,7 +3640,7 @@
 				}
 			}
 		}, {
-			"id":	2097371,
+			"id":	1048775,
 			"name":	"block_00",
 			"parent":	null,
 			"components":	{
@@ -3659,7 +3659,7 @@
 				}
 			}
 		}, {
-			"id":	2097372,
+			"id":	1048776,
 			"name":	"block_01",
 			"parent":	null,
 			"components":	{
@@ -3678,7 +3678,7 @@
 				}
 			}
 		}, {
-			"id":	2097373,
+			"id":	1048777,
 			"name":	"pallet",
 			"parent":	null,
 			"components":	{
@@ -3697,7 +3697,7 @@
 				}
 			}
 		}, {
-			"id":	2097374,
+			"id":	1048778,
 			"name":	"foundation",
 			"parent":	null,
 			"components":	{
@@ -3716,7 +3716,7 @@
 				}
 			}
 		}, {
-			"id":	2097375,
+			"id":	1048779,
 			"name":	"sun",
 			"parent":	null,
 			"components":	{
@@ -3736,7 +3736,7 @@
 				}
 			}
 		}, {
-			"id":	2097376,
+			"id":	1048780,
 			"name":	"ground",
 			"parent":	null,
 			"components":	{
@@ -3756,5 +3756,13 @@
 			}
 		}],
 	"format":	"pbr-scene",
-	"version":	1
+	"version":	1,
+	"environment":	{
+		"hdri":	null,
+		"use_ibl":	true,
+		"show_skybox":	true,
+		"sky_blur":	0,
+		"ambient_strength":	0.5,
+		"exposure":	1
+	}
 }

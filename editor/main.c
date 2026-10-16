@@ -224,6 +224,20 @@ typedef struct editor_state
     b8              gizmo_editing;    // a history group is open for the drag in progress
     b8              gizmo_executing;  // inside one of the gizmo's own commands (not logged)
 
+    // --- Export (the Export dialog) ----------------------------------------------------
+    // project_export() into export_dir, then the exported game's own --check
+    // run (check_process, in the background): it loads the startup scene in
+    // a hidden window and saves what it rendered to check_png, shown in the
+    // dialog as check_picture.
+    char                  export_dir[PROJECT_PATH_MAX];
+    char                  export_status[PROJECT_PATH_MAX + 640];
+    b8                    export_ok;      // the last export succeeded (the check may still run)
+    project_export_report export_report;
+    process*              check_process;
+    int                   check_result;   // -1 = not run / running, 0 = passed, else the game's exit code
+    rhi_texture           check_picture;
+    char                  check_png[PROJECT_PATH_MAX];
+
     // --- Add (Scene panel) ----------------------------------------------------------
     f32 add_size;   // meters: the longest side of a model or shape added from the panel
 
@@ -251,6 +265,7 @@ typedef struct editor_state
 #define POPUP_OPEN_PROJECT "Open project"
 #define POPUP_IMPORT       "Import asset"
 #define POPUP_SETTINGS     "Project settings"
+#define POPUP_EXPORT       "Export game"
 
 static inline f32
 clampf(f32 v, f32 lo, f32 hi)
@@ -862,6 +877,55 @@ host_project_create(void* user_data, command_context* ctx, const cJSON* args, cJ
 static void play_start(editor_state* state);
 static void play_stop(editor_state* state);
 static void play_toggle_pause(editor_state* state);
+static b8   run_export(editor_state* state, const char* folder);
+static void default_export_location(const editor_state* state, char* out, size_t size);
+
+static b8
+host_export_status(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    (void)ctx; (void)args; (void)error; (void)error_size;
+    editor_state* state = user_data;
+
+    *out_result = cJSON_CreateObject();
+    cJSON_AddBoolToObject(*out_result, "exported", state->export_ok);
+    cJSON_AddStringToObject(*out_result, "message", state->export_status);
+    if (state->export_ok)
+    {
+        cJSON_AddStringToObject(*out_result, "folder", state->export_dir);
+        cJSON_AddStringToObject(*out_result, "executable", state->export_report.executable);
+        cJSON_AddNumberToObject(*out_result, "files", state->export_report.files);
+        cJSON_AddNumberToObject(*out_result, "bytes", (double)state->export_report.bytes);
+    }
+    // The exported game's own check of its startup scene.
+    cJSON_AddStringToObject(*out_result, "check", state->check_process ? "running"
+                            : state->check_result == 0 ? "passed" : state->check_result > 0 ? "failed" : "none");
+    return true;
+}
+
+// The Export dialog's Export, for scripts and the agent.
+static b8
+host_export(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    editor_state* state  = user_data;
+    const char*   folder = cJSON_GetStringValue(cJSON_GetObjectItem(args, "folder"));
+
+    if (folder && folder[0])
+        snprintf(state->export_dir, sizeof(state->export_dir), "%s", folder);
+    else
+        default_export_location(state, state->export_dir, sizeof(state->export_dir));
+
+    if (!run_export(state, state->export_dir))
+    {
+        snprintf(error, error_size, "%s", state->export_status);
+        return false;
+    }
+    return host_export_status(user_data, ctx, NULL, out_result, error, error_size);
+}
+
+static const cmd_arg ARGS_EXPORT[] = {
+    { "folder", "string", false, "Where to put the game: a new or empty folder, or an earlier export; "
+                                 "default Documents/PBR Exports/<project name>" },
+};
 
 static const char*
 play_mode_name(play_mode mode)
@@ -977,6 +1041,10 @@ static const cmd_host_command HOST_COMMANDS[] = {
                                                                                                HOST_ARGS(ARGS_PLAY_SET),        false, host_play_set },
     { "play.status",      "Whether the scene is playing, paused or stopped, and for how long it has played",
                                                                                                NULL, 0,                         false, host_play_status },
+    { "project.export",   "Exports the project's saved scenes as a game a player can run, then has the game check itself",
+                                                                                               HOST_ARGS(ARGS_EXPORT),          false, host_export },
+    { "project.export_status", "The last export: where, how big, and whether the game's own check passed",
+                                                                                               NULL, 0,                         false, host_export_status },
 };
 
 #define HOST_COMMAND_COUNT ((uint32)(sizeof(HOST_COMMANDS) / sizeof(HOST_COMMANDS[0])))
@@ -1486,6 +1554,150 @@ play_advance(editor_state* state, f32 dt)
     }
 }
 
+// --- Export ---------------------------------------------------------------------------
+// The Export dialog's work: Project/Project.h project_export() with the Game
+// executable (GAME_RELEASE_EXE when it's been built, else GAME_EXE) and,
+// for a Release game, the C++ runtime DLLs CMake found (GAME_RUNTIME_DLLS);
+// then the exported game's --check run, watched by watch_export_check().
+
+#define EXPORT_MAX_DLLS 16
+
+// The Game executable to ship; *out_release says whether it's a Release
+// build (the one for players).
+static const char*
+game_executable(b8* out_release)
+{
+    *out_release = file_exists(GAME_RELEASE_EXE);
+    return *out_release ? GAME_RELEASE_EXE : GAME_EXE;
+}
+
+// Splits GAME_RUNTIME_DLLS ('|'-separated) into `paths` (pointers into
+// `buffer`); returns how many.
+static uint32
+runtime_dlls(char* buffer, size_t size, const char* paths[EXPORT_MAX_DLLS])
+{
+    snprintf(buffer, size, "%s", GAME_RUNTIME_DLLS);
+    uint32 count = 0;
+    for (char* item = buffer; item && *item && count < EXPORT_MAX_DLLS;)
+    {
+        char* bar = strchr(item, '|');
+        if (bar)
+            *bar++ = '\0';
+        paths[count++] = item;
+        item = bar;
+    }
+    return count;
+}
+
+// Documents/PBR Exports/<project name>.
+static void
+default_export_location(const editor_state* state, char* out, size_t size)
+{
+    char projects[PROJECT_PATH_MAX];
+    default_projects_location(projects, sizeof(projects));   // .../Documents/PBR Projects
+    char* last = strrchr(projects, '/');
+    if (last)
+        *last = '\0';
+    snprintf(out, size, "%s/PBR Exports/%s", projects, state->project.name);
+}
+
+static void
+open_export_dialog(editor_state* state)
+{
+    if (!state->export_dir[0])
+        default_export_location(state, state->export_dir, sizeof(state->export_dir));
+    state->open_popup = POPUP_EXPORT;
+}
+
+// Exports into `folder` and, if that worked, starts the exported game's
+// check. The outcome goes to export_status (and the return value).
+static b8
+run_export(editor_state* state, const char* folder)
+{
+    if (state->check_process)
+    {
+        snprintf(state->export_status, sizeof(state->export_status), "The last export's check is still running.");
+        return false;
+    }
+    if (state->check_picture)
+    {
+        rhi_texture_destroy(state->check_picture);
+        state->check_picture = NULL;
+    }
+    state->check_result = -1;
+
+    b8          release;
+    const char* game = game_executable(&release);
+    char        dll_buffer[4096];
+    const char* dlls[EXPORT_MAX_DLLS];
+    uint32      dll_count = release ? runtime_dlls(dll_buffer, sizeof(dll_buffer), dlls) : 0;
+
+    project_export_options options = { game, paths_engine_root(), dlls, dll_count };
+    char error[640];
+    state->export_ok = project_export(paths_project_root(), folder, &options, &state->export_report, error, sizeof(error));
+    if (!state->export_ok)
+    {
+        snprintf(state->export_status, sizeof(state->export_status), "Not exported: %s", error);
+        return false;
+    }
+
+    snprintf(state->export_status, sizeof(state->export_status), "Exported %u files (%.1f MB), %u scene(s), to %s.",
+             state->export_report.files, (double)state->export_report.bytes / (1024.0 * 1024.0),
+             state->export_report.scenes, folder);
+    console_info(&state->console, state->export_status);
+
+    // The game checks itself: its startup scene, in a hidden window.
+    char* png = user_data_path("export_check.png");
+    snprintf(state->check_png, sizeof(state->check_png), "%s", png);
+    free(png);
+    remove(state->check_png);
+
+    const char* argv[] = { state->export_report.executable, "--check", state->check_png, NULL };
+    state->check_process = process_spawn(argv, NULL);
+    if (!state->check_process)
+        state->check_result = 1;
+    return true;
+}
+
+// Once a frame: notices the check finishing, and loads its picture.
+static void
+watch_export_check(editor_state* state)
+{
+    int exit_code;
+    if (!state->check_process || process_running(state->check_process, &exit_code))
+        return;
+
+    process_destroy(state->check_process);
+    state->check_process = NULL;
+    state->check_result  = exit_code;
+    if (exit_code == 0 && file_exists(state->check_png))
+        state->check_picture = rhi_texture_create_from_file(state->check_png, RHI_FILTER_LINEAR, RHI_WRAP_CLAMP_TO_EDGE, false);
+
+    console_info(&state->console, exit_code == 0 ? "Export check passed: the game loads and renders its startup scene."
+                                                 : "Export check FAILED: see log.txt in the export folder.");
+}
+
+// Shows `folder` in the system's file browser.
+static void
+open_folder(const char* folder)
+{
+#ifdef _WIN32
+    char path[PROJECT_PATH_MAX];
+    snprintf(path, sizeof(path), "%s", folder);
+    for (char* c = path; *c; ++c)
+        if (*c == '/')
+            *c = '\\';
+    const char* argv[] = { "C:\\Windows\\explorer.exe", path, NULL };
+#elif defined(__APPLE__)
+    const char* argv[] = { "/usr/bin/open", folder, NULL };
+#else
+    const char* argv[] = { "/usr/bin/xdg-open", folder, NULL };
+#endif
+    // Left to run on its own: process_destroy() would end it. Its small
+    // handle is never freed (one per click).
+    (void)process_spawn(argv, NULL);
+}
+
 // --- Viewport toolbar ---------------------------------------------------------------
 
 // A button that can be greyed out, with a tooltip saying why (or what it does).
@@ -1570,7 +1782,8 @@ draw_toolbar(editor_state* state)
     igSameLine(0.0f, -1.0f);
     toolbar_separator();
 
-    toolbar_button("Export", false, "Export the game: coming with Stage 4 (docs/ROADMAP.md)");
+    if (toolbar_button("Export", true, "Make a folder with the game a player can run"))
+        open_export_dialog(state);
     igNewLine();
 }
 
@@ -2150,6 +2363,8 @@ draw_main_menu(editor_state* state)
             state->popup_error[0] = '\0';
             state->open_popup     = POPUP_IMPORT;
         }
+        if (igMenuItem_Bool("Export Game...", NULL, false, true))
+            open_export_dialog(state);
         if (igMenuItem_Bool("Project Settings...", NULL, false, true))
         {
             state->settings_edit  = state->project;
@@ -2457,6 +2672,87 @@ draw_settings_popup(editor_state* state)
 }
 
 static void
+draw_export_popup(editor_state* state)
+{
+    if (!igBeginPopupModal(POPUP_EXPORT, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+
+    igText("Export %s as a game a player can run", state->project.name);
+    igSetNextItemWidth(480.0f);
+    igInputText("Folder", state->export_dir, sizeof(state->export_dir), 0, NULL, NULL);
+    igTextDisabled("A new or empty folder, or an earlier export (replaced).");
+
+    // What it ships: a Release game runs anywhere; a Debug one needs Visual
+    // Studio's debug runtime.
+    b8 release;
+    game_executable(&release);
+    if (release)
+        igTextDisabled("Game: Release build, with the C++ runtime DLLs.");
+    else
+    {
+        igPushTextWrapPos(480.0f);
+        igTextColored((ImVec4_c){ 1.0f, 0.71f, 0.0f, 1.0f },
+                      "Game: Debug build. It runs only on PCs with Visual Studio. For players, build the Release "
+                      "game first: cmake --build build --config Release --target Game");
+        igPopTextWrapPos();
+    }
+
+    // Only saved scenes go out.
+    if (scene_dirty(state))
+    {
+        igTextColored((ImVec4_c){ 1.0f, 0.71f, 0.0f, 1.0f }, "%s has unsaved changes, which won't be exported.",
+                      state->scene_name[0] ? state->scene_name : "This scene");
+        igSameLine(0.0f, -1.0f);
+        if (igSmallButton("Save now"))
+            save_scene(state);
+    }
+
+    igSeparator();
+    igBeginDisabled(state->check_process != NULL);
+    if (dialog_button("Export"))
+        run_export(state, state->export_dir);
+    igEndDisabled();
+    igSameLine(0.0f, -1.0f);
+    igBeginDisabled(!state->export_ok);
+    if (dialog_button("Open folder"))
+        open_folder(state->export_dir);
+    igEndDisabled();
+    igSameLine(0.0f, -1.0f);
+    if (dialog_button("Close"))
+        igCloseCurrentPopup();
+
+    if (state->export_status[0])
+    {
+        igPushTextWrapPos(480.0f);
+        if (state->export_ok)
+            igTextWrapped("%s", state->export_status);
+        else
+            igTextColored((ImVec4_c){ 1.0f, 0.45f, 0.4f, 1.0f }, "%s", state->export_status);
+        igPopTextWrapPos();
+    }
+
+    // The game's own check, and what it rendered.
+    if (state->export_ok)
+    {
+        if (state->check_process)
+            igTextDisabled("Checking: the exported game is loading its startup scene...");
+        else if (state->check_result == 0)
+            igTextColored((ImVec4_c){ 0.31f, 0.78f, 0.31f, 1.0f }, "Check passed: the game loads and renders %s.",
+                          state->project.startup_scene);
+        else if (state->check_result > 0)
+            igTextColored((ImVec4_c){ 1.0f, 0.45f, 0.4f, 1.0f },
+                          "Check FAILED (exit code %d): see log.txt in the export folder.", state->check_result);
+
+        if (state->check_picture)
+        {
+            ImTextureRef_c picture = { NULL, (ImTextureID)rhi_texture_native_handle(state->check_picture) };
+            igImage(picture, (ImVec2_c){ 480.0f, 270.0f }, (ImVec2_c){ 0.0f, 1.0f }, (ImVec2_c){ 1.0f, 0.0f });
+        }
+    }
+    igEndPopup();
+}
+
+static void
 draw_popups(editor_state* state)
 {
     if (state->open_popup)
@@ -2471,6 +2767,7 @@ draw_popups(editor_state* state)
     draw_open_project_popup(state);
     draw_import_popup(state);
     draw_settings_popup(state);
+    draw_export_popup(state);
 }
 
 // --- App hooks -------------------------------------------------------------------------
@@ -2503,6 +2800,7 @@ on_init(App* app)
     state->snap_scale   = 0.1f;
     state->show_console = true;
     state->add_size     = 1.0f;
+    state->check_result = -1;
 
     history_init(&state->history);
 
@@ -2815,6 +3113,9 @@ fit_view_target(editor_state* state, uint16 width, uint16 height)
 
     if (state->view_target)
         rhi_framebuffer_destroy(state->view_target);
+    if (state->check_picture)
+        rhi_texture_destroy(state->check_picture);
+    process_destroy(state->check_process);
 
     rhi_framebuffer_attachment color = { .format = RHI_FORMAT_RGBA8 };
     state->view_target = rhi_framebuffer_create((rhi_framebuffer_desc){
@@ -2930,6 +3231,7 @@ static void on_frame(App* app, f32 dt)
     chat_poll(&state->chat);
     watch_agent(state);
     watch_game(state);
+    watch_export_check(state);
 
     gizmo_begin_frame();
     sync_hdri(state);
