@@ -18,10 +18,8 @@
 // something else, or quitting, asks first. Opening a scene starts a fresh
 // undo history.
 //
-// Live link: the scene being edited is published to the live scene file
-// (World/LiveScene.h) whenever it changes, however it changed -- panels,
-// console, agent. F5 (or "Play in Testbed") starts the game with --live, and
-// it follows every edit while it keeps running.
+// Play (the Viewport toolbar) runs a copy of the scene in place; Export
+// makes the game a player runs (game/main.c, Project/Project.h).
 
 #include "App.h"
 #include "Chat/ChatSession.h"
@@ -39,7 +37,6 @@
 #include "Scene/Camera.h"
 #include "Scene/Model.h"
 #include "Assets/AssetCache.h"
-#include "World/LiveScene.h"
 #include "World/Serialize.h"
 #include "World/World.h"
 #include "Platform/Window.h"
@@ -151,12 +148,6 @@ typedef struct editor_state
     process*     agent_process;
     char         agent_note[1280];
     char         agent_log[1024];
-
-    // --- Live link to the game (World/LiveScene.h) ------------------------------
-    live_publisher live;
-    process*       game_process;   // the Testbed started by F5; NULL if not running
-    char           game_log[1024];
-    char           game_note[256];
 
     // --- Rendering -------------------------------------------------------------
     // Renderer/SceneRenderer.h runs the whole lit frame (cascaded shadows,
@@ -1113,57 +1104,6 @@ start_agent(editor_state* state)
     free(python);
 }
 
-// F5: starts the game (TESTBED_EXE, set by CMake) following this editor's
-// scene, in the same project so the models and HDRIs the scene names
-// resolve to the same files.
-static void
-start_game(editor_state* state)
-{
-    if (state->game_process && process_running(state->game_process, NULL))
-    {
-        snprintf(state->game_note, sizeof(state->game_note), "The game is already running.");
-        return;
-    }
-    process_destroy(state->game_process);
-    state->game_process = NULL;
-
-    if (!file_exists(TESTBED_EXE))
-    {
-        snprintf(state->game_note, sizeof(state->game_note), "No game at %s; build the Testbed target.", TESTBED_EXE);
-        return;
-    }
-
-    const char* argv[] = { TESTBED_EXE, "--live", "--project", paths_project_root(), NULL };
-    state->game_process = process_spawn(argv, state->game_log);
-    snprintf(state->game_note, sizeof(state->game_note), state->game_process
-             ? "Game running, following your edits." : "Could not start the game; see %s.", state->game_log);
-}
-
-// Ends the F5 game, when the project it was started on is closed.
-static void
-stop_game(editor_state* state)
-{
-    if (!state->game_process)
-        return;
-    process_destroy(state->game_process);
-    state->game_process = NULL;
-    snprintf(state->game_note, sizeof(state->game_note), "Game closed with the project it was playing.");
-}
-
-// Notices the game being closed.
-static void
-watch_game(editor_state* state)
-{
-    int exit_code;
-    if (!state->game_process || process_running(state->game_process, &exit_code))
-        return;
-
-    snprintf(state->game_note, sizeof(state->game_note), exit_code == 0
-             ? "Game closed." : "The game exited (code %d); its log is %s.", exit_code, state->game_log);
-    process_destroy(state->game_process);
-    state->game_process = NULL;
-}
-
 // Notices the sidecar exiting, and says where to look.
 static void
 watch_agent(editor_state* state)
@@ -1652,8 +1592,13 @@ run_export(editor_state* state, const char* folder)
     free(png);
     remove(state->check_png);
 
+    // A Release game writes log.txt beside itself; a Debug one logs to its
+    // console, caught here instead.
+    char* log = user_data_path("export_check.log");
+    remove(log);
     const char* argv[] = { state->export_report.executable, "--check", state->check_png, NULL };
-    state->check_process = process_spawn(argv, NULL);
+    state->check_process = process_spawn(argv, log);
+    free(log);
     if (!state->check_process)
         state->check_result = 1;
     return true;
@@ -1674,7 +1619,8 @@ watch_export_check(editor_state* state)
         state->check_picture = rhi_texture_create_from_file(state->check_png, RHI_FILTER_LINEAR, RHI_WRAP_CLAMP_TO_EDGE, false);
 
     console_info(&state->console, exit_code == 0 ? "Export check passed: the game loads and renders its startup scene."
-                                                 : "Export check FAILED: see log.txt in the export folder.");
+                                                 : "Export check FAILED: see log.txt in the export folder "
+                                                   "(~/.pbr-renderer/export_check.log for a Debug game).");
 }
 
 // Shows `folder` in the system's file browser.
@@ -2055,7 +2001,6 @@ open_project(editor_state* state, const char* directory)
     // still cached as "models/tree.glb" would stand in for the new
     // project's file of that name.
     finish_edits(state);
-    stop_game(state);
     reset_history(state);
     world_clear(&state->scene);
     assets_collect_unused(&state->assets);
@@ -2741,7 +2686,7 @@ draw_export_popup(editor_state* state)
                           state->project.startup_scene);
         else if (state->check_result > 0)
             igTextColored((ImVec4_c){ 1.0f, 0.45f, 0.4f, 1.0f },
-                          "Check FAILED (exit code %d): see log.txt in the export folder.", state->check_result);
+                          "Check FAILED (exit code %d): see log.txt in the export folder (~/.pbr-renderer/export_check.log for a Debug game).", state->check_result);
 
         if (state->check_picture)
         {
@@ -2842,8 +2787,6 @@ on_init(App* app)
     const char* home = getenv("HOME");
 #endif
     snprintf(state->agent_log, sizeof(state->agent_log), "%s/.pbr-renderer/agent.log", home ? home : ".");
-    snprintf(state->game_log, sizeof(state->game_log), "%s/.pbr-renderer/game.log", home ? home : ".");
-    live_publisher_init(&state->live, NULL);
 
     // The chat agent connects through the server, so without one there's no agent.
     const char* autostart = getenv("PBR_AGENT_AUTOSTART");
@@ -2937,8 +2880,6 @@ static void on_key(App* app, int key, int action, int mods)
     }
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
         state->show_console = !state->show_console;
-    if (key == GLFW_KEY_F5 && action == GLFW_PRESS)
-        start_game(state);
 
     // Ctrl+P: Play / Stop; Ctrl+Shift+P: pause / resume; F10: one step while paused.
     if (key == GLFW_KEY_P && action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL))
@@ -2993,8 +2934,9 @@ draw_environment_controls(editor_state* state)
 }
 
 // --- Spin preview -------------------------------------------------------------------
-// The editor never runs world_tick(): what it holds -- and what panels,
-// commands, saving and the live link see -- is the authored pose. To still
+// The editor never runs world_tick() on the edited scene (Play ticks a
+// copy): what it holds -- and what panels, commands and saving see -- is
+// the authored pose. To still
 // show Spin components moving, a frame's draw is bracketed by
 // spin_preview_begin() (turn every spinning entity by `time`) and
 // spin_preview_end() (put the authored rotations back).
@@ -3230,7 +3172,6 @@ static void on_frame(App* app, f32 dt)
     server_poll(state->server, active_commands(state));
     chat_poll(&state->chat);
     watch_agent(state);
-    watch_game(state);
     watch_export_check(state);
 
     gizmo_begin_frame();
@@ -3260,10 +3201,6 @@ static void on_frame(App* app, f32 dt)
         igTextDisabled("Command server: port %u, %u client(s)", (unsigned)server_port(state->server),
                        server_client_count(state->server));
 
-    if (igButton(state->game_process ? "Game running (F5)" : "Play in Testbed (F5)", (ImVec2_c){ 0, 0 }))
-        start_game(state);
-    if (state->game_note[0])
-        igTextDisabled("%s", state->game_note);
     igSeparator();
 
     draw_add_controls(state);
@@ -3286,15 +3223,6 @@ static void on_frame(App* app, f32 dt)
 
     draw_popups(state);
     update_title(state);
-
-    // Whatever changed this frame -- panels, console, agent -- goes to the
-    // live scene file, for a game running with --live. Not while playing:
-    // Play's copy and environment are thrown away, so the game shouldn't
-    // follow them (it catches up on Stop).
-    // TODO: re-serializes the whole world to detect a change; to be replaced
-    // by incremental sync over the command server (World/LiveScene.h).
-    if (state->play == PLAY_STOPPED)
-        live_publisher_publish(&state->live, &state->scene, &state->env, window_get_time(), 0.1);
 }
 
 // Runs from terminate(), before the GL context goes away.
@@ -3306,8 +3234,6 @@ static void on_shutdown(App* app)
     chat_shutdown(&state->chat);             // closes a running turn's transaction
     server_stop(state->server);              // the agent (--exit-with-app) leaves when its connection closes...
     process_destroy(state->agent_process);   // ...or is ended here
-    process_destroy(state->game_process);    // the game started by F5 closes with the editor
-    live_publisher_shutdown(&state->live);
     finish_edits(state);                     // an edit still open becomes its own step
     inspector_shutdown(&state->inspector);
     console_shutdown(&state->console);

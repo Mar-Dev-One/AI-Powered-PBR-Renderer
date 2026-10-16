@@ -206,19 +206,14 @@ progress notes between tool calls. Tested end to end against `ServerHost` with a
 
 ## Editor / runtime split
 
-The editor (`editor/`) and the game runtime (`testbed/`, built as `Testbed` for development and
-`Game` for export) are separate apps on one engine library. Scenes carry their environment, and
-`Spin` components run in the game (`world_tick()`) and in the editor's Play mode.
+The editor (`editor/`) and the game runtime (`game/`, the `Game` target: a console program in
+Debug, none in Release) are separate apps on one engine library. Scenes carry their environment,
+and `Spin` components run in the game (`world_tick()`) and in the editor's Play mode.
 
-### Live link: first version, to replace
-
-F5 in the editor starts `Testbed --live`, which follows the editor through a shared scene file
-(`World/LiveScene.h`). In-editor Play now covers most testing, so this matters less. It works,
-but it is a stopgap:
-
-- Whole-world sync: every edit re-serializes and reloads every entity (cost grows with the scene)
-- The game's runtime state is rebuilt on every edit; only `Spin` poses are kept, matched by name
-- Entity IDs don't survive a reload; one-way only; up to ~0.2 s latency; one fixed file
+The first live link -- F5 started `Testbed --live`, which followed the editor through a shared
+scene file (`World/LiveScene.h`) -- was removed with the Testbed target (2026-10-16): in-editor
+Play replaced it, and it re-serialized the whole scene several times a second while the editor
+ran. To see the real game in its own window, export, or run `Game --project <folder>`.
 
 Next steps:
 
@@ -229,8 +224,8 @@ Next steps:
       writing components directly (the Inspector, gizmo and Add do; the Scene panel's direct
       light and model controls went away in Stage 2. The environment -- HDRI, exposure,
       ambient -- isn't World data and still has no undo.)
-- [ ] Separate-process live editing by incremental changes over the command server (the game
-      connects as a client and applies `scene.changed` events), replacing the file link
+- [ ] Optional, if a separate game window that follows edits is wanted again: the game connects
+      to the command server as a client and applies `scene.changed` events incrementally
 - [ ] Split the build: a runtime library without ImGui/Chat/Net/Commands for the game, the editor
       on top (same `engine/` folder). Still open: the exported `Game` links them, unused
 
@@ -307,7 +302,7 @@ the panel's size.
 - [x] Play from the toolbar runs the in-editor Play mode (see "Editor / runtime split" above:
       copy the world, tick the copy, restore on Stop), with a coloured border on the panel while
       playing. Options: view through the scene's Camera entity; play in a separate window
-      (today's F5 Testbed)
+      (the F5 Testbed then; removed since, see Editor / runtime split)
 
 Status (items 3-4): done. `world_copy()` (exact copy, same IDs; `tests/world_tests.c`). Toolbar:
 Play/Stop (Ctrl+P), Pause/Resume (Ctrl+Shift+P), Step (F10), the play clock, gizmo
@@ -318,7 +313,7 @@ view, selection, gizmo, Inspector, Entities, console, server, agent, Add -- work
 stops play first; Play waits while a chat turn runs. `play.set` / `play.status` commands and a
 `set_play` tool. First run without an imgui.ini gets a default layout (`default_layout()`).
 Not yet: viewing through the scene's Camera entity while playing (the editor camera stays).
-Separate-window play is still F5.
+Separate-window play was F5, removed since (Editor / runtime split).
 
 ### Stage 4: Game export
 

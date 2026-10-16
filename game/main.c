@@ -1,10 +1,11 @@
-// testbed/main.c
+// game/main.c
 //
-// The game runtime: loads a scene file (assets/scenes/<name>.json, as saved
-// by the editor's scene.save) and plays it. No ImGui, no command console, no
-// command server, no chat -- those are editor-only (editor/main.c).
+// The game runtime: loads a scene file (scenes/<name>.json in the project,
+// as saved by the editor) and plays it. No ImGui, no command console, no
+// command server, no chat -- those are editor-only (editor/main.c). An
+// export ships this program, renamed after the project.
 //
-//   Testbed [options] [scene] [hdri]
+//   Game [options] [scene] [hdri]
 //     scene         a name under the project's scenes/ ("orrery_plaza") or a
 //                   path to a .json file; defaults to the project's startup
 //                   scene (project.json, Project/Project.h), else DEFAULT_SCENE
@@ -15,10 +16,6 @@
 //     --width N     window size in pixels (default 1920 x 1080; in fullscreen,
 //     --height N    the monitor's resolution unless given)
 //     --fullscreen  fullscreen on the primary monitor
-//     --live        follow the editor: play the scene it is editing
-//                   (World/LiveScene.h) and pick up every edit as it happens,
-//                   instead of loading `scene` once. F5 in the editor starts
-//                   the game this way.
 //     --check PNG   load the scene in a hidden window, render a few frames,
 //                   save the picture to PNG and exit: 0 if the scene loaded
 //                   and rendered, 1 if not. The editor checks every export
@@ -29,13 +26,12 @@
 // assets/. Its project.json names the startup scene, and the window's title
 // and size.
 //
-// Built twice: Testbed (a console program, for development: its log shows
-// in the terminal) and Game (PBR_GAME_RUNTIME: no console window, the log
-// goes to log.txt next to it) -- the executable an export ships.
+// A Debug build is a console program, so its log shows in the terminal;
+// other builds (PBR_GAME_NO_CONSOLE, what players get) open no console and
+// write the log to log.txt next to the program.
 //
 // The game runs the scene's behaviours (World/World.h world_tick(): Spin
-// components turn their entities); the editor only previews them, keeping
-// the authored pose in the scene.
+// components turn their entities), as the editor's Play mode does.
 //
 // The scene file's "environment" (World/Environment.h) sets the HDRI,
 // exposure, ambient strength and skybox, as they were in the editor when it
@@ -58,7 +54,6 @@
 #include "Renderer/SceneRenderer.h"
 #include "Scene/Camera.h"
 #include "World/Environment.h"
-#include "World/LiveScene.h"
 #include "World/Serialize.h"
 #include "World/World.h"
 
@@ -71,9 +66,6 @@
 
 #define DEFAULT_SCENE "orrery_plaza"   // for a project folder without a project.json
 #define DEFAULT_HDRI  "hdri/citrus_orchard_road_puresky_4k.hdr"
-
-// How often --live checks the editor's scene file.
-#define LIVE_POLL_SECONDS 0.1
 
 // Same shadow setup as the editor, so a scene looks the same in both.
 #define SHADOW_MAP_SIZE 2048
@@ -102,11 +94,6 @@ typedef struct game_state
     ibl_environment   ibl;     // env.hdri baked; all zeroes if it couldn't be loaded
     char              baked_hdri[ENVIRONMENT_HDRI_MAX];   // what `ibl` was last baked from
     b8                hdri_baked;                         // false until the first bake
-
-    // --live: the editor's scene file, reloaded whenever it changes.
-    b8           live;
-    live_watcher watcher;
-    b8           framed;   // the orbit camera has been aimed at the scene once
 
     // The scene's Camera entity, or ENTITY_NULL to use the orbit camera.
     entity_id scene_camera;
@@ -140,7 +127,7 @@ resolve_scene_path(const char* arg)
     {
         char* path = malloc(length + 1);
         if (!path)
-            FATAL("testbed: out of memory");
+            FATAL("game: out of memory");
         memcpy(path, arg, length + 1);
         return path;
     }
@@ -152,16 +139,9 @@ resolve_scene_path(const char* arg)
 
 // Replaces the world (and environment) with `scene`'s. `source` names it in
 // the log. The scene is loaded into a fresh world first and swapped in only
-// if it loads, so a bad update leaves the game showing the last good scene.
-// With `keep_spin`, entities that spin keep the pose the game has turned
-// them to, so an edit elsewhere doesn't snap them back -- the editor never
-// ticks, so its file always holds the authored pose.
-//
-// TODO: stopgap for the live link (World/LiveScene.h). A full reload wipes
-// runtime state, and only Spin poses are carried over, matched by name.
-// Replace with incremental changes that leave untouched entities alone.
+// if it loads, so a bad scene leaves the last good one playing.
 static b8
-apply_scene(game_state* state, const cJSON* scene, const char* source, b8 keep_spin)
+apply_scene(game_state* state, const cJSON* scene, const char* source)
 {
     world next;
     world_init(&next, &state->assets);
@@ -169,26 +149,13 @@ apply_scene(game_state* state, const cJSON* scene, const char* source, b8 keep_s
     char error[640];
     if (!deserialize_scene(&next, scene, NULL, NULL, error, sizeof(error)))
     {
-        LOG_ERROR("testbed: can't load '%s': %s%s\n", source, error,
+        LOG_ERROR("game: can't load '%s': %s%s\n", source, error,
                   world_count(&state->world) ? " -- still showing the last scene that loaded" : "");
         world_shutdown(&next);
         return false;
     }
 
-    if (keep_spin)
-    {
-        const uint32 mask = COMPONENT_BIT(COMPONENT_SPIN);
-        for (entity_id e = world_next(&next, ENTITY_NULL, mask); e; e = world_next(&next, e, mask))
-        {
-            const c_transform* before = world_transform(&state->world, world_find(&state->world, world_name(&next, e)));
-            if (before)
-                glm_vec3_copy((f32*)before->rotation_deg, world_transform(&next, e)->rotation_deg);
-        }
-    }
-    else
-    {
-        LOG_INFO("testbed: loaded '%s' (%u entities)\n", source, world_count(&next));
-    }
+    LOG_INFO("game: loaded '%s' (%u entities)\n", source, world_count(&next));
 
     // The new world already holds its models, so releasing the old one's
     // references doesn't unload anything both use.
@@ -198,7 +165,7 @@ apply_scene(game_state* state, const cJSON* scene, const char* source, b8 keep_s
     // A bad environment doesn't stop the scene from playing: it keeps the last one.
     const cJSON* env = cJSON_GetObjectItem(scene, "environment");
     if (env && !deserialize_environment(env, &state->env, error, sizeof(error)))
-        LOG_WARN("testbed: '%s': %s -- keeping the previous environment\n", source, error);
+        LOG_WARN("game: '%s': %s -- keeping the previous environment\n", source, error);
 
     return true;
 }
@@ -210,7 +177,7 @@ load_scene(game_state* state, const char* arg)
     char* text = file_exists(path) ? file_read_to_string(path) : NULL;
     if (!text)
     {
-        LOG_ERROR("testbed: no scene at '%s'\n", path);
+        LOG_ERROR("game: no scene at '%s'\n", path);
         free(path);
         return false;
     }
@@ -220,17 +187,17 @@ load_scene(game_state* state, const char* arg)
 
     b8 ok = scene != NULL;
     if (ok)
-        ok = apply_scene(state, scene, path, false);
+        ok = apply_scene(state, scene, path);
     else
-        LOG_ERROR("testbed: can't load '%s': not valid JSON\n", path);
+        LOG_ERROR("game: can't load '%s': not valid JSON\n", path);
 
     cJSON_Delete(scene);
     free(path);
     return ok;
 }
 
-// Bakes env.hdri into `ibl` if it changed since the last bake (a live edit
-// can switch it). A missing file leaves the hemisphere ambient light.
+// Bakes env.hdri into `ibl` if it changed since the last bake. A missing
+// file leaves the hemisphere ambient light.
 static void
 sync_hdri(game_state* state)
 {
@@ -349,23 +316,17 @@ orbit_camera_update(game_state* state, window* wind)
     state->last_cursor_y = cursor_y;
 }
 
-// Picks the view after the world changed: the scene's first Camera entity,
-// else the orbit camera -- aimed at the scene the first time only, so a live
-// edit doesn't yank the view away from where the player left it.
+// Picks the view once the scene has loaded: its first Camera entity, else
+// the orbit camera aimed at everything in it.
 static void
 choose_camera(game_state* state)
 {
-    entity_id previous  = state->scene_camera;
     state->scene_camera = world_next(&state->world, ENTITY_NULL, COMPONENT_BIT(COMPONENT_CAMERA));
 
-    if (state->scene_camera && state->scene_camera != previous)
-        LOG_INFO("testbed: viewing through camera '%s'\n", world_name(&state->world, state->scene_camera));
-
-    if (!state->scene_camera && (!state->framed || previous))
-    {
+    if (state->scene_camera)
+        LOG_INFO("game: viewing through camera '%s'\n", world_name(&state->world, state->scene_camera));
+    else
         frame_scene(state);
-        state->framed = world_count(&state->world) > 0;
-    }
 }
 
 // --- App hooks -------------------------------------------------------------------
@@ -377,10 +338,10 @@ on_init(App* app)
     window_size size  = window_get_size(get_renderer()->drawing_window);
     state->aspect     = size.height ? (f32)size.width / (f32)size.height : 1.0f;
 
-    LOG_INFO("testbed: project %s, engine data %s\n", paths_project_root(), paths_engine_root());
+    LOG_INFO("game: project %s, engine data %s\n", paths_project_root(), paths_engine_root());
 
     if (!scene_renderer_create(&state->renderer, size.width, size.height, CASCADE_COUNT, SHADOW_MAP_SIZE))
-        FATAL("testbed: failed to create the scene renderer");
+        FATAL("game: failed to create the scene renderer");
 
     state->env = scene_environment_default();
     snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", DEFAULT_HDRI);
@@ -388,21 +349,7 @@ on_init(App* app)
     assets_init(&state->assets);
     world_init(&state->world, &state->assets);
 
-    if (state->live)
-    {
-        // The editor writes the file as soon as it runs; until then, an empty world.
-        live_watcher_init(&state->watcher, NULL);
-        cJSON* scene = live_watcher_poll(&state->watcher, 0.0, 0.0);
-        if (scene)
-            state->scene_loaded = apply_scene(state, scene, state->watcher.path, false);
-        else
-            LOG_INFO("testbed: waiting for the editor (%s)\n", state->watcher.path);
-        cJSON_Delete(scene);
-    }
-    else
-    {
-        state->scene_loaded = load_scene(state, state->scene_arg);
-    }
+    state->scene_loaded = load_scene(state, state->scene_arg);
     world_update(&state->world);
 
     if (state->hdri_arg)
@@ -483,22 +430,6 @@ on_frame(App* app, f32 dt)
 {
     game_state* state = (game_state*)app->user_data;
 
-    // --live: the editor changed something -- take its world, keep playing.
-    if (state->live)
-    {
-        cJSON* scene = live_watcher_poll(&state->watcher, window_get_time(), LIVE_POLL_SECONDS);
-        if (scene)
-        {
-            apply_scene(state, scene, state->watcher.path, true);
-            if (state->hdri_arg)   // the command line still wins
-                snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", state->hdri_arg);
-            sync_hdri(state);
-            world_update(&state->world);
-            choose_camera(state);
-            cJSON_Delete(scene);
-        }
-    }
-
     // A long stall (window dragged, breakpoint) shouldn't fling things around.
     world_tick(&state->world, fminf(dt, 0.1f));
     world_update(&state->world);
@@ -530,8 +461,6 @@ on_shutdown(App* app)
 {
     game_state* state = (game_state*)app->user_data;
 
-    if (state->live)
-        live_watcher_shutdown(&state->watcher);
     world_shutdown(&state->world);    // releases the world's assets...
     assets_shutdown(&state->assets);  // ...then the models themselves
     ibl_destroy(&state->ibl);
@@ -550,8 +479,7 @@ parse_size(const char* text, uint16 max)
 static void
 print_usage(void)
 {
-    printf("usage: Testbed [--width N] [--height N] [--fullscreen] [--live] [--project DIR] [--check PNG] [scene] [hdri]\n"
-           "  --live     follow the scene the editor is editing, live\n"
+    printf("usage: Game [--width N] [--height N] [--fullscreen] [--project DIR] [--check PNG] [scene] [hdri]\n"
            "  --project  the project folder (default: one next to the program, else the source tree's assets/)\n"
            "  --check    render the scene once, hidden, into PNG and exit (0 = it loaded and rendered)\n"
            "  scene      name under the project's scenes/ or a path to a .json file\n"
@@ -559,8 +487,8 @@ print_usage(void)
            "  hdri       .hdr under the project, overriding the scene's own\n", DEFAULT_SCENE);
 }
 
-#ifdef PBR_GAME_RUNTIME
-// The game has no console: its log goes to log.txt beside it (replaced each
+#ifdef PBR_GAME_NO_CONSOLE
+// No console: the log goes to log.txt beside the program (replaced each
 // run), which is where to look when a player reports a problem.
 static void
 log_to_file(void)
@@ -578,7 +506,7 @@ log_to_file(void)
 
 int main(int argc, char** argv)
 {
-#ifdef PBR_GAME_RUNTIME
+#ifdef PBR_GAME_NO_CONSOLE
     log_to_file();
 #endif
 
@@ -596,10 +524,6 @@ int main(int argc, char** argv)
         if (strcmp(arg, "--fullscreen") == 0)
         {
             fullscreen = true;
-        }
-        else if (strcmp(arg, "--live") == 0)
-        {
-            state.live = true;
         }
         else if (strcmp(arg, "--project") == 0)
         {
@@ -685,7 +609,7 @@ int main(int argc, char** argv)
     }
 
     App app = {
-        .name        = state.live ? "PBR Renderer (live from the editor)" : has_settings ? project.name : "PBR Renderer",
+        .name        = has_settings ? project.name : "PBR Game",
         .hidden      = state.check_path != NULL,
         .width       = width,
         .height      = height,

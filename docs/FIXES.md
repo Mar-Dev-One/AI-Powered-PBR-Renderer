@@ -16,8 +16,8 @@ root cause -- edits that bypass, or don't own, the command/history layer -- so f
         address entities by name, so `component.set` then edits the wrong one.
 
       Quick fix: pass the numeric entity id (commands accept it) instead of `world_name()`.
-      Real fix: route every GUI edit through commands (the TODO in `on_frame` above
-      `live_publisher_publish`), which also lets the live link stop re-serializing the world.
+      Real fix: route every GUI edit through commands. (Since Stage 2 the GUI does, and the
+      live link is gone.)
 
 - [ ] **2. One anonymous transaction stack is shared by every editor.**
       - A client that sends `history.begin` and disconnects is never rolled back (`drop_client`,
@@ -40,8 +40,9 @@ root cause -- edits that bypass, or don't own, the command/history layer -- so f
       name a different entity -- breaking the "IDs are safe to hand to an LLM" promise in
       `World/World.h`. Fix: pin the server and chat to one world.
 
-- [ ] **4. Testbed leaks models in `--live` mode.** It never calls `assets_collect_unused()`, so
-      every model the editor swaps out stays loaded in the game. Call it after `apply_scene()`.
+- [x] **4. Testbed leaks models in `--live` mode.** Gone: the Testbed and `--live` were removed
+      (the game loads one scene; in-editor Play replaced the live link). Original report: it never
+      called `assets_collect_unused()`, so every model the editor swapped out stayed loaded.
 
 - [ ] **5. Shortcuts follow physical key positions.** GLFW names keys by their US-layout position, so
       Ctrl+Z on AZERTY arrives as `GLFW_KEY_W` (same for W/E/R). Use ImGui's layout-aware checks

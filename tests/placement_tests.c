@@ -9,7 +9,6 @@
 
 #include "Commands/Commands.h"
 #include "Core/FileIO.h"
-#include "World/LiveScene.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -292,44 +291,6 @@ test_scene_environment(void)
     g_ctx.environment = NULL;
 }
 
-// The editor -> game live link: the watcher hands out a scene only when its
-// content changed, and the throttle holds back checks between intervals.
-static void
-test_live_scene(void)
-{
-    char path[1024];
-    snprintf(path, sizeof(path), "%s/live_test.json", TEST_SCENES_DIR);
-    remove(path);
-
-    live_publisher publisher;
-    live_watcher   watcher;
-    live_publisher_init(&publisher, path);
-    live_watcher_init(&watcher, path);
-
-    CHECK(live_watcher_poll(&watcher, 0.0, 0.0) == NULL);   // nothing published yet
-
-    scene_environment env = scene_environment_default();
-    CHECK(live_publisher_publish(&publisher, &g_world, &env, 0.0, 0.0));
-    CHECK(!live_publisher_publish(&publisher, &g_world, &env, 1.0, 0.0));   // unchanged: not rewritten
-
-    cJSON* scene = live_watcher_poll(&watcher, 0.0, 0.0);
-    CHECK(scene && cJSON_GetArraySize(cJSON_GetObjectItem(scene, "entities")) == (int)world_count(&g_world));
-    cJSON_Delete(scene);
-    CHECK(live_watcher_poll(&watcher, 1.0, 0.0) == NULL);   // same content again
-
-    // A change goes out, and comes back in -- once the throttle allows a check.
-    env.exposure = 3.0f;
-    CHECK(!live_publisher_publish(&publisher, &g_world, &env, 1.05, 0.1));   // too soon after 1.0
-    CHECK(live_publisher_publish(&publisher, &g_world, &env, 1.2, 0.1));
-    scene = live_watcher_poll(&watcher, 2.0, 0.1);
-    CHECK(scene && cJSON_GetObjectItem(cJSON_GetObjectItem(scene, "environment"), "exposure")->valuedouble == 3.0);
-    cJSON_Delete(scene);
-
-    live_watcher_shutdown(&watcher);
-    live_publisher_shutdown(&publisher);
-    remove(path);
-}
-
 // --- Host commands -----------------------------------------------------------
 
 static int g_exposure_calls;
@@ -403,7 +364,6 @@ main(void)
     test_place_model_errors();
     test_entity_place();
     test_scene_files();
-    test_live_scene();
     test_host_commands();
     test_scene_environment();   // last: it replaces the world
 

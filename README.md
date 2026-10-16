@@ -34,31 +34,24 @@ cmake --build build --config Release
 If you cloned without `--recursive`, run `git submodule update --init` first (GLFW, cglm and
 cimgui are submodules; the other dependencies are vendored in `engine/deps/`).
 
-This builds two apps on the same engine library. The assets path is compiled into both, so they
-can be started from any directory.
+This builds two apps on the same engine library. Both find their files at runtime (the engine's
+shaders, and a project folder), so they can be started from any directory.
 
-- **Editor** (`build/editor/Release/Editor.exe` with Visual Studio): the scene panels, command
-  console, command server and in-app chat described below.
-- **Testbed** (`build/testbed/Release/Testbed.exe`): the game runtime. It loads a scene saved by
-  the editor and plays it, with no UI, console or command server:
-  `Testbed [--width N] [--height N] [--fullscreen] [--live] [--project DIR] [scene] [hdri]`, where
-  `scene` is a name under the project's `scenes/` (default `orrery_plaza`) or a path to a `.json`
-  file, and `hdri` is a `.hdr` under the project that overrides the scene's own. The project is
-  `assets/` unless `--project` names another folder (the editor takes `--project` too). The scene file carries its environment (HDRI, exposure, ambient
-  strength, skybox), so it looks as it did in the editor. It views the scene through its first
-  Camera entity; without one, the camera frames the scene's objects (not its ground plane),
-  left-drag orbits and the wheel zooms. The window is 1920 x 1080 by default. The game runs the
-  scene's behaviours: a `Spin` component turns its entity at `degrees_per_second`. The editor
-  previews the turning but keeps the authored pose in the scene, so what you save (and what the
-  live link sends) is what you authored. The model viewer's **Spin** checkbox is such a component. Esc quits.
-
-**Live editing.** Press **F5** (or **Play in Testbed** in the Scene window) in the editor to start
-the game with `--live`: it plays the world the editor has on screen and picks up every change —
-from the panels, the console or the agent — within a fraction of a second, while it keeps running
-(spinning entities keep turning). The editor publishes its world and environment to
-`~/.pbr-renderer/live_scene.json` whenever it changes, and the game reloads that file; the editor
-stays the source of truth. The game started by F5 closes with the editor; its output goes to
-`~/.pbr-renderer/game.log`.
+- **Editor** (`build/editor/Release/Editor.exe` with Visual Studio): the projects, panels, Viewport,
+  command console, command server and in-app chat described below.
+- **Game** (`build/game/Release/Game.exe`): the game runtime, what an export ships. It plays a
+  project's scene with no UI, console or command server:
+  `Game [--width N] [--height N] [--fullscreen] [--project DIR] [--check PNG] [scene] [hdri]`, where
+  `scene` is a name under the project's `scenes/` (default: the project's startup scene) or a path
+  to a `.json` file, and `hdri` is a `.hdr` under the project that overrides the scene's own. The
+  project is `--project`, else a `project.json` next to the program (an exported game), else
+  `assets/`. The scene file carries its environment (HDRI, exposure, ambient strength, skybox), so
+  it looks as it did in the editor. It views the scene through its first Camera entity; without
+  one, the camera frames the scene's objects (not its ground plane), left-drag orbits and the
+  wheel zooms. The window's title and size come from the project. The game runs the scene's
+  behaviours: a `Spin` component turns its entity at `degrees_per_second`, as in the editor's Play
+  mode. Esc quits. A Debug build is a console program, so its log shows in the terminal; a Release
+  build opens no console and writes `log.txt` next to itself.
 
 **Exporting a game.** **Export** (Viewport toolbar, or File > Export Game) makes a folder a player
 can run: `<project name>.exe`, the C++ runtime DLLs it needs, the engine's shaders, `project.json`,
@@ -118,8 +111,8 @@ editing fields — drags for numbers and vectors (within each field's range), co
 checkboxes, dropdowns for enums and models, and a checkbox per material override. **Add
 component...** adds a MeshRenderer, Light, Camera or Spin; the **X** on a component's header
 removes it; **Delete** removes the entity. Every edit runs as a command, exactly like the console
-or the agent: it is validated (a rejected value shows in red and changes nothing), reaches the
-live game, and is undoable — a whole drag is one step. **Ctrl+Z** / **Ctrl+Y** undo and redo.
+or the agent: it is validated (a rejected value shows in red and changes nothing), reaches
+connected clients, and is undoable — a whole drag is one step. **Ctrl+Z** / **Ctrl+Y** undo and redo.
 
 **Gizmo:** the selection gets move / rotate / scale handles in the view —
 **W** / **E** / **R** switch between them. The Viewport toolbar has the **Local / World** toggle (scale
@@ -136,7 +129,6 @@ Lights are edited like any entity: select one and change it in the Inspector.
 | Ctrl+S | Save the scene |
 | Ctrl+P / Ctrl+Shift+P / F10 | Play or stop / pause or resume / step one frame |
 | F1 | Command console |
-| F5 | Play the scene in the Testbed, following edits |
 | Chat window | Ask the AI agent to build or change the scene |
 | Esc | Clear the selection, or quit |
 
@@ -230,7 +222,7 @@ engine/src/
   UI/              ImGui layer, entity panel, command console, chat panel
 editor/            the editor app (ImGui panels, console, command server, chat)
 engine/shaders/    the engine's GLSL shaders
-testbed/           the game runtime (loads and plays a scene; no editor UI)
+game/              the game runtime (plays a project's scene; no editor UI) -- what an export ships
 assets/            the default project: models, HDRIs, textures, scenes
 agent/             pbr_agent Python package: MCP server and in-app chat agent
 tests/             headless C tests and end-to-end server tests
