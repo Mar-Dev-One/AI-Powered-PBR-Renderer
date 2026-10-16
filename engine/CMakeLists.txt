@@ -37,6 +37,7 @@ add_library(PBR_Engine STATIC
     src/World/Serialize.c
     src/World/Environment.c
     src/World/LiveScene.c
+    src/Project/Project.c
     src/Commands/Commands.c
     src/Commands/History.c
     src/Commands/JsonRpc.c

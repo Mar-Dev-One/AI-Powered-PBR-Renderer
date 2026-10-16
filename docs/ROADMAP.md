@@ -227,19 +227,31 @@ running editor must clear it.
 
 ### Stage 2: Projects
 
-- [ ] Project format: a folder with `project.json` (name, startup scene, window size, default
+- [x] Project format: a folder with `project.json` (name, startup scene, window size, default
       HDRI) plus `scenes/`, `models/`, `hdri/`, `textures/`
-- [ ] New project: create the folder skeleton, an empty startup scene (ground, sun, camera) and
+- [x] New project: create the folder skeleton, an empty startup scene (ground, sun, camera) and
       `project.json`. Also an `editor.project.new` command, so the agent can do it
-- [ ] Open project: a File menu (New / Open / Recent), recent projects in `~/.pbr-renderer/`,
+- [x] Open project: a File menu (New / Open / Recent), recent projects in `~/.pbr-renderer/`,
       the project name in the window title; `Editor --project <dir>` on the command line
-- [ ] Edit within the project: the model and HDRI pickers list the project's files instead of the
+- [x] Edit within the project: the model and HDRI pickers list the project's files instead of the
       hard-coded `MODEL_PATHS` / `HDRI_PATHS`; `scene.save/load/list` work in the project's
       `scenes/`; the current scene's name in the UI
-- [ ] Save (Ctrl+S) / Save As, an unsaved-changes marker (from the revision counter), a prompt
+- [x] Save (Ctrl+S) / Save As, an unsaved-changes marker (from the revision counter), a prompt
       on close or when switching scenes/projects
-- [ ] Import asset: copy a `.glb` / `.gltf` (with its files) / `.hdr` into the project
-- [ ] The current demo worlds (lit model, material grid) become scenes in a sample project
+- [x] Import asset: copy a `.glb` / `.gltf` (with its files) / `.hdr` into the project
+- [x] The current demo worlds (lit model, material grid) become scenes in a sample project
+
+Status: done. `Project/Project.h` (project.json, `project_create()` with a starter scene of
+ground, sun, cube and camera, recent projects, `project_import_asset()` for .glb / .gltf / .obj /
+.hdr), `tests/project_tests.c`. The editor edits one scene of the open project: File and View
+menus, Save / Save As / unsaved-changes prompt (also on the window's close button:
+`App.on_close_request`), Project Settings, an Add section (project models, shapes, lights, a
+camera from the view), the HDRI list from the project. Agent: `project.info` / `project.create`
+commands and tools (`create_project` doesn't open the project: switching mid-turn would pull the
+scene from under the agent). `assets/` is the sample project (`model_viewer`, `material_grid`).
+The Testbed plays a project's startup scene when given no scene.
+Not yet: a native folder picker (paths are typed or picked from Recent); an agent's `scene.save`
+doesn't update the editor's saved state, so the title can still show `*` after it.
 
 ### Stage 3: Viewport panel
 

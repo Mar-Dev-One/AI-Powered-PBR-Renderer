@@ -104,6 +104,11 @@ void window_close(window* wind)
     glfwSetWindowShouldClose(wind->handle, GLFW_TRUE);
 }
 
+void window_cancel_close(window* wind)
+{
+    glfwSetWindowShouldClose(wind->handle, GLFW_FALSE);
+}
+
 window_size window_get_size(window* wind)
 {
     window_size size = {

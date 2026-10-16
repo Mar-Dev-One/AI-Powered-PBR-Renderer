@@ -48,6 +48,8 @@ void window_swap_buffers(window* wind);
 f64  window_get_time(void);
 b8   window_should_close(window* wind);
 void window_close(window* wind);
+// Clears a pending close request (window_should_close() is false again).
+void window_cancel_close(window* wind);
 
 void window_set_size(window* wind, uint16 width, uint16 height);
 void window_set_title(window* wind, const char* title);

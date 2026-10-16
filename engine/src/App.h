@@ -30,6 +30,11 @@ typedef void (*app_scroll_callback)(struct App* app, f64 dx, f64 dy);
 // 0x0 while the window is minimized.
 typedef void (*app_resize_callback)(struct App* app, uint16 width, uint16 height);
 
+// The window's close button (or the OS) asked to quit. Return true to let it
+// close, false to keep running -- e.g. to ask about unsaved changes first and
+// set should_close later. Without this hook the window just closes.
+typedef b8 (*app_close_request_callback)(struct App* app);
+
 typedef struct App
 {
     char* name;
@@ -40,6 +45,7 @@ typedef struct App
     app_key_callback      on_key;
     app_scroll_callback   on_scroll;
     app_resize_callback   on_resize;
+    app_close_request_callback on_close_request;
 
     void* user_data;             // optional, passed through to every hook via app->user_data
     b8 should_close;             // set this from a hook to exit run() without closing the window

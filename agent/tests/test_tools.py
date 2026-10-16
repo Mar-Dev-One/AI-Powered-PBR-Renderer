@@ -119,7 +119,7 @@ class AppToolsLiveTests(unittest.IsolatedAsyncioTestCase):
         async with EngineClient() as engine:
             self.assertEqual(check_against_engine(await engine.call("commands.list")), [])
             for tool in TOOLS:
-                if not tool.app_command:
+                if not tool.app_command or not tool.live_example:
                     continue
                 with self.subTest(tool=tool.name):
                     method, params = tool.to_command(tool.example)

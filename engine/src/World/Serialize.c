@@ -166,6 +166,17 @@ serialize_world(const world* w)
     return object;
 }
 
+cJSON*
+serialize_scene_file(const world* w, const scene_environment* env)
+{
+    cJSON* scene = serialize_world(w);
+    cJSON_AddStringToObject(scene, "format", SCENE_FORMAT);
+    cJSON_AddNumberToObject(scene, "version", SCENE_VERSION);
+    if (env)
+        cJSON_AddItemToObject(scene, "environment", serialize_environment(env));
+    return scene;
+}
+
 // --- Deserialize ---------------------------------------------------------------------
 
 // One validated field from the request, ready to apply.

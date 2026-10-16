@@ -1,0 +1,11 @@
+{
+	"format": "pbr-project",
+	"version": 1,
+	"name": "Sample Project",
+	"startup_scene": "model_viewer",
+	"window": {
+		"width": 1920,
+		"height": 1080
+	},
+	"default_hdri": "hdri/citrus_orchard_road_puresky_4k.hdr"
+}

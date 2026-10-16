@@ -30,7 +30,10 @@ root cause -- edits that bypass, or don't own, the command/history layer -- so f
       Fix: give each transaction an owner (connection, chat turn, UI drag); roll it back when the
       owner goes away; keep user edits out of an agent's open turn.
 
-- [ ] **3. Network commands go to whichever world is on screen.**
+- [x] **3. Network commands go to whichever world is on screen.** Gone with Projects (Stage 2):
+      the editor has one world, the scene being edited; opening another scene is refused while a
+      chat turn runs, and replaces the history, so no turn spans two scenes.
+      Original report:
       `server_poll(state->server, active_commands(state))` in `on_frame`: switching Lit/Grid during
       an agent turn sends its commands to the grid world while the turn's transaction is on the lit
       history. Both worlds hand out the same IDs (slot 0 = `1048576` in each), so an agent's ID can

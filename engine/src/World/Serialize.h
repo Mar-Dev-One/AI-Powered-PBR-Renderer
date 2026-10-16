@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Core/Defines.h"
+#include "Environment.h"
 #include "World.h"
 
 #include "cJSON.h"
@@ -49,6 +50,10 @@ b8 deserialize_component(world* w, entity_id e, component_type type, const cJSON
 
 #define SCENE_FORMAT  "pbr-scene"
 #define SCENE_VERSION 1
+
+// A whole scene file: serialize_world()'s object plus "format", "version"
+// and, if `env` isn't NULL, the "environment". Caller owns the result.
+cJSON* serialize_scene_file(const world* w, const scene_environment* env);
 
 // Adds the entities of `scene` (a parsed scene file) to `w`, alongside any
 // already there. A name already in use gets changed (see world_create()) and

@@ -62,11 +62,27 @@ stays the source of truth. The game started by F5 closes with the editor; its ou
 
 ## Using the editor
 
-The **Scene** window switches between two modes:
+**Projects.** The editor works on a project: a folder with a `project.json` (name, startup scene,
+window size, default HDRI) and `scenes/`, `models/`, `hdri/` and `textures/`. Every model and HDRI
+path in a scene is relative to it. Without `--project` the editor opens the sample project,
+`assets/`: its startup scene `model_viewer` is the spinning model on a ground plane, and
+`material_grid` is the metallic × roughness sphere grid for checking IBL and the BRDF.
 
-- **Lit Model**: a model viewer on a ground plane, with a model picker, spin, and a cascade debug
-  view.
-- **Grid**: a metallic × roughness sphere grid, for checking IBL and the BRDF.
+- **File > New Project** creates a folder (by default in `Documents/PBR Projects`) with a starter
+  scene — ground, sun, a cube and a camera — and opens it. **Open Project** takes a project folder;
+  **Recent Projects** lists the last ten.
+- **New Scene / Open Scene / Save (Ctrl+S) / Save As** work on `scenes/` in the project. The title
+  bar shows `*` while there are unsaved changes; opening something else or quitting asks first.
+  Opening a scene starts a fresh undo history.
+- **Import Asset** copies a `.glb`, `.gltf` (with the buffers and images it names), `.obj` (with its
+  `.mtl` and textures) or `.hdr` into the project.
+- **Project Settings** sets the name, the startup scene the game plays, its window size, and the
+  HDRI new scenes start with.
+
+The **Scene** window's **Add** section puts a model from the project, a cube, sphere or plane
+(at the size given), a light, a camera matching the current view, or an empty entity at the
+centre of the view, on the ground. Its **Environment** section sets ambient strength, exposure,
+the HDRI (from the project's `hdri/`), IBL, the skybox and its blur.
 
 **Selecting:** click an object in the view (a short click; dragging still orbits) or its name in
 the **Entities** panel. The selection is outlined in orange with its name; lights and cameras are
@@ -87,16 +103,17 @@ always uses the object's own axes) and **Snap** with its step (meters, degrees o
 holding **Ctrl** while dragging flips snapping. A drag is one undoable step, like an Inspector edit,
 and works on parented entities (the result is stored relative to the parent).
 
-The lighting panel edits every light in the scene, plus ambient strength, exposure, the HDRI, IBL
-and the skybox.
+Lights are edited like any entity: select one and change it in the Inspector.
 
 | Input | Action |
 |---|---|
 | Left mouse drag | Orbit the camera |
 | Mouse wheel | Zoom |
+| Ctrl+S | Save the scene |
 | F1 | Command console |
+| F5 | Play the scene in the Testbed, following edits |
 | Chat window | Ask the AI agent to build or change the scene |
-| Esc | Quit |
+| Esc | Clear the selection, or quit |
 
 ### Command console
 
@@ -167,10 +184,10 @@ Both are converted to the same `model` / `material` / `mesh` types and drawn wit
 `engine/shaders/pbr.*`. Not supported yet: skinning and animation, morph targets, Draco/meshopt
 compression, `KHR_texture_transform`, and second UV sets.
 
-To add a model to the editor's picker, put it in `assets/models/` and add it to `MODEL_PATHS` in
-[editor/main.c](editor/main.c). HDRIs work the same way: an equirectangular `.hdr` in
-`assets/hdri/`, listed in `HDRI_PATHS`. [Poly Haven](https://polyhaven.com/hdris) is a good
-source.
+To use a model, bring it into the project with **File > Import Asset** (or put it in the project's
+`models/`); it then appears in **Add > Model** and the Inspector's model list. HDRIs work the same
+way: an equirectangular `.hdr` in the project's `hdri/`. [Poly Haven](https://polyhaven.com/hdris)
+is a good source.
 
 ## Project layout
 

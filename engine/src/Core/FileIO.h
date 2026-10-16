@@ -29,3 +29,14 @@ typedef void (*file_visit_fn)(const char* name, b8 is_directory, void* user_data
 // recursive), in no particular order. False if the directory can't be
 // opened.
 b8 file_list_directory(const char* directory, file_visit_fn visit, void* user_data);
+
+// True if `path` exists and is a directory.
+b8 file_is_directory(const char* path);
+
+// Creates `path` and any missing parent folders ('/' or '\' separated). True
+// if it exists as a directory afterwards.
+b8 file_make_directories(const char* path);
+
+// Copies the file at `source` to `destination` (replacing it), in binary.
+// The destination's folder must exist. False (and logged) on failure.
+b8 file_copy(const char* source, const char* destination);

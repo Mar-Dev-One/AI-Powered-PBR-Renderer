@@ -96,6 +96,7 @@ class Tool:
     read_only: bool = False                            # never changes the scene
     app_command: bool = False                          # provided by the app (Editor), not the engine core
     returns_image: bool = False                        # result has base64 PNG "data" (view.screenshot)
+    live_example: bool = True                          # the live test may run the example (False: it makes files)
 
     def to_command(self, args: dict | None) -> tuple[str, dict]:
         """The engine command (method, params) for one call of this tool."""
@@ -343,6 +344,24 @@ TOOLS: list[Tool] = [
         "to the current scene with replace=false).",
         _schema({"name": {"type": "string"}, "replace": {"type": "boolean"}}, ["name"]),
         "scene.load", example={"name": "tool_test"},
+    ),
+
+    # --- Project ------------------------------------------------------------------------------
+    Tool(
+        "project_info",
+        "The open project (a folder of scenes, models and HDRIs): its name and folder, the scene the "
+        "game starts with, the scene being edited and whether it has unsaved changes.",
+        _schema({}), "project.info", read_only=True, app_command=True,
+    ),
+    Tool(
+        "create_project",
+        "Creates a new, separate project folder with a starter scene (ground, sun, cube, camera). It "
+        "doesn't open it: tell the user to open it from File > Open Project.",
+        _schema({
+            "name": {"type": "string", "description": "Project name, also its folder's name."},
+            "folder": {"type": "string", "description": "Folder to create it in; default Documents/PBR Projects."},
+        }, ["name"]),
+        "project.create", example={"name": "My Game"}, app_command=True, live_example=False,
     ),
 ]
 

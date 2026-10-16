@@ -148,3 +148,70 @@ b8 file_exists(const char* path)
     return stat(path, &info) == 0 && S_ISREG(info.st_mode);
 #endif
 }
+
+b8 file_is_directory(const char* path)
+{
+#ifdef _WIN32
+    DWORD attributes = GetFileAttributesA(path);
+    return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
+#else
+    struct stat info;
+    return stat(path, &info) == 0 && S_ISDIR(info.st_mode);
+#endif
+}
+
+b8 file_make_directories(const char* path)
+{
+    char partial[1024];
+    size_t length = strlen(path);
+    if (length == 0 || length >= sizeof(partial))
+        return false;
+    memcpy(partial, path, length + 1);
+
+    // Each prefix ending at a separator, then the whole path. Prefixes that
+    // can't be made (a drive "C:", or a folder that already exists) are fine:
+    // only the final check counts.
+    for (size_t i = 1; i < length; ++i)
+    {
+        if (partial[i] != '/' && partial[i] != '\\')
+            continue;
+        char separator = partial[i];
+        partial[i] = '\0';
+        if (!file_is_directory(partial))
+            file_make_directory(partial);
+        partial[i] = separator;
+    }
+    return file_make_directory(partial);
+}
+
+b8 file_copy(const char* source, const char* destination)
+{
+    FILE* in = fopen(source, "rb");
+    if (!in)
+    {
+        LOG_ERROR("Could not open file: %s\n", source);
+        return false;
+    }
+
+    FILE* out = fopen(destination, "wb");
+    if (!out)
+    {
+        LOG_ERROR("Could not open file for writing: %s\n", destination);
+        fclose(in);
+        return false;
+    }
+
+    char   buffer[64 * 1024];
+    size_t count;
+    b8     ok = true;
+    while (ok && (count = fread(buffer, 1, sizeof(buffer), in)) > 0)
+        ok = fwrite(buffer, 1, count, out) == count;
+
+    ok = ok && !ferror(in);
+    fclose(in);
+    ok = fclose(out) == 0 && ok;
+
+    if (!ok)
+        LOG_ERROR("Could not copy %s to %s\n", source, destination);
+    return ok;
+}

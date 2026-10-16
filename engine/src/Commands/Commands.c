@@ -1307,11 +1307,7 @@ cmd_scene_save(command_context* ctx, const cJSON* args, cmd_output* out)
     if (!arg_string(args, "name", true, &name, out) || !scene_path(ctx, name, path, sizeof(path), out))
         return false;
 
-    cJSON* scene = serialize_world(ctx->w);
-    cJSON_AddStringToObject(scene, "format", SCENE_FORMAT);
-    cJSON_AddNumberToObject(scene, "version", SCENE_VERSION);
-    if (ctx->environment)
-        cJSON_AddItemToObject(scene, "environment", serialize_environment(ctx->environment));
+    cJSON* scene = serialize_scene_file(ctx->w, ctx->environment);
 
     char* text = cJSON_Print(scene);
     b8    ok   = file_write_string(path, text);

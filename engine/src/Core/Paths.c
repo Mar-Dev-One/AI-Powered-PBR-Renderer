@@ -173,3 +173,18 @@ project_path(const char* relative_path)
 {
     return join(paths_project_root(), relative_path);
 }
+
+char*
+user_data_path(const char* relative_path)
+{
+#ifdef _WIN32
+    const char* home = getenv("USERPROFILE");
+#else
+    const char* home = getenv("HOME");
+#endif
+    char folder[PATHS_MAX];
+    snprintf(folder, sizeof(folder), "%s/.pbr-renderer", home && home[0] ? home : ".");
+    normalize(folder);
+    file_make_directory(folder);
+    return join(folder, relative_path);
+}

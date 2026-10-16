@@ -8,6 +8,11 @@ target_link_libraries(PathsTests PRIVATE PBR_Engine)
 target_compile_definitions(PathsTests PRIVATE PATHS_TEST_DIR="${CMAKE_CURRENT_BINARY_DIR}/paths_project")
 add_test(NAME PathsTests COMMAND PathsTests)
 
+add_executable(ProjectTests project_tests.c)
+target_link_libraries(ProjectTests PRIVATE PBR_Engine)
+target_compile_definitions(ProjectTests PRIVATE PROJECT_TEST_DIR="${CMAKE_CURRENT_BINARY_DIR}/project_scratch")
+add_test(NAME ProjectTests COMMAND ProjectTests)
+
 add_executable(SerializeTests serialize_tests.c)
 target_link_libraries(SerializeTests PRIVATE PBR_Engine)
 add_test(NAME SerializeTests COMMAND SerializeTests)

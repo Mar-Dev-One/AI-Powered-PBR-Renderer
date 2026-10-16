@@ -84,7 +84,14 @@ void run(App* app)
 
     f64 last_time = window_get_time();
 
-    while (!window_should_close(rend->drawing_window) && !app->should_close) {
+    while (!app->should_close) {
+        if (window_should_close(rend->drawing_window)) {
+            if (app->on_close_request && !app->on_close_request(app))
+                window_cancel_close(rend->drawing_window);
+            else
+                break;
+        }
+
         f64 now = window_get_time();
         f32 dt = (f32)(now - last_time);
         last_time = now;

@@ -1,12 +1,24 @@
 // editor/main.c
 //
-// The editor: the demo scenes (lit model viewer, IBL material grid) with
-// their ImGui panels, the entity inspector, the command console,
-// the command server other processes (MCP server, AI agent, scripts) drive
-// it through, and the in-app chat. The game runtime -- the same engine with
-// none of this -- is testbed/main.c.
+// The editor: opens a project (Project/Project.h) and edits one of its
+// scenes at a time, with the entity inspector, the gizmo, the command
+// console, the command server other processes (MCP server, AI agent,
+// scripts) drive it through, and the in-app chat. The game runtime -- the
+// same engine with none of this -- is testbed/main.c.
 //
-// Live link: the world on screen is published to the live scene file
+// Projects: File > New Project makes a folder with project.json, scenes/,
+// models/ and hdri/ (and a starter scene); File > Open Project / Recent
+// switches to another. The open project is the project root (Core/Paths.h):
+// every "models/..." and "hdri/..." in a scene, every scene.save / scene.load
+// / assets.list -- the agent's too -- works inside it. Without --project the
+// editor opens the sample project, the source tree's assets/.
+//
+// Scenes: File > New Scene / Open Scene / Save (Ctrl+S) / Save As. The
+// title bar shows "*" while the scene has changes that aren't saved; opening
+// something else, or quitting, asks first. Opening a scene starts a fresh
+// undo history.
+//
+// Live link: the scene being edited is published to the live scene file
 // (World/LiveScene.h) whenever it changes, however it changed -- panels,
 // console, agent. F5 (or "Play in Testbed") starts the game with --live, and
 // it follows every edit while it keeps running.
@@ -19,6 +31,7 @@
 #include "Core/Image.h"
 #include "Core/Paths.h"
 #include "Core/Process.h"
+#include "Project/Project.h"
 #include "RHI/RHI.h"
 #include "Renderer/IBL.h"
 #include "Renderer/Renderer.h"
@@ -27,6 +40,7 @@
 #include "Scene/Model.h"
 #include "Assets/AssetCache.h"
 #include "World/LiveScene.h"
+#include "World/Serialize.h"
 #include "World/World.h"
 #include "Platform/Window.h"
 #include "Net/CommandServer.h"
@@ -45,123 +59,55 @@
 #include <string.h>
 #include <GLFW/glfw3.h>
 
-// Model picker: every model the GUI combo box can switch between. Format is
-// picked from the extension (.obj / .gltf / .glb) by model_load(). Add an
-// entry here (and drop the file in assets/models/) to make a new model
-// selectable -- nothing else needs to change. glTF models bring their own
-// materials and textures; the .obj files here have none, so they're drawn
-// with the tweakable default material.
-static const char* MODEL_PATHS[] = {
-    "models/Avocado.glb",
-    "models/BoxTextured.glb",
-    "models/suzanne.obj",
-    "models/sphere.obj",
-    "models/lord_krishna_statue_3d_model_free.glb",
-    "models/bulky_knight.glb"
-};
-
-static const char* MODEL_NAMES[] = {
-    "Avocado (glTF, PBR textures)",
-    "Textured Box (glTF)",
-    "Suzanne (OBJ)",
-    "Sphere (OBJ)",
-    "krishna (glTF)",
-    "bulky_knight (glTF)"
-};
-
-#define MODEL_COUNT (sizeof(MODEL_PATHS) / sizeof(MODEL_PATHS[0]))
-
-// HDRI picker: equirectangular (2:1 lat/long) Radiance .hdr panoramas the GUI
-// can bake into image-based lighting. Add an entry here (and drop the file in
-// assets/hdri/) to make a new one selectable. Any 1k-2k HDRI works; Poly
-// Haven (polyhaven.com/hdris, CC0) has plenty. A missing file is not an
-// error -- the shader falls back to its built-in hemisphere ambient.
-static const char* HDRI_PATHS[] = {
-    "hdri/citrus_orchard_road_puresky_4k.hdr",
-    "hdri/table_mountain_2_puresky_4k.hdr"
-};
-
-static const char* HDRI_NAMES[] = {
-    "citrus_orchard_road_puresky_4k.hdr",
-    "table_mountain_2_puresky_4k.hdr"
-};
-
-#define HDRI_COUNT (sizeof(HDRI_PATHS) / sizeof(HDRI_PATHS[0]))
-
 // Resolution of *each* cascade's shadow map (Renderer/Shadow.h). Depth-only
 // framebuffers are cheap, so this and CASCADE_COUNT are both sized
 // generously; CASCADE_COUNT tops out at CSM_MAX_CASCADES.
 #define SHADOW_MAP_SIZE 2048
 #define CASCADE_COUNT   4
 
-// Material grid (RENDER_MODE_MATERIAL_GRID) layout.
-#define GRID_COLUMNS        7       // roughness: 0.05 (left) .. 1.0 (right)
-#define GRID_ROWS           5       // metallic:  1.0 (top)   .. 0.0 (bottom)
-#define GRID_SPACING        0.62f   // centre to centre, in world units
-#define GRID_SPHERE_RADIUS  0.27f
+// HDRIs the environment picker lists: the .hdr files in the project's hdri/
+// (and one folder level below it).
+#define HDRI_LIST_MAX 64
 
-// The grid sits right of the origin because the "Scene" panel covers the left
-// third of the default 800x600 window, and the leftmost column (the mirror-
-// smooth spheres) is the one worth seeing.
-#define GRID_CENTER_X       1.5f
-
-// Which of the two demo scenes on_frame draws this frame -- both share the
-// same camera/orbit controls, only the World and GUI panel differ.
-typedef enum render_mode
+// Something that replaces the scene on screen, so it waits for an answer
+// to "save changes?" when there are any (see request()).
+typedef enum pending_action
 {
-    RENDER_MODE_LIT_MODEL,
-    RENDER_MODE_MATERIAL_GRID   // IBL demo: a metallic x roughness sphere grid, see create_grid_world()
-} render_mode;
+    ACTION_NONE,
+    ACTION_OPEN_PROJECT,   // pending_arg: the project folder
+    ACTION_NEW_SCENE,
+    ACTION_OPEN_SCENE,     // pending_arg: the scene name
+    ACTION_QUIT
+} pending_action;
 
-typedef struct demo_state
+typedef struct editor_state
 {
-    render_mode mode;
-    camera      cam;
+    App*   app;
+    camera cam;
 
-    // --- Model viewer (RENDER_MODE_LIT_MODEL) ----------------------------
-    // A loaded model on a ground plane under three lights, drawn through the
-    // PBR shader. The World is the single source of truth: the GUI's light,
-    // ground and material controls edit World components directly, so they
-    // always show what the console (and, later, an AI agent) last did.
-    int        selected_model;     // index into MODEL_PATHS/MODEL_NAMES, driven by the GUI combo box
-    int        loaded_model;       // which entry was last requested (-1 = not yet); the load may have failed
+    // --- Project (Project/Project.h) -------------------------------------------
+    // The open project's settings (its folder is the project root,
+    // paths_project_root()), and the File > Recent list.
+    project_settings project;
+    project_recent   recent;
 
-    // --- Worlds (World/World.h) ----------------------------------------------
-    // Both lit modes are Worlds sharing one asset cache:
-    //   lit_world:  model_pivot (spins about Y) -> model (fit to ~2 units),
-    //               ground (built-in plane), key/fill/spot lights
-    //   grid_world: one sphere entity per grid cell, each with its own
-    //               metallic/roughness override, plus the same three lights
-    // The model/ground IDs may go stale if a command destroys them; the code
-    // checks before use and recreates the model entities when a model is
-    // picked.
-    asset_cache assets;
-    world       lit_world;
-    world       grid_world;
-    entity_id   model_pivot;
-    entity_id   model_entity;
-    entity_id   ground_entity;
-    entity_id   grid_spheres[GRID_ROWS * GRID_COLUMNS];
+    // --- The scene being edited ------------------------------------------------
+    // One World, the single source of truth: the inspector, gizmo, console
+    // and agent all change it through commands, so every change bumps
+    // commands.revision -- which is how unsaved changes are noticed.
+    // scene_name is the file it was opened from or saved to ("" = never
+    // saved); saved_revision / saved_env are what that file holds.
+    asset_cache       assets;
+    world             scene;
+    command_history   history;
+    command_context   commands;
+    char              scene_name[PROJECT_SCENE_MAX];
+    uint64            saved_revision;
+    scene_environment saved_env;
 
-    // --- Commands (Commands/Commands.h) ----------------------------------------
-    // One context + undo history per world; the console runs against the
-    // world on screen. App-level commands (camera, environment, exposure)
-    // come from HOST_COMMANDS below.
-    command_history lit_history;
-    command_history grid_history;
-    command_context lit_commands;
-    command_context grid_commands;
     command_console console;
     inspector       inspector;      // the selected entity's fields; edits run as undoable commands
     b8              show_console;   // F1 toggles
-
-    // Each world's on_change: the console log plus a "scene.changed" push to
-    // every server client, tagged with which world it was.
-    struct world_listener
-    {
-        struct demo_state* state;
-        const char*        world_name;
-    } lit_listener, grid_listener;
 
     // Lets other processes (the MCP server, an agent, scripts) run the same
     // commands over a localhost WebSocket; see Net/CommandServer.h. NULL if
@@ -176,46 +122,33 @@ typedef struct demo_state
     chat_session chat;
     chat_panel   chat_panel;
     process*     agent_process;
+    char         agent_note[1280];
+    char         agent_log[1024];
 
     // --- Live link to the game (World/LiveScene.h) ------------------------------
     live_publisher live;
     process*       game_process;   // the Testbed started by F5; NULL if not running
     char           game_log[1024];
     char           game_note[256];
-    char         agent_note[1280];
-    char         agent_log[1024];
 
-    // --- Lit rendering ---------------------------------------------------------
+    // --- Rendering -------------------------------------------------------------
     // Renderer/SceneRenderer.h runs the whole lit frame (cascaded shadows,
-    // HDR target, skybox, PBR uniforms, every MeshRenderer, tone mapping) for
-    // both modes; build_render_settings() turns the GUI state below into
-    // its settings.
+    // HDR target, skybox, PBR uniforms, every MeshRenderer, tone mapping);
+    // build_render_settings() turns the state below into its settings.
     scene_renderer renderer;
     b8             debug_show_cascades;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
-
-    // --- Material grid (RENDER_MODE_MATERIAL_GRID) ----------------------------
-    // The classic IBL test pattern: the same sphere 7 x 5 times, roughness
-    // sweeping left to right and metallic top to bottom.
-    vec3 grid_albedo;   // sRGB, like default_albedo; applied when changed
 
     // --- Environment + image-based lighting -----------------------------------
     // `env` (World/Environment.h) is the single source of truth for the HDRI,
     // IBL / skybox switches, exposure and ambient strength: the GUI, the
-    // environment.set / render.set commands and scene.load all write it, and
-    // scene.save stores it with the scene. `ibl` is env.hdri baked
+    // environment.set / render.set commands and opening a scene all write it,
+    // and saving stores it with the scene. `ibl` is env.hdri baked
     // (Renderer/IBL.h), all zeroes when it couldn't be loaded; sync_hdri()
     // re-bakes it whenever env.hdri changes.
     scene_environment env;
     ibl_environment   ibl;
     char              baked_hdri[ENVIRONMENT_HDRI_MAX];   // what `ibl` was last baked from; the bake may have failed
-    b8                hdri_baked;                         // false until the first bake
-
-    // Material for models the file gave none (a bare .obj), applied to the
-    // model entity's MeshRenderer override when a model loads or these change.
-    // Kept here rather than on the model so they survive switching models.
-    vec3       default_albedo;
-    f32        default_metallic;
-    f32        default_roughness;
+    b8                hdri_baked;                         // false until the first bake (and after switching projects)
 
     // Mouse-orbit camera control. The camera itself stays dumb (position +
     // target, per Camera.h) -- yaw/pitch/distance live here, in the layer
@@ -229,16 +162,14 @@ typedef struct demo_state
     b8  dragging;
 
     // --- Selection --------------------------------------------------------------
-    // One entity of the world on screen. A short left click in the view picks
+    // One entity of the scene. A short left click in the view picks
     // (World/World.h world_pick()); a drag still orbits. The Entities panel
-    // shows it and can set it; F frames it; Esc clears it. Kept with the world
-    // it belongs to: the two worlds' entity IDs overlap.
-    entity_id    selected;
-    const world* selection_world;
-    b8           reveal_selection;   // picked in the view this frame: open the Entities tree to it
-    f64          press_x;            // where the left button went down in the view
-    f64          press_y;
-    b8           press_on_gizmo;     // that press began on a gizmo handle: neither orbit nor pick
+    // shows it and can set it; F frames it; Esc clears it.
+    entity_id selected;
+    b8        reveal_selection;   // picked in the view this frame: open the Entities tree to it
+    f64       press_x;            // where the left button went down in the view
+    f64       press_y;
+    b8        press_on_gizmo;     // that press began on a gizmo handle: neither orbit nor pick
 
     // --- Gizmo (UI/Gizmo.h) -------------------------------------------------------
     // Move / rotate / scale handles on the selection. W / E / R pick the
@@ -254,7 +185,34 @@ typedef struct demo_state
     b8              gizmo_hot;        // over or dragging a handle, as of last frame's draw
     b8              gizmo_editing;    // a history group is open for the drag in progress
     b8              gizmo_executing;  // inside one of the gizmo's own commands (not logged)
-} demo_state;
+
+    // --- Add (Scene panel) ----------------------------------------------------------
+    f32 add_size;   // meters: the longest side of a model or shape added from the panel
+
+    // --- Menus and dialogs --------------------------------------------------------
+    // A menu item sets open_popup; the next draw_popups() opens that modal.
+    // An action that replaces the scene waits in `pending` while "save
+    // changes?" is asked.
+    const char*    open_popup;
+    pending_action pending;
+    char           pending_arg[PROJECT_PATH_MAX];
+    b8             continue_after_save_as;   // Save As was opened from "save changes?"
+    char           popup_error[640];         // shown in the open dialog until it closes or succeeds
+
+    char             save_as_name[PROJECT_SCENE_MAX];
+    char             new_project_name[PROJECT_NAME_MAX];
+    char             new_project_location[PROJECT_PATH_MAX];
+    char             open_project_path[PROJECT_PATH_MAX];
+    char             import_path[PROJECT_PATH_MAX];
+    project_settings settings_edit;     // the Project Settings dialog's copy
+} editor_state;
+
+#define POPUP_UNSAVED      "Unsaved changes"
+#define POPUP_SAVE_AS      "Save scene as"
+#define POPUP_NEW_PROJECT  "New project"
+#define POPUP_OPEN_PROJECT "Open project"
+#define POPUP_IMPORT       "Import asset"
+#define POPUP_SETTINGS     "Project settings"
 
 static inline f32
 clampf(f32 v, f32 lo, f32 hi)
@@ -267,7 +225,7 @@ clampf(f32 v, f32 lo, f32 hi)
 // change; cam->target itself is untouched so this only ever orbits, never
 // pans.
 static void
-orbit_camera_apply(demo_state* state)
+orbit_camera_apply(editor_state* state)
 {
     f32 yaw_rad   = glm_rad(state->orbit_yaw);
     f32 pitch_rad = glm_rad(state->orbit_pitch);
@@ -283,12 +241,12 @@ orbit_camera_apply(demo_state* state)
 
 // Polls the left mouse button + cursor delta and turns it into orbit_yaw /
 // orbit_pitch. Polling (rather than a glfwSetCursorPosCallback) keeps this
-// self-contained in the demo layer. Goes through the window_* input
+// self-contained in the editor layer. Goes through the window_* input
 // wrappers rather than GLFW directly.
-static void select_at(demo_state* state, f64 x, f64 y);
+static void select_at(editor_state* state, f64 x, f64 y);
 
 static void
-orbit_camera_update(demo_state* state, window* wind)
+orbit_camera_update(editor_state* state, window* wind)
 {
     f64 cursor_x, cursor_y;
     window_get_cursor_pos(wind, &cursor_x, &cursor_y);
@@ -332,212 +290,30 @@ orbit_camera_update(demo_state* state, window* wind)
     state->last_cursor_y = cursor_y;
 }
 
-// Mouse-wheel zoom: shrinks/grows orbit_distance, clamped so you can't
-// zoom through the model or scroll off into the distance forever. App.c only
-// calls this for scrolls ImGui didn't claim.
+// Mouse-wheel zoom: shrinks/grows orbit_distance by a share of itself, so
+// it feels the same close up and across a big scene, clamped so you can't
+// zoom through the target or scroll off forever. App.c only calls this for
+// scrolls ImGui didn't claim.
 static void
 on_scroll(App* app, f64 dx, f64 dy)
 {
     (void)dx;
 
-    demo_state* state = (demo_state*)app->user_data;
+    editor_state* state = (editor_state*)app->user_data;
 
-    const f32 zoom_speed = 0.5f;
+    const f32 zoom_speed = 0.1f;
 
-    state->orbit_distance -= (f32)dy * zoom_speed;
-    state->orbit_distance  = clampf(state->orbit_distance, 1.0f, 50.0f);
+    state->orbit_distance -= (f32)dy * zoom_speed * state->orbit_distance;
+    state->orbit_distance  = clampf(state->orbit_distance, 0.5f, 500.0f);
 
     orbit_camera_apply(state);
 }
 
-// sRGB color-picker value -> linear, as material colors are stored.
-static void
-srgb_to_linear(const vec3 srgb, f32 out[3])
-{
-    out[0] = powf(srgb[0], 2.2f);
-    out[1] = powf(srgb[1], 2.2f);
-    out[2] = powf(srgb[2], 2.2f);
-}
-
-// Adds the demo's key/fill/spot lights to `w`. After this the World owns
-// them: the GUI edits them in place (draw_light_editors()) and commands can
-// change, add or remove them like any other entity.
-static void
-create_demo_lights(world* w)
-{
-    light key, fill, spot;
-    light_init_directional(&key, (vec3){ -0.4f, -0.6f, -0.5f }, (vec3){ 1.0f, 0.98f, 0.92f }, 2.5f);
-    light_init_point(&fill, (vec3){ 0.55f, 0.7f, 1.0f }, 3.0f, 8.0f);
-
-    // A warm cone aimed at the origin, where the model sits. Intensity 0 =
-    // off until someone turns it up.
-    light_init_spot(&spot, (vec3){ 1.5f, -2.5f, -1.0f }, (vec3){ 1.0f, 0.75f, 0.45f }, 0.0f, 10.0f, 12.0f, 22.0f);
-
-    // Key first: the first directional light is the one shadowed.
-    entity_id key_e  = world_create(w, "key_light");
-    entity_id fill_e = world_create(w, "fill_light");
-    entity_id spot_e = world_create(w, "spot_light");
-
-    world_add_light(w, key_e, key);
-    world_add_light(w, fill_e, fill);
-    world_add_light(w, spot_e, spot);
-
-    glm_vec3_copy((vec3){ 1.5f, 1.0f, 1.5f }, world_transform(w, fill_e)->position);
-    glm_vec3_copy((vec3){ -1.5f, 2.5f, 1.0f }, world_transform(w, spot_e)->position);
-}
-
-
-// Builds lit_world: the (still empty) model under a spinning pivot, the
-// ground plane and the lights. load_selected_model() fills the model in.
-static void
-create_lit_world(demo_state* state)
-{
-    world* w = &state->lit_world;
-
-    state->model_pivot  = world_create(w, "model_pivot");
-    state->model_entity = world_create(w, "model");
-    world_set_parent(w, state->model_entity, state->model_pivot);
-    world_add_mesh_renderer(w, state->model_entity, ASSET_NONE);
-
-    // An 8 x 8 plane the model's shadow lands on; its height follows the
-    // loaded model (load_selected_model()).
-    state->ground_entity = world_create(w, "ground");
-    glm_vec3_copy((vec3){ 8.0f, 1.0f, 8.0f }, world_transform(w, state->ground_entity)->scale);
-
-    c_mesh_renderer* ground = world_add_mesh_renderer(w, state->ground_entity,
-                                                      assets_builtin(&state->assets, BUILTIN_PLANE));
-    ground->cast_shadows = false;   // flat and facing up: there's nothing above it for it to shadow
-
-    // Dim, non-metal concrete-ish grey: dark enough that the shadow reads
-    // clearly against it without crushing to black.
-    ground->material.fields = MATERIAL_OVERRIDE_BASE_COLOR | MATERIAL_OVERRIDE_METALLIC | MATERIAL_OVERRIDE_ROUGHNESS;
-    ground->material.base_color[0] = ground->material.base_color[1] = ground->material.base_color[2] = 0.18f;
-    ground->material.metallic  = 0.0f;
-    ground->material.roughness = 0.9f;
-
-    create_demo_lights(w);
-}
-
-// Builds grid_world: one built-in sphere per (roughness, metallic) cell.
-static void
-create_grid_world(demo_state* state)
-{
-    world*   w      = &state->grid_world;
-    asset_id sphere = assets_builtin(&state->assets, BUILTIN_SPHERE);
-
-    for (int row = 0; row < GRID_ROWS; ++row)
-    {
-        for (int col = 0; col < GRID_COLUMNS; ++col)
-        {
-            char name[32];
-            snprintf(name, sizeof(name), "sphere_r%d_c%d", row, col);
-
-            entity_id e = world_create(w, name);
-            state->grid_spheres[row * GRID_COLUMNS + col] = e;
-
-            c_transform* t = world_transform(w, e);
-            t->position[0] = GRID_CENTER_X + ((f32)col - 0.5f * (GRID_COLUMNS - 1)) * GRID_SPACING;
-            t->position[1] = (0.5f * (GRID_ROWS - 1) - (f32)row) * GRID_SPACING;
-            t->position[2] = 0.0f;
-            glm_vec3_fill(t->scale, 2.0f * GRID_SPHERE_RADIUS);   // the built-in sphere is 1 unit across
-
-            c_mesh_renderer* mr = world_add_mesh_renderer(w, e, sphere);
-            mr->material.fields    = MATERIAL_OVERRIDE_BASE_COLOR | MATERIAL_OVERRIDE_METALLIC | MATERIAL_OVERRIDE_ROUGHNESS;
-            srgb_to_linear(state->grid_albedo, mr->material.base_color);
-            mr->material.metallic  = 1.0f - (f32)row / (f32)(GRID_ROWS - 1);
-            mr->material.roughness = 0.05f + 0.95f * (f32)col / (f32)(GRID_COLUMNS - 1);
-        }
-    }
-
-    create_demo_lights(w);
-}
-
-// The GUI's default material, on the model entity -- but only for models
-// that brought no materials of their own (a bare .obj); glTF models keep
-// theirs. Runs when a model loads and when the GUI values change.
-static void
-apply_default_material(demo_state* state)
-{
-    c_mesh_renderer* mr = world_mesh_renderer(&state->lit_world, state->model_entity);
-    if (!mr)
-        return;
-
-    const model* m = assets_model(&state->assets, mr->model);
-    if (m && m->material_count == 0)
-    {
-        mr->material.fields = MATERIAL_OVERRIDE_BASE_COLOR | MATERIAL_OVERRIDE_METALLIC | MATERIAL_OVERRIDE_ROUGHNESS;
-        srgb_to_linear(state->default_albedo, mr->material.base_color);
-        mr->material.metallic  = state->default_metallic;
-        mr->material.roughness = state->default_roughness;
-    }
-    else
-    {
-        mr->material.fields = 0;
-    }
-}
-
-// Points lit_world's model entity at MODEL_PATHS[index], fits it into a ~2
-// unit box at the origin, and sits the ground under it. Recreates the
-// pivot/model entities if a command destroyed them.
-static void
-load_selected_model(demo_state* state, int index)
-{
-    world* w = &state->lit_world;
-
-    // Recorded even when the load fails, so on_frame doesn't retry (and
-    // re-log the error) every single frame.
-    state->loaded_model = index;
-
-    if (!world_is_alive(w, state->model_pivot))
-        state->model_pivot = world_create(w, "model_pivot");
-    if (!world_is_alive(w, state->model_entity))
-    {
-        state->model_entity = world_create(w, "model");
-        world_add_mesh_renderer(w, state->model_entity, ASSET_NONE);
-    }
-    world_set_parent(w, state->model_entity, state->model_pivot);
-    if (!world_has(w, state->model_entity, COMPONENT_MESH_RENDERER))
-        world_add_mesh_renderer(w, state->model_entity, ASSET_NONE);
-
-    asset_id id = assets_load_model(&state->assets, MODEL_PATHS[index]);
-    world_set_model(w, state->model_entity, id);
-    apply_default_material(state);
-
-    // Free the model this one replaced, rather than keeping every model
-    // ever picked resident on the GPU. (Undo history keeps the ones it
-    // still references.)
-    assets_collect_unused(&state->assets);
-
-    const model* m = assets_model(&state->assets, id);
-    if (!m)
-        return;   // assets_load_model() logged why; the model entity just draws nothing
-
-    // Assets come in wildly different units; fit everything into a ~2 unit
-    // box at the origin so the orbit camera framing works for all of them.
-    // The fit is a uniform scale plus a translation, so it maps straight
-    // onto the entity's transform.
-    mat4 fit;
-    model_get_fit_transform(m, 2.0f, fit);
-
-    c_transform* t = world_transform(w, state->model_entity);
-    glm_vec3_fill(t->scale, fit[0][0]);
-    glm_vec3_copy(fit[3], t->position);
-
-    // Sit the ground at the fitted model's lowest point. The pivot only
-    // spins about Y, which doesn't change Y, so this holds at every angle.
-    vec3 fitted_min;
-    glm_mat4_mulv3(fit, (f32*)m->bounds_min, 1.0f, fitted_min);
-    c_transform* ground = world_transform(w, state->ground_entity);
-    if (ground)
-        ground->position[1] = fitted_min[1];
-    world_update(w);
-}
-
 // Bakes env.hdri into state->ibl if it changed since the last bake -- picked
-// in the GUI, set by environment.set or brought in by scene.load. A
+// in the GUI, set by environment.set or brought in by opening a scene. A
 // missing/unreadable file leaves image-based lighting off, not the app dead.
 static void
-sync_hdri(demo_state* state)
+sync_hdri(editor_state* state)
 {
     if (state->hdri_baked && strcmp(state->baked_hdri, state->env.hdri) == 0)
         return;
@@ -556,34 +332,68 @@ sync_hdri(demo_state* state)
     free(path);
 }
 
-// env.hdri's index in HDRI_PATHS, or -1 for one the picker doesn't list (a
-// scene file can name any .hdr under assets/) or none.
-static int
-hdri_index(const demo_state* state)
+// --- HDRI list ------------------------------------------------------------------
+// The project's .hdr files, as scene paths ("hdri/sky.hdr", "hdri/night/moon.hdr").
+
+typedef struct hdri_list
 {
-    for (uint32 i = 0; i < HDRI_COUNT; ++i)
+    char   paths[HDRI_LIST_MAX][ENVIRONMENT_HDRI_MAX];
+    uint32 count;
+} hdri_list;
+
+typedef struct hdri_visit
+{
+    hdri_list*  list;
+    const char* prefix;   // "hdri/" or "hdri/<folder>/"
+    b8          nested;
+} hdri_visit;
+
+static void
+visit_hdri(const char* name, b8 is_directory, void* user_data)
+{
+    hdri_visit* visit  = user_data;
+    size_t      length = strlen(name);
+
+    if (is_directory && !visit->nested)
     {
-        if (strcmp(HDRI_PATHS[i], state->env.hdri) == 0)
-            return (int)i;
+        char prefix[ENVIRONMENT_HDRI_MAX], relative[ENVIRONMENT_HDRI_MAX];
+        snprintf(prefix, sizeof(prefix), "%s%s/", visit->prefix, name);
+        snprintf(relative, sizeof(relative), "%s%s", visit->prefix, name);
+
+        char*      folder = project_path(relative);
+        hdri_visit inner  = { visit->list, prefix, true };
+        file_list_directory(folder, visit_hdri, &inner);
+        free(folder);
     }
-    return -1;
+    else if (!is_directory && length > 4 && strcmp(name + length - 4, ".hdr") == 0 && visit->list->count < HDRI_LIST_MAX)
+    {
+        snprintf(visit->list->paths[visit->list->count++], ENVIRONMENT_HDRI_MAX, "%s%s", visit->prefix, name);
+    }
+}
+
+static void
+list_hdris(hdri_list* out)
+{
+    out->count = 0;
+    char*      folder = project_path("hdri");
+    hdri_visit visit  = { out, "hdri/", false };
+    file_list_directory(folder, visit_hdri, &visit);
+    free(folder);
 }
 
 // --- Application commands ------------------------------------------------------
-// Commands for state the World doesn't hold -- the camera, the HDRI and the
-// renderer settings -- registered with every command context, so the
-// console (and later an agent) can drive them like any built-in command.
+// Commands for state the World doesn't hold -- the camera, the HDRI, the
+// renderer settings and the project -- registered with the command context,
+// so the console (and the agent) can drive them like any built-in command.
 
-static scene_render_settings build_render_settings(const demo_state* state);
+static scene_render_settings build_render_settings(const editor_state* state);
 
-// on_change for both worlds: show the change in the console, and push it to
-// connected clients with the world's name, since each world keeps its own
-// revision count.
+// on_change: show the change in the console, and push it to connected
+// clients.
 static void
 on_world_change(void* user_data, const cJSON* event)
 {
-    struct world_listener* listener = user_data;
-    demo_state*            state    = listener->state;
+    editor_state* state = user_data;
 
     // The inspector's own edits show in its fields as they happen; logging
     // each frame of a drag would flood the console. Clients still hear them.
@@ -593,16 +403,10 @@ on_world_change(void* user_data, const cJSON* event)
     if (state->server)
     {
         cJSON* params = cJSON_Duplicate(event, true);
-        cJSON_AddStringToObject(params, "world", listener->world_name);
+        cJSON_AddStringToObject(params, "world", "scene");
         server_notify(state->server, SERVER_CHANGE_NOTIFICATION, params);
         cJSON_Delete(params);
     }
-}
-
-static command_context*
-active_commands(demo_state* state)
-{
-    return state->mode == RENDER_MODE_MATERIAL_GRID ? &state->grid_commands : &state->lit_commands;
 }
 
 // f32 -> JSON number at 4 significant digits, so 1.3f reads 1.3 rather
@@ -642,7 +446,7 @@ json_vec3(const cJSON* item, vec3 out)
 // Re-derives the orbit controls from the camera, so mouse orbiting carries
 // on from wherever a command put it.
 static void
-orbit_from_camera(demo_state* state)
+orbit_from_camera(editor_state* state)
 {
     vec3 offset;
     glm_vec3_sub(state->cam.position, state->cam.target, offset);
@@ -656,12 +460,15 @@ static b8
 host_environment_list(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
     (void)ctx; (void)args; (void)error; (void)error_size;
-    demo_state* state = user_data;
+    editor_state* state = user_data;
+
+    hdri_list hdris;
+    list_hdris(&hdris);
 
     *out_result = cJSON_CreateObject();
     cJSON* list = cJSON_AddArrayToObject(*out_result, "hdris");
-    for (uint32 i = 0; i < HDRI_COUNT; ++i)
-        cJSON_AddItemToArray(list, cJSON_CreateString(HDRI_PATHS[i]));
+    for (uint32 i = 0; i < hdris.count; ++i)
+        cJSON_AddItemToArray(list, cJSON_CreateString(hdris.paths[i]));
 
     if (state->env.hdri[0])
         cJSON_AddStringToObject(*out_result, "current", state->env.hdri);
@@ -677,20 +484,24 @@ host_environment_list(void* user_data, command_context* ctx, const cJSON* args, 
 static b8
 host_environment_set(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
-    demo_state* state = user_data;
+    editor_state* state = user_data;
 
-    const cJSON* hdri = cJSON_GetObjectItem(args, "hdri");
-    int          index = -1;
+    // A path from environment.list, or just its file name.
+    const cJSON* hdri  = cJSON_GetObjectItem(args, "hdri");
+    const char*  found = NULL;
+    hdri_list    hdris;
     if (cJSON_IsString(hdri))
     {
-        for (uint32 i = 0; i < HDRI_COUNT; ++i)
+        list_hdris(&hdris);
+        for (uint32 i = 0; i < hdris.count && !found; ++i)
         {
-            if (strcmp(HDRI_PATHS[i], hdri->valuestring) == 0 || strcmp(HDRI_NAMES[i], hdri->valuestring) == 0)
-                index = (int)i;
+            const char* slash = strrchr(hdris.paths[i], '/');
+            if (strcmp(hdris.paths[i], hdri->valuestring) == 0 || (slash && strcmp(slash + 1, hdri->valuestring) == 0))
+                found = hdris.paths[i];
         }
-        if (index < 0)
+        if (!found)
         {
-            snprintf(error, error_size, "unknown HDRI \"%s\"; environment.list shows the available ones", hdri->valuestring);
+            snprintf(error, error_size, "unknown HDRI \"%s\"; environment.list shows the project's HDRIs", hdri->valuestring);
             return false;
         }
     }
@@ -707,9 +518,9 @@ host_environment_set(void* user_data, command_context* ctx, const cJSON* args, c
         return false;
     }
 
-    if (index >= 0)
+    if (found)
     {
-        snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", HDRI_PATHS[index]);
+        snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", found);
         sync_hdri(state);
     }
 
@@ -726,7 +537,7 @@ static b8
 host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
     (void)ctx; (void)args; (void)error; (void)error_size;
-    demo_state* state = user_data;
+    editor_state* state = user_data;
 
     *out_result = cJSON_CreateObject();
     cJSON_AddItemToObject(*out_result, "position", vec3_json(state->cam.position));
@@ -740,7 +551,7 @@ host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
 static b8
 host_view_set_camera(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
-    demo_state* state = user_data;
+    editor_state* state = user_data;
 
     vec3 position, target;
     glm_vec3_copy(state->cam.position, position);
@@ -776,8 +587,8 @@ host_view_set_camera(void* user_data, command_context* ctx, const cJSON* args, c
 static b8
 host_view_frame(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
-    demo_state*  state = user_data;
-    const world* w     = ctx->w;
+    editor_state* state = user_data;
+    const world*  w     = ctx->w;
 
     vec3 bmin = { FLT_MAX, FLT_MAX, FLT_MAX }, bmax = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
     b8   any  = false;
@@ -803,15 +614,26 @@ host_view_frame(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     }
     else
     {
+        // Everything visible -- but not flat things (a ground plane) unless
+        // there's nothing else: a 20 m ground would shrink the scene's
+        // objects to dots. The same rule the game's camera uses.
         const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
-        for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+        for (int pass = 0; pass < 2 && !any; ++pass)
         {
-            vec3 emin, emax;
-            if (!world_mesh_renderer(w, e)->visible || !world_bounds(w, e, emin, emax))
-                continue;
-            glm_vec3_minv(bmin, emin, bmin);
-            glm_vec3_maxv(bmax, emax, bmax);
-            any = true;
+            b8 skip_flat = pass == 0;
+            for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+            {
+                vec3 emin, emax;
+                if (!world_mesh_renderer(w, e)->visible || !world_bounds(w, e, emin, emax))
+                    continue;
+                f32 height = emax[1] - emin[1];
+                f32 width  = fmaxf(emax[0] - emin[0], emax[2] - emin[2]);
+                if (skip_flat && height < width * 0.02f)
+                    continue;
+                glm_vec3_minv(bmin, emin, bmin);
+                glm_vec3_maxv(bmax, emax, bmax);
+                any = true;
+            }
         }
     }
 
@@ -834,7 +656,7 @@ host_view_frame(void* user_data, command_context* ctx, const cJSON* args, cJSON*
 static b8
 host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
-    demo_state* state = user_data;
+    editor_state* state = user_data;
 
     const cJSON* exposure = cJSON_GetObjectItem(args, "exposure");
     const cJSON* ambient  = cJSON_GetObjectItem(args, "ambient_strength");
@@ -860,7 +682,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
 static b8
 host_view_screenshot(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
 {
-    demo_state* state = user_data;
+    editor_state* state = user_data;
 
     // Longest side in pixels. Smaller keeps the payload (and an LLM's
     // context) small; 768 is plenty to judge composition and lighting.
@@ -877,8 +699,6 @@ host_view_screenshot(void* user_data, command_context* ctx, const cJSON* args, c
     }
 
     scene_render_settings settings = build_render_settings(state);
-    if (state->mode == RENDER_MODE_MATERIAL_GRID)
-        settings.shadows = false;   // as on screen
 
     world_update(ctx->w);
 
@@ -947,6 +767,68 @@ host_view_screenshot(void* user_data, command_context* ctx, const cJSON* args, c
     return true;
 }
 
+static b8 scene_dirty(const editor_state* state);
+
+static b8
+host_project_info(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    (void)ctx; (void)args; (void)error; (void)error_size;
+    editor_state* state = user_data;
+
+    *out_result = cJSON_CreateObject();
+    cJSON_AddStringToObject(*out_result, "name", state->project.name);
+    cJSON_AddStringToObject(*out_result, "folder", paths_project_root());
+    cJSON_AddStringToObject(*out_result, "startup_scene", state->project.startup_scene);
+    if (state->scene_name[0])
+        cJSON_AddStringToObject(*out_result, "scene", state->scene_name);
+    else
+        cJSON_AddNullToObject(*out_result, "scene");
+    cJSON_AddBoolToObject(*out_result, "unsaved_changes", scene_dirty(state));
+    return true;
+}
+
+// The folder new projects go in unless told otherwise: Documents/PBR Projects.
+static void
+default_projects_location(char* out, size_t size)
+{
+#ifdef _WIN32
+    const char* home = getenv("USERPROFILE");
+#else
+    const char* home = getenv("HOME");
+#endif
+    snprintf(out, size, "%s/Documents/PBR Projects", home && home[0] ? home : ".");
+    for (char* c = out; *c; ++c)
+        if (*c == '\\')
+            *c = '/';
+}
+
+// Creates a project; the user opens it (switching projects mid-turn would
+// pull the scene out from under the agent).
+static b8
+host_project_create(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    (void)ctx; (void)user_data;
+
+    const char* name   = cJSON_GetStringValue(cJSON_GetObjectItem(args, "name"));
+    const char* folder = cJSON_GetStringValue(cJSON_GetObjectItem(args, "folder"));
+
+    char location[PROJECT_PATH_MAX], directory[PROJECT_PATH_MAX * 2];
+    if (folder && folder[0])
+        snprintf(location, sizeof(location), "%s", folder);
+    else
+        default_projects_location(location, sizeof(location));
+    snprintf(directory, sizeof(directory), "%s/%s", location, name ? name : "");
+
+    if (!project_create(directory, name, error, error_size))
+        return false;
+
+    *out_result = cJSON_CreateObject();
+    cJSON_AddStringToObject(*out_result, "folder", directory);
+    cJSON_AddStringToObject(*out_result, "name", name);
+    cJSON_AddStringToObject(*out_result, "note", "Created. The user opens it from File > Open Project in the editor.");
+    return true;
+}
+
 static const cmd_arg ARGS_SCREENSHOT[] = {
     { "max_size", "number", false, "Longest side in pixels, 64-4096 (default 768); the window's size if smaller" },
 };
@@ -973,10 +855,15 @@ static const cmd_arg ARGS_RENDER_SET[] = {
     { "debug_show_cascades", "boolean", false, "Tint shading by shadow cascade" },
 };
 
+static const cmd_arg ARGS_PROJECT_CREATE[] = {
+    { "name",   "string", true,  "Project name, also its folder's name (none of \\ / : * ? \" < > |)" },
+    { "folder", "string", false, "Folder to create it in; default Documents/PBR Projects" },
+};
+
 #define HOST_ARGS(array) array, (uint32)(sizeof(array) / sizeof((array)[0]))
 
 static const cmd_host_command HOST_COMMANDS[] = {
-    { "environment.list", "The HDRIs that can light the scene, and the current settings", NULL, 0, false, host_environment_list },
+    { "environment.list", "The project's HDRIs that can light the scene, and the current settings", NULL, 0, false, host_environment_list },
     { "environment.set",  "Changes the HDRI and how it lights and backs the scene",         HOST_ARGS(ARGS_ENVIRONMENT_SET), false, host_environment_set },
     { "view.get",         "Where the camera is and what it looks at",                       NULL, 0, false, host_view_get },
     { "view.set_camera",  "Moves the camera and/or what it looks at",                       HOST_ARGS(ARGS_SET_CAMERA),      false, host_view_set_camera },
@@ -984,6 +871,10 @@ static const cmd_host_command HOST_COMMANDS[] = {
     { "render.set",       "Exposure, ambient strength and debug views",                      HOST_ARGS(ARGS_RENDER_SET),      false, host_render_set },
     { "view.screenshot",  "The scene as a PNG (base64), rendered now without the editor's panels -- to check how it looks",
                                                                                                HOST_ARGS(ARGS_SCREENSHOT),      false, host_view_screenshot },
+    { "project.info",     "The open project: name, folder, startup scene, the scene being edited and whether it has unsaved changes",
+                                                                                               NULL, 0,                         false, host_project_info },
+    { "project.create",   "Creates a new project folder with a starter scene (the user opens it in the editor)",
+                                                                                               HOST_ARGS(ARGS_PROJECT_CREATE),  false, host_project_create },
 };
 
 #define HOST_COMMAND_COUNT ((uint32)(sizeof(HOST_COMMANDS) / sizeof(HOST_COMMANDS[0])))
@@ -1003,13 +894,13 @@ join_path(const char* directory, const char* relative)
     size_t length = strlen(directory) + 1 + strlen(relative) + 1;
     char*  path   = malloc(length);
     if (!path)
-        FATAL("demo: out of memory");
+        FATAL("editor: out of memory");
     snprintf(path, length, "%s/%s", directory, relative);
     return path;
 }
 
 static void
-start_agent(demo_state* state)
+start_agent(editor_state* state)
 {
     if (state->agent_process && process_running(state->agent_process, NULL))
         return;
@@ -1023,7 +914,7 @@ start_agent(demo_state* state)
         size_t length = strlen(configured) + 1;
         python = malloc(length);
         if (!python)
-            FATAL("demo: out of memory");
+            FATAL("editor: out of memory");
         memcpy(python, configured, length);
     }
     else
@@ -1053,9 +944,10 @@ start_agent(demo_state* state)
 }
 
 // F5: starts the game (TESTBED_EXE, set by CMake) following this editor's
-// scene. Publishes first, so it finds the current world straight away.
+// scene, in the same project so the models and HDRIs the scene names
+// resolve to the same files.
 static void
-start_game(demo_state* state)
+start_game(editor_state* state)
 {
     if (state->game_process && process_running(state->game_process, NULL))
     {
@@ -1071,17 +963,26 @@ start_game(demo_state* state)
         return;
     }
 
-    // The same project, so the models and HDRIs the live scene names resolve
-    // to the same files.
     const char* argv[] = { TESTBED_EXE, "--live", "--project", paths_project_root(), NULL };
     state->game_process = process_spawn(argv, state->game_log);
     snprintf(state->game_note, sizeof(state->game_note), state->game_process
              ? "Game running, following your edits." : "Could not start the game; see %s.", state->game_log);
 }
 
+// Ends the F5 game, when the project it was started on is closed.
+static void
+stop_game(editor_state* state)
+{
+    if (!state->game_process)
+        return;
+    process_destroy(state->game_process);
+    state->game_process = NULL;
+    snprintf(state->game_note, sizeof(state->game_note), "Game closed with the project it was playing.");
+}
+
 // Notices the game being closed.
 static void
-watch_game(demo_state* state)
+watch_game(editor_state* state)
 {
     int exit_code;
     if (!state->game_process || process_running(state->game_process, &exit_code))
@@ -1095,7 +996,7 @@ watch_game(demo_state* state)
 
 // Notices the sidecar exiting, and says where to look.
 static void
-watch_agent(demo_state* state)
+watch_agent(editor_state* state)
 {
     int exit_code;
     if (!state->agent_process || process_running(state->agent_process, &exit_code))
@@ -1109,39 +1010,27 @@ watch_agent(demo_state* state)
 
 // --- Selection -------------------------------------------------------------------
 
-// Clears the selection if it no longer names a live entity of the world on
-// screen (deleted, scene loaded, other mode).
+// Clears the selection if it no longer names a live entity (deleted, another
+// scene opened).
 static void
-validate_selection(demo_state* state)
+validate_selection(editor_state* state)
 {
-    const world* w = active_commands(state)->w;
-    if (state->selection_world != w || !world_is_alive(w, state->selected))
-    {
-        state->selected        = ENTITY_NULL;
-        state->selection_world = w;
-    }
-}
-
-static void
-set_selection(demo_state* state, entity_id e)
-{
-    state->selected        = e;
-    state->selection_world = active_commands(state)->w;
+    if (!world_is_alive(&state->scene, state->selected))
+        state->selected = ENTITY_NULL;
 }
 
 // A click in the view at window point (x, y): selects what's under it, or
 // clears the selection on empty space.
 static void
-select_at(demo_state* state, f64 x, f64 y)
+select_at(editor_state* state, f64 x, f64 y)
 {
     const ImGuiViewport* viewport = igGetMainViewport();
-    const world*         w        = active_commands(state)->w;
 
     vec3 origin, direction;
     camera_screen_ray(&state->cam, (f32)x, (f32)y, viewport->Size.x, viewport->Size.y, origin, direction);
 
     // Lights and cameras have nothing to click on: a 25 cm sphere stands in.
-    set_selection(state, world_pick(w, origin, direction, 0.25f, NULL));
+    state->selected         = world_pick(&state->scene, origin, direction, 0.25f, NULL);
     state->reveal_selection = state->selected != ENTITY_NULL;
 }
 
@@ -1179,9 +1068,10 @@ selection_bounds(const world* w, entity_id e, vec3 lo, vec3 hi)
 // background list -- above the 3D view, below every panel. Call after the
 // world was drawn, with the same pose (inside a Spin preview).
 static void
-draw_selection(demo_state* state, const world* w)
+draw_selection(editor_state* state)
 {
-    if (state->selection_world != w || !world_is_alive(w, state->selected))
+    const world* w = &state->scene;
+    if (!world_is_alive(w, state->selected))
         return;
 
     const ImGuiViewport* viewport = igGetMainViewport();
@@ -1246,31 +1136,37 @@ draw_selection(demo_state* state, const world* w)
     }
 }
 
-// F: points the camera at the selection, as view.frame does.
+// Points the camera at `entity` (NULL = everything visible), as view.frame
+// does; says why in the console if it can't frame an entity.
 static void
-frame_selection(demo_state* state)
+frame_view(editor_state* state, const char* entity)
 {
-    validate_selection(state);
-    if (!state->selected)
-        return;
-
-    command_context* ctx  = active_commands(state);
-    cJSON*           args = cJSON_CreateObject();
-    cJSON_AddStringToObject(args, "entity", world_name(ctx->w, state->selected));
+    cJSON* args = cJSON_CreateObject();
+    if (entity)
+        cJSON_AddStringToObject(args, "entity", entity);
 
     cJSON* result = NULL;
     char   error[256];
-    if (!host_view_frame(state, ctx, args, &result, error, sizeof(error)))
+    if (!host_view_frame(state, &state->commands, args, &result, error, sizeof(error)) && entity)
         console_info(&state->console, error);
     cJSON_Delete(result);
     cJSON_Delete(args);
+}
+
+// F: points the camera at the selection.
+static void
+frame_selection(editor_state* state)
+{
+    validate_selection(state);
+    if (state->selected)
+        frame_view(state, world_name(&state->scene, state->selected));
 }
 
 // --- Gizmo --------------------------------------------------------------------------
 
 // Runs {cmd, args} for the gizmo (takes `args`); false and a console line on failure.
 static b8
-gizmo_run(demo_state* state, command_context* ctx, const char* cmd, cJSON* args)
+gizmo_run(editor_state* state, command_context* ctx, const char* cmd, cJSON* args)
 {
     cJSON* request = cJSON_CreateObject();
     cJSON_AddStringToObject(request, "cmd", cmd);
@@ -1293,7 +1189,7 @@ gizmo_run(demo_state* state, command_context* ctx, const char* cmd, cJSON* args)
 
 // Ends the drag's history group: the whole drag becomes one undo step.
 static void
-gizmo_finish_edit(demo_state* state, command_context* ctx)
+gizmo_finish_edit(editor_state* state, command_context* ctx)
 {
     if (!state->gizmo_editing)
         return;
@@ -1312,12 +1208,12 @@ vec3_array(const f32* v)
 // it: local = inverse(parent world) * new world, decomposed back into
 // position / rotation_deg / scale (World/World.h transform_from_matrix()).
 static void
-draw_gizmo(demo_state* state)
+draw_gizmo(editor_state* state)
 {
-    command_context* ctx = active_commands(state);
+    command_context* ctx = &state->commands;
     world*           w   = ctx->w;
 
-    if (state->selection_world != w || !world_is_alive(w, state->selected))
+    if (!world_is_alive(w, state->selected))
     {
         state->gizmo_hot = false;
         gizmo_finish_edit(state, ctx);
@@ -1397,7 +1293,7 @@ draw_gizmo(demo_state* state)
 
 // The Scene panel's gizmo controls.
 static void
-draw_gizmo_controls(demo_state* state)
+draw_gizmo_controls(editor_state* state)
 {
     igText("Gizmo (W / E / R)");
     igRadioButton_IntPtr("Move", (int*)&state->gizmo_op, GIZMO_TRANSLATE);
@@ -1422,59 +1318,909 @@ draw_gizmo_controls(demo_state* state)
     igSeparator();
 }
 
+// --- Running commands for the UI -------------------------------------------------------
+
+// Runs {cmd, args} (takes `args`). Returns the result on success (caller
+// deletes it), or NULL with the error in the console.
+static cJSON*
+run_command(editor_state* state, const char* cmd, cJSON* args)
+{
+    cJSON* request = cJSON_CreateObject();
+    cJSON_AddStringToObject(request, "cmd", cmd);
+    cJSON_AddItemToObject(request, "args", args ? args : cJSON_CreateObject());
+
+    cJSON* response = cmd_execute(&state->commands, request);
+    cJSON_Delete(request);
+
+    cJSON* result = NULL;
+    if (cJSON_IsTrue(cJSON_GetObjectItem(response, "ok")))
+    {
+        result = cJSON_DetachItemFromObject(response, "result");
+        if (!result)
+            result = cJSON_CreateObject();
+    }
+    else
+    {
+        const char* message = cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(response, "error"), "message"));
+        char        line[640];
+        snprintf(line, sizeof(line), "%s: %s", cmd, message ? message : "failed");
+        console_info(&state->console, line);
+    }
+    cJSON_Delete(response);
+    return result;
+}
+
+// --- Project and scene ------------------------------------------------------------------
+
+static b8
+environment_equal(const scene_environment* a, const scene_environment* b)
+{
+    return strcmp(a->hdri, b->hdri) == 0 && a->use_ibl == b->use_ibl && a->show_skybox == b->show_skybox
+        && a->sky_blur == b->sky_blur && a->ambient_strength == b->ambient_strength && a->exposure == b->exposure;
+}
+
+// Changes since the scene was opened or saved: any command that changed the
+// world (each bumps the revision, undo included), or the environment.
+static b8
+scene_dirty(const editor_state* state)
+{
+    return state->commands.revision != state->saved_revision || !environment_equal(&state->env, &state->saved_env);
+}
+
+static void
+mark_saved(editor_state* state)
+{
+    state->saved_revision = state->commands.revision;
+    state->saved_env      = state->env;
+}
+
+// "PBR Editor - Racing Game - main*"
+static void
+update_title(editor_state* state)
+{
+    static char last[PROJECT_NAME_MAX + PROJECT_SCENE_MAX + 64];
+    char        title[sizeof(last)];
+    snprintf(title, sizeof(title), "PBR Editor - %s - %s%s", state->project.name,
+             state->scene_name[0] ? state->scene_name : "untitled", scene_dirty(state) ? "*" : "");
+
+    if (strcmp(title, last) != 0)
+    {
+        window_set_title(get_renderer()->drawing_window, title);
+        memcpy(last, title, sizeof(last));
+    }
+}
+
+// Closes any edit in progress, so it doesn't join what comes next.
+static void
+finish_edits(editor_state* state)
+{
+    inspector_finish_edit(&state->inspector, &state->commands);
+    gizmo_finish_edit(state, &state->commands);
+}
+
+// A fresh undo history: steps from another scene mean nothing in this one.
+static void
+reset_history(editor_state* state)
+{
+    history_shutdown(&state->history, &state->scene);
+    history_init(&state->history);
+}
+
+// Tells the console and clients the scene was replaced wholesale (no
+// per-entity changes to list), with a new revision.
+static void
+announce_replaced(editor_state* state, const char* source)
+{
+    ++state->commands.revision;
+
+    cJSON* event = cJSON_CreateObject();
+    cJSON_AddNumberToObject(event, "revision", (double)state->commands.revision);
+    cJSON_AddStringToObject(event, "source", source);
+    cJSON_AddArrayToObject(event, "changes");
+    on_world_change(state, event);
+    cJSON_Delete(event);
+}
+
+// Replaces the scene with `scene_json` (a parsed scene file), named `name`
+// ("" = untitled). Loaded into a fresh World first, so a bad file leaves
+// the current scene as it was. False, with why in the console.
+static b8
+replace_scene(editor_state* state, const cJSON* scene_json, const char* name, const char* source)
+{
+    char              error[640];
+    scene_environment env      = scene_environment_default();
+    const cJSON*      env_json = cJSON_GetObjectItem(scene_json, "environment");
+    if (env_json && !deserialize_environment(env_json, &env, error, sizeof(error)))
+    {
+        console_info(&state->console, error);
+        return false;
+    }
+
+    world next;
+    world_init(&next, &state->assets);
+    if (!deserialize_scene(&next, scene_json, NULL, NULL, error, sizeof(error)))
+    {
+        console_info(&state->console, error);
+        world_shutdown(&next);
+        return false;
+    }
+
+    finish_edits(state);
+    reset_history(state);
+    world_shutdown(&state->scene);
+    state->scene = next;   // commands.w still points here
+    world_update(&state->scene);
+
+    state->env = env;
+    snprintf(state->scene_name, sizeof(state->scene_name), "%s", name);
+    state->selected = ENTITY_NULL;
+
+    announce_replaced(state, source);
+    mark_saved(state);
+    frame_view(state, NULL);
+    return true;
+}
+
+static b8
+open_scene(editor_state* state, const char* name)
+{
+    char relative[PROJECT_SCENE_MAX + 16];
+    snprintf(relative, sizeof(relative), "scenes/%s.json", name);
+    char*  path   = project_path(relative);
+    char*  text   = file_exists(path) ? file_read_to_string(path) : NULL;
+    cJSON* parsed = text ? cJSON_Parse(text) : NULL;
+    free(text);
+
+    b8 ok = false;
+    if (!parsed)
+    {
+        char line[PROJECT_PATH_MAX + 64];
+        snprintf(line, sizeof(line), "No readable scene at %s", path);
+        console_info(&state->console, line);
+    }
+    else
+    {
+        char source[PROJECT_SCENE_MAX + 16];
+        snprintf(source, sizeof(source), "open %s", name);
+        ok = replace_scene(state, parsed, name, source);
+    }
+    cJSON_Delete(parsed);
+    free(path);
+    return ok;
+}
+
+static void
+new_scene(editor_state* state)
+{
+    cJSON* starter = project_starter_scene(&state->project);
+    replace_scene(state, starter, "", "new scene");
+    cJSON_Delete(starter);
+}
+
+// Saves to scenes/<name>.json (scene.save: the entities and the environment).
+static b8
+save_scene_as(editor_state* state, const char* name)
+{
+    if (!project_scene_name_valid(name))
+    {
+        snprintf(state->popup_error, sizeof(state->popup_error),
+                 "\"%s\": use 1-64 letters, digits, '_' or '-'", name);
+        return false;
+    }
+
+    finish_edits(state);
+    cJSON* args = cJSON_CreateObject();
+    cJSON_AddStringToObject(args, "name", name);
+    cJSON* result = run_command(state, "scene.save", args);
+    if (!result)
+    {
+        snprintf(state->popup_error, sizeof(state->popup_error), "Couldn't save; the console says why.");
+        return false;
+    }
+    cJSON_Delete(result);
+
+    snprintf(state->scene_name, sizeof(state->scene_name), "%s", name);
+    mark_saved(state);
+
+    char line[PROJECT_SCENE_MAX + 32];
+    snprintf(line, sizeof(line), "Saved scene %s", name);
+    console_info(&state->console, line);
+    return true;
+}
+
+// Ctrl+S: to the scene's file, or Save As for a scene that has none yet.
+static void
+save_scene(editor_state* state)
+{
+    if (state->scene_name[0])
+    {
+        save_scene_as(state, state->scene_name);
+        return;
+    }
+    state->save_as_name[0] = '\0';
+    state->popup_error[0]  = '\0';
+    state->open_popup      = POPUP_SAVE_AS;
+}
+
+// Switches to the project in `directory`: its folder becomes the project
+// root, and its startup scene opens (a new scene if it has none). False,
+// with why in popup_error, if it isn't a project.
+static b8
+open_project(editor_state* state, const char* directory)
+{
+    project_settings settings;
+    if (!project_read(directory, &settings, state->popup_error, sizeof(state->popup_error)))
+        return false;
+    if (chat_busy(&state->chat))
+    {
+        snprintf(state->popup_error, sizeof(state->popup_error), "Wait for the chat turn to finish (or Stop it) first.");
+        return false;
+    }
+
+    // Everything of the old project goes before anything of the new one
+    // loads: the asset cache is keyed by project-relative path, so a model
+    // still cached as "models/tree.glb" would stand in for the new
+    // project's file of that name.
+    finish_edits(state);
+    stop_game(state);
+    reset_history(state);
+    world_clear(&state->scene);
+    assets_collect_unused(&state->assets);
+    state->hdri_baked = false;   // "hdri/sky.hdr" may be another file now
+
+    paths_set_project_root(directory);
+    state->project = settings;
+    project_recent_add(&state->recent, paths_project_root(), NULL);
+
+    char line[PROJECT_PATH_MAX + PROJECT_NAME_MAX + 32];
+    snprintf(line, sizeof(line), "Opened project %s (%s)", settings.name, paths_project_root());
+    console_info(&state->console, line);
+    chat_info(&state->chat, line);
+
+    if (!open_scene(state, settings.startup_scene))
+        new_scene(state);
+    return true;
+}
+
+static void
+perform(editor_state* state, pending_action action, const char* arg)
+{
+    switch (action)
+    {
+        case ACTION_OPEN_PROJECT:
+            if (!open_project(state, arg))
+            {
+                // Show why, in the dialog.
+                snprintf(state->open_project_path, sizeof(state->open_project_path), "%s", arg);
+                state->open_popup = POPUP_OPEN_PROJECT;
+            }
+            break;
+        case ACTION_NEW_SCENE:  new_scene(state); break;
+        case ACTION_OPEN_SCENE: open_scene(state, arg); break;
+        case ACTION_QUIT:       state->app->should_close = true; break;
+        case ACTION_NONE:       break;
+    }
+}
+
+// Does `action` now, or -- with unsaved changes -- once "save changes?" is
+// answered.
+static void
+request(editor_state* state, pending_action action, const char* arg)
+{
+    if ((action == ACTION_NEW_SCENE || action == ACTION_OPEN_SCENE) && chat_busy(&state->chat))
+    {
+        console_info(&state->console, "Wait for the chat turn to finish (or Stop it) before opening another scene.");
+        return;
+    }
+    if (!scene_dirty(state))
+    {
+        perform(state, action, arg);
+        return;
+    }
+    state->pending = action;
+    snprintf(state->pending_arg, sizeof(state->pending_arg), "%s", arg ? arg : "");
+    state->open_popup = POPUP_UNSAVED;
+}
+
+// --- Add ---------------------------------------------------------------------------
+
+// Where new things go: under the point the view orbits, at `height`.
+static void
+add_position(const editor_state* state, f32 height, vec3 out)
+{
+    out[0] = state->cam.target[0];
+    out[1] = height;
+    out[2] = state->cam.target[2];
+}
+
+// Selects the entity a create/place result names (and frees the result).
+static void
+select_result(editor_state* state, cJSON* result)
+{
+    const char* name = cJSON_GetStringValue(cJSON_GetObjectItem(result, "name"));
+    if (name)
+    {
+        state->selected         = world_find(&state->scene, name);
+        state->reveal_selection = true;
+    }
+    cJSON_Delete(result);
+}
+
+static void
+add_model(editor_state* state, const char* key)
+{
+    vec3 position;
+    add_position(state, 0.0f, position);
+
+    cJSON* args = cJSON_CreateObject();
+    cJSON_AddStringToObject(args, "model", key);
+    cJSON_AddNumberToObject(args, "size", state->add_size);
+    cJSON_AddItemToObject(args, "position", vec3_array(position));
+    cJSON_AddBoolToObject(args, "on_ground", true);
+
+    cJSON* result = run_command(state, "place_model", args);
+    if (result)
+        select_result(state, result);
+}
+
+// entity.create with a Transform at `position` (and `rotation_deg` if not
+// NULL), plus `component` with `fields` if not NULL.
+static void
+add_entity(editor_state* state, const char* name, const f32* position, const f32* rotation_deg,
+           const char* component, cJSON* fields)
+{
+    cJSON* components = cJSON_CreateObject();
+    cJSON* transform  = cJSON_AddObjectToObject(components, "Transform");
+    cJSON_AddItemToObject(transform, "position", vec3_array(position));
+    if (rotation_deg)
+        cJSON_AddItemToObject(transform, "rotation_deg", vec3_array(rotation_deg));
+    if (component)
+        cJSON_AddItemToObject(components, component, fields);
+
+    cJSON* args = cJSON_CreateObject();
+    cJSON_AddStringToObject(args, "name", name);
+    cJSON_AddItemToObject(args, "components", components);
+
+    cJSON* result = run_command(state, "entity.create", args);
+    if (result)
+        select_result(state, result);
+}
+
+// "point", "spot" or "directional" (a sun).
+static void
+add_light(editor_state* state, const char* type)
+{
+    b8   sun = strcmp(type, "directional") == 0;
+    vec3 position;
+    add_position(state, sun ? 0.0f : 2.5f, position);
+
+    cJSON* light = cJSON_CreateObject();
+    cJSON_AddStringToObject(light, "type", type);
+    cJSON_AddNumberToObject(light, "intensity", sun ? 2.0 : 10.0);
+    if (!sun)
+        cJSON_AddNumberToObject(light, "range", 10);
+    if (strcmp(type, "spot") == 0)
+    {
+        const f32 down[3] = { 0.0f, -1.0f, 0.0f };
+        cJSON_AddItemToObject(light, "direction", vec3_array(down));
+        cJSON_AddNumberToObject(light, "inner_cone_degrees", 15);
+        cJSON_AddNumberToObject(light, "outer_cone_degrees", 30);
+    }
+    else if (sun)
+    {
+        const f32 slant[3] = { -0.4f, -0.7f, -0.5f };
+        cJSON_AddItemToObject(light, "direction", vec3_array(slant));
+    }
+
+    char name[32];
+    snprintf(name, sizeof(name), "%s_light", sun ? "sun" : type);
+    add_entity(state, name, position, NULL, "Light", light);
+}
+
+// A Camera entity seeing what the editor's view sees. Its -Z axis has to
+// point from the eye at the orbit target: with rotation Ry(yaw) * Rx(pitch)
+// that is pitch = -orbit_pitch, yaw = orbit_yaw.
+static void
+add_camera(editor_state* state)
+{
+    const f32 rotation[3] = { -state->orbit_pitch, state->orbit_yaw, 0.0f };
+
+    cJSON* cam = cJSON_CreateObject();
+    cJSON_AddNumberToObject(cam, "fov_degrees", state->cam.fov_degrees);
+    add_entity(state, "camera", state->cam.position, rotation, "Camera", cam);
+}
+
+// The Scene panel's Add section.
+static void
+draw_add_controls(editor_state* state)
+{
+    igText("Add (at the view's centre)");
+    igDragFloat("Size (m)", &state->add_size, 0.05f, 0.05f, 100.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+    if (igIsItemHovered(0))
+        igSetTooltip("Longest side of a model or shape added below");
+
+    if (igBeginCombo("##add_model", "Model from the project...", 0))
+    {
+        cJSON*       list   = run_command(state, "assets.list", NULL);
+        const cJSON* models = cJSON_GetObjectItem(list, "models");
+        const cJSON* key;
+        cJSON_ArrayForEach(key, models)
+        {
+            if (cJSON_IsString(key) && igSelectable_Bool(key->valuestring, false, 0, (ImVec2_c){ 0, 0 }))
+                add_model(state, key->valuestring);
+        }
+        if (cJSON_GetArraySize(models) == 0)
+            igTextDisabled("(none yet -- File > Import Asset)");
+        cJSON_Delete(list);
+        igEndCombo();
+    }
+
+    if (igButton("Cube", (ImVec2_c){ 0, 0 }))
+        add_model(state, "builtin:cube");
+    igSameLine(0.0f, -1.0f);
+    if (igButton("Sphere", (ImVec2_c){ 0, 0 }))
+        add_model(state, "builtin:sphere");
+    igSameLine(0.0f, -1.0f);
+    if (igButton("Plane", (ImVec2_c){ 0, 0 }))
+        add_model(state, "builtin:plane");
+
+    if (igButton("Point light", (ImVec2_c){ 0, 0 }))
+        add_light(state, "point");
+    igSameLine(0.0f, -1.0f);
+    if (igButton("Spot light", (ImVec2_c){ 0, 0 }))
+        add_light(state, "spot");
+    igSameLine(0.0f, -1.0f);
+    if (igButton("Sun", (ImVec2_c){ 0, 0 }))
+        add_light(state, "directional");
+
+    if (igButton("Camera (this view)", (ImVec2_c){ 0, 0 }))
+        add_camera(state);
+    igSameLine(0.0f, -1.0f);
+    if (igButton("Empty", (ImVec2_c){ 0, 0 }))
+    {
+        vec3 position;
+        add_position(state, 0.0f, position);
+        add_entity(state, "empty", position, NULL, NULL, NULL);
+    }
+    igSeparator();
+}
+
+// --- Menus and dialogs ------------------------------------------------------------------
+
+static void
+draw_scene_menu_items(editor_state* state)
+{
+    cJSON*       list   = run_command(state, "scene.list", NULL);
+    const cJSON* scenes = cJSON_GetObjectItem(list, "scenes");
+    const cJSON* name;
+    cJSON_ArrayForEach(name, scenes)
+    {
+        if (!cJSON_IsString(name))
+            continue;
+        b8 current = strcmp(name->valuestring, state->scene_name) == 0;
+        if (igMenuItem_Bool(name->valuestring, NULL, current, true))
+            request(state, ACTION_OPEN_SCENE, name->valuestring);
+    }
+    if (cJSON_GetArraySize(scenes) == 0)
+        igTextDisabled("(no saved scenes)");
+    cJSON_Delete(list);
+}
+
+static void
+draw_main_menu(editor_state* state)
+{
+    if (!igBeginMainMenuBar())
+        return;
+
+    if (igBeginMenu("File", true))
+    {
+        if (igMenuItem_Bool("New Project...", NULL, false, true))
+        {
+            snprintf(state->new_project_name, sizeof(state->new_project_name), "My Game");
+            if (!state->new_project_location[0])
+                default_projects_location(state->new_project_location, sizeof(state->new_project_location));
+            state->popup_error[0] = '\0';
+            state->open_popup     = POPUP_NEW_PROJECT;
+        }
+        if (igMenuItem_Bool("Open Project...", NULL, false, true))
+        {
+            state->open_project_path[0] = '\0';
+            state->popup_error[0]       = '\0';
+            state->open_popup           = POPUP_OPEN_PROJECT;
+        }
+        if (igBeginMenu("Recent Projects", state->recent.count > 0))
+        {
+            for (uint32 i = 0; i < state->recent.count; ++i)
+            {
+                if (igMenuItem_Bool(state->recent.paths[i], NULL, false, true))
+                {
+                    char directory[PROJECT_PATH_MAX];   // the list changes when it opens
+                    snprintf(directory, sizeof(directory), "%s", state->recent.paths[i]);
+                    request(state, ACTION_OPEN_PROJECT, directory);
+                }
+            }
+            igEndMenu();
+        }
+        igSeparator();
+
+        if (igMenuItem_Bool("New Scene", NULL, false, true))
+            request(state, ACTION_NEW_SCENE, NULL);
+        if (igBeginMenu("Open Scene", true))
+        {
+            draw_scene_menu_items(state);
+            igEndMenu();
+        }
+        if (igMenuItem_Bool("Save", "Ctrl+S", false, true))
+            save_scene(state);
+        if (igMenuItem_Bool("Save As...", NULL, false, true))
+        {
+            snprintf(state->save_as_name, sizeof(state->save_as_name), "%s", state->scene_name);
+            state->popup_error[0] = '\0';
+            state->open_popup     = POPUP_SAVE_AS;
+        }
+        igSeparator();
+
+        if (igMenuItem_Bool("Import Asset...", NULL, false, true))
+        {
+            state->import_path[0] = '\0';
+            state->popup_error[0] = '\0';
+            state->open_popup     = POPUP_IMPORT;
+        }
+        if (igMenuItem_Bool("Project Settings...", NULL, false, true))
+        {
+            state->settings_edit  = state->project;
+            state->popup_error[0] = '\0';
+            state->open_popup     = POPUP_SETTINGS;
+        }
+        igSeparator();
+
+        if (igMenuItem_Bool("Quit", "Esc", false, true))
+            request(state, ACTION_QUIT, NULL);
+        igEndMenu();
+    }
+
+    if (igBeginMenu("View", true))
+    {
+        igMenuItem_BoolPtr("Console", "F1", &state->show_console, true);
+        igMenuItem_BoolPtr("Shadow cascades (debug)", NULL, &state->debug_show_cascades, true);
+        if (igMenuItem_Bool("Frame everything", NULL, false, true))
+            frame_view(state, NULL);
+        igEndMenu();
+    }
+
+    igEndMainMenuBar();
+}
+
+// The open dialog's error line, if any.
+static void
+draw_popup_error(editor_state* state)
+{
+    if (state->popup_error[0])
+    {
+        igPushTextWrapPos(480.0f);
+        igTextColored((ImVec4_c){ 1.0f, 0.45f, 0.4f, 1.0f }, "%s", state->popup_error);
+        igPopTextWrapPos();
+    }
+}
+
+static b8
+dialog_button(const char* label)
+{
+    return igButton(label, (ImVec2_c){ 120.0f, 0.0f });
+}
+
+static void
+draw_unsaved_popup(editor_state* state)
+{
+    if (!igBeginPopupModal(POPUP_UNSAVED, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+
+    igText("Save the changes to %s first?", state->scene_name[0] ? state->scene_name : "this untitled scene");
+    igSpacing();
+
+    if (dialog_button("Save"))
+    {
+        igCloseCurrentPopup();
+        if (state->scene_name[0])
+        {
+            if (save_scene_as(state, state->scene_name))
+                perform(state, state->pending, state->pending_arg);
+            state->pending = ACTION_NONE;
+        }
+        else
+        {
+            // No file yet: ask for a name, then carry on.
+            state->save_as_name[0]        = '\0';
+            state->popup_error[0]         = '\0';
+            state->continue_after_save_as = true;
+            state->open_popup             = POPUP_SAVE_AS;
+        }
+    }
+    igSameLine(0.0f, -1.0f);
+    if (dialog_button("Don't save"))
+    {
+        igCloseCurrentPopup();
+        perform(state, state->pending, state->pending_arg);
+        state->pending = ACTION_NONE;
+    }
+    igSameLine(0.0f, -1.0f);
+    if (dialog_button("Cancel"))
+    {
+        igCloseCurrentPopup();
+        state->pending = ACTION_NONE;
+    }
+    igEndPopup();
+}
+
+static void
+draw_save_as_popup(editor_state* state)
+{
+    if (!igBeginPopupModal(POPUP_SAVE_AS, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+
+    igText("Scene name, saved as scenes/<name>.json in %s", state->project.name);
+    if (igIsWindowAppearing())
+        igSetKeyboardFocusHere(0);
+    b8 enter = igInputText("##scene_name", state->save_as_name, sizeof(state->save_as_name),
+                           ImGuiInputTextFlags_EnterReturnsTrue, NULL, NULL);
+
+    char relative[PROJECT_SCENE_MAX + 16];
+    snprintf(relative, sizeof(relative), "scenes/%s.json", state->save_as_name);
+    char* full = project_path(relative);
+    if (state->save_as_name[0] && strcmp(state->save_as_name, state->scene_name) != 0 && file_exists(full))
+        igTextDisabled("Replaces the existing %s.", state->save_as_name);
+    free(full);
+
+    draw_popup_error(state);
+
+    if (dialog_button("Save") || enter)
+    {
+        if (save_scene_as(state, state->save_as_name))
+        {
+            igCloseCurrentPopup();
+            if (state->continue_after_save_as)
+                perform(state, state->pending, state->pending_arg);
+            state->continue_after_save_as = false;
+            state->pending                = ACTION_NONE;
+        }
+    }
+    igSameLine(0.0f, -1.0f);
+    if (dialog_button("Cancel"))
+    {
+        igCloseCurrentPopup();
+        state->continue_after_save_as = false;
+        state->pending                = ACTION_NONE;
+    }
+    igEndPopup();
+}
+
+static void
+draw_new_project_popup(editor_state* state)
+{
+    if (!igBeginPopupModal(POPUP_NEW_PROJECT, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+
+    igSetNextItemWidth(420.0f);
+    igInputText("Name", state->new_project_name, sizeof(state->new_project_name), 0, NULL, NULL);
+    igSetNextItemWidth(420.0f);
+    igInputText("Location", state->new_project_location, sizeof(state->new_project_location), 0, NULL, NULL);
+
+    char directory[PROJECT_PATH_MAX];
+    snprintf(directory, sizeof(directory), "%s/%s", state->new_project_location, state->new_project_name);
+    igTextDisabled("Creates %s", directory);
+    draw_popup_error(state);
+
+    if (dialog_button("Create"))
+    {
+        // Made now, then opened like any other project (asking about
+        // unsaved changes first).
+        if (project_create(directory, state->new_project_name, state->popup_error, sizeof(state->popup_error)))
+        {
+            igCloseCurrentPopup();
+            request(state, ACTION_OPEN_PROJECT, directory);
+        }
+    }
+    igSameLine(0.0f, -1.0f);
+    if (dialog_button("Cancel"))
+        igCloseCurrentPopup();
+    igEndPopup();
+}
+
+static void
+draw_open_project_popup(editor_state* state)
+{
+    if (!igBeginPopupModal(POPUP_OPEN_PROJECT, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+
+    igText("Project folder (the one with project.json)");
+    igSetNextItemWidth(480.0f);
+    if (igIsWindowAppearing())
+        igSetKeyboardFocusHere(0);
+    b8 enter = igInputText("##project_path", state->open_project_path, sizeof(state->open_project_path),
+                           ImGuiInputTextFlags_EnterReturnsTrue, NULL, NULL);
+
+    if (state->recent.count)
+    {
+        igTextDisabled("Recent:");
+        for (uint32 i = 0; i < state->recent.count; ++i)
+        {
+            if (igSelectable_Bool(state->recent.paths[i], false, 0, (ImVec2_c){ 0, 0 }))
+                snprintf(state->open_project_path, sizeof(state->open_project_path), "%s", state->recent.paths[i]);
+        }
+    }
+    draw_popup_error(state);
+
+    if (dialog_button("Open") || enter)
+    {
+        project_settings check;
+        if (project_read(state->open_project_path, &check, state->popup_error, sizeof(state->popup_error)))
+        {
+            igCloseCurrentPopup();
+            char directory[PROJECT_PATH_MAX];
+            snprintf(directory, sizeof(directory), "%s", state->open_project_path);
+            request(state, ACTION_OPEN_PROJECT, directory);
+        }
+    }
+    igSameLine(0.0f, -1.0f);
+    if (dialog_button("Cancel"))
+        igCloseCurrentPopup();
+    igEndPopup();
+}
+
+static void
+draw_import_popup(editor_state* state)
+{
+    if (!igBeginPopupModal(POPUP_IMPORT, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+
+    igText("File to copy into %s: .glb, .gltf, .obj or .hdr", state->project.name);
+    igSetNextItemWidth(480.0f);
+    if (igIsWindowAppearing())
+        igSetKeyboardFocusHere(0);
+    b8 enter = igInputText("##import_path", state->import_path, sizeof(state->import_path),
+                           ImGuiInputTextFlags_EnterReturnsTrue, NULL, NULL);
+    igTextDisabled(".gltf and .obj bring the files they name (buffers, .mtl, textures) along.");
+    draw_popup_error(state);
+
+    if (dialog_button("Import") || enter)
+    {
+        // Pasted paths often come quoted.
+        char path[PROJECT_PATH_MAX];
+        snprintf(path, sizeof(path), "%s", state->import_path[0] == '"' ? state->import_path + 1 : state->import_path);
+        size_t length = strlen(path);
+        if (length && path[length - 1] == '"')
+            path[length - 1] = '\0';
+
+        char key[PROJECT_PATH_MAX];
+        if (project_import_asset(paths_project_root(), path, key, sizeof(key), state->popup_error, sizeof(state->popup_error)))
+        {
+            char line[PROJECT_PATH_MAX + 64];
+            snprintf(line, sizeof(line), "Imported %s (Scene panel > Add, or the HDRI list)", key);
+            console_info(&state->console, line);
+            igCloseCurrentPopup();
+        }
+    }
+    igSameLine(0.0f, -1.0f);
+    if (dialog_button("Cancel"))
+        igCloseCurrentPopup();
+    igEndPopup();
+}
+
+static void
+draw_settings_popup(editor_state* state)
+{
+    if (!igBeginPopupModal(POPUP_SETTINGS, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+
+    project_settings* s = &state->settings_edit;
+    igTextDisabled("%s", paths_project_root());
+    igSetNextItemWidth(300.0f);
+    igInputText("Name", s->name, sizeof(s->name), 0, NULL, NULL);
+
+    // The scene the game opens with.
+    igSetNextItemWidth(300.0f);
+    if (igBeginCombo("Startup scene", s->startup_scene, 0))
+    {
+        cJSON*       list = run_command(state, "scene.list", NULL);
+        const cJSON* name;
+        cJSON_ArrayForEach(name, cJSON_GetObjectItem(list, "scenes"))
+        {
+            if (cJSON_IsString(name)
+                && igSelectable_Bool(name->valuestring, strcmp(name->valuestring, s->startup_scene) == 0, 0, (ImVec2_c){ 0, 0 }))
+                snprintf(s->startup_scene, sizeof(s->startup_scene), "%s", name->valuestring);
+        }
+        cJSON_Delete(list);
+        igEndCombo();
+    }
+
+    int size[2] = { s->window_width, s->window_height };
+    igSetNextItemWidth(300.0f);
+    if (igInputInt2("Window size", size, 0))
+    {
+        s->window_width  = (uint16)(size[0] < 64 ? 64 : (size[0] > 16384 ? 16384 : size[0]));
+        s->window_height = (uint16)(size[1] < 64 ? 64 : (size[1] > 16384 ? 16384 : size[1]));
+    }
+
+    // The HDRI new scenes start with.
+    igSetNextItemWidth(300.0f);
+    if (igBeginCombo("Default HDRI", s->default_hdri[0] ? s->default_hdri : "(none)", 0))
+    {
+        hdri_list hdris;
+        list_hdris(&hdris);
+        if (igSelectable_Bool("(none)", !s->default_hdri[0], 0, (ImVec2_c){ 0, 0 }))
+            s->default_hdri[0] = '\0';
+        for (uint32 i = 0; i < hdris.count; ++i)
+        {
+            if (igSelectable_Bool(hdris.paths[i], strcmp(hdris.paths[i], s->default_hdri) == 0, 0, (ImVec2_c){ 0, 0 }))
+                snprintf(s->default_hdri, sizeof(s->default_hdri), "%s", hdris.paths[i]);
+        }
+        igEndCombo();
+    }
+    draw_popup_error(state);
+
+    if (dialog_button("Save"))
+    {
+        if (project_write(paths_project_root(), s, state->popup_error, sizeof(state->popup_error)))
+        {
+            state->project = *s;
+            igCloseCurrentPopup();
+        }
+    }
+    igSameLine(0.0f, -1.0f);
+    if (dialog_button("Cancel"))
+        igCloseCurrentPopup();
+    igEndPopup();
+}
+
+static void
+draw_popups(editor_state* state)
+{
+    if (state->open_popup)
+    {
+        igOpenPopup_Str(state->open_popup, 0);
+        state->open_popup = NULL;
+    }
+
+    draw_unsaved_popup(state);
+    draw_save_as_popup(state);
+    draw_new_project_popup(state);
+    draw_open_project_popup(state);
+    draw_import_popup(state);
+    draw_settings_popup(state);
+}
+
+// --- App hooks -------------------------------------------------------------------------
+
 // Runs once from App.c's run(), after the GL context / RHI / ImGui exist.
 static void
 on_init(App* app)
 {
-    demo_state* state = (demo_state*)app->user_data;
+    editor_state* state = (editor_state*)app->user_data;
+    state->app = app;
     window_size framebuffer_size = window_get_size(get_renderer()->drawing_window);
 
-    // --- Model viewer setup ---------------------------------------------
     if (!scene_renderer_create(&state->renderer, framebuffer_size.width, framebuffer_size.height,
                                CASCADE_COUNT, SHADOW_MAP_SIZE))
-        FATAL("demo: failed to create the scene renderer");
+        FATAL("editor: failed to create the scene renderer");
 
-    state->grid_albedo[0] = state->grid_albedo[1] = state->grid_albedo[2] = 0.9f;
+    state->env       = scene_environment_default();
+    state->saved_env = state->env;
 
-    state->env = scene_environment_default();
-    snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", HDRI_PATHS[0]);
-    sync_hdri(state);
-
-    state->mode = RENDER_MODE_LIT_MODEL;
-
-    glm_vec3_copy((vec3){ 0.9f, 0.3f, 0.25f }, state->default_albedo);
-    state->default_metallic  = 0.0f;
-    state->default_roughness = 0.45f;
-
-    // --- Worlds -------------------------------------------------------------
     assets_init(&state->assets);
-    world_init(&state->lit_world, &state->assets);
-    world_init(&state->grid_world, &state->assets);
+    world_init(&state->scene, &state->assets);
 
-    create_lit_world(state);
-    create_grid_world(state);
-
-    state->selected_model = 0;
-    state->loaded_model   = -1;
-    load_selected_model(state, state->selected_model);
-    world_update(&state->grid_world);
-
-    // --- Commands + console ---------------------------------------------------
     console_init(&state->console);
     inspector_init(&state->inspector);
 
-    state->gizmo_op    = GIZMO_TRANSLATE;
-    state->gizmo_space = GIZMO_WORLD;
-    state->snap_move   = 0.25f;
-    state->snap_rotate = 15.0f;
-    state->snap_scale  = 0.1f;
+    state->gizmo_op     = GIZMO_TRANSLATE;
+    state->gizmo_space  = GIZMO_WORLD;
+    state->snap_move    = 0.25f;
+    state->snap_rotate  = 15.0f;
+    state->snap_scale   = 0.1f;
     state->show_console = true;
+    state->add_size     = 1.0f;
 
-    history_init(&state->lit_history);
-    history_init(&state->grid_history);
-
-    state->lit_listener  = (struct world_listener){ state, "lit" };
-    state->grid_listener = (struct world_listener){ state, "grid" };
+    history_init(&state->history);
 
     state->server = server_start(NULL);
     chat_init(&state->chat, state->server);
@@ -1483,32 +2229,19 @@ on_init(App* app)
     uint32                  chat_command_count;
     const cmd_host_command* chat_command_table = chat_commands(&chat_command_count);
 
-    command_context*       contexts[2]  = { &state->lit_commands, &state->grid_commands };
-    world*                 worlds[2]    = { &state->lit_world, &state->grid_world };
-    command_history*       histories[2] = { &state->lit_history, &state->grid_history };
-    struct world_listener* listeners[2] = { &state->lit_listener, &state->grid_listener };
-    for (int i = 0; i < 2; ++i)
-    {
-        *contexts[i] = (command_context){
-            .w                    = worlds[i],
-            .history              = histories[i],
-            .on_change            = on_world_change,
-            .on_change_user       = listeners[i],
-            .host_commands        = HOST_COMMANDS,
-            .host_command_count   = HOST_COMMAND_COUNT,
-            .host_user            = state,
-            .module_commands      = chat_command_table,
-            .module_command_count = chat_command_count,
-            .module_user          = &state->chat,
-            .environment          = &state->env,
-        };
-    }
-
-    {
-        char line[2200];
-        snprintf(line, sizeof(line), "Project: %s (engine data: %s)", paths_project_root(), paths_engine_root());
-        console_info(&state->console, line);
-    }
+    state->commands = (command_context){
+        .w                    = &state->scene,
+        .history              = &state->history,
+        .on_change            = on_world_change,
+        .on_change_user       = state,
+        .host_commands        = HOST_COMMANDS,
+        .host_command_count   = HOST_COMMAND_COUNT,
+        .host_user            = state,
+        .module_commands      = chat_command_table,
+        .module_command_count = chat_command_count,
+        .module_user          = &state->chat,
+        .environment          = &state->env,
+    };
 
     if (state->server)
     {
@@ -1540,34 +2273,31 @@ on_init(App* app)
         start_agent(state);
 
     f32 aspect = (f32)framebuffer_size.width / (f32)framebuffer_size.height;
+    camera_init(&state->cam, (vec3){ 4.0f, 3.0f, 6.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, 45.0f, aspect, 0.1f, 500.0f);
+    orbit_from_camera(state);
+    state->dragging = false;
 
-    vec3 initial_position = { 2.5f, 2.0f, 3.5f };
-    vec3 initial_target   = { 0.0f, 0.0f, 0.0f };
+    // The project main() checked, and its startup scene.
+    char error[640];
+    if (!project_read(paths_project_root(), &state->project, error, sizeof(error)))
+        FATAL("editor: %s", error);
+    project_recent_load(&state->recent, NULL);
+    project_recent_add(&state->recent, paths_project_root(), NULL);
 
-    camera_init(&state->cam,
-                initial_position,
-                initial_target,               // target: look at the origin
-                45.0f,                        // vertical FOV
-                aspect,
-                0.1f, 100.0f);
+    char line[PROJECT_PATH_MAX * 2 + PROJECT_NAME_MAX + 64];
+    snprintf(line, sizeof(line), "Project %s: %s (engine data: %s)", state->project.name, paths_project_root(),
+             paths_engine_root());
+    console_info(&state->console, line);
 
-    // Derive yaw/pitch/distance from the position above so mouse-orbit
-    // continues smoothly from wherever the camera already was, instead of
-    // snapping to some default angle on the first drag.
-    vec3 offset;
-    glm_vec3_sub(initial_position, initial_target, offset);
-
-    state->orbit_distance = glm_vec3_norm(offset);
-    state->orbit_yaw       = glm_deg(atan2f(offset[0], offset[2]));
-    state->orbit_pitch     = glm_deg(asinf(offset[1] / state->orbit_distance));
-    state->dragging        = false;
+    if (!open_scene(state, state->project.startup_scene))
+        new_scene(state);
 }
 
 // The GL viewport is already updated by App.c before this runs; the
 // projection matrix needs the same treatment or the scene will stretch.
 static void on_resize(App* app, uint16 width, uint16 height)
 {
-    demo_state* state = (demo_state*)app->user_data;
+    editor_state* state = (editor_state*)app->user_data;
 
     // 0x0 while minimized -- would make the aspect NaN/inf.
     if (width == 0 || height == 0)
@@ -1577,9 +2307,20 @@ static void on_resize(App* app, uint16 width, uint16 height)
     scene_renderer_resize(&state->renderer, width, height);
 }
 
+// The window's close button: ask about unsaved changes first.
+static b8
+on_close_request(App* app)
+{
+    editor_state* state = (editor_state*)app->user_data;
+    if (!scene_dirty(state))
+        return true;
+    request(state, ACTION_QUIT, NULL);
+    return false;
+}
+
 static void on_key(App* app, int key, int action, int mods)
 {
-    demo_state* state = (demo_state*)app->user_data;
+    editor_state* state = (editor_state*)app->user_data;
 
     // Esc clears the selection first; with nothing selected it quits.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -1588,20 +2329,21 @@ static void on_key(App* app, int key, int action, int mods)
         if (state->selected)
             state->selected = ENTITY_NULL;
         else
-            app->should_close = true;
+            request(state, ACTION_QUIT, NULL);
     }
-    // Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z): undo / redo in the world on screen,
-    // like history.undo / history.redo. Only reaches here when no text field
-    // has the keyboard (ImGui handles undo inside those itself).
+    if (key == GLFW_KEY_S && action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL))
+        save_scene(state);
+
+    // Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z): undo / redo, like history.undo /
+    // history.redo. Only reaches here when no text field has the keyboard
+    // (ImGui handles undo inside those itself).
     if ((mods & GLFW_MOD_CONTROL) && (action == GLFW_PRESS || action == GLFW_REPEAT)
         && (key == GLFW_KEY_Z || key == GLFW_KEY_Y))
     {
         b8 redo = key == GLFW_KEY_Y || (mods & GLFW_MOD_SHIFT);
-        command_context* ctx = active_commands(state);
-        inspector_finish_edit(&state->inspector, ctx);
-        gizmo_finish_edit(state, ctx);
+        finish_edits(state);
 
-        char*       reply   = cmd_execute_text(ctx, redo ? "{\"cmd\":\"history.redo\"}" : "{\"cmd\":\"history.undo\"}");
+        char*       reply   = cmd_execute_text(&state->commands, redo ? "{\"cmd\":\"history.redo\"}" : "{\"cmd\":\"history.undo\"}");
         cJSON*      parsed  = cJSON_Parse(reply);
         const char* message = cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(parsed, "error"), "message"));
         if (message)
@@ -1609,7 +2351,7 @@ static void on_key(App* app, int key, int action, int mods)
         cJSON_Delete(parsed);
         cJSON_free(reply);
     }
-    if (key == GLFW_KEY_F && action == GLFW_PRESS)
+    if (key == GLFW_KEY_F && action == GLFW_PRESS && !(mods & GLFW_MOD_CONTROL))
         frame_selection(state);
 
     // W / E / R: the gizmo's move / rotate / scale (not mid-drag).
@@ -1625,79 +2367,30 @@ static void on_key(App* app, int key, int action, int mods)
         start_game(state);
 }
 
-// One editor per Light entity in `w` -- whatever lights exist, including
-// ones added or renamed from the console. Edits go straight into the
-// components (no undo; the console's history covers commands).
-static void
-draw_light_editors(world* w)
-{
-    static const char* const TYPE_NAMES[] = { "directional", "point", "spot" };
-
-    igText("Lights");
-    const uint32 mask  = COMPONENT_BIT(COMPONENT_LIGHT);
-    uint32       count = 0;
-
-    for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
-    {
-        c_light*     l = world_light(w, e);
-        c_transform* t = world_transform(w, e);
-        ++count;
-
-        igPushID_Int((int)e);
-        char header[ENTITY_NAME_MAX + 32];
-        snprintf(header, sizeof(header), "%s (%s)", world_name(w, e), TYPE_NAMES[l->type]);
-
-        if (igCollapsingHeader_TreeNodeFlags(header, l->type == LIGHT_DIRECTIONAL ? ImGuiTreeNodeFlags_DefaultOpen : 0))
-        {
-            igColorEdit3("Color", l->color, 0);
-            igSliderFloat("Intensity", &l->intensity, 0.0f, l->type == LIGHT_DIRECTIONAL ? 10.0f : 50.0f,
-                          l->intensity > 0.0f ? "%.2f" : "off (0)", 0);
-
-            if (l->type == LIGHT_DIRECTIONAL)
-            {
-                igSliderFloat3("Direction", l->direction, -1.0f, 1.0f, "%.2f", 0);
-            }
-            else
-            {
-                b8 moved = igSliderFloat3("Position", t->position, -5.0f, 5.0f, "%.2f", 0);
-                igSliderFloat("Range", &l->range, 0.0f, 20.0f, l->range > 0.0f ? "%.2f" : "unlimited", 0);
-
-                if (l->type == LIGHT_SPOT)
-                {
-                    igSliderFloat("Inner angle", &l->inner_cone_degrees, 0.0f, 89.0f, "%.1f deg", 0);
-                    igSliderFloat("Outer angle", &l->outer_cone_degrees, 0.0f, 89.0f, "%.1f deg", 0);
-                    if (l->outer_cone_degrees < l->inner_cone_degrees)
-                        l->outer_cone_degrees = l->inner_cone_degrees;
-
-                    // Keep the cone on the model while dragging it around.
-                    if ((moved || igButton("Aim at origin", (ImVec2_c){ 0, 0 })) && glm_vec3_norm2(t->position) > 1e-8f)
-                        glm_vec3_negate_to(t->position, l->direction);
-                }
-            }
-        }
-        igPopID();
-    }
-
-    if (count == 0)
-        igTextDisabled("(no lights -- add one from the console)");
-    igSeparator();
-}
-
 // Ambient, exposure and image-based lighting: the scene's environment, not
 // World entities (saved with the scene all the same).
 static void
-draw_environment_controls(demo_state* state)
+draw_environment_controls(editor_state* state)
 {
+    igText("Environment");
     igSliderFloat("Ambient", &state->env.ambient_strength, 0.0f, 2.0f, "%.2f", 0);
     igSliderFloat("Exposure", &state->env.exposure, 0.1f, 4.0f, "%.2f", 0);
-    igSeparator();
 
-    igText("Image-based lighting");
-    int index = hdri_index(state);
-    if (igCombo_Str_arr("HDRI", &index, HDRI_NAMES, (int)HDRI_COUNT, -1) && index >= 0)
-        snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", HDRI_PATHS[index]);
-    if (index < 0 && state->env.hdri[0])
-        igTextDisabled("From the scene: %s", state->env.hdri);
+    if (igBeginCombo("HDRI", state->env.hdri[0] ? state->env.hdri : "(none)", 0))
+    {
+        hdri_list hdris;
+        list_hdris(&hdris);
+        if (igSelectable_Bool("(none)", !state->env.hdri[0], 0, (ImVec2_c){ 0, 0 }))
+            state->env.hdri[0] = '\0';
+        for (uint32 i = 0; i < hdris.count; ++i)
+        {
+            if (igSelectable_Bool(hdris.paths[i], strcmp(hdris.paths[i], state->env.hdri) == 0, 0, (ImVec2_c){ 0, 0 }))
+                snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", hdris.paths[i]);
+        }
+        if (hdris.count == 0)
+            igTextDisabled("(no .hdr in the project's hdri/)");
+        igEndCombo();
+    }
 
     if (state->ibl.irradiance)
     {
@@ -1707,35 +2400,14 @@ draw_environment_controls(demo_state* state)
     }
     else if (state->env.hdri[0])
     {
-        igText("No HDRI loaded. Expected:");
-        igText("assets/%s", state->env.hdri);
-    }
-    else
-    {
-        igText("No HDRI set.");
+        igTextWrapped("Couldn't load %s; lit by the hemisphere ambient light.", state->env.hdri);
     }
     igSeparator();
 }
 
-// The model viewer's "Spin": a Spin component on model_pivot (the model is
-// centred under it, so it turns about its own middle), the same rate the
-// viewer always used: 0.5 rad/s about Y. A component rather than an
-// animation in this file, so the game plays it too.
-#define MODEL_SPIN_DEGREES_PER_SECOND 28.6479f
-
-static void
-set_model_spin(demo_state* state, b8 on)
-{
-    world* w = &state->lit_world;
-    if (on)
-        world_add_spin(w, state->model_pivot, (vec3){ 0.0f, MODEL_SPIN_DEGREES_PER_SECOND, 0.0f });
-    else
-        world_remove(w, state->model_pivot, COMPONENT_SPIN);
-}
-
 // --- Spin preview -------------------------------------------------------------------
 // The editor never runs world_tick(): what it holds -- and what panels,
-// commands, scene.save and the live link see -- is the authored pose. To still
+// commands, saving and the live link see -- is the authored pose. To still
 // show Spin components moving, a frame's draw is bracketed by
 // spin_preview_begin() (turn every spinning entity by `time`) and
 // spin_preview_end() (put the authored rotations back).
@@ -1759,7 +2431,7 @@ spin_preview_begin(world* w, f32 time)
     preview.entities  = malloc(capacity * sizeof(*preview.entities));
     preview.rotations = malloc(capacity * sizeof(*preview.rotations));
     if (!preview.entities || !preview.rotations)
-        FATAL("demo: out of memory");
+        FATAL("editor: out of memory");
 
     for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
     {
@@ -1796,51 +2468,19 @@ spin_preview_end(world* w, spin_preview* preview)
     *preview = (spin_preview){ 0 };
 }
 
-// The grid's albedo picker, applied to every sphere still in the grid
-// world when it changes.
-static void
-apply_grid_albedo(demo_state* state)
-{
-    f32 albedo[3];
-    srgb_to_linear(state->grid_albedo, albedo);
-
-    for (int i = 0; i < GRID_ROWS * GRID_COLUMNS; ++i)
-    {
-        c_mesh_renderer* mr = world_mesh_renderer(&state->grid_world, state->grid_spheres[i]);
-        if (!mr)
-            continue;   // removed from the console
-        mr->material.fields |= MATERIAL_OVERRIDE_BASE_COLOR;
-        mr->material.base_color[0] = albedo[0];
-        mr->material.base_color[1] = albedo[1];
-        mr->material.base_color[2] = albedo[2];
-    }
-}
-
-// Square the camera up to the grid -- the default viewpoint is a corner view
-// meant for a single model, which foreshortens a flat 7 x 5 layout badly.
-static void
-frame_material_grid(demo_state* state)
-{
-    state->orbit_yaw      = 0.0f;
-    state->orbit_pitch    = 0.0f;
-    state->orbit_distance = 7.6f;
-    orbit_camera_apply(state);
-}
-
-
 // This frame's SceneRenderer settings from the GUI state.
 static scene_render_settings
-build_render_settings(const demo_state* state)
+build_render_settings(const editor_state* state)
 {
     scene_render_settings settings = scene_render_settings_default();
 
     scene_render_settings_apply_environment(&settings, &state->env, &state->ibl);
     settings.debug_show_cascades = state->debug_show_cascades;
 
-    // Where nothing (not even the skybox) is drawn: App.c's screen clear
-    // color, (0.4, 0.1, 0.12) in sRGB, converted to linear so it comes out
-    // of tone mapping looking about the same.
-    glm_vec3_copy((vec3){ 0.133f, 0.0063f, 0.0094f }, settings.clear_color);
+    // Where nothing (not even the skybox) is drawn -- a scene without an
+    // HDRI: a neutral dark grey, so an empty background never reads as an
+    // error.
+    glm_vec3_copy((vec3){ 0.045f, 0.05f, 0.06f }, settings.clear_color);
 
     return settings;
 }
@@ -1849,8 +2489,8 @@ static void on_frame(App* app, f32 dt)
 {
     (void)dt;
 
-    demo_state* state = (demo_state*)app->user_data;
-    window*     wind  = get_renderer()->drawing_window;
+    editor_state* state = (editor_state*)app->user_data;
+    window*       wind  = get_renderer()->drawing_window;
 
     // Left-drag to orbit the camera around the target. Must run after
     // imgui_layer_new_frame() (WantCaptureMouse needs this frame's ImGui
@@ -1861,59 +2501,42 @@ static void on_frame(App* app, f32 dt)
     // Picks up edits to pbr.vert/pbr.frag saved while the app runs.
     scene_renderer_poll_hot_reload(&state->renderer);
 
-    // Requests from other processes, run against the world on screen --
-    // before rendering, so their changes show this same frame.
-    server_poll(state->server, active_commands(state));
+    // Requests from other processes -- before rendering, so their changes
+    // show this same frame.
+    server_poll(state->server, &state->commands);
     chat_poll(&state->chat);
     watch_agent(state);
     watch_game(state);
 
-    f32 time = (f32)window_get_time();
     gizmo_begin_frame();
+    sync_hdri(state);
 
-    if (state->mode == RENDER_MODE_MATERIAL_GRID)
-    {
-        sync_hdri(state);
+    spin_preview preview = spin_preview_begin(&state->scene, (f32)window_get_time());
+    world_update(&state->scene);
 
-        spin_preview preview = spin_preview_begin(&state->grid_world, time);
-        world_update(&state->grid_world);
-
-        // The demo is about ambient light, so no shadow pass.
-        scene_render_settings settings = build_render_settings(state);
-        settings.shadows = false;
-
-        scene_renderer_draw(&state->renderer, &state->grid_world, &state->cam, &settings);
-        draw_selection(state, &state->grid_world);
-        spin_preview_end(&state->grid_world, &preview);
-    }
-    else // RENDER_MODE_LIT_MODEL
-    {
-        // A different model was picked in the GUI last frame.
-        if (state->selected_model != state->loaded_model)
-            load_selected_model(state, state->selected_model);
-
-        sync_hdri(state);
-
-        spin_preview preview = spin_preview_begin(&state->lit_world, time);
-        world_update(&state->lit_world);
-
-        scene_render_settings settings = build_render_settings(state);
-        scene_renderer_draw(&state->renderer, &state->lit_world, &state->cam, &settings);
-        draw_selection(state, &state->lit_world);
-        spin_preview_end(&state->lit_world, &preview);
-    }
+    scene_render_settings settings = build_render_settings(state);
+    scene_renderer_draw(&state->renderer, &state->scene, &state->cam, &settings);
+    draw_selection(state);
+    spin_preview_end(&state->scene, &preview);
 
     // Handles on the selection, at its saved pose (after any Spin preview).
     draw_gizmo(state);
 
     // App/on_frame runs between imgui_layer_new_frame() and
     // imgui_layer_render() (see App.c), so any ig*() calls here just work.
-    // Fullscreen dockspace so ImGui windows can actually be dragged and
-    // docked against something. dockspace_id=0 auto-generates an ID; NULL
-    // viewport = the main viewport; no flags, no window-class restriction.
+    // The menu bar first, so the dockspace fits under it. dockspace_id=0
+    // auto-generates an ID; NULL viewport = the main viewport.
+    draw_main_menu(state);
     igDockSpaceOverViewport(0, NULL, ImGuiDockNodeFlags_PassthruCentralNode, NULL);
 
     igBegin("Scene", NULL, 0);
+
+    igText("%s", state->project.name);
+    igTextDisabled("%s", paths_project_root());
+    igText("Scene: %s%s", state->scene_name[0] ? state->scene_name : "untitled", scene_dirty(state) ? " (unsaved)" : "");
+    if (igButton("Save (Ctrl+S)", (ImVec2_c){ 0, 0 }))
+        save_scene(state);
+    igSeparator();
 
     if (state->server)
         igTextDisabled("Command server: port %u, %u client(s)", (unsigned)server_port(state->server),
@@ -1926,119 +2549,57 @@ static void on_frame(App* app, f32 dt)
     igSeparator();
 
     draw_gizmo_controls(state);
-
-    igText("Render Mode");
-    igRadioButton_IntPtr("Lit Model", (int*)&state->mode, RENDER_MODE_LIT_MODEL);
-    igSameLine(0.0f, -1.0f);
-    if (igRadioButton_IntPtr("Grid", (int*)&state->mode, RENDER_MODE_MATERIAL_GRID))
-        frame_material_grid(state);
-    igSeparator();
-
-    if (state->mode == RENDER_MODE_MATERIAL_GRID)
-    {
-        igTextWrapped("Columns: roughness 0.05 to 1.0, left to right.");
-        igTextWrapped("Rows: metallic 1.0 to 0.0, top to bottom.");
-        if (igColorEdit3("Albedo", state->grid_albedo, 0))
-            apply_grid_albedo(state);
-        igSeparator();
-
-        draw_light_editors(&state->grid_world);
-        draw_environment_controls(state);
-    }
-    else // RENDER_MODE_LIT_MODEL
-    {
-        igCombo_Str_arr("Model", &state->selected_model, MODEL_NAMES, (int)MODEL_COUNT, -1);
-
-        const c_mesh_renderer* model_mr = world_mesh_renderer(&state->lit_world, state->model_entity);
-        const model*           m        = model_mr ? assets_model(&state->assets, model_mr->model) : NULL;
-        if (!model_mr)
-        {
-            igTextWrapped("The \"model\" entity was removed; pick a model to bring it back.");
-        }
-        else if (m)
-        {
-            igText("%u submeshes, %u materials, %u textures", m->submesh_count, m->material_count, m->texture_count);
-            igText("%u vertices, %u triangles", m->vertex_count, m->triangle_count);
-        }
-        else
-        {
-            igText("Model failed to load (see console)");
-        }
-
-        b8 spin = world_has(&state->lit_world, state->model_pivot, COMPONENT_SPIN);
-        if (igCheckbox("Spin", &spin))
-            set_model_spin(state, spin);
-
-        c_mesh_renderer* ground = world_mesh_renderer(&state->lit_world, state->ground_entity);
-        if (ground)
-            igCheckbox("Ground plane", &ground->visible);
-
-        igCheckbox("Debug: show shadow cascades", &state->debug_show_cascades);
-        igSeparator();
-
-        draw_light_editors(&state->lit_world);
-        draw_environment_controls(state);
-
-        igText("Default material (models without one)");
-        b8 changed = igColorEdit3("Albedo", state->default_albedo, 0);
-        changed |= igSliderFloat("Metallic", &state->default_metallic, 0.0f, 1.0f, "%.2f", 0);
-        changed |= igSliderFloat("Roughness", &state->default_roughness, 0.0f, 1.0f, "%.2f", 0);
-        if (changed)
-            apply_default_material(state);
-    }
+    draw_add_controls(state);
+    draw_environment_controls(state);
 
     igEnd();
 
-    // Every entity and component of the world on screen (read-only), and
-    // the command console for it.
-    command_context* active = active_commands(state);
+    // Every entity and component of the scene, and the command console for it.
     validate_selection(state);   // commands this frame may have removed it
-    entity_panel_draw(active->w, "Entities", &state->selected, state->reveal_selection);
-    inspector_draw(&state->inspector, active, &state->selected, "Inspector");
-    state->selection_world  = active->w;
+    entity_panel_draw(&state->scene, "Entities", &state->selected, state->reveal_selection);
+    inspector_draw(&state->inspector, &state->commands, &state->selected, "Inspector");
     state->reveal_selection = false;
     if (state->show_console)
-        console_draw(&state->console, active, "Console (F1)");
+        console_draw(&state->console, &state->commands, "Console (F1)");
 
-    if (chat_panel_draw(&state->chat_panel, &state->chat, active, "Chat", state->agent_note) == CHAT_PANEL_START_AGENT
+    if (chat_panel_draw(&state->chat_panel, &state->chat, &state->commands, "Chat", state->agent_note) == CHAT_PANEL_START_AGENT
         && state->server)
         start_agent(state);
+
+    draw_popups(state);
+    update_title(state);
 
     // Whatever changed this frame -- panels, console, agent -- goes to the
     // live scene file, for a game running with --live.
     // TODO: re-serializes the whole world to detect a change; to be replaced
-    // by an in-editor Play mode / incremental sync (World/LiveScene.h). That
-    // needs the panels to edit through commands, so every change is an event.
-    live_publisher_publish(&state->live, active->w, &state->env, window_get_time(), 0.1);
+    // by an in-editor Play mode / incremental sync (World/LiveScene.h).
+    live_publisher_publish(&state->live, &state->scene, &state->env, window_get_time(), 0.1);
 }
 
 // Runs from terminate(), before the GL context goes away.
 static void on_shutdown(App* app)
 {
-    demo_state* state = (demo_state*)app->user_data;
+    editor_state* state = (editor_state*)app->user_data;
 
     chat_shutdown(&state->chat);             // closes a running turn's transaction
     server_stop(state->server);              // the agent (--exit-with-app) leaves when its connection closes...
     process_destroy(state->agent_process);   // ...or is ended here
     process_destroy(state->game_process);    // the game started by F5 closes with the editor
     live_publisher_shutdown(&state->live);
-    inspector_finish_edit(&state->inspector, active_commands(state));   // an edit still open becomes its own step
-    gizmo_finish_edit(state, active_commands(state));
+    finish_edits(state);                     // an edit still open becomes its own step
     inspector_shutdown(&state->inspector);
     console_shutdown(&state->console);
-    history_shutdown(&state->lit_history, &state->lit_world);     // histories hold asset references too
-    history_shutdown(&state->grid_history, &state->grid_world);
-    world_shutdown(&state->lit_world);    // releases the worlds' assets...
-    world_shutdown(&state->grid_world);
-    assets_shutdown(&state->assets);      // ...then the models themselves
+    history_shutdown(&state->history, &state->scene);   // the history holds asset references too
+    world_shutdown(&state->scene);       // releases the scene's assets...
+    assets_shutdown(&state->assets);     // ...then the models themselves
     ibl_destroy(&state->ibl);
     scene_renderer_destroy(&state->renderer);
 }
 
 int main(int argc, char** argv)
 {
-    // --project <dir>: edit that folder's scenes, models and HDRIs instead of
-    // the source tree's assets/ (Core/Paths.h).
+    // --project <dir>: the project to open (a folder with project.json).
+    // Without it, the sample project: the source tree's assets/.
     for (int i = 1; i < argc; ++i)
     {
         if (strcmp(argv[i], "--project") == 0 && i + 1 < argc)
@@ -2056,24 +2617,33 @@ int main(int argc, char** argv)
         }
     }
 
+    project_settings check;
+    char             error[640];
+    if (!project_read(paths_project_root(), &check, error, sizeof(error)))
+    {
+        fprintf(stderr, "%s\nPass --project with a folder that has a project.json.\n", error);
+        return 1;
+    }
+
     // GPU resources (renderer, IBL, models) can only be created after RHI
     // is initialized, which happens inside run() -- on_init creates them,
-    // on_shutdown destroys them.
-    demo_state state = { 0 };
+    // on_shutdown destroys them. Static: the state holds large buffers.
+    static editor_state state;
 
     App app = {
-        .name = "PBR Renderer - Editor",
-        .width = 1920,     // Full HD
-        .height = 1080,
-        .on_init = on_init,
-        .on_frame = on_frame,
-        .on_shutdown = on_shutdown,
-        .on_key = on_key,
-        .on_scroll = on_scroll,
-        .on_resize = on_resize,
-        .user_data = &state,
-        .should_close = false,
-        .use_imgui = true
+        .name             = "PBR Editor",
+        .width            = 1920,     // Full HD
+        .height           = 1080,
+        .on_init          = on_init,
+        .on_frame         = on_frame,
+        .on_shutdown      = on_shutdown,
+        .on_key           = on_key,
+        .on_scroll        = on_scroll,
+        .on_resize        = on_resize,
+        .on_close_request = on_close_request,
+        .user_data        = &state,
+        .should_close     = false,
+        .use_imgui        = true
     };
 
     run(&app);

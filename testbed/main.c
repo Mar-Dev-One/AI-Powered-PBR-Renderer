@@ -6,7 +6,8 @@
 //
 //   Testbed [options] [scene] [hdri]
 //     scene         a name under the project's scenes/ ("orrery_plaza") or a
-//                   path to a .json file; defaults to DEFAULT_SCENE
+//                   path to a .json file; defaults to the project's startup
+//                   scene (project.json, Project/Project.h), else DEFAULT_SCENE
 //     hdri          a Radiance .hdr under the project for image-based
 //                   lighting, overriding the scene's own
 //     --project D   play the project in folder D (scenes/, models/, hdri/;
@@ -37,6 +38,7 @@
 #include "Core/FileIO.h"
 #include "Core/Paths.h"
 #include "Platform/Window.h"
+#include "Project/Project.h"
 #include "Renderer/IBL.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/SceneRenderer.h"
@@ -53,7 +55,7 @@
 #include <string.h>
 #include <GLFW/glfw3.h>
 
-#define DEFAULT_SCENE "orrery_plaza"
+#define DEFAULT_SCENE "orrery_plaza"   // for a project folder without a project.json
 #define DEFAULT_HDRI  "hdri/citrus_orchard_road_puresky_4k.hdr"
 
 // How often --live checks the editor's scene file.
@@ -490,13 +492,14 @@ print_usage(void)
     printf("usage: Testbed [--width N] [--height N] [--fullscreen] [--live] [--project DIR] [scene] [hdri]\n"
            "  --live     follow the scene the editor is editing, live\n"
            "  --project  the project folder (default: the source tree's assets/)\n"
-           "  scene      name under the project's scenes/ or a path to a .json file (default %s)\n"
+           "  scene      name under the project's scenes/ or a path to a .json file\n"
+           "             (default: the project's startup scene, else %s)\n"
            "  hdri       .hdr under the project, overriding the scene's own\n", DEFAULT_SCENE);
 }
 
 int main(int argc, char** argv)
 {
-    game_state state = { .scene_arg = DEFAULT_SCENE };
+    game_state state = { 0 };
 
     uint16 width      = 0;
     uint16 height     = 0;
@@ -562,6 +565,15 @@ int main(int argc, char** argv)
             print_usage();
             return 1;
         }
+    }
+
+    // No scene named: the one the project starts with.
+    static project_settings project;
+    if (!state.scene_arg)
+    {
+        state.scene_arg = DEFAULT_SCENE;
+        if (project_exists(paths_project_root()) && project_read(paths_project_root(), &project, NULL, 0))
+            state.scene_arg = project.startup_scene;
     }
 
     // Windowed defaults to 1920 x 1080 (Full HD); fullscreen to the monitor's own mode

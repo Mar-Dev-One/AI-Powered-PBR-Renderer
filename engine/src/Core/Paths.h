@@ -48,3 +48,9 @@ const char* paths_executable_dir(void);
 // free() it.
 char* engine_path(const char* relative_path);
 char* project_path(const char* relative_path);
+
+// "<home>/.pbr-renderer/<relative_path>" (home: USERPROFILE on Windows, HOME
+// elsewhere; "." if unset), creating the .pbr-renderer folder. Per-user
+// editor state lives there (recent projects, the live scene file).
+// Caller frees.
+char* user_data_path(const char* relative_path);
