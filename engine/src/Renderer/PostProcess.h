@@ -6,15 +6,26 @@
 // HDR scene target + final display pass. Lit passes (pbr.frag, skybox.frag)
 // write linear, unclamped radiance into an RGBA16F framebuffer between
 // post_begin_scene() and post_end_scene(); post_end_scene() then draws one
-// fullscreen triangle to the default framebuffer that applies exposure, ACES
-// tone mapping and gamma (engine/shaders/tonemap.frag). Keeping tone mapping
-// out of the per-object shaders means blended materials blend in linear HDR
-// space, and leaves a single place for later post effects (bloom, AA,
-// auto-exposure) to hook into.
+// fullscreen triangle to the default framebuffer that applies bloom,
+// exposure, ACES tone mapping and gamma (engine/shaders/tonemap.frag).
+// Keeping tone mapping out of the per-object shaders means blended materials
+// blend in linear HDR space, and leaves a single place for later post
+// effects (AA, auto-exposure) to hook into.
+//
+// Bloom (post_bloom(), between the two): the scene is halved down a chain
+// of up to POST_BLOOM_MAX_MIPS targets (bloom_downsample.frag) and blurred
+// back up it (bloom_upsample.frag), then mixed into the picture by its
+// strength. No threshold -- the physically based kind: everything spreads a
+// little, and only what's far brighter than its surroundings (the sun, a
+// lamp, emissive surfaces) visibly glows.
 
-// The tone-mapping shader's files, under the engine root.
-#define POST_VERTEX_PATH   "shaders/fullscreen.vert"
-#define POST_FRAGMENT_PATH "shaders/tonemap.frag"
+// The shaders' files, under the engine root.
+#define POST_VERTEX_PATH          "shaders/fullscreen.vert"
+#define POST_FRAGMENT_PATH        "shaders/tonemap.frag"
+#define POST_BLOOM_DOWN_PATH      "shaders/bloom_downsample.frag"
+#define POST_BLOOM_UP_PATH        "shaders/bloom_upsample.frag"
+
+#define POST_BLOOM_MAX_MIPS 6
 
 typedef struct post_process
 {
@@ -25,14 +36,30 @@ typedef struct post_process
     rhi_shader tonemap_shader;
     rhi_buffer triangle_vertices;   // one clip-space triangle covering the screen
     rhi_buffer triangle_indices;
+
+    rhi_shader      bloom_down_shader;
+    rhi_shader      bloom_up_shader;
+    rhi_framebuffer bloom_mips[POST_BLOOM_MAX_MIPS];   // RGBA16F, half the scene's size, then half again...
+    uint16          bloom_widths[POST_BLOOM_MAX_MIPS];
+    uint16          bloom_heights[POST_BLOOM_MAX_MIPS];
+    uint32          bloom_mip_count;
+    b8              bloom_ready;    // post_bloom() ran since post_begin_scene()
 } post_process;
 
-// Loads the tone-mapping shader and allocates a width x height scene target.
-// Returns false (and leaves `post` safe to destroy) on failure.
+// How post_end_scene() turns the scene into the picture.
+typedef struct post_settings
+{
+    f32 exposure;
+    b8  raw;     // a debug view's data (0..1): gamma only -- no bloom, exposure or ACES
+    f32 bloom;   // 0 (none) .. 1: how much of the blurred scene is mixed in; needs post_bloom() first
+} post_settings;
+
+// Loads the shaders and allocates a width x height scene target (and its
+// bloom chain). Returns false (and leaves `post` safe to destroy) on failure.
 b8 post_create(post_process* post, uint16 width, uint16 height);
 
-// Re-allocates the scene target at the new size. A no-op for 0 x 0
-// (minimized window) or an unchanged size.
+// Re-allocates the scene target and bloom chain at the new size. A no-op
+// for 0 x 0 (minimized window) or an unchanged size.
 void post_resize(post_process* post, uint16 width, uint16 height);
 
 // Binds the HDR scene target (and its viewport) and clears it to the given
@@ -41,16 +68,20 @@ void post_resize(post_process* post, uint16 width, uint16 height);
 // when they finish.
 void post_begin_scene(post_process* post, f32 r, f32 g, f32 b);
 
+// Blurs the finished scene down and back up the bloom chain, for
+// post_end_scene() to mix in. Only worth calling when settings.bloom > 0.
+// Leaves a bloom target bound.
+void post_bloom(post_process* post);
+
 // Binds the default framebuffer and resolves the scene target onto it:
-// color * exposure -> ACES -> gamma 2.2. `raw` skips exposure and ACES (gamma
-// only), for a debug view whose pixels are data in 0..1 rather than light.
-// Leaves the default render state active, so UI drawn afterwards lands on
-// top of the tone-mapped image.
-void post_end_scene(post_process* post, f32 exposure, b8 raw);
+// mix(color, bloom, settings.bloom) * exposure -> ACES -> gamma 2.2. Leaves
+// the default render state active, so UI drawn afterwards lands on top of
+// the tone-mapped image.
+void post_end_scene(post_process* post, const post_settings* settings);
 
 // Same, but into `target` (an RGBA8 framebuffer the size of the scene
 // target) instead of the screen -- for screenshots. Leaves `target` bound.
-void post_end_scene_to(post_process* post, f32 exposure, b8 raw, rhi_framebuffer target);
+void post_end_scene_to(post_process* post, const post_settings* settings, rhi_framebuffer target);
 
 // Safe on a zeroed / failed / already-destroyed post_process.
 void post_destroy(post_process* post);

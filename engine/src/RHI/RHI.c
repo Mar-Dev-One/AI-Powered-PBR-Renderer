@@ -113,6 +113,11 @@ void rhi_shader_set_mat4(rhi_shader shader, const char* name, const f32* matrix)
     backend.shader_set_mat4(shader, name, matrix);
 }
 
+void rhi_shader_set_vec2(rhi_shader shader, const char* name, f32 x, f32 y)
+{
+    backend.shader_set_vec2(shader, name, x, y);
+}
+
 void rhi_shader_set_vec3(rhi_shader shader, const char* name, f32 x, f32 y, f32 z)
 {
     backend.shader_set_vec3(shader, name, x, y, z);
@@ -240,7 +245,8 @@ void rhi_framebuffer_set_cubemap_target(rhi_framebuffer framebuffer, rhi_texture
 
 rhi_render_state rhi_render_state_default(void)
 {
-    return (rhi_render_state){ .cull_back_faces = true, .blend_enabled = false, .depth_write = true, .front_face_cw = false };
+    return (rhi_render_state){ .cull_back_faces = true, .blend_enabled = false, .blend_additive = false,
+                               .depth_write = true, .front_face_cw = false };
 }
 
 void rhi_set_render_state(rhi_render_state state)

@@ -28,6 +28,7 @@ typedef struct rhi_backend_api
     void       (*shader_bind)(rhi_shader shader);
     void       (*shader_destroy)(rhi_shader shader);
     void       (*shader_set_mat4)(rhi_shader shader, const char* name, const f32* matrix);
+    void       (*shader_set_vec2)(rhi_shader shader, const char* name, f32 x, f32 y);
     void       (*shader_set_vec3)(rhi_shader shader, const char* name, f32 x, f32 y, f32 z);
     void       (*shader_set_vec4)(rhi_shader shader, const char* name, f32 x, f32 y, f32 z, f32 w);
     void       (*shader_set_int)(rhi_shader shader, const char* name, int32 value);

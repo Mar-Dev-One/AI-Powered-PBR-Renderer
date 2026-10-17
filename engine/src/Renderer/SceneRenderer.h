@@ -27,10 +27,10 @@
 //     material.
 //
 // Each frame's passes are timed on the GPU ("Shadows", "Sky", "Scene",
-// "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
+// "Bloom", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
 // begin() to end(), so it includes whatever the app draws in between.
 //
-// Its shaders are hot-reloaded -- PBR, tone mapping and shadow depth:
+// Its shaders are hot-reloaded -- PBR, tone mapping, bloom and shadow depth:
 // scene_renderer_poll_hot_reload() rebuilds one when its files change on
 // disk, keeping the old program if the new source fails to compile. (The
 // IBL's own shaders reload through ibl_cache_poll_hot_reload().)
@@ -67,6 +67,7 @@ typedef struct scene_render_settings
     f32 sky_blur;                 // 0..1, see ibl_draw_skybox()
     f32 ambient_strength;
     f32 exposure;
+    f32 bloom;                    // 0 = off; see Renderer/PostProcess.h
     b8  shadows;                  // cascaded shadows for the first directional light
     f32 cascade_split_lambda;     // see csm_update(); 0.5 is a good default
     b8  debug_show_cascades;      // tint shading by cascade, see pbr.frag
@@ -74,7 +75,8 @@ typedef struct scene_render_settings
     vec3 clear_color;             // linear HDR background where nothing is drawn
 } scene_render_settings;
 
-// Sensible defaults: no IBL, skybox on, ambient 0.5, exposure 1, shadows on.
+// Sensible defaults: no IBL, skybox on, ambient 0.5, exposure 1, bloom 0.04,
+// shadows on.
 scene_render_settings scene_render_settings_default(void);
 
 // Copies a scene's environment into `settings`: the lighting values, and
@@ -94,6 +96,7 @@ typedef struct scene_renderer
     // Hot reload: each shader's files.
     file_watch pbr_files;
     file_watch post_files;
+    file_watch bloom_files;
     file_watch shadow_files;
 } scene_renderer;
 

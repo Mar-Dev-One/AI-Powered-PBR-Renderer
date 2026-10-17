@@ -93,6 +93,7 @@ rhi_shader gl_shader_create(rhi_shader_desc desc);
 void       gl_shader_bind(rhi_shader shader);
 void       gl_shader_destroy(rhi_shader shader);
 void       gl_shader_set_mat4(rhi_shader shader, const char* name, const f32* matrix);
+void       gl_shader_set_vec2(rhi_shader shader, const char* name, f32 x, f32 y);
 void       gl_shader_set_vec3(rhi_shader shader, const char* name, f32 x, f32 y, f32 z);
 void       gl_shader_set_vec4(rhi_shader shader, const char* name, f32 x, f32 y, f32 z, f32 w);
 void       gl_shader_set_int(rhi_shader shader, const char* name, int32 value);

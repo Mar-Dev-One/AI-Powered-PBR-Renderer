@@ -59,7 +59,10 @@ void gl_set_render_state(rhi_render_state state)
     if (state.blend_enabled)
     {
         glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        if (state.blend_additive)
+            glBlendFunc(GL_ONE, GL_ONE);
+        else
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
     else
     {
@@ -140,6 +143,7 @@ void rhi_gl_get_backend(rhi_backend_api* out_api)
     out_api->shader_bind = gl_shader_bind;
     out_api->shader_destroy = gl_shader_destroy;
     out_api->shader_set_mat4 = gl_shader_set_mat4;
+    out_api->shader_set_vec2 = gl_shader_set_vec2;
     out_api->shader_set_vec3 = gl_shader_set_vec3;
     out_api->shader_set_vec4 = gl_shader_set_vec4;
     out_api->shader_set_int = gl_shader_set_int;

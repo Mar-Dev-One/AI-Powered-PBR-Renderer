@@ -18,6 +18,7 @@ scene_render_settings_default(void)
         .sky_blur             = 0.0f,
         .ambient_strength     = 0.5f,
         .exposure             = 1.0f,
+        .bloom                = 0.04f,
         .shadows              = true,
         .cascade_split_lambda = 0.5f,
         .debug_show_cascades  = false,
@@ -67,6 +68,7 @@ scene_render_settings_apply_environment(scene_render_settings* settings, const s
     settings->sky_blur         = env->sky_blur;
     settings->ambient_strength = env->ambient_strength;
     settings->exposure         = env->exposure;
+    settings->bloom            = env->bloom;
 }
 
 // The constants pbr.vert/pbr.frag size their arrays with, generated from
@@ -122,9 +124,11 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
 
     static const char* const pbr_files[]    = { PBR_VERTEX_PATH, PBR_FRAGMENT_PATH };
     static const char* const post_files[]   = { POST_VERTEX_PATH, POST_FRAGMENT_PATH };
+    static const char* const bloom_files[]  = { POST_VERTEX_PATH, POST_BLOOM_DOWN_PATH, POST_BLOOM_UP_PATH };
     static const char* const shadow_files[] = { CSM_VERTEX_PATH, CSM_FRAGMENT_PATH };
     file_watch_init(&r->pbr_files, pbr_files, 2);
     file_watch_init(&r->post_files, post_files, 2);
+    file_watch_init(&r->bloom_files, bloom_files, 3);
     file_watch_init(&r->shadow_files, shadow_files, 2);
 
     r->pbr_shader = build_pbr_shader();
@@ -249,8 +253,21 @@ finish_frame(scene_renderer* r, const scene_render_settings* settings, rhi_frame
     gpu_profiler_end(&r->profiler, r->scene_scope);
     rhi_set_wireframe(false);
 
+    post_settings post = {
+        .exposure = settings->exposure,
+        .raw      = debug_view_is_data(settings->debug_view),
+        .bloom    = settings->bloom,
+    };
+
+    if (post.bloom > 0.0f && !post.raw)
+    {
+        uint32 scope = gpu_profiler_begin(&r->profiler, "Bloom");
+        post_bloom(&r->post);
+        gpu_profiler_end(&r->profiler, scope);
+    }
+
     uint32 scope = gpu_profiler_begin(&r->profiler, "Post");
-    post_end_scene_to(&r->post, settings->exposure, debug_view_is_data(settings->debug_view), target);
+    post_end_scene_to(&r->post, &post, target);
     gpu_profiler_end(&r->profiler, scope);
 }
 
@@ -335,6 +352,14 @@ scene_renderer_capture(scene_renderer* r, const world* w, const camera* cam,
 }
 
 static b8
+reload_bloom(scene_renderer* r)
+{
+    b8 down = shader_rebuild(&r->post.bloom_down_shader, POST_VERTEX_PATH, POST_BLOOM_DOWN_PATH, NULL);
+    b8 up   = shader_rebuild(&r->post.bloom_up_shader, POST_VERTEX_PATH, POST_BLOOM_UP_PATH, NULL);
+    return down && up;
+}
+
+static b8
 reload_pbr(scene_renderer* r)
 {
     char defines[1024];
@@ -351,7 +376,8 @@ scene_renderer_reload_shaders(scene_renderer* r)
     b8 pbr    = reload_pbr(r);
     b8 post   = shader_rebuild(&r->post.tonemap_shader, POST_VERTEX_PATH, POST_FRAGMENT_PATH, NULL);
     b8 shadow = shader_rebuild(&r->csm.depth_shader, CSM_VERTEX_PATH, CSM_FRAGMENT_PATH, NULL);
-    return pbr && post && shadow;
+    b8 bloom  = reload_bloom(r);
+    return pbr && post && shadow && bloom;
 }
 
 void
@@ -361,6 +387,8 @@ scene_renderer_poll_hot_reload(scene_renderer* r)
         reload_pbr(r);
     if (file_watch_changed(&r->post_files))
         shader_rebuild(&r->post.tonemap_shader, POST_VERTEX_PATH, POST_FRAGMENT_PATH, NULL);
+    if (file_watch_changed(&r->bloom_files))
+        reload_bloom(r);
     if (file_watch_changed(&r->shadow_files))
         shader_rebuild(&r->csm.depth_shader, CSM_VERTEX_PATH, CSM_FRAGMENT_PATH, NULL);
 }

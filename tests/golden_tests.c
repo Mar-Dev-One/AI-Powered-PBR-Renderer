@@ -66,6 +66,7 @@ static const golden_case CASES[] = {
     { "avocado_normals", "avocado.json",   "normals" },   // normal mapping
     { "avocado_shadow",  "avocado.json",   "shadow" },    // the shadow term alone
     { "materials",       "materials.json", NULL },        // metallic x roughness grid
+    { "bloom",           "bloom.json",     NULL },        // a glowing emissive sphere in the dark
 };
 
 #define CASE_COUNT (sizeof(CASES) / sizeof(CASES[0]))

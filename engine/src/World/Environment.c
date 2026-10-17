@@ -35,6 +35,7 @@ scene_environment_default(void)
     env.sky_blur         = 0.0f;
     env.ambient_strength = 0.5f;
     env.exposure         = 1.0f;
+    env.bloom            = 0.04f;
     return env;
 }
 
@@ -51,6 +52,7 @@ serialize_environment(const scene_environment* env)
     cJSON_AddNumberToObject(object, "sky_blur", round6(env->sky_blur));
     cJSON_AddNumberToObject(object, "ambient_strength", round6(env->ambient_strength));
     cJSON_AddNumberToObject(object, "exposure", round6(env->exposure));
+    cJSON_AddNumberToObject(object, "bloom", round6(env->bloom));
     return object;
 }
 
@@ -126,7 +128,8 @@ deserialize_environment(const cJSON* fields, scene_environment* env, char* error
         || !read_bool(fields, "show_skybox", &next.show_skybox, error, error_size)
         || !read_number(fields, "sky_blur", 0.0, false, 1.0, &next.sky_blur, error, error_size)
         || !read_number(fields, "ambient_strength", 0.0, false, 4.0, &next.ambient_strength, error, error_size)
-        || !read_number(fields, "exposure", 0.0, true, 16.0, &next.exposure, error, error_size))
+        || !read_number(fields, "exposure", 0.0, true, 16.0, &next.exposure, error, error_size)
+        || !read_number(fields, "bloom", 0.0, false, 1.0, &next.bloom, error, error_size))
         return false;
 
     *env = next;

@@ -16,8 +16,14 @@ static const f32 TRIANGLE_VERTICES[] = {
 
 static const uint32 TRIANGLE_INDICES[] = { 0, 1, 2 };
 
-// Texture unit the scene color is sampled from in tonemap.frag.
+// Texture units tonemap.frag samples the scene and the bloom from; the
+// bloom passes read their source from POST_SLOT_SCENE too.
 #define POST_SLOT_SCENE 0
+#define POST_SLOT_BLOOM 1
+
+// The bloom chain stops before a target would be smaller than this: below
+// it the blur has nothing left to add.
+#define BLOOM_MIN_SIZE 4
 
 static rhi_framebuffer
 create_scene_target(uint16 width, uint16 height)
@@ -33,24 +39,64 @@ create_scene_target(uint16 width, uint16 height)
     });
 }
 
+static rhi_shader
+load_shader(const char* vertex, const char* fragment)
+{
+    char* vertex_path   = engine_path(vertex);
+    char* fragment_path = engine_path(fragment);
+
+    rhi_shader shader = rhi_shader_create_from_files(vertex_path, fragment_path);
+
+    free(vertex_path);
+    free(fragment_path);
+
+    if (!shader)
+        LOG_ERROR("post_create: failed to build '%s' + '%s'\n", vertex, fragment);
+    return shader;
+}
+
+static void
+destroy_bloom_chain(post_process* post)
+{
+    for (uint32 i = 0; i < post->bloom_mip_count; ++i)
+        rhi_framebuffer_destroy(post->bloom_mips[i]);
+    memset(post->bloom_mips, 0, sizeof(post->bloom_mips));
+    post->bloom_mip_count = 0;
+}
+
+// Half the scene's size, then half of that, ... down to BLOOM_MIN_SIZE.
+static void
+create_bloom_chain(post_process* post)
+{
+    rhi_framebuffer_attachment color  = { .format = RHI_FORMAT_RGBA16F };
+    uint16                     width  = post->width / 2;
+    uint16                     height = post->height / 2;
+
+    while (post->bloom_mip_count < POST_BLOOM_MAX_MIPS && width >= BLOOM_MIN_SIZE && height >= BLOOM_MIN_SIZE)
+    {
+        post->bloom_widths[post->bloom_mip_count]  = width;
+        post->bloom_heights[post->bloom_mip_count] = height;
+        post->bloom_mips[post->bloom_mip_count++]  = rhi_framebuffer_create((rhi_framebuffer_desc){
+            .width                  = width,
+            .height                 = height,
+            .color_attachments      = &color,
+            .color_attachment_count = 1,
+        });
+        width  /= 2;
+        height /= 2;
+    }
+}
+
 b8
 post_create(post_process* post, uint16 width, uint16 height)
 {
     memset(post, 0, sizeof(*post));
 
-    char* vertex_path   = engine_path(POST_VERTEX_PATH);
-    char* fragment_path = engine_path(POST_FRAGMENT_PATH);
-
-    post->tonemap_shader = rhi_shader_create_from_files(vertex_path, fragment_path);
-
-    free(vertex_path);
-    free(fragment_path);
-
-    if (!post->tonemap_shader)
-    {
-        LOG_ERROR("post_create: failed to build the tone-mapping shader\n");
+    post->tonemap_shader    = load_shader(POST_VERTEX_PATH, POST_FRAGMENT_PATH);
+    post->bloom_down_shader = load_shader(POST_VERTEX_PATH, POST_BLOOM_DOWN_PATH);
+    post->bloom_up_shader   = load_shader(POST_VERTEX_PATH, POST_BLOOM_UP_PATH);
+    if (!post->tonemap_shader || !post->bloom_down_shader || !post->bloom_up_shader)
         return false;
-    }
 
     rhi_vertex_attribute position = { .location = 0, .component_count = 2, .offset = 0 };
     rhi_vertex_layout    layout   = { .attributes = &position, .attribute_count = 1, .stride = 2 * sizeof(f32) };
@@ -63,6 +109,7 @@ post_create(post_process* post, uint16 width, uint16 height)
     post->width        = width  ? width  : 1;
     post->height       = height ? height : 1;
     post->scene_target = create_scene_target(post->width, post->height);
+    create_bloom_chain(post);
 
     return true;
 }
@@ -77,10 +124,12 @@ post_resize(post_process* post, uint16 width, uint16 height)
         return;
 
     rhi_framebuffer_destroy(post->scene_target);
+    destroy_bloom_chain(post);
 
     post->width        = width;
     post->height       = height;
     post->scene_target = create_scene_target(width, height);
+    create_bloom_chain(post);
 }
 
 void
@@ -89,18 +138,78 @@ post_begin_scene(post_process* post, f32 r, f32 g, f32 b)
     if (!post->scene_target)
         return;
 
+    post->bloom_ready = false;
     rhi_framebuffer_bind(post->scene_target);
     rhi_clear(r, g, b, 1.0f);
 }
 
-void
-post_end_scene(post_process* post, f32 exposure, b8 raw)
+static void
+draw_triangle(const post_process* post)
 {
-    post_end_scene_to(post, exposure, raw, NULL);
+    rhi_draw_indexed(post->triangle_vertices, post->triangle_indices, 3);
 }
 
 void
-post_end_scene_to(post_process* post, f32 exposure, b8 raw, rhi_framebuffer target)
+post_bloom(post_process* post)
+{
+    if (!post->scene_target || post->bloom_mip_count == 0)
+        return;
+
+    // Each pass overwrites its whole target (down) or adds to all of it (up).
+    rhi_render_state state = rhi_render_state_default();
+    state.depth_write = false;
+    rhi_set_render_state(state);
+
+    // Down: the scene into mip 0, each mip into the next.
+    rhi_shader down = post->bloom_down_shader;
+    rhi_shader_bind(down);
+    rhi_shader_set_int(down, "u_source", POST_SLOT_SCENE);
+
+    rhi_framebuffer source        = post->scene_target;
+    uint16          source_width  = post->width;
+    uint16          source_height = post->height;
+    for (uint32 i = 0; i < post->bloom_mip_count; ++i)
+    {
+        rhi_framebuffer_bind(post->bloom_mips[i]);
+        rhi_shader_set_vec2(down, "u_source_texel", 1.0f / (f32)source_width, 1.0f / (f32)source_height);
+        rhi_shader_set_int(down, "u_first", i == 0);
+        rhi_texture_bind(rhi_framebuffer_get_color_texture(source, 0), POST_SLOT_SCENE);
+        draw_triangle(post);
+
+        source        = post->bloom_mips[i];
+        source_width  = post->bloom_widths[i];
+        source_height = post->bloom_heights[i];
+    }
+
+    // Up: each mip blurred into the next larger one, added to what's there.
+    state.blend_enabled  = true;
+    state.blend_additive = true;
+    rhi_set_render_state(state);
+
+    rhi_shader up = post->bloom_up_shader;
+    rhi_shader_bind(up);
+    rhi_shader_set_int(up, "u_source", POST_SLOT_SCENE);
+
+    for (uint32 i = post->bloom_mip_count - 1; i > 0; --i)
+    {
+        rhi_framebuffer_bind(post->bloom_mips[i - 1]);
+        rhi_shader_set_vec2(up, "u_radius", 1.0f / (f32)post->bloom_widths[i], 1.0f / (f32)post->bloom_heights[i]);
+        rhi_texture_bind(rhi_framebuffer_get_color_texture(post->bloom_mips[i], 0), POST_SLOT_SCENE);
+        draw_triangle(post);
+    }
+
+    rhi_set_render_state(rhi_render_state_default());
+    post->bloom_ready = true;
+}
+
+void
+post_end_scene(post_process* post, const post_settings* settings)
+{
+    post_end_scene_to(post, settings, NULL);
+}
+
+void
+post_end_scene_to(post_process* post, const post_settings* settings, rhi_framebuffer target)
 {
     if (!post->scene_target)
         return;
@@ -116,15 +225,21 @@ post_end_scene_to(post_process* post, f32 exposure, b8 raw, rhi_framebuffer targ
     state.depth_write = false;
     rhi_set_render_state(state);
 
+    b8         bloom  = settings->bloom > 0.0f && !settings->raw && post->bloom_ready;
     rhi_shader shader = post->tonemap_shader;
 
     rhi_shader_bind(shader);
     rhi_shader_set_int(shader, "u_scene", POST_SLOT_SCENE);
-    rhi_shader_set_float(shader, "u_exposure", exposure);
-    rhi_shader_set_int(shader, "u_raw", raw);
+    rhi_shader_set_int(shader, "u_bloom", POST_SLOT_BLOOM);
+    rhi_shader_set_float(shader, "u_exposure", settings->exposure);
+    rhi_shader_set_int(shader, "u_raw", settings->raw);
+    rhi_shader_set_float(shader, "u_bloom_strength", bloom ? settings->bloom : 0.0f);
+    rhi_shader_set_float(shader, "u_bloom_scale", post->bloom_mip_count ? 1.0f / (f32)post->bloom_mip_count : 0.0f);
     rhi_texture_bind(rhi_framebuffer_get_color_texture(post->scene_target, 0), POST_SLOT_SCENE);
+    if (bloom)
+        rhi_texture_bind(rhi_framebuffer_get_color_texture(post->bloom_mips[0], 0), POST_SLOT_BLOOM);
 
-    rhi_draw_indexed(post->triangle_vertices, post->triangle_indices, 3);
+    draw_triangle(post);
 
     rhi_set_render_state(rhi_render_state_default());
 }
@@ -134,12 +249,17 @@ post_destroy(post_process* post)
 {
     if (post->scene_target)
         rhi_framebuffer_destroy(post->scene_target);
+    destroy_bloom_chain(post);
     if (post->triangle_vertices)
         rhi_buffer_destroy(post->triangle_vertices);
     if (post->triangle_indices)
         rhi_buffer_destroy(post->triangle_indices);
     if (post->tonemap_shader)
         rhi_shader_destroy(post->tonemap_shader);
+    if (post->bloom_down_shader)
+        rhi_shader_destroy(post->bloom_down_shader);
+    if (post->bloom_up_shader)
+        rhi_shader_destroy(post->bloom_up_shader);
 
     memset(post, 0, sizeof(*post));
 }

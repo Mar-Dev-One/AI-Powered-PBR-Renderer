@@ -196,6 +196,15 @@ void gl_shader_set_mat4(rhi_shader shader, const char* name, const f32* matrix)
     glProgramUniformMatrix4fv(shader->program, location, 1, GL_FALSE, matrix);
 }
 
+void gl_shader_set_vec2(rhi_shader shader, const char* name, f32 x, f32 y)
+{
+    GLint location = uniform_location(shader, name);
+    if (location < 0)
+        return;
+
+    glProgramUniform2f(shader->program, location, x, y);
+}
+
 void gl_shader_set_vec3(rhi_shader shader, const char* name, f32 x, f32 y, f32 z)
 {
     GLint location = uniform_location(shader, name);

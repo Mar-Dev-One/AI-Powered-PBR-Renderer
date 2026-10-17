@@ -358,7 +358,8 @@ images (the check only proves the scene loads and renders); scene switching in t
 ### Now: small, high value
 
 - [ ] FXAA in `tonemap.frag`
-- [ ] Bloom (between the scene pass and `post_end_scene()`)
+- [x] Bloom (between the scene pass and `post_end_scene()`): `post_bloom()`, the scene
+      environment's `bloom` (default 0.04; the Scene panel, `render.set`)
 - [ ] `KHR_materials_emissive_strength`
 - [x] Debug views: albedo, normals, roughness/metal, AO, shadow only, lighting only, wireframe
       (`scene_render_settings.debug_view`; the Viewport toolbar, View > Debug view, `render.set`)

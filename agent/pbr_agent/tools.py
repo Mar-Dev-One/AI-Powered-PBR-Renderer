@@ -323,9 +323,12 @@ TOOLS: list[Tool] = [
     ),
     Tool(
         "set_render",
-        "Overall brightness (exposure, about 0.5-2) and the strength of the environment's ambient light.",
+        "Overall brightness (exposure, about 0.5-2), the strength of the environment's ambient light, "
+        "and bloom: how much bright light (the sun, lamps, emissive surfaces) glows into its surroundings.",
         _schema({"exposure": {"type": "number", "exclusiveMinimum": 0, "maximum": 16},
-                 "ambient_strength": {"type": "number", "minimum": 0, "maximum": 4}}),
+                 "ambient_strength": {"type": "number", "minimum": 0, "maximum": 4},
+                 "bloom": {"type": "number", "minimum": 0, "maximum": 1,
+                           "description": "0 = none, 0.04 = subtle (the default), 0.1 = strong."}}),
         "render.set", example={"exposure": 1.0}, app_command=True,
     ),
 

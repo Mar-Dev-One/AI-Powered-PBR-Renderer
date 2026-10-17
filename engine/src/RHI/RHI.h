@@ -170,6 +170,7 @@ void       rhi_shader_destroy(rhi_shader shader);
 // column-major (the layout cglm's mat4 already uses, so callers can just
 // pass `(const f32*)&some_mat4[0][0]`).
 void rhi_shader_set_mat4(rhi_shader shader, const char* name, const f32* matrix);
+void rhi_shader_set_vec2(rhi_shader shader, const char* name, f32 x, f32 y);
 void rhi_shader_set_vec3(rhi_shader shader, const char* name, f32 x, f32 y, f32 z);
 void rhi_shader_set_vec4(rhi_shader shader, const char* name, f32 x, f32 y, f32 z, f32 w);
 void rhi_shader_set_int(rhi_shader shader, const char* name, int32 value);
@@ -242,6 +243,7 @@ typedef struct rhi_render_state
 {
     b8 cull_back_faces;   // false = draw both sides of every triangle (double-sided materials)
     b8 blend_enabled;     // standard src-alpha / one-minus-src-alpha blending
+    b8 blend_additive;    // with blend_enabled: add the output to what's there instead (bloom's upsampling)
     b8 depth_write;       // blended geometry usually turns this off so it doesn't occlude what's behind it
     b8 front_face_cw;     // true = clockwise winding is the front face (mirrored / negative-scale transforms flip winding)
 } rhi_render_state;
