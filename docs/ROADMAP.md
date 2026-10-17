@@ -364,7 +364,8 @@ images (the check only proves the scene loads and renders); scene switching in t
       (`scene_render_settings.debug_view`; the Viewport toolbar, View > Debug view, `render.set`)
 - [x] GPU timers per pass in ImGui (`Renderer/GpuProfiler.h`; View > GPU timings, `render.timings`)
 - [ ] Async HDRI loading and baking (the current bake blocks a frame, which would freeze the chat UI)
-- [ ] Golden-image tests: headless render of reference scenes compared against saved PNGs, in CI
+- [x] Golden-image tests: headless render of reference scenes compared against saved PNGs
+      (`tests/golden_tests.c`, label `gpu`). Not in CI: there is none yet, and it needs a GPU.
 
 ### With the ECS / AI work
 

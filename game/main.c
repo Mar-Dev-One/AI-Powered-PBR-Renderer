@@ -19,7 +19,12 @@
 //     --check PNG   load the scene in a hidden window, render a few frames,
 //                   save the picture to PNG and exit: 0 if the scene loaded
 //                   and rendered, 1 if not. The editor checks every export
-//                   this way.
+//                   this way, and tests/golden_tests.c compares the pictures
+//                   with saved ones. Behaviours (Spin) don't run, so the
+//                   picture is always the scene as saved.
+//     --view NAME   show a debug view instead of the lit scene: albedo,
+//                   normals, roughness, metallic, ao, shadow, lighting,
+//                   wireframe (Renderer/SceneRenderer.h)
 //
 // The project: --project, else a project.json next to the executable (an
 // exported game, Project/Project.h project_export()), else the source tree's
@@ -94,6 +99,8 @@ typedef struct game_state
     const char* check_path;
     uint32      check_frames;
     b8          check_passed;
+
+    scene_debug_view debug_view;   // --view; SCENE_VIEW_LIT normally
 
     asset_cache     assets;
     world           world;
@@ -390,7 +397,9 @@ on_frame(App* app, f32 dt)
     game_state* state = (game_state*)app->user_data;
 
     // A long stall (window dragged, breakpoint) shouldn't fling things around.
-    world_tick(&state->world, fminf(dt, 0.1f));
+    // A check's picture is the scene as saved, whatever the frame times.
+    if (!state->check_path)
+        world_tick(&state->world, fminf(dt, 0.1f));
     world_update(&state->world);
 
     // The scene camera follows its entity (it may be animated or parented);
@@ -405,6 +414,7 @@ on_frame(App* app, f32 dt)
 
     scene_render_settings settings = scene_render_settings_default();
     scene_render_settings_apply_environment(&settings, &state->env, ibl_cache_maps(&state->ibl));
+    settings.debug_view = state->debug_view;
 
     scene_renderer_draw(&state->renderer, &state->world, &state->cam, &settings);
 
@@ -438,9 +448,10 @@ parse_size(const char* text, uint16 max)
 static void
 print_usage(void)
 {
-    printf("usage: Game [--width N] [--height N] [--fullscreen] [--project DIR] [--check PNG] [scene] [hdri]\n"
+    printf("usage: Game [--width N] [--height N] [--fullscreen] [--project DIR] [--check PNG] [--view NAME] [scene] [hdri]\n"
            "  --project  the project folder (default: one next to the program, else the source tree's assets/)\n"
            "  --check    render the scene once, hidden, into PNG and exit (0 = it loaded and rendered)\n"
+           "  --view     a debug view: albedo, normals, roughness, metallic, ao, shadow, lighting, wireframe\n"
            "  scene      name under the project's scenes/ or a path to a .json file\n"
            "             (default: the project's startup scene, else %s)\n"
            "  hdri       .hdr under the project, overriding the scene's own\n", DEFAULT_SCENE);
@@ -508,6 +519,15 @@ int main(int argc, char** argv)
             if (!state.check_path)
             {
                 fprintf(stderr, "--check needs the PNG file to write\n");
+                print_usage();
+                return 1;
+            }
+        }
+        else if (strcmp(arg, "--view") == 0)
+        {
+            if (!scene_debug_view_from_name(i + 1 < argc ? argv[++i] : NULL, &state.debug_view))
+            {
+                fprintf(stderr, "--view needs one of: lit, albedo, normals, roughness, metallic, ao, shadow, lighting, wireframe\n");
                 print_usage();
                 return 1;
             }

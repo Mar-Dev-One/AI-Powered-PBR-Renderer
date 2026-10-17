@@ -69,3 +69,18 @@ if(EXISTS ${PBR_AGENT_PYTHON})
              COMMAND ${PBR_AGENT_PYTHON} -m unittest discover -s ${CMAKE_SOURCE_DIR}/agent/tests)
     set_tests_properties(AgentTests PROPERTIES ENVIRONMENT "PBR_SERVER_HOST=$<TARGET_FILE:ServerHost>")
 endif()
+
+# Golden images: reference scenes rendered by the Game's --check, compared
+# with the pictures saved in tests/golden/ (see golden_tests.c, which also
+# says how to accept an intended change). Needs a GPU, hence the label:
+# `ctest -LE gpu` skips it where there is none.
+add_executable(GoldenTests golden_tests.c)
+target_link_libraries(GoldenTests PRIVATE PBR_Runtime)
+add_dependencies(GoldenTests Game)
+target_compile_definitions(GoldenTests PRIVATE
+    GAME_EXE="$<TARGET_FILE:Game>"
+    GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
+    GOLDEN_OUT_DIR="${CMAKE_CURRENT_BINARY_DIR}/golden"
+    GOLDEN_PROJECT_DIR="${CMAKE_SOURCE_DIR}/assets")
+add_test(NAME GoldenTests COMMAND GoldenTests)
+set_tests_properties(GoldenTests PROPERTIES LABELS gpu TIMEOUT 600)

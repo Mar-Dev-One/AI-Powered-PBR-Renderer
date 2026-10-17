@@ -232,15 +232,27 @@ docs/              roadmap
 
 ## Tests
 
-The C tests are headless (no window or GL context), so they run anywhere:
-
 ```sh
 ctest --test-dir build -C Release --output-on-failure
+ctest --test-dir build -C Release -LE gpu      # without the GPU test, e.g. on a build server
 ```
 
-They cover the world, serialization, commands, undo history, placement, JSON-RPC and encoding.
-With Python 3 on the path, ctest also runs an end-to-end test of the WebSocket server, and, when
-`agent/.venv` exists, the `pbr_agent` test suite.
+The C tests are headless (no window or GL context), so they run anywhere. They cover the world,
+serialization, commands, undo history, placement, JSON-RPC and encoding. With Python 3 on the
+path, ctest also runs an end-to-end test of the WebSocket server, and, when `agent/.venv` exists,
+the `pbr_agent` test suite.
+
+`GoldenTests` (label `gpu`) renders the reference scenes in `tests/golden/scenes/` with the game's
+`--check` and compares them with the saved pictures in `tests/golden/`. A failure leaves the render
+and a diff (changed pixels in red) in `build/tests/golden/`. When a rendering change is intended,
+save new pictures, look at them, and commit them:
+
+```sh
+build/tests/Release/GoldenTests --update            # every case
+build/tests/Release/GoldenTests --update avocado    # some
+```
+
+The saved pictures come from one GPU; on another, small rounding differences may need new ones.
 
 ## Dependencies
 
