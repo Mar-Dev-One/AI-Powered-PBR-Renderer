@@ -15,9 +15,11 @@ building the export.
 
 1. **Try an export on a PC without Visual Studio.** Everything says it runs (its dependencies are
    Windows' own DLLs plus the copied C++ runtime), but it has only been run on the build machine.
-2. **Errors a player can see.** The exported game has no console, so a `FATAL` (no OpenGL 4.6, a
+2. ~~**Errors a player can see.** The exported game has no console, so a `FATAL` (no OpenGL 4.6, a
    broken startup scene) just closes it, with the reason only in `log.txt`. Show a message box,
-   and stop writing terminal color codes into `log.txt`.
+   and stop writing terminal color codes into `log.txt`.~~ Done: a Release game shows a message
+   box (`Platform/Dialog.h`) on a `FATAL` (`log_set_fatal_hook()`, `Core/Log.c`) or a startup scene
+   that doesn't load, then closes; never under `--check`. Logs are in color only on a terminal.
 3. **Play through the scene's camera.** Play keeps the editor's orbit camera; the game looks
    through the first Camera entity. A toolbar toggle to see what the player will see.
 4. **Exercise the in-app agent against the live Claude API.** Its loop is only tested with a

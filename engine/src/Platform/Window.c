@@ -46,8 +46,13 @@ window* window_create(window_descriptor desc)
     GLFWwindow* handle = glfwCreateWindow(desc.width, desc.height, desc.title, monitor, NULL);
 
     if (!handle) {
+        // Nearly always a graphics driver without OpenGL 4.6 (or none at
+        // all, e.g. a remote desktop session): say so, with GLFW's reason.
+        const char* reason = NULL;
+        glfwGetError(&reason);
         glfwTerminate();
-        FATAL("Failed to create GLFW window");
+        FATAL("Couldn't create a window with OpenGL 4.6, which this program needs. "
+              "Updating the graphics driver may fix it.\n\n(%s)", reason ? reason : "no reason given");
     }
 
     glfwMakeContextCurrent(handle);

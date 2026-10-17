@@ -51,7 +51,8 @@ shaders, and a project folder), so they can be started from any directory.
   wheel zooms. The window's title and size come from the project. The game runs the scene's
   behaviours: a `Spin` component turns its entity at `degrees_per_second`, as in the editor's Play
   mode. Esc quits. A Debug build is a console program, so its log shows in the terminal; a Release
-  build opens no console and writes `log.txt` next to itself.
+  build opens no console and writes `log.txt` next to itself, and if it has to close (no OpenGL
+  4.6, a startup scene that doesn't load) it says why in a message box first.
 
 **Exporting a game.** **Export** (Viewport toolbar, or File > Export Game) makes a folder a player
 can run: `<project name>.exe`, the C++ runtime DLLs it needs, the engine's shaders, `project.json`,

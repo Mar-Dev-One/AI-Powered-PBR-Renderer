@@ -60,73 +60,16 @@ typedef enum log_level
 
 
 
-static inline void
-log_message(log_level level,
-            const char* file,
-            int line,
-            const char* fmt,
-            ...)
-{
-    static const char* names[] =
-    {
-        "TRACE",
-        "DEBUG",
-        "INFO",
-        "WARN",
-        "ERROR",
-        "FATAL"
-    };
+// Core/Log.c. Writes to stdout (stderr from WARN up), in color only when
+// the stream is a terminal, so a log redirected to a file (an exported
+// game's log.txt) stays plain text.
+void log_message(log_level level, const char* file, int line, const char* fmt, ...);
 
-#if defined(_WIN32)
-    static const char* colors[] =
-    {
-        "\x1b[90m",
-        "\x1b[36m",
-        "\x1b[32m",
-        "\x1b[33m",
-        "\x1b[31m",
-        "\x1b[35m"
-    };
-#else
-    static const char* colors[] =
-    {
-        "\033[90m",
-        "\033[36m",
-        "\033[32m",
-        "\033[33m",
-        "\033[31m",
-        "\033[35m"
-    };
-#endif
-
-    FILE* stream =
-        (level >= LOG_LEVEL_WARN)
-        ? stderr
-        : stdout;
-
-    if (level == LOG_LEVEL_TRACE || level == LOG_LEVEL_INFO) {
-        fprintf(stream,
-            "%s[%s] : ",
-            colors[level],
-            names[level]
-        );
-    }else {
-        fprintf(stream,
-            "%s[%s] %s:%d: ",
-            colors[level],
-            names[level],
-            file,
-            line);
-    }
-
-
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(stream, fmt, args);
-    va_end(args);
-
-    fprintf(stream, "\033[0m");
-}
+// Called with a FATAL's message (no trailing newline) after it's logged and
+// before the program aborts, e.g. to show it to a player who has no console.
+// NULL (the default) for none.
+typedef void (*log_fatal_hook)(const char* message);
+void log_set_fatal_hook(log_fatal_hook hook);
 
 
 

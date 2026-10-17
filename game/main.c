@@ -28,7 +28,10 @@
 //
 // A Debug build is a console program, so its log shows in the terminal;
 // other builds (PBR_GAME_NO_CONSOLE, what players get) open no console and
-// write the log to log.txt next to the program.
+// write the log to log.txt next to the program. Those also show a message
+// box before closing on an error (a FATAL, or a startup scene that doesn't
+// load), so the player learns why -- except under --check, which nobody
+// watches.
 //
 // The game runs the scene's behaviours (World/World.h world_tick(): Spin
 // components turn their entities), as the editor's Play mode does.
@@ -48,6 +51,7 @@
 #include "Core/FileIO.h"
 #include "Core/Image.h"
 #include "Core/Paths.h"
+#include "Platform/Dialog.h"
 #include "Platform/Window.h"
 #include "Project/Project.h"
 #include "Renderer/IBL.h"
@@ -83,6 +87,7 @@ typedef struct game_state
     const char* hdri_arg;
     const char* fallback_hdri;   // for a scene that names none ("" = the hemisphere ambient)
     b8          scene_loaded;
+    char        scene_error[768];   // why it didn't, for the player
 
     // --check: where the picture goes, frames drawn so far, and the verdict
     // main() returns.
@@ -107,6 +112,35 @@ typedef struct game_state
     f64 last_cursor_y;
     b8  dragging;
 } game_state;
+
+// --- Telling the player ----------------------------------------------------------
+
+// The message box's title: the game's name.
+static char player_title[128] = "PBR Game";
+static b8   player_can_see    = false;   // set in main(): no console, and not --check
+
+// Shows `problem` in a message box, pointing at log.txt for the details.
+// False (and nothing shown) if the player has a console instead, or nobody
+// is watching (--check).
+static b8
+tell_player(const char* problem)
+{
+    if (!player_can_see)
+        return false;
+
+    char message[1536];
+    snprintf(message, sizeof(message), "%s has to close.\n\n%s\n\nThe details are in log.txt, next to the game.",
+             player_title, problem);
+    dialog_show_error(player_title, message);
+    return true;
+}
+
+// log_set_fatal_hook(): the program aborts once it returns.
+static void
+on_fatal(const char* message)
+{
+    tell_player(message);
+}
 
 // --- Scene -----------------------------------------------------------------------
 
@@ -144,6 +178,7 @@ apply_scene(game_state* state, const cJSON* scene, const char* source)
     {
         LOG_ERROR("game: can't load '%s': %s%s\n", source, error,
                   world_count(&state->world) ? " -- still showing the last scene that loaded" : "");
+        snprintf(state->scene_error, sizeof(state->scene_error), "Can't load the scene '%s': %s", source, error);
         world_shutdown(&next);
         return false;
     }
@@ -171,6 +206,7 @@ load_scene(game_state* state, const char* arg)
     if (!text)
     {
         LOG_ERROR("game: no scene at '%s'\n", path);
+        snprintf(state->scene_error, sizeof(state->scene_error), "There's no scene at '%s'.", path);
         free(path);
         return false;
     }
@@ -182,7 +218,10 @@ load_scene(game_state* state, const char* arg)
     if (ok)
         ok = apply_scene(state, scene, path);
     else
+    {
         LOG_ERROR("game: can't load '%s': not valid JSON\n", path);
+        snprintf(state->scene_error, sizeof(state->scene_error), "Can't load the scene '%s': it isn't valid JSON.", path);
+    }
 
     cJSON_Delete(scene);
     free(path);
@@ -266,6 +305,11 @@ on_init(App* app)
     world_init(&state->world, &state->assets);
 
     state->scene_loaded = load_scene(state, state->scene_arg);
+    if (!state->scene_loaded && tell_player(state->scene_error))
+    {
+        app->should_close = true;
+        return;
+    }
     world_update(&state->world);
 
     if (state->hdri_arg)
@@ -530,6 +574,22 @@ int main(int argc, char** argv)
         width  = width ? width : default_width;
         height = height ? height : default_height;
     }
+
+    // Once the game's name is known: errors from here on can be shown.
+#ifdef PBR_GAME_NO_CONSOLE
+    if (!state.check_path)
+    {
+        if (has_settings)
+            snprintf(player_title, sizeof(player_title), "%s", project.name);
+        player_can_see = true;
+        log_set_fatal_hook(on_fatal);
+    #ifdef _MSC_VER
+        // After our message box, abort() quietly: no "abort() has been
+        // called" box or Windows Error Reporting dialog on top of it.
+        _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+    #endif
+    }
+#endif
 
     App app = {
         .name        = has_settings ? project.name : "PBR Game",

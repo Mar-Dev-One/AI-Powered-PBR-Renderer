@@ -20,12 +20,14 @@ include(cmake/cimgui.cmake)
 
 add_library(PBR_Runtime STATIC
     src/App.c
+    src/Core/Log.c
     src/Core/FileIO.c
     src/Core/Paths.c
     src/Core/Image.c
     src/Core/Encoding.c
     src/Core/Process.c
     src/Platform/Window.c
+    src/Platform/Dialog.c
     src/RHI/RHI.c
     src/RHI/OpenGL/RHI_GL.c
     src/RHI/OpenGL/RHI_GL_Buffer.c
