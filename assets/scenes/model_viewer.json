@@ -2094,6 +2094,22 @@
 					"cast_shadows":	true
 				}
 			}
+		}, {
+			"id":	1048692,
+			"name":	"lord_krishna_statue_3d_model_free",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.500526, 2.9],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.52667, 0.52667, 0.52667]
+				},
+				"MeshRenderer":	{
+					"model":	"models/lord_krishna_statue_3d_model_free.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
 		}],
 	"format":	"pbr-scene",
 	"version":	1,
@@ -2103,6 +2119,7 @@
 		"show_skybox":	true,
 		"sky_blur":	0,
 		"ambient_strength":	0.35,
-		"exposure":	1
+		"exposure":	1,
+		"bloom":	0.04
 	}
 }

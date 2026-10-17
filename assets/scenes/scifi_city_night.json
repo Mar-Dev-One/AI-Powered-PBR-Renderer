@@ -1,6 +1,6 @@
 {
 	"entities":	[{
-			"id":	2097152,
+			"id":	1048576,
 			"name":	"lower_roadway",
 			"parent":	null,
 			"components":	{
@@ -19,7 +19,7 @@
 				}
 			}
 		}, {
-			"id":	2097153,
+			"id":	1048577,
 			"name":	"road_stripe_c",
 			"parent":	null,
 			"components":	{
@@ -39,7 +39,7 @@
 				}
 			}
 		}, {
-			"id":	2097154,
+			"id":	1048578,
 			"name":	"plaza_base",
 			"parent":	null,
 			"components":	{
@@ -118,7 +118,7 @@
 				}
 			}
 		}, {
-			"id":	2097250,
+			"id":	1048582,
 			"name":	"lamp_pole_6",
 			"parent":	null,
 			"components":	{
@@ -137,7 +137,7 @@
 				}
 			}
 		}, {
-			"id":	2097256,
+			"id":	1048583,
 			"name":	"lamp_head_6",
 			"parent":	null,
 			"components":	{
@@ -155,7 +155,7 @@
 				}
 			}
 		}, {
-			"id":	2097295,
+			"id":	1048584,
 			"name":	"lamp_light_6",
 			"parent":	null,
 			"components":	{
@@ -175,7 +175,7 @@
 				}
 			}
 		}, {
-			"id":	2097298,
+			"id":	1048585,
 			"name":	"lamp_light_5",
 			"parent":	null,
 			"components":	{
@@ -195,7 +195,7 @@
 				}
 			}
 		}, {
-			"id":	2097300,
+			"id":	1048586,
 			"name":	"lamp_head_5",
 			"parent":	null,
 			"components":	{
@@ -213,7 +213,7 @@
 				}
 			}
 		}, {
-			"id":	2097301,
+			"id":	1048587,
 			"name":	"lamp_pole_5",
 			"parent":	null,
 			"components":	{
@@ -232,7 +232,7 @@
 				}
 			}
 		}, {
-			"id":	2097302,
+			"id":	1048588,
 			"name":	"lamp_light_4",
 			"parent":	null,
 			"components":	{
@@ -252,7 +252,7 @@
 				}
 			}
 		}, {
-			"id":	2097303,
+			"id":	1048589,
 			"name":	"lamp_head_4",
 			"parent":	null,
 			"components":	{
@@ -270,7 +270,7 @@
 				}
 			}
 		}, {
-			"id":	2097304,
+			"id":	1048590,
 			"name":	"lamp_pole_4",
 			"parent":	null,
 			"components":	{
@@ -289,7 +289,7 @@
 				}
 			}
 		}, {
-			"id":	2097305,
+			"id":	1048591,
 			"name":	"lamp_light_3",
 			"parent":	null,
 			"components":	{
@@ -309,7 +309,7 @@
 				}
 			}
 		}, {
-			"id":	2097306,
+			"id":	1048592,
 			"name":	"lamp_head_3",
 			"parent":	null,
 			"components":	{
@@ -327,7 +327,7 @@
 				}
 			}
 		}, {
-			"id":	2097307,
+			"id":	1048593,
 			"name":	"lamp_pole_3",
 			"parent":	null,
 			"components":	{
@@ -346,7 +346,7 @@
 				}
 			}
 		}, {
-			"id":	2097308,
+			"id":	1048594,
 			"name":	"lamp_light_2",
 			"parent":	null,
 			"components":	{
@@ -366,7 +366,7 @@
 				}
 			}
 		}, {
-			"id":	2097309,
+			"id":	1048595,
 			"name":	"lamp_head_2",
 			"parent":	null,
 			"components":	{
@@ -384,7 +384,7 @@
 				}
 			}
 		}, {
-			"id":	2097310,
+			"id":	1048596,
 			"name":	"lamp_pole_2",
 			"parent":	null,
 			"components":	{
@@ -403,7 +403,7 @@
 				}
 			}
 		}, {
-			"id":	2097311,
+			"id":	1048597,
 			"name":	"lamp_light_1",
 			"parent":	null,
 			"components":	{
@@ -423,7 +423,7 @@
 				}
 			}
 		}, {
-			"id":	2097312,
+			"id":	1048598,
 			"name":	"lamp_head_1",
 			"parent":	null,
 			"components":	{
@@ -441,7 +441,7 @@
 				}
 			}
 		}, {
-			"id":	2097313,
+			"id":	1048599,
 			"name":	"lamp_pole_1",
 			"parent":	null,
 			"components":	{
@@ -460,7 +460,7 @@
 				}
 			}
 		}, {
-			"id":	2097314,
+			"id":	1048600,
 			"name":	"bld_e_sign",
 			"parent":	null,
 			"components":	{
@@ -480,7 +480,7 @@
 				}
 			}
 		}, {
-			"id":	2097315,
+			"id":	1048601,
 			"name":	"bld_e",
 			"parent":	null,
 			"components":	{
@@ -499,7 +499,7 @@
 				}
 			}
 		}, {
-			"id":	2097316,
+			"id":	1048602,
 			"name":	"bld_d_windows",
 			"parent":	null,
 			"components":	{
@@ -519,7 +519,7 @@
 				}
 			}
 		}, {
-			"id":	2097317,
+			"id":	1048603,
 			"name":	"bld_d",
 			"parent":	null,
 			"components":	{
@@ -538,7 +538,7 @@
 				}
 			}
 		}, {
-			"id":	2097318,
+			"id":	1048604,
 			"name":	"bld_c_windows",
 			"parent":	null,
 			"components":	{
@@ -558,7 +558,7 @@
 				}
 			}
 		}, {
-			"id":	2097319,
+			"id":	1048605,
 			"name":	"bld_c",
 			"parent":	null,
 			"components":	{
@@ -577,7 +577,7 @@
 				}
 			}
 		}, {
-			"id":	2097320,
+			"id":	1048606,
 			"name":	"bld_b_windows_side",
 			"parent":	null,
 			"components":	{
@@ -597,7 +597,7 @@
 				}
 			}
 		}, {
-			"id":	2097321,
+			"id":	1048607,
 			"name":	"bld_b_windows",
 			"parent":	null,
 			"components":	{
@@ -617,7 +617,7 @@
 				}
 			}
 		}, {
-			"id":	2097322,
+			"id":	1048608,
 			"name":	"bld_b",
 			"parent":	null,
 			"components":	{
@@ -636,7 +636,7 @@
 				}
 			}
 		}, {
-			"id":	2097323,
+			"id":	1048609,
 			"name":	"bld_a_windows",
 			"parent":	null,
 			"components":	{
@@ -656,7 +656,7 @@
 				}
 			}
 		}, {
-			"id":	2097324,
+			"id":	1048610,
 			"name":	"bld_a",
 			"parent":	null,
 			"components":	{
@@ -675,7 +675,7 @@
 				}
 			}
 		}, {
-			"id":	2097325,
+			"id":	1048611,
 			"name":	"train_car3",
 			"parent":	null,
 			"components":	{
@@ -686,7 +686,7 @@
 				}
 			}
 		}, {
-			"id":	2097345,
+			"id":	1048612,
 			"name":	"train_car3_repulsor",
 			"parent":	"train_car3",
 			"components":	{
@@ -706,7 +706,7 @@
 				}
 			}
 		}, {
-			"id":	2097346,
+			"id":	1048613,
 			"name":	"train_car3_taillights",
 			"parent":	"train_car3",
 			"components":	{
@@ -726,7 +726,7 @@
 				}
 			}
 		}, {
-			"id":	2097347,
+			"id":	1048614,
 			"name":	"train_car3_body",
 			"parent":	"train_car3",
 			"components":	{
@@ -745,7 +745,7 @@
 				}
 			}
 		}, {
-			"id":	2097326,
+			"id":	1048615,
 			"name":	"train_car2",
 			"parent":	null,
 			"components":	{
@@ -756,7 +756,7 @@
 				}
 			}
 		}, {
-			"id":	2097348,
+			"id":	1048616,
 			"name":	"train_car2_repulsor",
 			"parent":	"train_car2",
 			"components":	{
@@ -776,7 +776,7 @@
 				}
 			}
 		}, {
-			"id":	2097349,
+			"id":	1048617,
 			"name":	"train_car2_windows_r",
 			"parent":	"train_car2",
 			"components":	{
@@ -796,7 +796,7 @@
 				}
 			}
 		}, {
-			"id":	2097350,
+			"id":	1048618,
 			"name":	"train_car2_windows_l",
 			"parent":	"train_car2",
 			"components":	{
@@ -816,7 +816,7 @@
 				}
 			}
 		}, {
-			"id":	2097351,
+			"id":	1048619,
 			"name":	"train_car2_body",
 			"parent":	"train_car2",
 			"components":	{
@@ -835,7 +835,7 @@
 				}
 			}
 		}, {
-			"id":	2097327,
+			"id":	1048620,
 			"name":	"train_engine",
 			"parent":	null,
 			"components":	{
@@ -846,7 +846,7 @@
 				}
 			}
 		}, {
-			"id":	2097352,
+			"id":	1048621,
 			"name":	"train_engine_repulsor",
 			"parent":	"train_engine",
 			"components":	{
@@ -866,7 +866,7 @@
 				}
 			}
 		}, {
-			"id":	2097353,
+			"id":	1048622,
 			"name":	"train_engine_visor",
 			"parent":	"train_engine",
 			"components":	{
@@ -886,7 +886,7 @@
 				}
 			}
 		}, {
-			"id":	2097354,
+			"id":	1048623,
 			"name":	"train_engine_nose",
 			"parent":	"train_engine",
 			"components":	{
@@ -905,7 +905,7 @@
 				}
 			}
 		}, {
-			"id":	2097355,
+			"id":	1048624,
 			"name":	"train_engine_body",
 			"parent":	"train_engine",
 			"components":	{
@@ -924,7 +924,7 @@
 				}
 			}
 		}, {
-			"id":	2097328,
+			"id":	1048625,
 			"name":	"hauler",
 			"parent":	null,
 			"components":	{
@@ -935,7 +935,7 @@
 				}
 			}
 		}, {
-			"id":	2097299,
+			"id":	1048626,
 			"name":	"hauler_cargo",
 			"parent":	"hauler",
 			"components":	{
@@ -954,7 +954,7 @@
 				}
 			}
 		}, {
-			"id":	2097334,
+			"id":	1048627,
 			"name":	"hauler_cable",
 			"parent":	"hauler",
 			"components":	{
@@ -973,7 +973,7 @@
 				}
 			}
 		}, {
-			"id":	2097335,
+			"id":	1048628,
 			"name":	"hauler_thrust_fr",
 			"parent":	"hauler",
 			"components":	{
@@ -993,7 +993,7 @@
 				}
 			}
 		}, {
-			"id":	2097336,
+			"id":	1048629,
 			"name":	"hauler_thrust_fl",
 			"parent":	"hauler",
 			"components":	{
@@ -1013,7 +1013,7 @@
 				}
 			}
 		}, {
-			"id":	2097337,
+			"id":	1048630,
 			"name":	"hauler_hull",
 			"parent":	"hauler",
 			"components":	{
@@ -1032,7 +1032,7 @@
 				}
 			}
 		}, {
-			"id":	2097329,
+			"id":	1048631,
 			"name":	"speeder",
 			"parent":	null,
 			"components":	{
@@ -1043,7 +1043,7 @@
 				}
 			}
 		}, {
-			"id":	2097338,
+			"id":	1048632,
 			"name":	"speeder1_trail_r",
 			"parent":	"speeder",
 			"components":	{
@@ -1063,7 +1063,7 @@
 				}
 			}
 		}, {
-			"id":	2097339,
+			"id":	1048633,
 			"name":	"speeder1_trail_l",
 			"parent":	"speeder",
 			"components":	{
@@ -1083,7 +1083,7 @@
 				}
 			}
 		}, {
-			"id":	2097340,
+			"id":	1048634,
 			"name":	"speeder1_engine_r",
 			"parent":	"speeder",
 			"components":	{
@@ -1103,7 +1103,7 @@
 				}
 			}
 		}, {
-			"id":	2097341,
+			"id":	1048635,
 			"name":	"speeder1_engine_l",
 			"parent":	"speeder",
 			"components":	{
@@ -1123,7 +1123,7 @@
 				}
 			}
 		}, {
-			"id":	2097342,
+			"id":	1048636,
 			"name":	"speeder1_wings",
 			"parent":	"speeder",
 			"components":	{
@@ -1142,7 +1142,7 @@
 				}
 			}
 		}, {
-			"id":	2097343,
+			"id":	1048637,
 			"name":	"speeder1_canopy",
 			"parent":	"speeder",
 			"components":	{
@@ -1161,7 +1161,7 @@
 				}
 			}
 		}, {
-			"id":	2097344,
+			"id":	1048638,
 			"name":	"speeder1_fuselage",
 			"parent":	"speeder",
 			"components":	{
@@ -1180,7 +1180,7 @@
 				}
 			}
 		}, {
-			"id":	2097330,
+			"id":	1048639,
 			"name":	"scout",
 			"parent":	null,
 			"components":	{
@@ -1191,7 +1191,7 @@
 				}
 			}
 		}, {
-			"id":	2097331,
+			"id":	1048640,
 			"name":	"scout_trail",
 			"parent":	"scout",
 			"components":	{
@@ -1211,7 +1211,7 @@
 				}
 			}
 		}, {
-			"id":	2097332,
+			"id":	1048641,
 			"name":	"scout_engine",
 			"parent":	"scout",
 			"components":	{
@@ -1231,7 +1231,7 @@
 				}
 			}
 		}, {
-			"id":	2097333,
+			"id":	1048642,
 			"name":	"scout_body",
 			"parent":	"scout",
 			"components":	{
@@ -1250,7 +1250,7 @@
 				}
 			}
 		}, {
-			"id":	2097356,
+			"id":	1048643,
 			"name":	"track_glow_3",
 			"parent":	null,
 			"components":	{
@@ -1270,7 +1270,7 @@
 				}
 			}
 		}, {
-			"id":	2097357,
+			"id":	1048644,
 			"name":	"track_glow_2",
 			"parent":	null,
 			"components":	{
@@ -1290,7 +1290,7 @@
 				}
 			}
 		}, {
-			"id":	2097358,
+			"id":	1048645,
 			"name":	"track_glow_1",
 			"parent":	null,
 			"components":	{
@@ -1310,7 +1310,7 @@
 				}
 			}
 		}, {
-			"id":	2097359,
+			"id":	1048646,
 			"name":	"track_seg_3",
 			"parent":	null,
 			"components":	{
@@ -1329,7 +1329,7 @@
 				}
 			}
 		}, {
-			"id":	2097360,
+			"id":	1048647,
 			"name":	"track_seg_2",
 			"parent":	null,
 			"components":	{
@@ -1348,7 +1348,7 @@
 				}
 			}
 		}, {
-			"id":	2097361,
+			"id":	1048648,
 			"name":	"track_seg_1",
 			"parent":	null,
 			"components":	{
@@ -1367,7 +1367,7 @@
 				}
 			}
 		}, {
-			"id":	2097362,
+			"id":	1048649,
 			"name":	"pylon_arm_4",
 			"parent":	null,
 			"components":	{
@@ -1386,7 +1386,7 @@
 				}
 			}
 		}, {
-			"id":	2097363,
+			"id":	1048650,
 			"name":	"pylon_4",
 			"parent":	null,
 			"components":	{
@@ -1405,7 +1405,7 @@
 				}
 			}
 		}, {
-			"id":	2097364,
+			"id":	1048651,
 			"name":	"pylon_arm_3",
 			"parent":	null,
 			"components":	{
@@ -1424,7 +1424,7 @@
 				}
 			}
 		}, {
-			"id":	2097365,
+			"id":	1048652,
 			"name":	"pylon_3",
 			"parent":	null,
 			"components":	{
@@ -1443,7 +1443,7 @@
 				}
 			}
 		}, {
-			"id":	2097366,
+			"id":	1048653,
 			"name":	"pylon_arm_2",
 			"parent":	null,
 			"components":	{
@@ -1462,7 +1462,7 @@
 				}
 			}
 		}, {
-			"id":	2097367,
+			"id":	1048654,
 			"name":	"pylon_2",
 			"parent":	null,
 			"components":	{
@@ -1481,7 +1481,7 @@
 				}
 			}
 		}, {
-			"id":	2097368,
+			"id":	1048655,
 			"name":	"pylon_arm_1",
 			"parent":	null,
 			"components":	{
@@ -1500,7 +1500,7 @@
 				}
 			}
 		}, {
-			"id":	2097369,
+			"id":	1048656,
 			"name":	"pylon_1",
 			"parent":	null,
 			"components":	{
@@ -1519,7 +1519,7 @@
 				}
 			}
 		}, {
-			"id":	2097370,
+			"id":	1048657,
 			"name":	"tower_beacon",
 			"parent":	null,
 			"components":	{
@@ -1539,7 +1539,7 @@
 				}
 			}
 		}, {
-			"id":	2097371,
+			"id":	1048658,
 			"name":	"tower_windows",
 			"parent":	null,
 			"components":	{
@@ -1559,7 +1559,7 @@
 				}
 			}
 		}, {
-			"id":	2097372,
+			"id":	1048659,
 			"name":	"tower_spire",
 			"parent":	null,
 			"components":	{
@@ -1578,7 +1578,7 @@
 				}
 			}
 		}, {
-			"id":	2097373,
+			"id":	1048660,
 			"name":	"tower_main_mid",
 			"parent":	null,
 			"components":	{
@@ -1597,7 +1597,7 @@
 				}
 			}
 		}, {
-			"id":	2097374,
+			"id":	1048661,
 			"name":	"tower_main_base",
 			"parent":	null,
 			"components":	{
@@ -1616,7 +1616,7 @@
 				}
 			}
 		}, {
-			"id":	2097375,
+			"id":	1048662,
 			"name":	"road_stripe_r",
 			"parent":	null,
 			"components":	{
@@ -1636,7 +1636,7 @@
 				}
 			}
 		}, {
-			"id":	2097376,
+			"id":	1048663,
 			"name":	"road_stripe_l",
 			"parent":	null,
 			"components":	{
@@ -1657,5 +1657,14 @@
 			}
 		}],
 	"format":	"pbr-scene",
-	"version":	1
+	"version":	1,
+	"environment":	{
+		"hdri":	"hdri/table_mountain_2_puresky_4k.hdr",
+		"use_ibl":	true,
+		"show_skybox":	true,
+		"sky_blur":	0,
+		"ambient_strength":	2,
+		"exposure":	0.35,
+		"bloom":	0.3
+	}
 }

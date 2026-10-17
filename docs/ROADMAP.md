@@ -360,7 +360,8 @@ images (the check only proves the scene loads and renders); scene switching in t
 - [ ] FXAA in `tonemap.frag`
 - [x] Bloom (between the scene pass and `post_end_scene()`): `post_bloom()`, the scene
       environment's `bloom` (default 0.04; the Scene panel, `render.set`)
-- [ ] `KHR_materials_emissive_strength`
+- [x] `KHR_materials_emissive_strength` (read by `Scene/ModelGltf.c` since glTF loading landed;
+      checked with a test model at strength 1 and 12)
 - [x] Debug views: albedo, normals, roughness/metal, AO, shadow only, lighting only, wireframe
       (`scene_render_settings.debug_view`; the Viewport toolbar, View > Debug view, `render.set`)
 - [x] GPU timers per pass in ImGui (`Renderer/GpuProfiler.h`; View > GPU timings, `render.timings`)
