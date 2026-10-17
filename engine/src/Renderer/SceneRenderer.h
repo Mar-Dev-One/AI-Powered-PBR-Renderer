@@ -8,6 +8,7 @@
 #include "GpuProfiler.h"
 #include "IBL.h"
 #include "PostProcess.h"
+#include "ShaderReload.h"
 #include "Shadow.h"
 
 // The lit frame, as one unit: cascaded shadows for the world's first
@@ -29,9 +30,10 @@
 // "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
 // begin() to end(), so it includes whatever the app draws in between.
 //
-// pbr.vert/pbr.frag are hot-reloaded: scene_renderer_poll_hot_reload()
-// rebuilds them when either file changes on disk, keeping the old program
-// if the new source fails to compile.
+// Its shaders are hot-reloaded -- PBR, tone mapping and shadow depth:
+// scene_renderer_poll_hot_reload() rebuilds one when its files change on
+// disk, keeping the old program if the new source fails to compile. (The
+// IBL's own shaders reload through ibl_cache_poll_hot_reload().)
 
 // What the frame shows: the lit scene, or one input to its shading. The
 // data views (albedo through shadow, and wireframe) show values in 0..1
@@ -81,15 +83,6 @@ scene_render_settings scene_render_settings_default(void);
 void scene_render_settings_apply_environment(scene_render_settings* settings, const scene_environment* env,
                                              const ibl_environment* ibl);
 
-// What hot reload compares to notice a shader file changed: the size as
-// well as the mtime, because mtime only has one-second resolution and many
-// editors save by truncating then rewriting within the same second.
-typedef struct file_stamp
-{
-    int64 mtime;
-    int64 size;
-} file_stamp;
-
 typedef struct scene_renderer
 {
     rhi_shader   pbr_shader;
@@ -98,8 +91,10 @@ typedef struct scene_renderer
     gpu_profiler profiler;
     uint32       scene_scope;    // "Scene": from begin() to end()
 
-    file_stamp vertex_stamp;     // pbr.vert as of the last build
-    file_stamp fragment_stamp;   // pbr.frag as of the last build
+    // Hot reload: each shader's files.
+    file_watch pbr_files;
+    file_watch post_files;
+    file_watch shadow_files;
 } scene_renderer;
 
 // Builds the PBR shader, `cascade_count` x `shadow_resolution` shadow
@@ -144,12 +139,12 @@ uint8* scene_renderer_capture(scene_renderer* r, const world* w, const camera* c
 void scene_renderer_draw(scene_renderer* r, const world* w, const camera* cam,
                          const scene_render_settings* settings);
 
-// Rebuilds pbr.vert/pbr.frag now. On a compile/link failure the previous
-// program stays in use (and the error is logged). Returns true if rebuilt.
+// Rebuilds every shader it owns now. One that fails to compile or link
+// keeps its previous program (and the error is logged). True if all rebuilt.
 b8 scene_renderer_reload_shaders(scene_renderer* r);
 
-// Cheap enough to call every frame (two stat() calls): reloads the shaders
-// if either source file changed since the last build.
+// Cheap enough to call every frame (a stat() per shader file): rebuilds
+// each shader whose files changed since it was last built.
 void scene_renderer_poll_hot_reload(scene_renderer* r);
 
 // Safe on a zeroed / failed / already-destroyed scene_renderer.

@@ -3141,8 +3141,9 @@ static void on_frame(App* app, f32 dt)
 
     validate_selection(state);
 
-    // Picks up edits to pbr.vert/pbr.frag saved while the app runs.
+    // Picks up edits to the engine's shaders saved while the app runs.
     scene_renderer_poll_hot_reload(&state->renderer);
+    ibl_cache_poll_hot_reload(&state->ibl);   // re-bakes on the sync below
 
     // Requests from other processes -- before rendering, so their changes
     // show this same frame.

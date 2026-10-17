@@ -40,6 +40,7 @@ add_library(PBR_Runtime STATIC
     src/Renderer/Lighting.c
     src/Renderer/PostProcess.c
     src/Renderer/SceneRenderer.c
+    src/Renderer/ShaderReload.c
     src/Renderer/Shadow.c
     src/Scene/Camera.c
     src/Scene/OrbitCamera.c

@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h>
 
 #define PBR_VERTEX_PATH   "shaders/pbr.vert"
 #define PBR_FRAGMENT_PATH "shaders/pbr.frag"
@@ -98,31 +97,6 @@ scene_renderer_shader_defines(char* out, size_t size)
              (int)SCENE_VIEW_WIREFRAME);
 }
 
-// A shader file's (under the engine root) modification time and size, or
-// zeros if it can't be stat()ed.
-static file_stamp
-shader_stamp(const char* relative_path)
-{
-    char*       path  = engine_path(relative_path);
-    struct stat info;
-    file_stamp  stamp = { 0, 0 };
-
-    if (stat(path, &info) == 0)
-    {
-        stamp.mtime = (int64)info.st_mtime;
-        stamp.size  = (int64)info.st_size;
-    }
-
-    free(path);
-    return stamp;
-}
-
-static b8
-stamp_equal(file_stamp a, file_stamp b)
-{
-    return a.mtime == b.mtime && a.size == b.size;
-}
-
 static rhi_shader
 build_pbr_shader(void)
 {
@@ -146,8 +120,12 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
 {
     memset(r, 0, sizeof(*r));
 
-    r->vertex_stamp   = shader_stamp(PBR_VERTEX_PATH);
-    r->fragment_stamp = shader_stamp(PBR_FRAGMENT_PATH);
+    static const char* const pbr_files[]    = { PBR_VERTEX_PATH, PBR_FRAGMENT_PATH };
+    static const char* const post_files[]   = { POST_VERTEX_PATH, POST_FRAGMENT_PATH };
+    static const char* const shadow_files[] = { CSM_VERTEX_PATH, CSM_FRAGMENT_PATH };
+    file_watch_init(&r->pbr_files, pbr_files, 2);
+    file_watch_init(&r->post_files, post_files, 2);
+    file_watch_init(&r->shadow_files, shadow_files, 2);
 
     r->pbr_shader = build_pbr_shader();
     if (!r->pbr_shader)
@@ -356,38 +334,35 @@ scene_renderer_capture(scene_renderer* r, const world* w, const camera* cam,
     return pixels;
 }
 
+static b8
+reload_pbr(scene_renderer* r)
+{
+    char defines[1024];
+    scene_renderer_shader_defines(defines, sizeof(defines));
+    return shader_rebuild(&r->pbr_shader, PBR_VERTEX_PATH, PBR_FRAGMENT_PATH, defines);
+}
+
+// Every shader keeps its uniforms' values per program, and each pass sets
+// all of its own every time it runs, so a swapped-in program needs nothing
+// carried over.
 b8
 scene_renderer_reload_shaders(scene_renderer* r)
 {
-    rhi_shader shader = build_pbr_shader();
-    if (!shader)
-    {
-        LOG_ERROR("Shader hot reload: pbr.vert/pbr.frag failed to build, keeping the previous version\n");
-        return false;
-    }
-
-    rhi_shader_destroy(r->pbr_shader);
-    r->pbr_shader = shader;
-
-    LOG_INFO("Shader hot reload: rebuilt pbr.vert/pbr.frag\n");
-    return true;
+    b8 pbr    = reload_pbr(r);
+    b8 post   = shader_rebuild(&r->post.tonemap_shader, POST_VERTEX_PATH, POST_FRAGMENT_PATH, NULL);
+    b8 shadow = shader_rebuild(&r->csm.depth_shader, CSM_VERTEX_PATH, CSM_FRAGMENT_PATH, NULL);
+    return pbr && post && shadow;
 }
 
 void
 scene_renderer_poll_hot_reload(scene_renderer* r)
 {
-    file_stamp vertex_stamp   = shader_stamp(PBR_VERTEX_PATH);
-    file_stamp fragment_stamp = shader_stamp(PBR_FRAGMENT_PATH);
-
-    if (stamp_equal(vertex_stamp, r->vertex_stamp) && stamp_equal(fragment_stamp, r->fragment_stamp))
-        return;
-
-    // Recorded before the rebuild, so a broken edit is reported once rather
-    // than every frame until the file changes again.
-    r->vertex_stamp   = vertex_stamp;
-    r->fragment_stamp = fragment_stamp;
-
-    scene_renderer_reload_shaders(r);
+    if (file_watch_changed(&r->pbr_files))
+        reload_pbr(r);
+    if (file_watch_changed(&r->post_files))
+        shader_rebuild(&r->post.tonemap_shader, POST_VERTEX_PATH, POST_FRAGMENT_PATH, NULL);
+    if (file_watch_changed(&r->shadow_files))
+        shader_rebuild(&r->csm.depth_shader, CSM_VERTEX_PATH, CSM_FRAGMENT_PATH, NULL);
 }
 
 void

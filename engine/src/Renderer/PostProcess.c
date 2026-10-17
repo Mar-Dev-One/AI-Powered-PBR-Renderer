@@ -38,8 +38,8 @@ post_create(post_process* post, uint16 width, uint16 height)
 {
     memset(post, 0, sizeof(*post));
 
-    char* vertex_path   = engine_path("shaders/fullscreen.vert");
-    char* fragment_path = engine_path("shaders/tonemap.frag");
+    char* vertex_path   = engine_path(POST_VERTEX_PATH);
+    char* fragment_path = engine_path(POST_FRAGMENT_PATH);
 
     post->tonemap_shader = rhi_shader_create_from_files(vertex_path, fragment_path);
 

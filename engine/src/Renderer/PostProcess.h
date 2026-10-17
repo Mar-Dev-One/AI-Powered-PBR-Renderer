@@ -12,6 +12,10 @@
 // space, and leaves a single place for later post effects (bloom, AA,
 // auto-exposure) to hook into.
 
+// The tone-mapping shader's files, under the engine root.
+#define POST_VERTEX_PATH   "shaders/fullscreen.vert"
+#define POST_FRAGMENT_PATH "shaders/tonemap.frag"
+
 typedef struct post_process
 {
     rhi_framebuffer scene_target;   // RGBA16F color + depth, window-sized

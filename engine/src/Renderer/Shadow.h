@@ -42,6 +42,10 @@ typedef struct shadow_cascade
     f32             texel_world_size; // world-space width of one shadow-map texel; scales pbr.frag's normal-offset bias
 } shadow_cascade;
 
+// The depth-only shader's files, under the engine root.
+#define CSM_VERTEX_PATH   "shaders/shadow_depth.vert"
+#define CSM_FRAGMENT_PATH "shaders/shadow_depth.frag"
+
 typedef struct csm_state
 {
     shadow_cascade cascades[CSM_MAX_CASCADES];

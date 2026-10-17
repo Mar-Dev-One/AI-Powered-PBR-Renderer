@@ -2,6 +2,7 @@
 
 #include "../Core/Defines.h"
 #include "../RHI/RHI.h"
+#include "ShaderReload.h"
 #include "../World/Environment.h"
 
 #include <cglm/cglm.h>
@@ -69,6 +70,7 @@ typedef struct ibl_cache
     ibl_environment maps;                         // all zeroes when nothing is baked, or the bake failed
     char            baked[ENVIRONMENT_HDRI_MAX];  // the setting `maps` was baked from
     b8              valid;                        // false until the first sync, and after ibl_cache_invalidate()
+    file_watch      shaders;                      // the bake and skybox shaders' files, for hot reload
 } ibl_cache;
 
 // Bakes `hdri` (a path under the project, "" = none) unless it's what the
@@ -79,6 +81,13 @@ void ibl_cache_sync(ibl_cache* cache, const char* hdri);
 // Bakes again on the next sync, even for the same setting -- after switching
 // projects, where "hdri/sky.hdr" may name another file.
 void ibl_cache_invalidate(ibl_cache* cache);
+
+// Hot reload for the IBL's shaders (the bakes' and the skybox's): when one
+// of their files changes on disk, bakes again on the next sync with the new
+// source -- the maps are where those shaders' work ends up. A shader that
+// fails to compile leaves no maps (the hemisphere ambient light, and the
+// error logged) until it's fixed. Cheap enough for every frame.
+void ibl_cache_poll_hot_reload(ibl_cache* cache);
 
 // The baked maps, or NULL if there are none.
 const ibl_environment* ibl_cache_maps(const ibl_cache* cache);

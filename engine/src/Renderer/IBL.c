@@ -346,6 +346,29 @@ ibl_cache_invalidate(ibl_cache* cache)
     cache->valid = false;
 }
 
+void
+ibl_cache_poll_hot_reload(ibl_cache* cache)
+{
+    // Every file ibl_create() builds a shader from.
+    static const char* const files[] = {
+        "shaders/ibl_cube.vert", "shaders/equirect_to_cube.frag", "shaders/irradiance.frag", "shaders/prefilter.frag",
+        "shaders/brdf_lut.vert", "shaders/brdf_lut.frag",         "shaders/skybox.vert",     "shaders/skybox.frag",
+    };
+
+    // A zeroed cache starts watching on its first poll.
+    if (cache->shaders.count == 0)
+    {
+        file_watch_init(&cache->shaders, files, sizeof(files) / sizeof(files[0]));
+        return;
+    }
+
+    if (file_watch_changed(&cache->shaders))
+    {
+        LOG_INFO("Shader hot reload: an IBL shader changed, baking the environment again\n");
+        ibl_cache_invalidate(cache);
+    }
+}
+
 const ibl_environment*
 ibl_cache_maps(const ibl_cache* cache)
 {

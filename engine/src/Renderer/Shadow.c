@@ -18,8 +18,8 @@ csm_create(csm_state* csm, uint32 cascade_count, uint32 resolution)
         cascade_count = CSM_MAX_CASCADES;
     }
 
-    char* vertex_path   = engine_path("shaders/shadow_depth.vert");
-    char* fragment_path = engine_path("shaders/shadow_depth.frag");
+    char* vertex_path   = engine_path(CSM_VERTEX_PATH);
+    char* fragment_path = engine_path(CSM_FRAGMENT_PATH);
 
     csm->depth_shader = rhi_shader_create_from_files(vertex_path, fragment_path);
 
