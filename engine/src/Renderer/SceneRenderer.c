@@ -22,8 +22,41 @@ scene_render_settings_default(void)
         .shadows              = true,
         .cascade_split_lambda = 0.5f,
         .debug_show_cascades  = false,
+        .debug_view           = SCENE_VIEW_LIT,
         .clear_color          = { 0.0f, 0.0f, 0.0f }
     };
+}
+
+static const char* const DEBUG_VIEW_NAMES[SCENE_VIEW_COUNT] = {
+    "lit", "albedo", "normals", "roughness", "metallic", "ao", "shadow", "lighting", "wireframe"
+};
+
+const char*
+scene_debug_view_name(scene_debug_view view)
+{
+    return (uint32)view < SCENE_VIEW_COUNT ? DEBUG_VIEW_NAMES[view] : NULL;
+}
+
+b8
+scene_debug_view_from_name(const char* name, scene_debug_view* out_view)
+{
+    for (uint32 i = 0; name && i < SCENE_VIEW_COUNT; ++i)
+    {
+        if (strcmp(name, DEBUG_VIEW_NAMES[i]) == 0)
+        {
+            *out_view = (scene_debug_view)i;
+            return true;
+        }
+    }
+    return false;
+}
+
+// The views whose pixels are data, not light: shown without exposure, tone
+// mapping or skybox (see scene_debug_view).
+static b8
+debug_view_is_data(scene_debug_view view)
+{
+    return view != SCENE_VIEW_LIT && view != SCENE_VIEW_LIGHTING;
 }
 
 void
@@ -48,9 +81,21 @@ scene_renderer_shader_defines(char* out, size_t size)
              "#define MAX_LIGHTS %d\n"
              "#define LIGHT_DIRECTIONAL %d\n"
              "#define LIGHT_POINT %d\n"
-             "#define LIGHT_SPOT %d\n",
+             "#define LIGHT_SPOT %d\n"
+             "#define DEBUG_VIEW_LIT %d\n"
+             "#define DEBUG_VIEW_ALBEDO %d\n"
+             "#define DEBUG_VIEW_NORMALS %d\n"
+             "#define DEBUG_VIEW_ROUGHNESS %d\n"
+             "#define DEBUG_VIEW_METALLIC %d\n"
+             "#define DEBUG_VIEW_AO %d\n"
+             "#define DEBUG_VIEW_SHADOW %d\n"
+             "#define DEBUG_VIEW_LIGHTING %d\n"
+             "#define DEBUG_VIEW_WIREFRAME %d\n",
              CSM_MAX_CASCADES, LIGHTING_MAX_LIGHTS,
-             (int)LIGHT_DIRECTIONAL, (int)LIGHT_POINT, (int)LIGHT_SPOT);
+             (int)LIGHT_DIRECTIONAL, (int)LIGHT_POINT, (int)LIGHT_SPOT,
+             (int)SCENE_VIEW_LIT, (int)SCENE_VIEW_ALBEDO, (int)SCENE_VIEW_NORMALS, (int)SCENE_VIEW_ROUGHNESS,
+             (int)SCENE_VIEW_METALLIC, (int)SCENE_VIEW_AO, (int)SCENE_VIEW_SHADOW, (int)SCENE_VIEW_LIGHTING,
+             (int)SCENE_VIEW_WIREFRAME);
 }
 
 // A shader file's (under the engine root) modification time and size, or
@@ -81,7 +126,7 @@ stamp_equal(file_stamp a, file_stamp b)
 static rhi_shader
 build_pbr_shader(void)
 {
-    char defines[256];
+    char defines[1024];
     scene_renderer_shader_defines(defines, sizeof(defines));
 
     char* vertex_path   = engine_path(PBR_VERTEX_PATH);
@@ -170,8 +215,12 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     camera_get_projection(cam, projection);
     glm_mat4_mul(projection, view, view_projection);
 
-    if (settings->ibl && settings->show_skybox)
+    if (settings->ibl && settings->show_skybox && !debug_view_is_data(settings->debug_view))
         ibl_draw_skybox(settings->ibl, view, projection, settings->sky_blur);
+
+    // Until finish_frame(): the world's geometry only, not the passes around it.
+    if (settings->debug_view == SCENE_VIEW_WIREFRAME)
+        rhi_set_wireframe(true);
 
     // --- PBR shader -------------------------------------------------------------
     rhi_shader shader = r->pbr_shader;
@@ -182,6 +231,7 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     rhi_shader_set_vec3(shader, "u_view_pos", cam->position[0], cam->position[1], cam->position[2]);
     rhi_shader_set_float(shader, "u_ambient_strength", settings->ambient_strength);
     rhi_shader_set_int(shader, "u_debug_show_cascades", settings->debug_show_cascades);
+    rhi_shader_set_int(shader, "u_debug_view", (int)settings->debug_view);
 
     lighting_bind(shader, w);
     ibl_bind(settings->ibl, shader);
@@ -197,10 +247,19 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     return shader;
 }
 
+// Resolves the HDR target into `target` (NULL = the screen), the way
+// settings->debug_view wants it.
+static void
+finish_frame(scene_renderer* r, const scene_render_settings* settings, rhi_framebuffer target)
+{
+    rhi_set_wireframe(false);
+    post_end_scene_to(&r->post, settings->exposure, debug_view_is_data(settings->debug_view), target);
+}
+
 void
 scene_renderer_end(scene_renderer* r, const scene_render_settings* settings)
 {
-    post_end_scene(&r->post, settings->exposure);
+    finish_frame(r, settings, NULL);
 }
 
 void
@@ -238,7 +297,7 @@ scene_renderer_draw_to(scene_renderer* r, const world* w, const camera* cam,
 {
     rhi_shader shader = scene_renderer_begin(r, w, cam, settings);
     scene_renderer_draw_world(w, shader);
-    post_end_scene_to(&r->post, settings->exposure, target);
+    finish_frame(r, settings, target);
     rhi_framebuffer_bind_default();
 }
 
@@ -262,7 +321,7 @@ scene_renderer_capture(scene_renderer* r, const world* w, const camera* cam,
 
     rhi_shader shader = scene_renderer_begin(r, w, cam, settings);
     scene_renderer_draw_world(w, shader);
-    post_end_scene_to(&r->post, settings->exposure, target);   // leaves `target` bound, to read
+    finish_frame(r, settings, target);   // leaves `target` bound, to read
 
     uint8* pixels = malloc((size_t)width * height * 4);
     if (!pixels)

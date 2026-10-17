@@ -141,6 +141,7 @@ typedef struct editor_state
     // build_render_settings() turns the state below into its settings.
     scene_renderer renderer;
     b8             debug_show_cascades;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
+    scene_debug_view debug_view;          // lit, or one input to the shading (SceneRenderer.h)
 
     // --- Image-based lighting -------------------------------------------------
     // doc.env (World/Environment.h) is the single source of truth for the
@@ -484,6 +485,7 @@ host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
     cJSON_AddItemToObject(*out_result, "fov_degrees", number_json(state->cam.fov_degrees));
     cJSON_AddItemToObject(*out_result, "exposure", number_json(state->doc.env.exposure));
     cJSON_AddItemToObject(*out_result, "ambient_strength", number_json(state->doc.env.ambient_strength));
+    cJSON_AddStringToObject(*out_result, "debug_view", scene_debug_view_name(state->debug_view));
     return true;
 }
 
@@ -575,6 +577,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     const cJSON* exposure = cJSON_GetObjectItem(args, "exposure");
     const cJSON* ambient  = cJSON_GetObjectItem(args, "ambient_strength");
     const cJSON* cascades = cJSON_GetObjectItem(args, "debug_show_cascades");
+    const cJSON* view     = cJSON_GetObjectItem(args, "debug_view");
 
     if ((exposure && (!cJSON_IsNumber(exposure) || exposure->valuedouble <= 0.0 || exposure->valuedouble > 16.0))
         || (ambient && (!cJSON_IsNumber(ambient) || ambient->valuedouble < 0.0 || ambient->valuedouble > 4.0))
@@ -584,9 +587,18 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
         return false;
     }
 
+    scene_debug_view debug_view = state->debug_view;
+    if (view && !scene_debug_view_from_name(cJSON_GetStringValue(view), &debug_view))
+    {
+        snprintf(error, error_size, "debug_view must be one of: lit, albedo, normals, roughness, metallic, ao, shadow, "
+                                    "lighting, wireframe");
+        return false;
+    }
+
     if (exposure) state->doc.env.exposure         = (f32)exposure->valuedouble;
     if (ambient)  state->doc.env.ambient_strength = (f32)ambient->valuedouble;
     if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
+    state->debug_view = debug_view;
 
     return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
 }
@@ -877,6 +889,9 @@ static const cmd_arg ARGS_RENDER_SET[] = {
     { "exposure",            "number",  false, "Brightness multiplier before tone mapping, e.g. 1" },
     { "ambient_strength",    "number",  false, "Strength of the image-based / ambient light, e.g. 0.5" },
     { "debug_show_cascades", "boolean", false, "Tint shading by shadow cascade" },
+    { "debug_view",          "string",  false, "What the view shows: lit (normal), or one input to the shading -- albedo, "
+                                                "normals, roughness, metallic, ao, shadow, lighting (white surfaces), "
+                                                "wireframe" },
 };
 
 static const cmd_arg ARGS_PROJECT_CREATE[] = {
@@ -1509,6 +1524,11 @@ open_folder(const char* folder)
 
 // --- Viewport toolbar ---------------------------------------------------------------
 
+// scene_debug_view's values, for the toolbar's combo and the View menu.
+static const char* const DEBUG_VIEW_LABELS[SCENE_VIEW_COUNT] = {
+    "Lit", "Albedo", "Normals", "Roughness", "Metallic", "AO", "Shadow", "Lighting", "Wireframe"
+};
+
 // A button that can be greyed out, with a tooltip saying why (or what it does).
 static b8
 toolbar_button(const char* label, b8 enabled, const char* tooltip)
@@ -1588,6 +1608,13 @@ draw_toolbar(editor_state* state)
         igDragFloat("##step", &state->snap_rotate, 0.5f, 1.0f, 90.0f, "%.0f deg", ImGuiSliderFlags_AlwaysClamp);
     else
         igDragFloat("##step", &state->snap_scale, 0.01f, 0.01f, 1.0f, "x%.2f", ImGuiSliderFlags_AlwaysClamp);
+    igSameLine(0.0f, -1.0f);
+    toolbar_separator();
+
+    igSetNextItemWidth(110.0f);
+    igCombo_Str_arr("##view", (int*)&state->debug_view, DEBUG_VIEW_LABELS, SCENE_VIEW_COUNT, -1);
+    if (igIsItemHovered(0))
+        igSetTooltip("What the view shows: the lit scene, or one input to its shading");
     igSameLine(0.0f, -1.0f);
     toolbar_separator();
 
@@ -2143,6 +2170,13 @@ draw_main_menu(editor_state* state)
     {
         igMenuItem_BoolPtr("Console", "F1", &state->show_console, true);
         igMenuItem_BoolPtr("Shadow cascades (debug)", NULL, &state->debug_show_cascades, true);
+        if (igBeginMenu("Debug view", true))
+        {
+            for (int v = 0; v < SCENE_VIEW_COUNT; ++v)
+                if (igMenuItem_Bool(DEBUG_VIEW_LABELS[v], NULL, state->debug_view == (scene_debug_view)v, true))
+                    state->debug_view = (scene_debug_view)v;
+            igEndMenu();
+        }
         if (igMenuItem_Bool("Frame everything", NULL, false, true))
             frame_view(state, NULL);
         igEndMenu();
@@ -2819,6 +2853,7 @@ build_render_settings(const editor_state* state)
 
     scene_render_settings_apply_environment(&settings, &state->doc.env, ibl_cache_maps(&state->ibl));
     settings.debug_show_cascades = state->debug_show_cascades;
+    settings.debug_view          = state->debug_view;
 
     // Where nothing (not even the skybox) is drawn -- a scene without an
     // HDRI: a neutral dark grey, so an empty background never reads as an

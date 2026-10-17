@@ -56,6 +56,7 @@ void gl_shutdown(void);
 void gl_set_viewport(uint16 x, uint16 y, uint16 width, uint16 height);
 void gl_clear(f32 r, f32 g, f32 b, f32 a);
 void gl_set_render_state(rhi_render_state state);
+void gl_set_wireframe(b8 enabled);
 void gl_draw_indexed(rhi_buffer vertex_buffer, rhi_buffer index_buffer, uint32 index_count);
 
 // The most recent viewport passed to gl_set_viewport(). This is what the

@@ -70,6 +70,11 @@ void gl_set_render_state(rhi_render_state state)
     glFrontFace(state.front_face_cw ? GL_CW : GL_CCW);
 }
 
+void gl_set_wireframe(b8 enabled)
+{
+    glPolygonMode(GL_FRONT_AND_BACK, enabled ? GL_LINE : GL_FILL);
+}
+
 void gl_draw_indexed(rhi_buffer vertex_buffer, rhi_buffer index_buffer, uint32 index_count)
 {
     glBindVertexArray(vertex_buffer->vao);
@@ -120,6 +125,7 @@ void rhi_gl_get_backend(rhi_backend_api* out_api)
     out_api->framebuffer_set_cubemap_target = gl_framebuffer_set_cubemap_target;
 
     out_api->set_render_state = gl_set_render_state;
+    out_api->set_wireframe = gl_set_wireframe;
     out_api->draw_indexed = gl_draw_indexed;
 }
 

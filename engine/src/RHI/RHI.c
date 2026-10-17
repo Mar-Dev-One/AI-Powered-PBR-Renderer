@@ -248,6 +248,11 @@ void rhi_set_render_state(rhi_render_state state)
     backend.set_render_state(state);
 }
 
+void rhi_set_wireframe(b8 enabled)
+{
+    backend.set_wireframe(enabled);
+}
+
 void rhi_draw_indexed(rhi_buffer vertex_buffer, rhi_buffer index_buffer, uint32 index_count)
 {
     backend.draw_indexed(vertex_buffer, index_buffer, index_count);

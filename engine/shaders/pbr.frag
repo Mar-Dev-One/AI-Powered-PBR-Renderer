@@ -14,7 +14,8 @@
 //   CSM_MAX_CASCADES                            Renderer/Shadow.h
 //   MAX_LIGHTS                                  Renderer/Lighting.h's LIGHTING_MAX_LIGHTS
 //   LIGHT_DIRECTIONAL / LIGHT_POINT / LIGHT_SPOT  Scene/Light.h's light_type values
-#if !defined(CSM_MAX_CASCADES) || !defined(MAX_LIGHTS) || !defined(LIGHT_SPOT)
+//   DEBUG_VIEW_LIT ... DEBUG_VIEW_WIREFRAME     SceneRenderer.h's scene_debug_view values
+#if !defined(CSM_MAX_CASCADES) || !defined(MAX_LIGHTS) || !defined(LIGHT_SPOT) || !defined(DEBUG_VIEW_WIREFRAME)
 #error "pbr.frag must be compiled with SceneRenderer's defines"
 #endif
 
@@ -87,6 +88,11 @@ uniform int             u_cascade_count;
 // visually. Off (0) by default; Shadow.h doesn't set this itself, so it
 // stays 0 unless something explicitly opts in.
 uniform int u_debug_show_cascades;
+
+// What to output (SceneRenderer.h's scene_debug_view): DEBUG_VIEW_LIT for
+// the shaded surface, or one of its inputs. The data views' values are
+// shown as they are: tonemap.frag only gamma-encodes them (u_raw).
+uniform int u_debug_view;
 
 // --- Image-based lighting (set by ibl_bind, see Renderer/IBL.h) ---------------
 uniform int         u_use_ibl;              // 0 = hemisphere fallback below
@@ -298,6 +304,13 @@ vec3 shade_light(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 diffuse_color, vec3
     return (diffuse + specular) * radiance * NoL;
 }
 
+// A 0..1 value to show as is: tonemap.frag gamma-encodes data views, so
+// undo that here (albedo is already linear and skips this).
+vec3 as_display(vec3 value)
+{
+    return pow(clamp(value, 0.0, 1.0), vec3(2.2));
+}
+
 vec3 hemisphere(vec3 dir)
 {
     const vec3 sky    = vec3(0.55, 0.65, 0.85);
@@ -333,6 +346,15 @@ void main()
     vec3 emissive = u_emissive;
     if (has_texture(4))
         emissive *= texture(u_emissive_tex, v_uv).rgb;
+
+    vec3 albedo = base.rgb;   // for DEBUG_VIEW_ALBEDO, before the lighting view whitens it
+
+    // The light alone: every surface white, nothing glowing.
+    if (u_debug_view == DEBUG_VIEW_LIGHTING)
+    {
+        base.rgb = vec3(1.0);
+        emissive = vec3(0.0);
+    }
 
     // --- Shading normal ------------------------------------------------------
     vec3 N = normalize(v_normal);
@@ -371,8 +393,9 @@ void main()
     vec3 energy_compensation = 1.0 + f0 * (1.0 / ess - 1.0);
 
     // --- Direct light ----------------------------------------------------------
-    int  cascade_index = pick_cascade(v_view_depth);
-    vec3 direct        = vec3(0.0);
+    int   cascade_index     = pick_cascade(v_view_depth);
+    vec3  direct            = vec3(0.0);
+    float shadow_visibility = 1.0;   // the shadowed light's, for DEBUG_VIEW_SHADOW
 
     for (int i = 0; i < u_light_count; ++i)
     {
@@ -401,7 +424,8 @@ void main()
         if (i == u_shadow_light_index && cascade_index >= 0)
         {
             float geometric_NoL = clamp(dot(geometric_normal, L), 0.0, 1.0);
-            attenuation *= 1.0 - shadow_calculation(cascade_index, geometric_normal, geometric_NoL);
+            shadow_visibility = 1.0 - shadow_calculation(cascade_index, geometric_normal, geometric_NoL);
+            attenuation *= shadow_visibility;
         }
 
         vec3 radiance = light.color * light.intensity * attenuation;
@@ -449,12 +473,23 @@ void main()
     // CSM_MAX_CASCADES == 4) so a cascade fit/split problem shows up as a
     // wrong-looking color band instead of having to guess from shadow
     // artifacts alone.
-    if (u_debug_show_cascades != 0 && cascade_index >= 0)
+    if (u_debug_show_cascades != 0 && cascade_index >= 0 && u_debug_view == DEBUG_VIEW_LIT)
     {
         const vec3 cascade_tints[CSM_MAX_CASCADES] = vec3[](
             vec3(1.0, 0.3, 0.3), vec3(0.3, 1.0, 0.3), vec3(0.3, 0.3, 1.0), vec3(1.0, 1.0, 0.3)
         );
         color = mix(color, cascade_tints[cascade_index], 0.35);
+    }
+
+    switch (u_debug_view)
+    {
+        case DEBUG_VIEW_ALBEDO:    color = albedo;                       break;
+        case DEBUG_VIEW_NORMALS:   color = as_display(N * 0.5 + 0.5);    break;
+        case DEBUG_VIEW_ROUGHNESS: color = as_display(vec3(roughness));  break;
+        case DEBUG_VIEW_METALLIC:  color = as_display(vec3(metallic));   break;
+        case DEBUG_VIEW_AO:        color = as_display(vec3(occlusion));  break;
+        case DEBUG_VIEW_SHADOW:    color = as_display(vec3(shadow_visibility)); break;
+        case DEBUG_VIEW_WIREFRAME: color = as_display(vec3(0.85));       break;
     }
 
     frag_color = vec4(color, u_alpha_mode == 2 ? base.a : 1.0);

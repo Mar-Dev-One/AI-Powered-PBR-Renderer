@@ -28,6 +28,31 @@
 // rebuilds them when either file changes on disk, keeping the old program
 // if the new source fails to compile.
 
+// What the frame shows: the lit scene, or one input to its shading. The
+// data views (albedo through shadow, and wireframe) show values in 0..1
+// as they are -- no exposure or tone mapping, no skybox -- so a black
+// pixel in "Metallic" really is 0. Lighting is the lit scene with every
+// surface white and no emission: the light alone.
+typedef enum scene_debug_view
+{
+    SCENE_VIEW_LIT,
+    SCENE_VIEW_ALBEDO,      // base color, textures included (linear, shown as sRGB)
+    SCENE_VIEW_NORMALS,     // world-space shading normal (normal maps applied), xyz -> rgb
+    SCENE_VIEW_ROUGHNESS,
+    SCENE_VIEW_METALLIC,
+    SCENE_VIEW_AO,          // the occlusion texture (white without one)
+    SCENE_VIEW_SHADOW,      // the shadowed light's visibility: black = in shadow
+    SCENE_VIEW_LIGHTING,
+    SCENE_VIEW_WIREFRAME,
+    SCENE_VIEW_COUNT
+} scene_debug_view;
+
+// "lit", "albedo", ... (the render.set command's names); NULL out of range.
+const char* scene_debug_view_name(scene_debug_view view);
+
+// The inverse; false if `name` isn't one.
+b8 scene_debug_view_from_name(const char* name, scene_debug_view* out_view);
+
 typedef struct scene_render_settings
 {
     const ibl_environment* ibl;   // NULL = pbr.frag's hemisphere ambient and no skybox
@@ -38,6 +63,7 @@ typedef struct scene_render_settings
     b8  shadows;                  // cascaded shadows for the first directional light
     f32 cascade_split_lambda;     // see csm_update(); 0.5 is a good default
     b8  debug_show_cascades;      // tint shading by cascade, see pbr.frag
+    scene_debug_view debug_view;  // SCENE_VIEW_LIT for the real thing
     vec3 clear_color;             // linear HDR background where nothing is drawn
 } scene_render_settings;
 

@@ -94,13 +94,13 @@ post_begin_scene(post_process* post, f32 r, f32 g, f32 b)
 }
 
 void
-post_end_scene(post_process* post, f32 exposure)
+post_end_scene(post_process* post, f32 exposure, b8 raw)
 {
-    post_end_scene_to(post, exposure, NULL);
+    post_end_scene_to(post, exposure, raw, NULL);
 }
 
 void
-post_end_scene_to(post_process* post, f32 exposure, rhi_framebuffer target)
+post_end_scene_to(post_process* post, f32 exposure, b8 raw, rhi_framebuffer target)
 {
     if (!post->scene_target)
         return;
@@ -121,6 +121,7 @@ post_end_scene_to(post_process* post, f32 exposure, rhi_framebuffer target)
     rhi_shader_bind(shader);
     rhi_shader_set_int(shader, "u_scene", POST_SLOT_SCENE);
     rhi_shader_set_float(shader, "u_exposure", exposure);
+    rhi_shader_set_int(shader, "u_raw", raw);
     rhi_texture_bind(rhi_framebuffer_get_color_texture(post->scene_target, 0), POST_SLOT_SCENE);
 
     rhi_draw_indexed(post->triangle_vertices, post->triangle_indices, 3);

@@ -10,6 +10,7 @@ out vec4 frag_color;
 
 uniform sampler2D u_scene;      // RGBA16F, linear radiance
 uniform float     u_exposure;
+uniform int       u_raw;        // a debug view's data (0..1): gamma only, no exposure or ACES
 
 // Narkowicz's fit of the ACES filmic curve.
 vec3 aces_tonemap(vec3 x)
@@ -21,7 +22,7 @@ void main()
 {
     vec3 color = texture(u_scene, v_uv).rgb;
 
-    color = aces_tonemap(color * u_exposure);
+    color = u_raw != 0 ? clamp(color, 0.0, 1.0) : aces_tonemap(color * u_exposure);
     color = pow(color, vec3(1.0 / 2.2));
 
     frag_color = vec4(color, 1.0);

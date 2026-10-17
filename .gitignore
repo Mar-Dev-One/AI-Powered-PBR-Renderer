@@ -77,3 +77,6 @@ __pycache__/
 # Python virtual environment and build metadata for agent/
 agent/.venv/
 *.egg-info/
+
+# Local helper script
+commit.bat

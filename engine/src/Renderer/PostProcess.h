@@ -38,13 +38,15 @@ void post_resize(post_process* post, uint16 width, uint16 height);
 void post_begin_scene(post_process* post, f32 r, f32 g, f32 b);
 
 // Binds the default framebuffer and resolves the scene target onto it:
-// color * exposure -> ACES -> gamma 2.2. Leaves the default render state
-// active, so UI drawn afterwards lands on top of the tone-mapped image.
-void post_end_scene(post_process* post, f32 exposure);
+// color * exposure -> ACES -> gamma 2.2. `raw` skips exposure and ACES (gamma
+// only), for a debug view whose pixels are data in 0..1 rather than light.
+// Leaves the default render state active, so UI drawn afterwards lands on
+// top of the tone-mapped image.
+void post_end_scene(post_process* post, f32 exposure, b8 raw);
 
 // Same, but into `target` (an RGBA8 framebuffer the size of the scene
 // target) instead of the screen -- for screenshots. Leaves `target` bound.
-void post_end_scene_to(post_process* post, f32 exposure, rhi_framebuffer target);
+void post_end_scene_to(post_process* post, f32 exposure, b8 raw, rhi_framebuffer target);
 
 // Safe on a zeroed / failed / already-destroyed post_process.
 void post_destroy(post_process* post);

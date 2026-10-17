@@ -360,7 +360,8 @@ images (the check only proves the scene loads and renders); scene switching in t
 - [ ] FXAA in `tonemap.frag`
 - [ ] Bloom (between the scene pass and `post_end_scene()`)
 - [ ] `KHR_materials_emissive_strength`
-- [ ] Debug views: albedo, normals, roughness/metal, AO, shadow only, lighting only, wireframe
+- [x] Debug views: albedo, normals, roughness/metal, AO, shadow only, lighting only, wireframe
+      (`scene_render_settings.debug_view`; the Viewport toolbar, View > Debug view, `render.set`)
 - [ ] GPU timers per pass in ImGui
 - [ ] Async HDRI loading and baking (the current bake blocks a frame, which would freeze the chat UI)
 - [ ] Golden-image tests: headless render of reference scenes compared against saved PNGs, in CI

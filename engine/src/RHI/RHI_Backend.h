@@ -53,6 +53,7 @@ typedef struct rhi_backend_api
                                                        uint32 face, uint32 mip);
 
     void (*set_render_state)(rhi_render_state state);
+    void (*set_wireframe)(b8 enabled);
 
     void (*draw_indexed)(rhi_buffer vertex_buffer, rhi_buffer index_buffer, uint32 index_count);
 } rhi_backend_api;

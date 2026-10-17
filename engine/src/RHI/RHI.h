@@ -248,6 +248,10 @@ typedef struct rhi_render_state
 rhi_render_state rhi_render_state_default(void);
 void             rhi_set_render_state(rhi_render_state state);
 
+// Rasterizes triangles as their edges only (a debug view), until turned off.
+// Separate from rhi_render_state, which every material sets per draw.
+void             rhi_set_wireframe(b8 enabled);
+
 // --- Drawing ------------------------------------------------------------
 void rhi_draw_indexed(rhi_buffer vertex_buffer, rhi_buffer index_buffer, uint32 index_count);
 
