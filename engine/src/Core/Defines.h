@@ -71,6 +71,12 @@ void log_message(log_level level, const char* file, int line, const char* fmt, .
 typedef void (*log_fatal_hook)(const char* message);
 void log_set_fatal_hook(log_fatal_hook hook);
 
+// Also gets every message, after it's written out: `file`/`line` are "" / 0
+// for TRACE and INFO, `message` has no trailing newline (and is cut at 4 KB).
+// For showing the log in an app (UI/LogPanel.h). One at a time; NULL for none.
+typedef void (*log_sink)(log_level level, const char* file, int line, const char* message, void* user_data);
+void log_set_sink(log_sink sink, void* user_data);
+
 
 
 #define LOG_TRACE(...) \

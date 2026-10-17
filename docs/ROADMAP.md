@@ -385,7 +385,8 @@ images (the check only proves the scene loads and renders); scene switching in t
 - [ ] AI: camera shots (close-up, wide, rule-of-thirds framing)
 - [ ] AI: per-turn diff summary, shown in the chat panel and fed back to the model
 - [ ] Hot reload for every shader, not just `pbr.*`
-- [ ] In-app log window (shader errors visible in the UI)
+- [x] In-app log window (shader errors visible in the UI): View > Log, opens by itself on an
+      error (`UI/LogPanel.h`, `log_set_sink()`); `log.get` for scripts and the agent
 
 ### Later
 

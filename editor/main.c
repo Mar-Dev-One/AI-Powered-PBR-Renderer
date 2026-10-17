@@ -48,6 +48,7 @@
 #include "UI/Gizmo.h"
 #include "UI/Inspector.h"
 #include "UI/ImGuiLayer.h"
+#include "UI/LogPanel.h"
 #include "cimgui.h"
 
 #include "PlaySession.h"
@@ -119,6 +120,8 @@ typedef struct editor_state
     inspector       inspector;      // the selected entity's fields; edits run as undoable commands
     b8              show_console;   // F1 toggles
     b8              show_gpu_timings;
+    log_panel       log;            // the engine's log, from main() on (UI/LogPanel.h)
+    b8              show_log;       // opens by itself when an error is logged
     f32             cpu_frame_ms;   // smoothed, for the GPU timings window
 
     // Lets other processes (the MCP server, an agent, scripts) run the same
@@ -628,6 +631,61 @@ host_render_timings(void* user_data, command_context* ctx, const cJSON* args, cJ
     return true;
 }
 
+// The latest log lines (what View > Log shows), e.g. to see why a shader
+// or a model failed.
+static b8
+host_log_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    (void)ctx;
+    editor_state*    state     = user_data;
+    const log_panel* log       = &state->log;
+    const cJSON*     count_arg = cJSON_GetObjectItem(args, "count");
+    const cJSON*     level_arg = cJSON_GetObjectItem(args, "min_level");
+
+    int count = cJSON_IsNumber(count_arg) ? count_arg->valueint : 50;
+    if (count_arg && (!cJSON_IsNumber(count_arg) || count < 1 || count > LOG_PANEL_MAX_ENTRIES))
+    {
+        snprintf(error, error_size, "count must be 1..%d", LOG_PANEL_MAX_ENTRIES);
+        return false;
+    }
+
+    log_level min_level = LOG_LEVEL_TRACE;
+    if (level_arg)
+    {
+        const char* name  = cJSON_GetStringValue(level_arg);
+        b8          found = false;
+        for (int l = LOG_LEVEL_TRACE; l <= LOG_LEVEL_FATAL && name && !found; ++l)
+            if (strcmp(name, log_level_name((log_level)l)) == 0)
+                min_level = (log_level)l, found = true;
+        if (!found)
+        {
+            snprintf(error, error_size, "min_level must be trace, debug, info, warn, error or fatal");
+            return false;
+        }
+    }
+
+    // The newest `count` matching lines, oldest first.
+    uint32 first = log->entry_count, matched = 0;
+    while (first > 0 && matched < (uint32)count)
+        if (log_panel_entry_at(log, --first)->level >= min_level)
+            ++matched;
+
+    *out_result = cJSON_CreateObject();
+    cJSON* entries = cJSON_AddArrayToObject(*out_result, "entries");
+    for (uint32 i = first; i < log->entry_count; ++i)
+    {
+        const log_panel_entry* entry = log_panel_entry_at(log, i);
+        if (entry->level < min_level)
+            continue;
+        cJSON* item = cJSON_CreateObject();
+        cJSON_AddStringToObject(item, "time", entry->time);
+        cJSON_AddStringToObject(item, "level", log_level_name(entry->level));
+        cJSON_AddStringToObject(item, "text", entry->text);
+        cJSON_AddItemToArray(entries, item);
+    }
+    return true;
+}
+
 // What the scene looks like right now, as a PNG -- rendered fresh,
 // without the editor's panels, so a model can see its own work.
 static b8
@@ -890,6 +948,11 @@ static const cmd_arg ARGS_PLAY_SET[] = {
                                 "paused) or \"stop\" (drop the copy, back to the edited scene)" },
 };
 
+static const cmd_arg ARGS_LOG_GET[] = {
+    { "count",     "number", false, "How many lines, newest last (default 50, at most 500)" },
+    { "min_level", "string", false, "Only lines at least this serious: trace (default), debug, info, warn, error, fatal" },
+};
+
 static const cmd_arg ARGS_SCREENSHOT[] = {
     { "max_size", "number", false, "Longest side in pixels, 64-4096 (default 768); the window's size if smaller" },
 };
@@ -933,6 +996,8 @@ static const cmd_host_command HOST_COMMANDS[] = {
     { "view.set_camera",  "Moves the camera and/or what it looks at",                       HOST_ARGS(ARGS_SET_CAMERA),      false, host_view_set_camera },
     { "view.frame",       "Points the camera at an entity (or everything) so it fills the view", HOST_ARGS(ARGS_FRAME),     false, host_view_frame },
     { "render.set",       "Exposure, ambient strength and debug views",                      HOST_ARGS(ARGS_RENDER_SET),      false, host_render_set },
+    { "log.get",          "The engine's latest log lines: shader errors, models that failed to load, warnings",
+                                                                                               HOST_ARGS(ARGS_LOG_GET),         false, host_log_get },
     { "render.timings",   "How long each render pass takes on the GPU, and the frame on the CPU, in ms",
                                                                                                NULL, 0,                         false, host_render_timings },
     { "view.screenshot",  "The scene as a PNG (base64), rendered now without the editor's panels -- to check how it looks",
@@ -2197,6 +2262,7 @@ draw_main_menu(editor_state* state)
     {
         igMenuItem_BoolPtr("Console", "F1", &state->show_console, true);
         igMenuItem_BoolPtr("GPU timings", NULL, &state->show_gpu_timings, true);
+        igMenuItem_BoolPtr("Log", NULL, &state->show_log, true);
         igMenuItem_BoolPtr("Shadow cascades (debug)", NULL, &state->debug_show_cascades, true);
         if (igBeginMenu("Debug view", true))
         {
@@ -3130,6 +3196,13 @@ static void on_frame(App* app, f32 dt)
     if (state->show_gpu_timings)
         draw_gpu_timings(state);
 
+    // An error (a shader that won't compile on hot reload, a model that
+    // won't load) brings the log up.
+    if (log_panel_take_new_errors(&state->log))
+        state->show_log = true;
+    if (state->show_log)
+        log_panel_draw(&state->log, "Log", &state->show_log);
+
     if (chat_panel_draw(&state->chat_panel, &state->chat, active, "Chat", state->agent_note) == CHAT_PANEL_START_AGENT
         && state->server)
         start_agent(state);
@@ -3193,6 +3266,9 @@ int main(int argc, char** argv)
     // on_shutdown destroys them. Static: the state holds large buffers.
     static editor_state state;
 
+    // Before anything else logs, so the Log window has the whole session.
+    log_panel_init(&state.log);
+
     App app = {
         .name             = "PBR Editor",
         // Maximized: a fixed 1920 x 1080 window on a 1920 x 1080 screen ran
@@ -3214,6 +3290,7 @@ int main(int argc, char** argv)
 
     run(&app);
     terminate(&app);
+    log_panel_shutdown(&state.log);
 
     return 0;
 }

@@ -112,6 +112,7 @@ add_library(PBR_Tools STATIC
     src/UI/GizmoBridge.cpp
     src/UI/CommandConsole.c
     src/UI/ChatPanel.c
+    src/UI/LogPanel.c
 )
 
 # PUBLIC: the editor calls cimgui's ig*() functions directly.
