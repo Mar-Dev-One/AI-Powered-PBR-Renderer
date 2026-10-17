@@ -362,7 +362,7 @@ images (the check only proves the scene loads and renders); scene switching in t
 - [ ] `KHR_materials_emissive_strength`
 - [x] Debug views: albedo, normals, roughness/metal, AO, shadow only, lighting only, wireframe
       (`scene_render_settings.debug_view`; the Viewport toolbar, View > Debug view, `render.set`)
-- [ ] GPU timers per pass in ImGui
+- [x] GPU timers per pass in ImGui (`Renderer/GpuProfiler.h`; View > GPU timings, `render.timings`)
 - [ ] Async HDRI loading and baking (the current bake blocks a frame, which would freeze the chat UI)
 - [ ] Golden-image tests: headless render of reference scenes compared against saved PNGs, in CI
 

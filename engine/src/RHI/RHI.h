@@ -9,6 +9,7 @@ typedef struct rhi_buffer*      rhi_buffer;
 typedef struct rhi_shader*      rhi_shader;
 typedef struct rhi_texture*     rhi_texture;
 typedef struct rhi_framebuffer* rhi_framebuffer;
+typedef struct rhi_query*       rhi_query;
 
 // Generic GL-style proc-address loader, supplied by the Platform layer
 // (see window_get_gl_loader in Platform/Window.h) so RHI never has to
@@ -251,6 +252,17 @@ void             rhi_set_render_state(rhi_render_state state);
 // Rasterizes triangles as their edges only (a debug view), until turned off.
 // Separate from rhi_render_state, which every material sets per draw.
 void             rhi_set_wireframe(b8 enabled);
+
+// --- GPU timestamps ------------------------------------------------------
+// rhi_timestamp_write() records when the GPU gets to that point in the work
+// submitted so far; two of them time what's between. The GPU runs behind
+// the CPU, so the value arrives frames later: rhi_timestamp_read() never
+// waits, and says false until it's there (or if nothing was written).
+// Renderer/GpuProfiler.h builds per-pass timings on these.
+rhi_query rhi_timestamp_create(void);
+void      rhi_timestamp_write(rhi_query query);
+b8        rhi_timestamp_read(rhi_query query, uint64* out_nanoseconds);
+void      rhi_timestamp_destroy(rhi_query query);
 
 // --- Drawing ------------------------------------------------------------
 void rhi_draw_indexed(rhi_buffer vertex_buffer, rhi_buffer index_buffer, uint32 index_count);

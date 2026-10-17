@@ -35,6 +35,7 @@ add_library(PBR_Runtime STATIC
     src/RHI/OpenGL/RHI_GL_Texture.c
     src/RHI/OpenGL/RHI_GL_Framebuffer.c
     src/Renderer/Renderer.c
+    src/Renderer/GpuProfiler.c
     src/Renderer/IBL.c
     src/Renderer/Lighting.c
     src/Renderer/PostProcess.c

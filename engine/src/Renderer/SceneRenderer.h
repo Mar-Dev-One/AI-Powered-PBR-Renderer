@@ -5,6 +5,7 @@
 #include "../Scene/Camera.h"
 #include "../World/Environment.h"
 #include "../World/World.h"
+#include "GpuProfiler.h"
 #include "IBL.h"
 #include "PostProcess.h"
 #include "Shadow.h"
@@ -23,6 +24,10 @@
 //     draws geometry that isn't in the World. begin() hands back the bound
 //     PBR shader; such draws only set u_model / u_normal_matrix and a
 //     material.
+//
+// Each frame's passes are timed on the GPU ("Shadows", "Sky", "Scene",
+// "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
+// begin() to end(), so it includes whatever the app draws in between.
 //
 // pbr.vert/pbr.frag are hot-reloaded: scene_renderer_poll_hot_reload()
 // rebuilds them when either file changes on disk, keeping the old program
@@ -90,6 +95,8 @@ typedef struct scene_renderer
     rhi_shader   pbr_shader;
     csm_state    csm;
     post_process post;
+    gpu_profiler profiler;
+    uint32       scene_scope;    // "Scene": from begin() to end()
 
     file_stamp vertex_stamp;     // pbr.vert as of the last build
     file_stamp fragment_stamp;   // pbr.frag as of the last build

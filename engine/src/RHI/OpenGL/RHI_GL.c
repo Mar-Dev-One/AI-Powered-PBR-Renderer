@@ -75,6 +75,44 @@ void gl_set_wireframe(b8 enabled)
     glPolygonMode(GL_FRONT_AND_BACK, enabled ? GL_LINE : GL_FILL);
 }
 
+rhi_query gl_timestamp_create(void)
+{
+    rhi_query query = calloc(1, sizeof(*query));
+    if (query)
+        glGenQueries(1, &query->handle);
+    return query;
+}
+
+void gl_timestamp_write(rhi_query query)
+{
+    glQueryCounter(query->handle, GL_TIMESTAMP);
+    query->written = true;
+}
+
+b8 gl_timestamp_read(rhi_query query, uint64* out_nanoseconds)
+{
+    if (!query->written)
+        return false;
+
+    GLint available = 0;
+    glGetQueryObjectiv(query->handle, GL_QUERY_RESULT_AVAILABLE, &available);
+    if (!available)
+        return false;
+
+    GLuint64 value = 0;
+    glGetQueryObjectui64v(query->handle, GL_QUERY_RESULT, &value);
+    *out_nanoseconds = (uint64)value;
+    return true;
+}
+
+void gl_timestamp_destroy(rhi_query query)
+{
+    if (!query)
+        return;
+    glDeleteQueries(1, &query->handle);
+    free(query);
+}
+
 void gl_draw_indexed(rhi_buffer vertex_buffer, rhi_buffer index_buffer, uint32 index_count)
 {
     glBindVertexArray(vertex_buffer->vao);
@@ -126,6 +164,11 @@ void rhi_gl_get_backend(rhi_backend_api* out_api)
 
     out_api->set_render_state = gl_set_render_state;
     out_api->set_wireframe = gl_set_wireframe;
+
+    out_api->timestamp_create = gl_timestamp_create;
+    out_api->timestamp_write = gl_timestamp_write;
+    out_api->timestamp_read = gl_timestamp_read;
+    out_api->timestamp_destroy = gl_timestamp_destroy;
     out_api->draw_indexed = gl_draw_indexed;
 }
 

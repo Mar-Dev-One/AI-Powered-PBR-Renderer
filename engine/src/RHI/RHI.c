@@ -253,6 +253,26 @@ void rhi_set_wireframe(b8 enabled)
     backend.set_wireframe(enabled);
 }
 
+rhi_query rhi_timestamp_create(void)
+{
+    return backend.timestamp_create();
+}
+
+void rhi_timestamp_write(rhi_query query)
+{
+    backend.timestamp_write(query);
+}
+
+b8 rhi_timestamp_read(rhi_query query, uint64* out_nanoseconds)
+{
+    return backend.timestamp_read(query, out_nanoseconds);
+}
+
+void rhi_timestamp_destroy(rhi_query query)
+{
+    backend.timestamp_destroy(query);
+}
+
 void rhi_draw_indexed(rhi_buffer vertex_buffer, rhi_buffer index_buffer, uint32 index_count)
 {
     backend.draw_indexed(vertex_buffer, index_buffer, index_count);

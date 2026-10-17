@@ -162,6 +162,13 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     if (!post_create(&r->post, width, height))
         return false;
 
+    // Without timings the frame still renders: only the numbers are missing.
+    if (!gpu_profiler_create(&r->profiler))
+    {
+        LOG_WARN("scene_renderer_create: no GPU timestamp queries, so no GPU timings\n");
+        gpu_profiler_destroy(&r->profiler);
+    }
+
     return true;
 }
 
@@ -198,13 +205,17 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     // --- Shadow pass ---------------------------------------------------------
     // Before the HDR target is bound: csm_render() binds its own
     // framebuffers and leaves the default one bound when it's done.
+    gpu_profiler_begin_frame(&r->profiler);
+
     vec3 shadow_dir;
     b8   shadowed = settings->shadows && find_shadow_light(w, shadow_dir);
 
     if (shadowed)
     {
+        uint32 scope = gpu_profiler_begin(&r->profiler, "Shadows");
         csm_update(&r->csm, cam, shadow_dir, settings->cascade_split_lambda);
         csm_render(&r->csm, w);
+        gpu_profiler_end(&r->profiler, scope);
     }
 
     // --- Scene target + background ----------------------------------------------
@@ -216,7 +227,11 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     glm_mat4_mul(projection, view, view_projection);
 
     if (settings->ibl && settings->show_skybox && !debug_view_is_data(settings->debug_view))
+    {
+        uint32 scope = gpu_profiler_begin(&r->profiler, "Sky");
         ibl_draw_skybox(settings->ibl, view, projection, settings->sky_blur);
+        gpu_profiler_end(&r->profiler, scope);
+    }
 
     // Until finish_frame(): the world's geometry only, not the passes around it.
     if (settings->debug_view == SCENE_VIEW_WIREFRAME)
@@ -244,6 +259,7 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     if (!shadowed)
         rhi_shader_set_int(shader, "u_cascade_count", 0);
 
+    r->scene_scope = gpu_profiler_begin(&r->profiler, "Scene");
     return shader;
 }
 
@@ -252,8 +268,12 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
 static void
 finish_frame(scene_renderer* r, const scene_render_settings* settings, rhi_framebuffer target)
 {
+    gpu_profiler_end(&r->profiler, r->scene_scope);
     rhi_set_wireframe(false);
+
+    uint32 scope = gpu_profiler_begin(&r->profiler, "Post");
     post_end_scene_to(&r->post, settings->exposure, debug_view_is_data(settings->debug_view), target);
+    gpu_profiler_end(&r->profiler, scope);
 }
 
 void
@@ -373,6 +393,7 @@ scene_renderer_poll_hot_reload(scene_renderer* r)
 void
 scene_renderer_destroy(scene_renderer* r)
 {
+    gpu_profiler_destroy(&r->profiler);
     post_destroy(&r->post);
     csm_destroy(&r->csm);
 

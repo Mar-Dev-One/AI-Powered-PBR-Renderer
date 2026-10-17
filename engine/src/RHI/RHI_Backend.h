@@ -55,5 +55,10 @@ typedef struct rhi_backend_api
     void (*set_render_state)(rhi_render_state state);
     void (*set_wireframe)(b8 enabled);
 
+    rhi_query (*timestamp_create)(void);
+    void      (*timestamp_write)(rhi_query query);
+    b8        (*timestamp_read)(rhi_query query, uint64* out_nanoseconds);
+    void      (*timestamp_destroy)(rhi_query query);
+
     void (*draw_indexed)(rhi_buffer vertex_buffer, rhi_buffer index_buffer, uint32 index_count);
 } rhi_backend_api;

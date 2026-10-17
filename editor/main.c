@@ -118,6 +118,8 @@ typedef struct editor_state
     command_console console;
     inspector       inspector;      // the selected entity's fields; edits run as undoable commands
     b8              show_console;   // F1 toggles
+    b8              show_gpu_timings;
+    f32             cpu_frame_ms;   // smoothed, for the GPU timings window
 
     // Lets other processes (the MCP server, an agent, scripts) run the same
     // commands over a localhost WebSocket; see Net/CommandServer.h. NULL if
@@ -603,6 +605,29 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
 }
 
+// How long the last frames took: each render pass on the GPU (smoothed
+// over about 20 frames) and the whole frame on the CPU.
+static b8
+host_render_timings(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    (void)ctx; (void)args; (void)error; (void)error_size;
+    editor_state*       state    = user_data;
+    const gpu_profiler* profiler = &state->renderer.profiler;
+
+    *out_result = cJSON_CreateObject();
+    cJSON* passes = cJSON_AddArrayToObject(*out_result, "gpu_passes");
+    for (uint32 i = 0; i < profiler->timing_count; ++i)
+    {
+        cJSON* pass = cJSON_CreateObject();
+        cJSON_AddStringToObject(pass, "name", profiler->timings[i].name);
+        cJSON_AddItemToObject(pass, "ms", number_json(profiler->timings[i].ms));
+        cJSON_AddItemToArray(passes, pass);
+    }
+    cJSON_AddItemToObject(*out_result, "gpu_frame_ms", number_json(profiler->frame_ms));
+    cJSON_AddItemToObject(*out_result, "cpu_frame_ms", number_json(state->cpu_frame_ms));
+    return true;
+}
+
 // What the scene looks like right now, as a PNG -- rendered fresh,
 // without the editor's panels, so a model can see its own work.
 static b8
@@ -908,6 +933,8 @@ static const cmd_host_command HOST_COMMANDS[] = {
     { "view.set_camera",  "Moves the camera and/or what it looks at",                       HOST_ARGS(ARGS_SET_CAMERA),      false, host_view_set_camera },
     { "view.frame",       "Points the camera at an entity (or everything) so it fills the view", HOST_ARGS(ARGS_FRAME),     false, host_view_frame },
     { "render.set",       "Exposure, ambient strength and debug views",                      HOST_ARGS(ARGS_RENDER_SET),      false, host_render_set },
+    { "render.timings",   "How long each render pass takes on the GPU, and the frame on the CPU, in ms",
+                                                                                               NULL, 0,                         false, host_render_timings },
     { "view.screenshot",  "The scene as a PNG (base64), rendered now without the editor's panels -- to check how it looks",
                                                                                                HOST_ARGS(ARGS_SCREENSHOT),      false, host_view_screenshot },
     { "project.info",     "The open project: name, folder, startup scene, the scene being edited and whether it has unsaved changes",
@@ -2169,6 +2196,7 @@ draw_main_menu(editor_state* state)
     if (igBeginMenu("View", true))
     {
         igMenuItem_BoolPtr("Console", "F1", &state->show_console, true);
+        igMenuItem_BoolPtr("GPU timings", NULL, &state->show_gpu_timings, true);
         igMenuItem_BoolPtr("Shadow cascades (debug)", NULL, &state->debug_show_cascades, true);
         if (igBeginMenu("Debug view", true))
         {
@@ -2924,6 +2952,38 @@ fit_view_target(editor_state* state, uint16 width, uint16 height)
 // view_target and shown as an image, with the selection outline and the
 // gizmo on top and the mouse controls (view_input()) over it. Docked into
 // the main area the first time.
+// View > GPU timings: each pass of the Viewport's frame on the GPU, as a
+// number and a bar against the whole GPU frame, then the CPU frame time.
+static void
+draw_gpu_timings(editor_state* state)
+{
+    if (!igBegin("GPU timings", &state->show_gpu_timings, 0))
+    {
+        igEnd();
+        return;
+    }
+
+    const gpu_profiler* profiler = &state->renderer.profiler;
+    if (profiler->timing_count == 0)
+        igTextDisabled("No timings yet (or no GPU timestamp support).");
+
+    for (uint32 i = 0; i < profiler->timing_count; ++i)
+    {
+        const gpu_timing* t = &profiler->timings[i];
+        igText("%-8s %6.2f ms", t->name, (double)t->ms);
+        igSameLine(0.0f, -1.0f);
+        f32 fraction = profiler->frame_ms > 0.0f ? t->ms / profiler->frame_ms : 0.0f;
+        igProgressBar(fraction, (ImVec2_c){ -1.0f, 0.0f }, "");
+    }
+
+    igSeparator();
+    igText("GPU frame %6.2f ms", (double)profiler->frame_ms);
+    igText("CPU frame %6.2f ms (%.0f fps)", (double)state->cpu_frame_ms,
+           state->cpu_frame_ms > 0.0f ? 1000.0 / (double)state->cpu_frame_ms : 0.0);
+    igTextDisabled("Averaged over about 20 frames. The Viewport only.");
+    igEnd();
+}
+
 static void
 draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt)
 {
@@ -3009,6 +3069,10 @@ static void on_frame(App* app, f32 dt)
 {
     editor_state* state = (editor_state*)app->user_data;
 
+    // Smoothed like the GPU timings (GpuProfiler.c), to compare with them.
+    f32 frame_ms        = dt * 1000.0f;
+    state->cpu_frame_ms = state->cpu_frame_ms > 0.0f ? state->cpu_frame_ms + (frame_ms - state->cpu_frame_ms) * 0.1f : frame_ms;
+
     validate_selection(state);
 
     // Picks up edits to pbr.vert/pbr.frag saved while the app runs.
@@ -3063,6 +3127,8 @@ static void on_frame(App* app, f32 dt)
     state->reveal_selection = false;
     if (state->show_console)
         console_draw(&state->console, active, "Console (F1)");
+    if (state->show_gpu_timings)
+        draw_gpu_timings(state);
 
     if (chat_panel_draw(&state->chat_panel, &state->chat, active, "Chat", state->agent_note) == CHAT_PANEL_START_AGENT
         && state->server)

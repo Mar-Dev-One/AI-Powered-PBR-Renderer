@@ -50,6 +50,12 @@ struct rhi_framebuffer
     uint16       height;
 };
 
+struct rhi_query
+{
+    GLuint handle;    // a GL_TIMESTAMP query
+    b8     written;   // glQueryCounter() has run at least once (reading one that hasn't is an error)
+};
+
 // --- RHI_GL.c (device) ---------------------------------------------------
 b8   gl_init(rhi_proc_loader loader);
 void gl_shutdown(void);
@@ -57,6 +63,11 @@ void gl_set_viewport(uint16 x, uint16 y, uint16 width, uint16 height);
 void gl_clear(f32 r, f32 g, f32 b, f32 a);
 void gl_set_render_state(rhi_render_state state);
 void gl_set_wireframe(b8 enabled);
+
+rhi_query gl_timestamp_create(void);
+void      gl_timestamp_write(rhi_query query);
+b8        gl_timestamp_read(rhi_query query, uint64* out_nanoseconds);
+void      gl_timestamp_destroy(rhi_query query);
 void gl_draw_indexed(rhi_buffer vertex_buffer, rhi_buffer index_buffer, uint32 index_count);
 
 // The most recent viewport passed to gl_set_viewport(). This is what the
