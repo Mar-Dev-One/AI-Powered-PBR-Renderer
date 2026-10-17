@@ -24,8 +24,9 @@ building the export.
    through the first Camera entity. A toolbar toggle to see what the player will see.
 4. **Exercise the in-app agent against the live Claude API.** Its loop is only tested with a
    scripted model (Phase 5).
-5. **Trim the export's runtime DLLs.** Since the library split the game has no C++ code, so it
-   imports only `VCRUNTIME140.dll`; Export still copies all of `msvcp140*.dll` too.
+5. ~~**Trim the export's runtime DLLs.** Since the library split the game has no C++ code, so it
+   imports only `VCRUNTIME140.dll`; Export still copies all of `msvcp140*.dll` too.~~ Done:
+   `editor/CMakeLists.txt` lets only `vcruntime140.dll` through (8 DLLs before).
 6. **Editor polish:** a native folder picker for New/Open Project, Import and Export (paths are
    typed today); an agent's `scene.save` should update the editor's saved state, so the title
    loses its `*`.

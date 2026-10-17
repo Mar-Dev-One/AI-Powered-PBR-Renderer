@@ -20,10 +20,16 @@ target_compile_definitions(Editor PRIVATE
     GAME_EXE_IS_DEBUG=$<CONFIG:Debug>
     GAME_RELEASE_EXE="$<TARGET_FILE_DIR:Game>/../Release/$<TARGET_FILE_NAME:Game>")
 
-# The C++ runtime DLLs a Release build needs on a PC that may not have them
-# (vcruntime140.dll, msvcp140.dll, ...), as CMake finds them for this
-# compiler; Export copies them next to the game ('|'-separated).
+# The runtime DLLs a Release game needs on a PC that may not have them, as
+# CMake finds them for this compiler; Export copies them next to the game
+# ('|'-separated). The game is C only, so it imports just vcruntime140.dll
+# (the rest of the C runtime, api-ms-win-crt-*, is part of Windows 10 and
+# later): the C++ library (msvcp140*.dll, concrt140.dll) and C++ exception
+# support (vcruntime140_1.dll) stay out. Should the game gain C++ code,
+# `dumpbin /dependents Game.exe` lists what to let through.
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
 include(InstallRequiredSystemLibraries)
-string(REPLACE ";" "|" GAME_RUNTIME_DLLS "${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}")
+set(GAME_RUNTIME_DLL_LIST ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS})
+list(FILTER GAME_RUNTIME_DLL_LIST INCLUDE REGEX "/vcruntime140\\.dll$")
+string(REPLACE ";" "|" GAME_RUNTIME_DLLS "${GAME_RUNTIME_DLL_LIST}")
 target_compile_definitions(Editor PRIVATE GAME_RUNTIME_DLLS="${GAME_RUNTIME_DLLS}")
