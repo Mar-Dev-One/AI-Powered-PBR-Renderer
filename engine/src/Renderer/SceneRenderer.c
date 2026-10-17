@@ -19,6 +19,7 @@ scene_render_settings_default(void)
         .ambient_strength     = 0.5f,
         .exposure             = 1.0f,
         .bloom                = 0.04f,
+        .fxaa                 = true,
         .shadows              = true,
         .cascade_split_lambda = 0.5f,
         .debug_show_cascades  = false,
@@ -125,10 +126,12 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     static const char* const pbr_files[]    = { PBR_VERTEX_PATH, PBR_FRAGMENT_PATH };
     static const char* const post_files[]   = { POST_VERTEX_PATH, POST_FRAGMENT_PATH };
     static const char* const bloom_files[]  = { POST_VERTEX_PATH, POST_BLOOM_DOWN_PATH, POST_BLOOM_UP_PATH };
+    static const char* const fxaa_files[]   = { POST_VERTEX_PATH, POST_FXAA_PATH };
     static const char* const shadow_files[] = { CSM_VERTEX_PATH, CSM_FRAGMENT_PATH };
     file_watch_init(&r->pbr_files, pbr_files, 2);
     file_watch_init(&r->post_files, post_files, 2);
     file_watch_init(&r->bloom_files, bloom_files, 3);
+    file_watch_init(&r->fxaa_files, fxaa_files, 2);
     file_watch_init(&r->shadow_files, shadow_files, 2);
 
     r->pbr_shader = build_pbr_shader();
@@ -257,6 +260,7 @@ finish_frame(scene_renderer* r, const scene_render_settings* settings, rhi_frame
         .exposure = settings->exposure,
         .raw      = debug_view_is_data(settings->debug_view),
         .bloom    = settings->bloom,
+        .fxaa     = settings->fxaa,
     };
 
     if (post.bloom > 0.0f && !post.raw)
@@ -377,7 +381,8 @@ scene_renderer_reload_shaders(scene_renderer* r)
     b8 post   = shader_rebuild(&r->post.tonemap_shader, POST_VERTEX_PATH, POST_FRAGMENT_PATH, NULL);
     b8 shadow = shader_rebuild(&r->csm.depth_shader, CSM_VERTEX_PATH, CSM_FRAGMENT_PATH, NULL);
     b8 bloom  = reload_bloom(r);
-    return pbr && post && shadow && bloom;
+    b8 fxaa   = shader_rebuild(&r->post.fxaa_shader, POST_VERTEX_PATH, POST_FXAA_PATH, NULL);
+    return pbr && post && shadow && bloom && fxaa;
 }
 
 void
@@ -389,6 +394,8 @@ scene_renderer_poll_hot_reload(scene_renderer* r)
         shader_rebuild(&r->post.tonemap_shader, POST_VERTEX_PATH, POST_FRAGMENT_PATH, NULL);
     if (file_watch_changed(&r->bloom_files))
         reload_bloom(r);
+    if (file_watch_changed(&r->fxaa_files))
+        shader_rebuild(&r->post.fxaa_shader, POST_VERTEX_PATH, POST_FXAA_PATH, NULL);
     if (file_watch_changed(&r->shadow_files))
         shader_rebuild(&r->csm.depth_shader, CSM_VERTEX_PATH, CSM_FRAGMENT_PATH, NULL);
 }

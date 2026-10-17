@@ -10,7 +10,11 @@
 // exposure, ACES tone mapping and gamma (engine/shaders/tonemap.frag).
 // Keeping tone mapping out of the per-object shaders means blended materials
 // blend in linear HDR space, and leaves a single place for later post
-// effects (AA, auto-exposure) to hook into.
+// effects (auto-exposure) to hook into.
+//
+// Anti-aliasing (post_settings.fxaa): tone mapping writes into an RGBA8
+// target with each pixel's luma in alpha instead, and fxaa.frag smooths its
+// edges into the final picture.
 //
 // Bloom (post_bloom(), between the two): the scene is halved down a chain
 // of up to POST_BLOOM_MAX_MIPS targets (bloom_downsample.frag) and blurred
@@ -24,6 +28,7 @@
 #define POST_FRAGMENT_PATH        "shaders/tonemap.frag"
 #define POST_BLOOM_DOWN_PATH      "shaders/bloom_downsample.frag"
 #define POST_BLOOM_UP_PATH        "shaders/bloom_upsample.frag"
+#define POST_FXAA_PATH            "shaders/fxaa.frag"
 
 #define POST_BLOOM_MAX_MIPS 6
 
@@ -44,6 +49,9 @@ typedef struct post_process
     uint16          bloom_heights[POST_BLOOM_MAX_MIPS];
     uint32          bloom_mip_count;
     b8              bloom_ready;    // post_bloom() ran since post_begin_scene()
+
+    rhi_shader      fxaa_shader;
+    rhi_framebuffer ldr_target;     // RGBA8, window-sized: the tone-mapped picture FXAA reads
 } post_process;
 
 // How post_end_scene() turns the scene into the picture.
@@ -52,6 +60,7 @@ typedef struct post_settings
     f32 exposure;
     b8  raw;     // a debug view's data (0..1): gamma only -- no bloom, exposure or ACES
     f32 bloom;   // 0 (none) .. 1: how much of the blurred scene is mixed in; needs post_bloom() first
+    b8  fxaa;    // smooth jagged edges (not with raw: a data view's values stay exact)
 } post_settings;
 
 // Loads the shaders and allocates a width x height scene target (and its
@@ -74,7 +83,8 @@ void post_begin_scene(post_process* post, f32 r, f32 g, f32 b);
 void post_bloom(post_process* post);
 
 // Binds the default framebuffer and resolves the scene target onto it:
-// mix(color, bloom, settings.bloom) * exposure -> ACES -> gamma 2.2. Leaves
+// mix(color, bloom, settings.bloom) * exposure -> ACES -> gamma 2.2, then
+// FXAA if settings.fxaa. Leaves
 // the default render state active, so UI drawn afterwards lands on top of
 // the tone-mapped image.
 void post_end_scene(post_process* post, const post_settings* settings);

@@ -14,6 +14,7 @@ uniform float     u_bloom_strength;   // 0 = none
 uniform float     u_bloom_scale;      // 1 / the chain's levels: u_bloom holds every level's blur added up
 uniform float     u_exposure;
 uniform int       u_raw;        // a debug view's data (0..1): gamma only, no exposure or ACES
+uniform int       u_luma_alpha; // write the pixel's luma to alpha, for fxaa.frag (otherwise alpha = 1)
 
 // Narkowicz's fit of the ACES filmic curve.
 vec3 aces_tonemap(vec3 x)
@@ -33,5 +34,8 @@ void main()
     color = u_raw != 0 ? clamp(color, 0.0, 1.0) : aces_tonemap(color * u_exposure);
     color = pow(color, vec3(1.0 / 2.2));
 
-    frag_color = vec4(color, 1.0);
+    // FXAA finds edges by luma, measured on the gamma-encoded picture as
+    // the eye sees it.
+    float alpha = u_luma_alpha != 0 ? dot(color, vec3(0.299, 0.587, 0.114)) : 1.0;
+    frag_color = vec4(color, alpha);
 }

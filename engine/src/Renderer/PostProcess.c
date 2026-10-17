@@ -39,6 +39,19 @@ create_scene_target(uint16 width, uint16 height)
     });
 }
 
+static rhi_framebuffer
+create_ldr_target(uint16 width, uint16 height)
+{
+    rhi_framebuffer_attachment color = { .format = RHI_FORMAT_RGBA8 };
+
+    return rhi_framebuffer_create((rhi_framebuffer_desc){
+        .width                  = width,
+        .height                 = height,
+        .color_attachments      = &color,
+        .color_attachment_count = 1,
+    });
+}
+
 static rhi_shader
 load_shader(const char* vertex, const char* fragment)
 {
@@ -95,7 +108,8 @@ post_create(post_process* post, uint16 width, uint16 height)
     post->tonemap_shader    = load_shader(POST_VERTEX_PATH, POST_FRAGMENT_PATH);
     post->bloom_down_shader = load_shader(POST_VERTEX_PATH, POST_BLOOM_DOWN_PATH);
     post->bloom_up_shader   = load_shader(POST_VERTEX_PATH, POST_BLOOM_UP_PATH);
-    if (!post->tonemap_shader || !post->bloom_down_shader || !post->bloom_up_shader)
+    post->fxaa_shader       = load_shader(POST_VERTEX_PATH, POST_FXAA_PATH);
+    if (!post->tonemap_shader || !post->bloom_down_shader || !post->bloom_up_shader || !post->fxaa_shader)
         return false;
 
     rhi_vertex_attribute position = { .location = 0, .component_count = 2, .offset = 0 };
@@ -109,6 +123,7 @@ post_create(post_process* post, uint16 width, uint16 height)
     post->width        = width  ? width  : 1;
     post->height       = height ? height : 1;
     post->scene_target = create_scene_target(post->width, post->height);
+    post->ldr_target   = create_ldr_target(post->width, post->height);
     create_bloom_chain(post);
 
     return true;
@@ -124,11 +139,13 @@ post_resize(post_process* post, uint16 width, uint16 height)
         return;
 
     rhi_framebuffer_destroy(post->scene_target);
+    rhi_framebuffer_destroy(post->ldr_target);
     destroy_bloom_chain(post);
 
     post->width        = width;
     post->height       = height;
     post->scene_target = create_scene_target(width, height);
+    post->ldr_target   = create_ldr_target(width, height);
     create_bloom_chain(post);
 }
 
@@ -214,7 +231,12 @@ post_end_scene_to(post_process* post, const post_settings* settings, rhi_framebu
     if (!post->scene_target)
         return;
 
-    if (target)
+    // With FXAA, tone mapping goes to the LDR target first, and FXAA from
+    // there to `target`.
+    b8 fxaa = settings->fxaa && !settings->raw && post->ldr_target;
+    if (fxaa)
+        rhi_framebuffer_bind(post->ldr_target);
+    else if (target)
         rhi_framebuffer_bind(target);
     else
         rhi_framebuffer_bind_default();
@@ -233,6 +255,7 @@ post_end_scene_to(post_process* post, const post_settings* settings, rhi_framebu
     rhi_shader_set_int(shader, "u_bloom", POST_SLOT_BLOOM);
     rhi_shader_set_float(shader, "u_exposure", settings->exposure);
     rhi_shader_set_int(shader, "u_raw", settings->raw);
+    rhi_shader_set_int(shader, "u_luma_alpha", fxaa);
     rhi_shader_set_float(shader, "u_bloom_strength", bloom ? settings->bloom : 0.0f);
     rhi_shader_set_float(shader, "u_bloom_scale", post->bloom_mip_count ? 1.0f / (f32)post->bloom_mip_count : 0.0f);
     rhi_texture_bind(rhi_framebuffer_get_color_texture(post->scene_target, 0), POST_SLOT_SCENE);
@@ -240,6 +263,20 @@ post_end_scene_to(post_process* post, const post_settings* settings, rhi_framebu
         rhi_texture_bind(rhi_framebuffer_get_color_texture(post->bloom_mips[0], 0), POST_SLOT_BLOOM);
 
     draw_triangle(post);
+
+    if (fxaa)
+    {
+        if (target)
+            rhi_framebuffer_bind(target);
+        else
+            rhi_framebuffer_bind_default();
+
+        rhi_shader_bind(post->fxaa_shader);
+        rhi_shader_set_int(post->fxaa_shader, "u_source", POST_SLOT_SCENE);
+        rhi_shader_set_vec2(post->fxaa_shader, "u_texel", 1.0f / (f32)post->width, 1.0f / (f32)post->height);
+        rhi_texture_bind(rhi_framebuffer_get_color_texture(post->ldr_target, 0), POST_SLOT_SCENE);
+        draw_triangle(post);
+    }
 
     rhi_set_render_state(rhi_render_state_default());
 }
@@ -249,6 +286,8 @@ post_destroy(post_process* post)
 {
     if (post->scene_target)
         rhi_framebuffer_destroy(post->scene_target);
+    if (post->ldr_target)
+        rhi_framebuffer_destroy(post->ldr_target);
     destroy_bloom_chain(post);
     if (post->triangle_vertices)
         rhi_buffer_destroy(post->triangle_vertices);
@@ -260,6 +299,8 @@ post_destroy(post_process* post)
         rhi_shader_destroy(post->bloom_down_shader);
     if (post->bloom_up_shader)
         rhi_shader_destroy(post->bloom_up_shader);
+    if (post->fxaa_shader)
+        rhi_shader_destroy(post->fxaa_shader);
 
     memset(post, 0, sizeof(*post));
 }

@@ -147,6 +147,7 @@ typedef struct editor_state
     scene_renderer renderer;
     b8             debug_show_cascades;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
     scene_debug_view debug_view;          // lit, or one input to the shading (SceneRenderer.h)
+    b8             no_fxaa;               // anti-aliasing turned off (View menu, render.set); on by default
 
     // --- Image-based lighting -------------------------------------------------
     // doc.env (World/Environment.h) is the single source of truth for the
@@ -492,6 +493,7 @@ host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
     cJSON_AddItemToObject(*out_result, "ambient_strength", number_json(state->doc.env.ambient_strength));
     cJSON_AddItemToObject(*out_result, "bloom", number_json(state->doc.env.bloom));
     cJSON_AddStringToObject(*out_result, "debug_view", scene_debug_view_name(state->debug_view));
+    cJSON_AddBoolToObject(*out_result, "fxaa", !state->no_fxaa);
     return true;
 }
 
@@ -585,14 +587,15 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     const cJSON* bloom    = cJSON_GetObjectItem(args, "bloom");
     const cJSON* cascades = cJSON_GetObjectItem(args, "debug_show_cascades");
     const cJSON* view     = cJSON_GetObjectItem(args, "debug_view");
+    const cJSON* fxaa     = cJSON_GetObjectItem(args, "fxaa");
 
     if ((exposure && (!cJSON_IsNumber(exposure) || exposure->valuedouble <= 0.0 || exposure->valuedouble > 16.0))
         || (ambient && (!cJSON_IsNumber(ambient) || ambient->valuedouble < 0.0 || ambient->valuedouble > 4.0))
         || (bloom && (!cJSON_IsNumber(bloom) || bloom->valuedouble < 0.0 || bloom->valuedouble > 1.0))
-        || (cascades && !cJSON_IsBool(cascades)))
+        || (cascades && !cJSON_IsBool(cascades)) || (fxaa && !cJSON_IsBool(fxaa)))
     {
         snprintf(error, error_size, "exposure must be in (0, 16], ambient_strength in [0, 4], bloom in [0, 1], "
-                                    "debug_show_cascades true/false");
+                                    "debug_show_cascades and fxaa true/false");
         return false;
     }
 
@@ -608,6 +611,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     if (ambient)  state->doc.env.ambient_strength = (f32)ambient->valuedouble;
     if (bloom)    state->doc.env.bloom            = (f32)bloom->valuedouble;
     if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
+    if (fxaa)     state->no_fxaa             = !cJSON_IsTrue(fxaa);
     state->debug_view = debug_view;
 
     return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
@@ -984,6 +988,7 @@ static const cmd_arg ARGS_RENDER_SET[] = {
     { "bloom",               "number",  false, "How much bright light spreads into its surroundings, 0 (none) to 1; "
                                                 "0.04 is subtle, 0.1 strong" },
     { "debug_show_cascades", "boolean", false, "Tint shading by shadow cascade" },
+    { "fxaa",                "boolean", false, "Anti-aliasing: smooth jagged edges (default true)" },
     { "debug_view",          "string",  false, "What the view shows: lit (normal), or one input to the shading -- albedo, "
                                                 "normals, roughness, metallic, ao, shadow, lighting (white surfaces), "
                                                 "wireframe" },
@@ -2271,6 +2276,8 @@ draw_main_menu(editor_state* state)
         igMenuItem_BoolPtr("GPU timings", NULL, &state->show_gpu_timings, true);
         igMenuItem_BoolPtr("Log", NULL, &state->show_log, true);
         igMenuItem_BoolPtr("Shadow cascades (debug)", NULL, &state->debug_show_cascades, true);
+        if (igMenuItem_Bool("Anti-aliasing (FXAA)", NULL, !state->no_fxaa, true))
+            state->no_fxaa = !state->no_fxaa;
         if (igBeginMenu("Debug view", true))
         {
             for (int v = 0; v < SCENE_VIEW_COUNT; ++v)
@@ -2958,6 +2965,7 @@ build_render_settings(const editor_state* state)
     scene_render_settings_apply_environment(&settings, &state->doc.env, ibl_cache_maps(&state->ibl));
     settings.debug_show_cascades = state->debug_show_cascades;
     settings.debug_view          = state->debug_view;
+    settings.fxaa                = !state->no_fxaa;
 
     // Where nothing (not even the skybox) is drawn -- a scene without an
     // HDRI: a neutral dark grey, so an empty background never reads as an
