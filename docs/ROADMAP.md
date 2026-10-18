@@ -4,9 +4,10 @@ Two tracks: the **AI scene builder** (describe a scene in chat, from Claude Desk
 chat panel inside the app, and have it built) and the **renderer/editor features** around it.
 The AI track drives the order; renderer features slot in where they help it.
 
-_Updated 2026-10-16._ Where things stand: the AI scene builder (Phases 1-5) works from Claude
+_Updated 2026-10-18._ Where things stand: the AI scene builder (Phases 1-5) works from Claude
 Desktop/Code and from the in-app chat. The editor opens projects, edits their scenes in a Viewport
-panel, plays them in place, and exports a game a player can run (Stages 1-4 below).
+panel, plays them in place, and exports a game a player can run (Stages 1-4 below). The renderer
+work under "Engine roadmap" has phases 1-3 done; its follow-ups and phases 4-7 are saved for later.
 
 ## Next up
 
@@ -352,6 +353,70 @@ server code, unused: the Release game is 1.7 MB); a pixel comparison against sav
 images (the check only proves the scene loads and renders); scene switching in the game.
 - [ ] Later: zip the export; cache baked IBL maps in the export so the game doesn't bake at
       startup; scene switching in the game (a component or a startup list)
+
+## Engine roadmap
+
+The renderer and runtime work, numbered as it was planned on 2026-10-18. Phases 1-3 are done
+(details under "Feature roadmap" below); the rest is saved for later. **Resume with "Follow-ups"
+or phase 4.**
+
+### Done
+
+- **1. Seeing what the renderer does:** 1.1 debug views, 1.2 GPU timers per pass, 1.3 golden-image
+  tests (`tests/golden_tests.c`), 1.4 in-app log window, 1.5 hot reload for every shader.
+- **2. Image quality:** 2.1 bloom, 2.2 `KHR_materials_emissive_strength` (was already in), 2.3 FXAA,
+  2.4 AgX and Khronos PBR Neutral tone mapping, 2.5 auto-exposure, 2.6 SSAO (with a depth
+  pre-pass), 2.7 TAA.
+- **3. Lighting:** 3.1 spot light shadows, 3.2 point light shadows, 3.3 per-frame data in uniform
+  buffers, 3.4 clustered forward lighting (up to 1024 lights), 3.5 reflection probes.
+
+### Follow-ups found along the way
+
+Smallest and most useful first.
+
+- **Shadow map cache:** re-render a spot or point light's maps only when something in its range
+  moves. The sample scene's four shadowed point lamps redraw the whole village 24 times a frame
+  (about 3.5 ms); most scenes are static.
+- **Tighter light-to-cluster test:** test each light's sphere against each cluster's box rather than
+  its screen rectangle; dense scenes still put 32+ lights in many clusters.
+- **Half-resolution SSAO:** about 2.4 ms of the 4.4 ms SSAO costs at full resolution.
+- **Per-object motion vectors for TAA:** moving entities (`Spin`) aren't tracked, only the camera.
+- **2D texture arrays (or bindless textures) in the RHI:** all 16 guaranteed texture units are
+  used; cube map arrays exist already.
+- **Reflection probes:** probe-based diffuse lighting (irradiance), rotated boxes, more than 8.
+
+### 4. Larger scenes
+
+- 4.1 Frustum culling from the entities' `Bounds`.
+- 4.2 Instancing for repeated models.
+- 4.3 Transparency sorting across all entities, not just within one model.
+- 4.4 Async HDRI loading and baking, so changing the environment no longer freezes the editor and
+  chat.
+- 4.5 Baked IBL maps cached in exports, so the game doesn't bake at startup.
+
+### 5. Animation
+
+- 5.1 glTF skinning and animation playback: an `Animator` component.
+- 5.2 Play / loop / speed commands, so the agent can use animations.
+- 5.3 Morph targets.
+
+### 6. Game runtime (only if this should become a game engine)
+
+- 6.1 Input actions: named actions mapped to keys and gamepad buttons.
+- 6.2 A first-person / fly camera controller, so a player can walk through the scene.
+- 6.3 Audio with miniaudio (a single-file C library): an `AudioSource` component.
+- 6.4 Physics with Jolt through its C wrapper (JoltC): rigid bodies, colliders, raycasts.
+- 6.5 Scripting, most likely Lua, for behaviours beyond `Spin`.
+
+Decide first whether this is an AI scene builder with a polished renderer or a game engine: for a
+scene builder, phases 4-5 are the engine work and phase 6 can wait.
+
+### 7. Materials (whenever needed)
+
+- 7.1 `KHR_texture_transform` and a second UV set.
+- 7.2 Clearcoat.
+- 7.3 Transmission / IOR.
+- 7.4 Sheen and anisotropy.
 
 ## Feature roadmap
 
