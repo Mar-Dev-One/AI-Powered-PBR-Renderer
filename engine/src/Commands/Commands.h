@@ -39,6 +39,22 @@
 // (including undo, redo and rollbacks). `event` is only valid during the call.
 typedef void (*cmd_change_fn)(void* user_data, const cJSON* event);
 
+// What happened to a scene file, for cmd_scene_file_fn.
+typedef enum cmd_scene_file_op
+{
+    CMD_SCENE_SAVED,    // the world and environment were written to the file
+    CMD_SCENE_LOADED    // the file replaced the world and environment (a merging load isn't reported)
+} cmd_scene_file_op;
+
+// Called once a scene.save or a replacing scene.load has succeeded and
+// finished -- revision bumped, undo step recorded -- from whoever ran it (the
+// console, a script, the agent), so an app can track which file the world
+// matches. `name` is the scene's name (scenes/<name>.json), only valid during
+// the call. Not called for commands inside a batch: the batch could still
+// fail and take a load back.
+typedef void (*cmd_scene_file_fn)(void* user_data, struct command_context* ctx, cmd_scene_file_op op,
+                                  const char* name);
+
 // One argument of a command, as commands.list reports it.
 typedef struct cmd_arg
 {
@@ -75,6 +91,7 @@ typedef struct command_context
     uint64           revision;         // bumped once per change to the world
     cmd_change_fn    on_change;        // optional
     void*            on_change_user;
+    cmd_scene_file_fn on_scene_file;   // optional; called with on_change_user
 
     const cmd_host_command* host_commands;   // optional application commands
     uint32                  host_command_count;

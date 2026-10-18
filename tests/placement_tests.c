@@ -251,6 +251,51 @@ test_scene_files(void)
     CHECK(world_count(&g_world) == count);
 }
 
+// on_scene_file: what the editor follows to know which file the scene
+// matches, whoever saved or loaded it.
+static int               g_file_calls;
+static cmd_scene_file_op g_file_op;
+static char              g_file_name[64];
+static uint32            g_file_cursor;   // the history cursor when it was called
+
+static void
+record_scene_file(void* user_data, command_context* ctx, cmd_scene_file_op op, const char* name)
+{
+    (void)user_data;
+    ++g_file_calls;
+    g_file_op     = op;
+    g_file_cursor = ctx->history->cursor;
+    snprintf(g_file_name, sizeof(g_file_name), "%s", name);
+}
+
+static void
+test_scene_file_hook(void)
+{
+    g_ctx.on_scene_file = record_scene_file;
+    g_file_calls        = 0;
+
+    CHECK(run("{\"cmd\":\"scene.save\",\"args\":{\"name\":\"hooked\"}}"));
+    CHECK(g_file_calls == 1 && g_file_op == CMD_SCENE_SAVED && strcmp(g_file_name, "hooked") == 0);
+
+    // A replacing load is reported once its undo step is recorded...
+    uint32 cursor = g_history.cursor;
+    CHECK(run("{\"cmd\":\"scene.load\",\"args\":{\"name\":\"hooked\"}}"));
+    CHECK(g_file_calls == 2 && g_file_op == CMD_SCENE_LOADED && strcmp(g_file_name, "hooked") == 0);
+    CHECK(g_file_cursor == g_history.cursor && g_history.cursor == cursor + 1);
+
+    // ...a merging one isn't (the world matches no file), nor a failed command...
+    CHECK(run("{\"cmd\":\"scene.load\",\"args\":{\"name\":\"hooked\",\"replace\":false}}"));
+    CHECK(!run("{\"cmd\":\"scene.save\",\"args\":{\"name\":\"../evil\"}}"));
+    CHECK(g_file_calls == 2);
+
+    // ...nor anything inside a batch, which could still fail and take it back.
+    CHECK(run("{\"cmd\":\"batch\",\"args\":{\"commands\":[{\"cmd\":\"scene.save\",\"args\":{\"name\":\"hooked\"}}]}}"));
+    CHECK(g_file_calls == 2);
+
+    CHECK(run("{\"cmd\":\"history.undo\"}"));   // the merge
+    g_ctx.on_scene_file = NULL;
+}
+
 // The environment travels with the scene: saved by scene.save, restored by a
 // replacing scene.load, left alone by a merging one, and a bad one fails the
 // load before the world is touched.
@@ -364,6 +409,7 @@ main(void)
     test_place_model_errors();
     test_entity_place();
     test_scene_files();
+    test_scene_file_hook();
     test_host_commands();
     test_scene_environment();   // last: it replaces the world
 

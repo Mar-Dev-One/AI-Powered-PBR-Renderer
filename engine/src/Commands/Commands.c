@@ -23,6 +23,12 @@ typedef struct cmd_output
     cJSON*      result;
     const char* error_code;
     char        error[1024];
+
+    // Set by scene.save and a replacing scene.load: reported to
+    // command_context.on_scene_file once the command has finished.
+    b8                scene_file;
+    cmd_scene_file_op scene_file_op;
+    const char*       scene_file_name;   // the "name" argument
 } cmd_output;
 
 typedef b8 (*cmd_handler)(command_context* ctx, const cJSON* args, cmd_output* out);
@@ -1323,6 +1329,9 @@ cmd_scene_save(command_context* ctx, const cJSON* args, cmd_output* out)
     out->result = cJSON_CreateObject();
     cJSON_AddStringToObject(out->result, "name", name);
     cJSON_AddNumberToObject(out->result, "entities", world_count(ctx->w));
+    out->scene_file      = true;
+    out->scene_file_op   = CMD_SCENE_SAVED;
+    out->scene_file_name = name;
     return true;
 }
 
@@ -1417,6 +1426,12 @@ cmd_scene_load(command_context* ctx, const cJSON* args, cmd_output* out)
     free(created);
 
     cJSON_AddNumberToObject(out->result, "loaded", loaded);
+    if (replace)
+    {
+        out->scene_file      = true;
+        out->scene_file_op   = CMD_SCENE_LOADED;
+        out->scene_file_name = name;
+    }
     return true;
 }
 
@@ -1764,6 +1779,9 @@ cmd_execute(command_context* ctx, const cJSON* request)
         else
             free(changes);
     }
+
+    if (out.scene_file && ctx->on_scene_file && ctx->batch_depth == 0)
+        ctx->on_scene_file(ctx->on_change_user, ctx, out.scene_file_op, out.scene_file_name);
 
     cJSON_Delete(empty);
     return response;

@@ -82,6 +82,17 @@ on_world_change(void* user_data, const cJSON* event)
     }
 }
 
+void
+on_scene_file(void* user_data, command_context* ctx, cmd_scene_file_op op, const char* name)
+{
+    editor_state* state = user_data;
+    if (ctx != &state->doc.commands)
+        return;   // Play's copy: never saved, and loading into it renames nothing
+    doc_scene_file(&state->doc, op, name);
+    if (op == CMD_SCENE_LOADED)
+        state->look_through = ENTITY_NULL;   // a Camera of the scene that was replaced
+}
+
 cJSON*
 number_json(f32 value)
 {

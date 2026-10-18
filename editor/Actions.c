@@ -131,6 +131,7 @@ undo_or_redo(editor_state* state, b8 redo)
         console_info(&state->console, message);
     cJSON_Delete(parsed);
     cJSON_free(reply);
+    doc_follow_history(&state->doc);   // undone past a load: the old scene's name again
     return ok;
 }
 
@@ -495,13 +496,11 @@ save_scene_as(editor_state* state, const char* name)
     finish_edits(state);
     cJSON* args = cJSON_CreateObject();
     cJSON_AddStringToObject(args, "name", name);
-    if (!run_ok(state, "scene.save", args))
+    if (!run_ok(state, "scene.save", args))   // on_scene_file() marks the document saved
     {
         snprintf(state->popup_error, sizeof(state->popup_error), "Couldn't save; the console says why.");
         return false;
     }
-
-    doc_mark_saved(&state->doc, name);
 
     char line[PROJECT_SCENE_MAX + 32];
     snprintf(line, sizeof(line), "Saved scene %s", name);

@@ -320,6 +320,10 @@ const cmd_host_command* editor_host_commands(uint32* out_count);
 // on_change: shows a change in the console, and pushes it to connected clients.
 void on_world_change(void* user_data, const cJSON* event);
 
+// on_scene_file: a scene.save or replacing scene.load of the edited scene,
+// run by anyone -- the document now matches that file (SceneDocument.h).
+void on_scene_file(void* user_data, command_context* ctx, cmd_scene_file_op op, const char* name);
+
 // f32 -> JSON number at 4 significant digits, so 1.3f reads 1.3 rather
 // than 1.2999999523162842.
 cJSON* number_json(f32 value);

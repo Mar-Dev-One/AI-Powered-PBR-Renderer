@@ -146,6 +146,7 @@ on_init(App* app)
 
     doc_init(&state->doc, &state->assets, (command_context){
         .on_change            = on_world_change,
+        .on_scene_file        = on_scene_file,
         .on_change_user       = state,
         .host_commands        = host_command_table,
         .host_command_count   = host_command_count,
@@ -349,6 +350,7 @@ on_frame(App* app, f32 dt)
     // show this same frame.
     server_poll(state->server, active_commands(state));
     chat_poll(&state->chat);
+    doc_follow_history(&state->doc);   // an agent's or the console's undo may have gone back past a load
     watch_agent(state);
     watch_export_check(state);
 

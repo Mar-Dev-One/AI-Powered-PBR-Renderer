@@ -31,8 +31,10 @@ building the export.
    imports only `VCRUNTIME140.dll`; Export still copies all of `msvcp140*.dll` too.~~ Done:
    `editor/CMakeLists.txt` lets only `vcruntime140.dll` through (8 DLLs before).
 6. **Editor polish:** a native folder picker for New/Open Project, Import and Export (paths are
-   typed today); an agent's `scene.save` should update the editor's saved state, so the title
-   loses its `*`.
+   typed today). ~~An agent's `scene.save` should update the editor's saved state, so the title
+   loses its `*`.~~ Done: `command_context.on_scene_file` reports every `scene.save` and replacing
+   `scene.load`, whoever runs it; the editor follows a load through undo and redo
+   (`doc_follow_history()`), and the `*` now notices every environment field.
 7. **Phase 6** of the AI track: asset catalog, verify loop, `fetch_asset`.
 8. **Export, later:** zip it, cache baked IBL maps so the game doesn't bake at startup, scene
    switching in the game, a pixel comparison in the export check.
@@ -316,8 +318,8 @@ camera from the view), the HDRI list from the project. Agent: `project.info` / `
 commands and tools (`create_project` doesn't open the project: switching mid-turn would pull the
 scene from under the agent). `assets/` is the sample project (`model_viewer`, `material_grid`).
 The Testbed plays a project's startup scene when given no scene.
-Not yet: a native folder picker (paths are typed or picked from Recent); an agent's `scene.save`
-doesn't update the editor's saved state, so the title can still show `*` after it.
+Not yet: a native folder picker (paths are typed or picked from Recent). (An agent's `scene.save`
+and `scene.load` now update the editor's saved state and scene name: "Next up" item 6.)
 
 ### Stage 3: Viewport panel
 
