@@ -1,8 +1,9 @@
 #version 460 core
 
 // Metallic-roughness PBR (Cook-Torrance GGX) for models loaded through
-// Scene/Model.h. Direct light is up to MAX_LIGHTS punctual lights
-// (directional/point/spot, uploaded by Renderer/Lighting.h); indirect light is
+// Scene/Model.h. Direct light is punctual lights (directional/point/spot),
+// clustered by Renderer/Lighting.h: each pixel shades the lights that reach
+// everywhere plus those assigned to its cluster; indirect light is
 // image-based (Renderer/IBL.h: baked irradiance + GGX-prefiltered environment)
 // when u_use_ibl is set, and otherwise a cheap sky/ground hemisphere -- enough
 // that metals aren't pitch black while no environment is loaded.
@@ -12,12 +13,12 @@
 // Injected at compile time from the C side (scene_renderer_shader_defines(),
 // Renderer/SceneRenderer.c), never written out here:
 //   CSM_MAX_CASCADES                            Renderer/Shadow.h
-//   MAX_LIGHTS                                  Renderer/Lighting.h's LIGHTING_MAX_LIGHTS
+//   CLUSTER_X / CLUSTER_Y / CLUSTER_Z           Renderer/Lighting.h's cluster grid
 //   LIGHT_DIRECTIONAL / LIGHT_POINT / LIGHT_SPOT  Scene/Light.h's light_type values
 //   DEBUG_VIEW_LIT ... DEBUG_VIEW_WIREFRAME     SceneRenderer.h's scene_debug_view values
 //   SPOT_SHADOW_MAX                             Renderer/SpotShadow.h
 //   POINT_SHADOW_MAX                            Renderer/PointShadow.h
-#if !defined(CSM_MAX_CASCADES) || !defined(MAX_LIGHTS) || !defined(LIGHT_SPOT) || !defined(DEBUG_VIEW_WIREFRAME) \
+#if !defined(CSM_MAX_CASCADES) || !defined(CLUSTER_Z) || !defined(LIGHT_SPOT) || !defined(DEBUG_VIEW_LIGHTS) \
     || !defined(SPOT_SHADOW_MAX) || !defined(POINT_SHADOW_MAX)
 #error "pbr.frag must be compiled with SceneRenderer's defines"
 #endif
@@ -66,15 +67,26 @@ struct scene_light
     float outer_cos;   // LIGHT_SPOT: cos of the zero-intensity half-angle
 };
 
-layout(std140, binding = 0) uniform LightBlock
+// Renderer/Lighting.h's storage buffers: every light, then per cluster a
+// run (offset, count) in the index list, whose first u_global_count entries
+// are the lights every pixel shades.
+layout(std430, binding = 0) readonly buffer LightBuffer
 {
-    scene_light u_lights[MAX_LIGHTS];
-    int         u_light_count;
-
-    // Index into u_lights[] of the light the cascades below were rendered
-    // for, or -1 if no light is shadowed.
-    int         u_shadow_light_index;
+    uint        u_light_total;
+    uint        u_global_count;
+    uint        u_light_pad0;
+    uint        u_light_pad1;
+    scene_light u_lights[];
 };
+layout(std430, binding = 1) readonly buffer ClusterBuffer { uvec2 u_clusters[]; };
+layout(std430, binding = 2) readonly buffer IndexBuffer   { uint  u_light_indices[]; };
+
+uniform vec2 u_cluster_tile;    // pixels per cluster tile
+uniform vec2 u_cluster_depth;   // slice = floor(log(view depth) * x + y)
+
+// Index into u_lights[] of the light the cascades below were rendered for,
+// or -1 if no light is shadowed.
+uniform int u_shadow_light_index;
 
 uniform vec3  u_view_pos;
 uniform float u_ambient_strength;
@@ -437,6 +449,24 @@ vec3 shade_light(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 diffuse_color, vec3
     return (diffuse + specular) * radiance * NoL;
 }
 
+// This pixel's cluster: its screen tile and depth slice.
+uint cluster_index()
+{
+    ivec2 tile  = clamp(ivec2(gl_FragCoord.xy / u_cluster_tile), ivec2(0), ivec2(CLUSTER_X - 1, CLUSTER_Y - 1));
+    int   slice = clamp(int(floor(log(max(v_view_depth, 1e-4)) * u_cluster_depth.x + u_cluster_depth.y)), 0,
+                        CLUSTER_Z - 1);
+    return uint(tile.x + CLUSTER_X * (tile.y + CLUSTER_Y * slice));
+}
+
+// DEBUG_VIEW_LIGHTS: black for none, then blue, green, yellow, red at 32+.
+vec3 light_count_heat(uint count)
+{
+    if (count == 0u)
+        return vec3(0.0);
+    float t = clamp(float(count) / 32.0, 0.0, 1.0);
+    return clamp(vec3(2.0 * t - 0.5, 1.0 - abs(2.0 * t - 1.0) * 1.2, 1.0 - 2.0 * t) * 1.2, 0.0, 1.0);
+}
+
 // A 0..1 value to show as is: tonemap.frag gamma-encodes data views, so
 // undo that here (albedo is already linear and skips this).
 vec3 as_display(vec3 value)
@@ -535,8 +565,13 @@ void main()
     vec3  direct            = vec3(0.0);
     float shadow_visibility = 1.0;   // every shadowed light's together, for DEBUG_VIEW_SHADOW
 
-    for (int i = 0; i < u_light_count; ++i)
+    // The lights that reach everywhere, then this cluster's.
+    uvec2 cluster_run = u_clusters[cluster_index()];
+    uint  light_total = u_global_count + cluster_run.y;
+
+    for (uint k = 0u; k < light_total; ++k)
     {
+        int i = int(k < u_global_count ? u_light_indices[k] : u_light_indices[cluster_run.x + k - u_global_count]);
         scene_light light = u_lights[i];
 
         vec3  L;
@@ -659,6 +694,7 @@ void main()
         case DEBUG_VIEW_AO:        color = as_display(vec3(occlusion));  break;
         case DEBUG_VIEW_SHADOW:    color = as_display(vec3(shadow_visibility)); break;
         case DEBUG_VIEW_WIREFRAME: color = as_display(vec3(0.85));       break;
+        case DEBUG_VIEW_LIGHTS:    color = as_display(light_count_heat(light_total)); break;
     }
 
     frag_color = vec4(color, u_alpha_mode == 2 ? base.a : 1.0);

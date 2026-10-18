@@ -421,7 +421,12 @@ images (the check only proves the scene loads and renders); scene switching in t
 - [ ] Materials: `KHR_texture_transform` and a second UV set, clearcoat,
       transmission/IOR/volume, sheen, anisotropy, iridescence
 - [ ] glTF skinning and animation, morph targets
-- [ ] Clustered forward lighting (once scenes have dozens of lights)
+- [x] Clustered forward lighting (`Renderer/Lighting.h`): 16 x 9 x 24 clusters (exponential depth),
+      lights assigned on the CPU each frame, three storage buffers; up to 1024 lights (was 8).
+      `debug_unclustered` / the game's `--unclustered` is the reference (200 lights: identical);
+      the Lights debug view is a heatmap of lights per pixel
+- [ ] Tighter light-to-cluster test (sphere against each cluster's box, not the sphere's screen
+      rectangle): dense scenes still give many clusters 32+ lights
 - [x] Per-frame data in UBOs (removes `snprintf` uniform names in `lighting_bind`): pbr.frag's
       LightBlock and ShadowBlock, std140 copies in `Renderer/FrameData.h` checked by static
       asserts; `rhi_uniform_buffer_create()` / `rhi_uniform_buffer_bind()`

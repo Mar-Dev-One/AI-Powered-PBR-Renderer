@@ -146,6 +146,7 @@ typedef struct editor_state
     // build_render_settings() turns the state below into its settings.
     scene_renderer renderer;
     b8             debug_show_cascades;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
+    b8             debug_unclustered;     // every light evaluated everywhere (render.set): clustering's reference
     scene_debug_view debug_view;          // lit, or one input to the shading (SceneRenderer.h)
     scene_antialiasing antialiasing;      // View menu, render.set; FXAA from on_init()
 
@@ -590,6 +591,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     const cJSON* ambient  = cJSON_GetObjectItem(args, "ambient_strength");
     const cJSON* bloom    = cJSON_GetObjectItem(args, "bloom");
     const cJSON* cascades = cJSON_GetObjectItem(args, "debug_show_cascades");
+    const cJSON* unclust  = cJSON_GetObjectItem(args, "debug_unclustered");
     const cJSON* view     = cJSON_GetObjectItem(args, "debug_view");
     const cJSON* aa       = cJSON_GetObjectItem(args, "antialiasing");
     const cJSON* tonemap  = cJSON_GetObjectItem(args, "tonemap");
@@ -600,13 +602,13 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     if ((exposure && (!cJSON_IsNumber(exposure) || exposure->valuedouble <= 0.0 || exposure->valuedouble > 16.0))
         || (ambient && (!cJSON_IsNumber(ambient) || ambient->valuedouble < 0.0 || ambient->valuedouble > 4.0))
         || (bloom && (!cJSON_IsNumber(bloom) || bloom->valuedouble < 0.0 || bloom->valuedouble > 1.0))
-        || (cascades && !cJSON_IsBool(cascades))
+        || (cascades && !cJSON_IsBool(cascades)) || (unclust && !cJSON_IsBool(unclust))
         || (auto_exp && !cJSON_IsBool(auto_exp)) || (ssao && !cJSON_IsBool(ssao))
         || (radius && (!cJSON_IsNumber(radius) || radius->valuedouble < 0.05 || radius->valuedouble > 5.0)))
     {
         snprintf(error, error_size, "exposure must be in (0, 16], ambient_strength in [0, 4], bloom in [0, 1], "
-                                    "ssao_radius in [0.05, 5]; debug_show_cascades, auto_exposure and ssao "
-                                    "true/false");
+                                    "ssao_radius in [0.05, 5]; debug_show_cascades, debug_unclustered, auto_exposure "
+                                    "and ssao true/false");
         return false;
     }
 
@@ -628,7 +630,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     if (view && !scene_debug_view_from_name(cJSON_GetStringValue(view), &debug_view))
     {
         snprintf(error, error_size, "debug_view must be one of: lit, albedo, normals, roughness, metallic, ao, shadow, "
-                                    "lighting, wireframe");
+                                    "lighting, wireframe, lights");
         return false;
     }
 
@@ -640,6 +642,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     if (ssao)     state->doc.env.ssao          = cJSON_IsTrue(ssao);
     if (radius)   state->doc.env.ssao_radius   = (f32)radius->valuedouble;
     if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
+    if (unclust)  state->debug_unclustered   = cJSON_IsTrue(unclust);
     state->antialiasing = aa_value;
     state->debug_view = debug_view;
 
@@ -1023,6 +1026,8 @@ static const cmd_arg ARGS_RENDER_SET[] = {
     { "bloom",               "number",  false, "How much bright light spreads into its surroundings, 0 (none) to 1; "
                                                 "0.04 is subtle, 0.1 strong" },
     { "debug_show_cascades", "boolean", false, "Tint shading by shadow cascade" },
+    { "debug_unclustered",   "boolean", false, "Evaluate every light at every pixel, not just its cluster's -- "
+                                                "the reference clustered lighting must match" },
     { "antialiasing",        "string",  false, "How jagged edges are smoothed: fxaa (the default), taa (steadier, "
                                                 "a little softer), off" },
     { "tonemap",             "string",  false, "How light becomes screen color: aces (contrasty, the default), agx "
@@ -1030,7 +1035,7 @@ static const cmd_arg ARGS_RENDER_SET[] = {
                                                 "true color)" },
     { "debug_view",          "string",  false, "What the view shows: lit (normal), or one input to the shading -- albedo, "
                                                 "normals, roughness, metallic, ao, shadow, lighting (white surfaces), "
-                                                "wireframe" },
+                                                "wireframe, lights (how many lights each pixel shades)" },
 };
 
 static const cmd_arg ARGS_PROJECT_CREATE[] = {
@@ -1669,7 +1674,7 @@ open_folder(const char* folder)
 
 // scene_debug_view's values, for the toolbar's combo and the View menu.
 static const char* const DEBUG_VIEW_LABELS[SCENE_VIEW_COUNT] = {
-    "Lit", "Albedo", "Normals", "Roughness", "Metallic", "AO", "Shadow", "Lighting", "Wireframe"
+    "Lit", "Albedo", "Normals", "Roughness", "Metallic", "AO", "Shadow", "Lighting", "Wireframe", "Lights"
 };
 
 // A button that can be greyed out, with a tooltip saying why (or what it does).
@@ -3030,6 +3035,7 @@ build_render_settings(const editor_state* state)
     scene_render_settings_apply_environment(&settings, &state->doc.env, ibl_cache_maps(&state->ibl));
     settings.debug_show_cascades = state->debug_show_cascades;
     settings.debug_view          = state->debug_view;
+    settings.debug_unclustered   = state->debug_unclustered;
     settings.antialiasing        = state->antialiasing;
 
     // Where nothing (not even the skybox) is drawn -- a scene without an

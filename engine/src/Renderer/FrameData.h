@@ -8,22 +8,21 @@
 
 #include <stddef.h>
 
-// The CPU copies of pbr.frag's two uniform blocks, laid out to GLSL's
-// std140 rules byte for byte: SceneRenderer fills them each frame
-// (lighting_fill(), csm_bind(), spot_shadows_bind(), point_shadows_bind()),
-// uploads them as uniform buffers and binds those to the blocks' binding
-// points -- one upload per block instead of a uniform call per light and
-// cascade, each with a name built by snprintf().
+// The CPU copies of what pbr.frag reads from buffers, laid out to GLSL's
+// rules byte for byte: its lights (struct scene_light, in a std430 storage
+// buffer: Renderer/Lighting.h) and its ShadowBlock uniform block (std140),
+// which SceneRenderer fills each frame (csm_bind(), spot_shadows_bind(),
+// point_shadows_bind()), uploads and binds -- one upload instead of a
+// uniform call per cascade and light, each with a name built by snprintf().
 //
 // std140 in short: vec3 and vec4 align to 16 bytes, and every element of an
 // array (a float or an int too) takes a multiple of 16 -- hence the padding
 // and the [4]s below. The static asserts check the offsets against the
 // declarations in pbr.frag.
 
-#define FRAME_LIGHT_BINDING  0   // layout(binding = ...) of pbr.frag's LightBlock
-#define FRAME_SHADOW_BINDING 1   // ...and of its ShadowBlock
+#define FRAME_SHADOW_BINDING 1   // layout(binding = ...) of pbr.frag's ShadowBlock
 
-// pbr.frag's struct scene_light.
+// pbr.frag's struct scene_light (the same in std140 and std430).
 typedef struct gpu_light
 {
     int32 type;              // Scene/Light.h's light_type
@@ -38,14 +37,6 @@ typedef struct gpu_light
     f32   outer_cos;
     f32   pad2[2];
 } gpu_light;
-
-typedef struct gpu_light_block
-{
-    gpu_light lights[LIGHTING_MAX_LIGHTS];
-    int32     light_count;
-    int32     shadow_light_index;   // the cascades' light in lights[], or -1
-    int32     pad[2];
-} gpu_light_block;
 
 typedef struct gpu_shadow_block
 {
@@ -74,8 +65,6 @@ STATIC_ASSERT(sizeof(gpu_light) == 80, "gpu_light must match std140's struct sce
 STATIC_ASSERT(offsetof(gpu_light, color) == 16 && offsetof(gpu_light, direction) == 32
               && offsetof(gpu_light, position) == 48 && offsetof(gpu_light, range) == 60
               && offsetof(gpu_light, inner_cos) == 64, "gpu_light's members must sit at std140's offsets");
-STATIC_ASSERT(offsetof(gpu_light_block, light_count) == 80 * LIGHTING_MAX_LIGHTS,
-              "u_light_count must follow u_lights[]");
 STATIC_ASSERT(offsetof(gpu_shadow_block, cascade_splits) == 64 * CSM_MAX_CASCADES
               && offsetof(gpu_shadow_block, cascade_count) == 96 * CSM_MAX_CASCADES
               && offsetof(gpu_shadow_block, spot_light) == 96 * CSM_MAX_CASCADES + 16

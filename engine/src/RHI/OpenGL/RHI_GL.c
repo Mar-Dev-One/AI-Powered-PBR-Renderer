@@ -152,6 +152,8 @@ void rhi_gl_get_backend(rhi_backend_api* out_api)
     out_api->index_buffer_create = gl_index_buffer_create;
     out_api->uniform_buffer_create = gl_uniform_buffer_create;
     out_api->uniform_buffer_bind = gl_uniform_buffer_bind;
+    out_api->storage_buffer_create = gl_uniform_buffer_create;   // the same GL buffer; only the binding differs
+    out_api->storage_buffer_bind = gl_storage_buffer_bind;
     out_api->buffer_update = gl_buffer_update;
     out_api->buffer_destroy = gl_buffer_destroy;
 

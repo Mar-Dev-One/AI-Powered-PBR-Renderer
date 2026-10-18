@@ -75,6 +75,7 @@ static const golden_case CASES[] = {
     { "avocado_taa",     "avocado.json",   NULL, "taa" }, // temporal anti-aliasing over the 8-frame jitter
     { "spot_shadow",     "spot_shadow.json",     NULL },  // two spot lights' shadows, two atlas tiles
     { "point_shadow",    "point_shadow.json",    NULL },  // a point light's shadows through five cube faces
+    { "many_lights",     "many_lights.json",     NULL },  // 200 point lights, clustered (matches --unclustered exactly)
 };
 
 #define CASE_COUNT (sizeof(CASES) / sizeof(CASES[0]))

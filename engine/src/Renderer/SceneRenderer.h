@@ -7,6 +7,7 @@
 #include "../World/World.h"
 #include "GpuProfiler.h"
 #include "IBL.h"
+#include "Lighting.h"
 #include "PostProcess.h"
 #include "ShaderReload.h"
 #include "Shadow.h"
@@ -57,6 +58,7 @@ typedef enum scene_debug_view
     SCENE_VIEW_SHADOW,      // the shadowed light's visibility: black = in shadow
     SCENE_VIEW_LIGHTING,
     SCENE_VIEW_WIREFRAME,
+    SCENE_VIEW_LIGHTS,      // how many lights each pixel shades (Renderer/Lighting.h's clusters): a heatmap
     SCENE_VIEW_COUNT
 } scene_debug_view;
 
@@ -103,6 +105,7 @@ typedef struct scene_render_settings
     f32 cascade_split_lambda;     // see csm_update(); 0.5 is a good default
     b8  debug_show_cascades;      // tint shading by cascade, see pbr.frag
     scene_debug_view debug_view;  // SCENE_VIEW_LIT for the real thing
+    b8  debug_unclustered;        // every light everywhere: the reference the clustered lighting must match
     vec3 clear_color;             // linear HDR background where nothing is drawn
 } scene_render_settings;
 
@@ -126,10 +129,10 @@ typedef struct scene_renderer
     post_process post;
     gpu_profiler profiler;
 
-    // pbr.frag's uniform blocks (Renderer/FrameData.h): the lights, and every
-    // shadow's matrices and parameters.
-    rhi_buffer   light_buffer;
-    rhi_buffer   shadow_buffer;
+    // The lights, by cluster (Renderer/Lighting.h), and pbr.frag's
+    // ShadowBlock uniform block (Renderer/FrameData.h).
+    light_clusters clusters;
+    rhi_buffer     shadow_buffer;
     uint32       scene_scope;    // "Scene": from begin() to end()
 
     // TAA: this frame's step in the jitter sequence, and the camera's

@@ -65,6 +65,11 @@ void gl_uniform_buffer_bind(rhi_buffer buffer, uint32 binding)
     glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer->handle);
 }
 
+void gl_storage_buffer_bind(rhi_buffer buffer, uint32 binding)
+{
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, buffer->handle);
+}
+
 void gl_buffer_update(rhi_buffer buffer, const void* data, uint64 size, uint64 offset)
 {
     // Direct state access: binding the buffer to update it would, for an

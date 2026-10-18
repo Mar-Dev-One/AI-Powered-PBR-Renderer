@@ -148,6 +148,14 @@ rhi_buffer rhi_uniform_buffer_create(uint64 size);
 // layout(binding = `binding`) read, in every shader, until rebound.
 void       rhi_uniform_buffer_bind(rhi_buffer buffer, uint32 binding);
 
+// A shader storage buffer of `size` bytes: like a uniform buffer, but as
+// large as needed and read through runtime-sized arrays (std430 layout).
+rhi_buffer rhi_storage_buffer_create(uint64 size);
+
+// Makes `buffer` what the storage blocks declared with
+// layout(binding = `binding`) read, until rebound.
+void       rhi_storage_buffer_bind(rhi_buffer buffer, uint32 binding);
+
 ////
 void rhi_read_pixels(uint16 x, uint16 y, uint16 width, uint16 height, void* out_pixels);
 

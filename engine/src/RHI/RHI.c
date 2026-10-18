@@ -63,6 +63,16 @@ void rhi_uniform_buffer_bind(rhi_buffer buffer, uint32 binding)
     backend.uniform_buffer_bind(buffer, binding);
 }
 
+rhi_buffer rhi_storage_buffer_create(uint64 size)
+{
+    return backend.storage_buffer_create(size);
+}
+
+void rhi_storage_buffer_bind(rhi_buffer buffer, uint32 binding)
+{
+    backend.storage_buffer_bind(buffer, binding);
+}
+
 void rhi_buffer_update(rhi_buffer buffer, const void* data, uint64 size, uint64 offset)
 {
     backend.buffer_update(buffer, data, size, offset);

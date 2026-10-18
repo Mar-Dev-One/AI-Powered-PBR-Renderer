@@ -24,9 +24,11 @@
 //                   picture is always the scene as saved.
 //     --view NAME   show a debug view instead of the lit scene: albedo,
 //                   normals, roughness, metallic, ao, shadow, lighting,
-//                   wireframe (Renderer/SceneRenderer.h)
+//                   wireframe, lights (Renderer/SceneRenderer.h)
 //     --antialiasing NAME
 //                   fxaa (the default), taa or off
+//     --unclustered every light shaded at every pixel instead of by cluster
+//                   (Renderer/Lighting.h): the reference clustering must match
 //
 // The project: --project, else a project.json next to the executable (an
 // exported game, Project/Project.h project_export()), else the source tree's
@@ -104,6 +106,7 @@ typedef struct game_state
 
     scene_debug_view   debug_view;     // --view; SCENE_VIEW_LIT normally
     scene_antialiasing antialiasing;   // --antialiasing; FXAA normally
+    b8                 unclustered;    // --unclustered
 
     asset_cache     assets;
     world           world;
@@ -419,6 +422,7 @@ on_frame(App* app, f32 dt)
     scene_render_settings_apply_environment(&settings, &state->env, ibl_cache_maps(&state->ibl));
     settings.debug_view   = state->debug_view;
     settings.antialiasing = state->antialiasing;
+    settings.debug_unclustered = state->unclustered;
     // Auto-exposure adapts by the frame time; a check's picture mustn't
     // depend on frame times, so it goes straight to the scene's level.
     settings.delta_time = state->check_path ? -1.0f : dt;
@@ -537,10 +541,14 @@ int main(int argc, char** argv)
         {
             if (!scene_debug_view_from_name(i + 1 < argc ? argv[++i] : NULL, &state.debug_view))
             {
-                fprintf(stderr, "--view needs one of: lit, albedo, normals, roughness, metallic, ao, shadow, lighting, wireframe\n");
+                fprintf(stderr, "--view needs one of: lit, albedo, normals, roughness, metallic, ao, shadow, lighting, wireframe, lights\n");
                 print_usage();
                 return 1;
             }
+        }
+        else if (strcmp(arg, "--unclustered") == 0)
+        {
+            state.unclustered = true;
         }
         else if (strcmp(arg, "--antialiasing") == 0)
         {

@@ -1,0 +1,8733 @@
+{
+	"format": "pbr-scene",
+	"version": 1,
+	"entities": [
+		{
+			"name": "ground",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						24,
+						1,
+						24
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:plane",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.7,
+						0.7,
+						0.7
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.5
+				}
+			}
+		},
+		{
+			"name": "pillar_0",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						5.0,
+						0.75,
+						0.0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_1",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.330127018922194,
+						0.75,
+						2.4999999999999996
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_2",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						2.5000000000000004,
+						0.75,
+						4.330127018922193
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_3",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						3.061616997868383e-16,
+						0.75,
+						5.0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_4",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.499999999999999,
+						0.75,
+						4.330127018922194
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_5",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-4.330127018922194,
+						0.75,
+						2.4999999999999996
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_6",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.0,
+						0.75,
+						6.123233995736766e-16
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_7",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-4.330127018922193,
+						0.75,
+						-2.5000000000000004
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_8",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.500000000000002,
+						0.75,
+						-4.330127018922193
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_9",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.184850993605148e-16,
+						0.75,
+						-5.0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_10",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						2.5000000000000004,
+						0.75,
+						-4.330127018922193
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "pillar_11",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.330127018922192,
+						0.75,
+						-2.500000000000002
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						1.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.8,
+						0.8,
+						0.8
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.6
+				}
+			}
+		},
+		{
+			"name": "centre",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						1.0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1.0,
+						1.0,
+						1.0
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.9,
+						0.9,
+						0.9
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.3
+				}
+			}
+		},
+		{
+			"name": "light_000",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.523344703336752,
+						0.3651926580007885,
+						-6.9830165215099615
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.2084874844421643,
+						0.29395327320536846,
+						0.9975592423524671
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_001",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.7176400861337839,
+						0.7566921598704781,
+						-2.6862216617482897
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9671656751484163,
+						0.4207452997577227,
+						0.11208902509386093
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_002",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.250086831160303,
+						0.38164171200947855,
+						-1.3270863267522834
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.952606728597199,
+						0.4577084883669453,
+						0.08968478303585581
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_003",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.5096162171497198,
+						0.500915068146313,
+						6.537042493440762
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8562047219472534,
+						0.625770387141205,
+						0.018024890911541636
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_004",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						2.5486644481117864,
+						0.6570124271857021,
+						8.954178849140114
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.05753487730098139,
+						0.5195683320072513,
+						0.9228967906917673
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_005",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.525102111858402,
+						0.5606483576985086,
+						-9.068346387644874
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8149899882731293,
+						0.006222415672134496,
+						0.6787875960547363
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_006",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.114898332851249,
+						1.0345137232080281,
+						-7.644155238432633
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.3203805903362775,
+						0.9939169316344042,
+						0.18570247802931839
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_007",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.38547240152125,
+						0.6351577884531581,
+						1.6320032732493246
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.17866535329723315,
+						0.32891736687617,
+						0.9924172798265969
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_008",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.9548893141911563,
+						0.48536284153739384,
+						-8.744220500533537
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9653480286876231,
+						0.425719196203255,
+						0.10893277510912192
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_009",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						3.6079994636357178,
+						0.8270056771568748,
+						-1.4481538866119426
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.3038877816857052,
+						0.9963713089310009,
+						0.19974090938329414
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_010",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.9363124725844933,
+						0.9290949903566141,
+						-4.004660062726353
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.6376224853806157,
+						0.014901550398109698,
+						0.8474759642212746
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_011",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.118069785556942,
+						1.087623746016086,
+						1.4884742051734197
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0062527785478574405,
+						0.6786075065365347,
+						0.8151397149156079
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_012",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.588905788784352,
+						0.4062592004294659,
+						-4.241244702196269
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9961258967874408,
+						0.1981381584704236,
+						0.30573594474213533
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_013",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.6375435642954557,
+						0.740066790428225,
+						5.142818591304987
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7888260128407374,
+						0.7090479542667937,
+						0.002126032892469043
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_014",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.215854859051246,
+						0.8157233462496456,
+						3.3643171306879047
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5457118068839208,
+						0.04594481196499273,
+						0.9083433811510861
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_015",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						7.509556236617765,
+						0.8349328893945165,
+						-3.725049743038065
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.33150439360992023,
+						0.1765629703027311,
+						0.9919326360873483
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_016",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.5979040856498443,
+						1.1502129855971435,
+						-0.8758933739717385
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7678279287011287,
+						0.00043435651238132866,
+						0.73173771478649
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_017",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.5180332516071111,
+						0.9313428191739814,
+						3.2830441094934883
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.964109941656778,
+						0.42903963349312957,
+						0.10685042485009244
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_018",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						2.9425770905533746,
+						0.5561359788847342,
+						9.861918789332684
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7183453386100174,
+						0.0012840277998476535,
+						0.7803706335901348
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_019",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.2841711510657836,
+						0.7155257576697892,
+						3.3730543176837635
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9949839347930356,
+						0.31368955123944764,
+						0.19132651396751688
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_020",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.639032421869109,
+						0.9914096896252687,
+						-7.658084110365362
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9660874134611922,
+						0.42371053487004384,
+						0.11020205166876401
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_021",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.413195559626315,
+						1.0842797767136694,
+						-5.047703326061715
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.1128484430820828,
+						0.9675926647671286,
+						0.4195588921507888
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_022",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.388373975997228,
+						1.0950454437973611,
+						-1.0162519810133812
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.023930948255204865,
+						0.6056763244713937,
+						0.8703927272734014
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_023",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						6.3855967567148255,
+						0.6737668654905287,
+						7.279689393970305
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.4111863836111599,
+						0.9705336744654309,
+						0.11827994192340935
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_024",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.8245766933675043,
+						0.435828815211998,
+						7.683856543964339
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9824698641182071,
+						0.14511154769924678,
+						0.3724185881825459
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_025",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.475645430192594,
+						0.7364664573072208,
+						-5.360862663609285
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5522556384878426,
+						0.9045135758688465,
+						0.043230785643311065
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_026",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.7824700746451132,
+						0.6770518510127951,
+						-4.745067614029241
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.999834618346904,
+						0.2612189256706767,
+						0.23894645598241893
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_027",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.614928542105492,
+						0.9214442914223799,
+						1.3268244741278394
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9784454702075498,
+						0.1350098246407781,
+						0.38654470515167205
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_028",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.3098286614155672,
+						0.34859360390141114,
+						2.351854988182554
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.2763704176231213,
+						0.22452632322888677,
+						0.9991032591479916
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_029",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						7.990660201159045,
+						1.0180858090769094,
+						5.599389814121455
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8524703054105518,
+						0.016643514833359074,
+						0.6308861797560891
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_030",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.152421862174627,
+						0.870860609117138,
+						-2.0204233535945404
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8978776094213747,
+						0.5633016497215932,
+						0.03882074085703208
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_031",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.755043567626249,
+						0.44607286899488763,
+						-8.653047683139503
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.6281046463599963,
+						0.8545069912376067,
+						0.017388362402397273
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_032",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.198926955353132,
+						0.43613843905148514,
+						-8.948487922194662
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9999994628918277,
+						0.25063495817337345,
+						0.24936557893479872
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_033",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.97071263954807,
+						1.0868991396364376,
+						-2.7278015593085803
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9935955625935482,
+						0.322285975411797,
+						0.18411846199465498
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_034",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						2.2813797557695743,
+						0.6126505914483313,
+						-7.028990293382171
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.4929072864816983,
+						0.9365154896788205,
+						0.0705772238394814
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_035",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.716731209434351,
+						1.1937924495342425,
+						-7.543155384756101
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7911841805606361,
+						0.002401049355536311,
+						0.7064147700838274
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_036",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.6802108168013259,
+						0.3919688550733516,
+						-0.32330687167461036
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9289496208087317,
+						0.508014890719156,
+						0.06303548847211249
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_037",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.147283235139964,
+						0.44529474947378833,
+						-4.704862165656398
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7377194923428007,
+						0.00019789307016304658,
+						0.7620826145870361
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_038",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.538085579095037,
+						0.43194228500918164,
+						9.01971145749404
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.00786000542505616,
+						0.6695934041047816,
+						0.8225465904701622
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_039",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.8634485176422864,
+						1.1806511184470754,
+						-9.45915017155663
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0077781253438516385,
+						0.6700305878119854,
+						0.822191286844163
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_040",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						7.266500605793379,
+						0.630029812585061,
+						3.923935718156038
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.46510895749044484,
+						0.9494026503364115,
+						0.08548839217314375
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_041",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.659159309313274,
+						1.0011494022043594,
+						5.438758168040625
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.010447541334789923,
+						0.6567206067913055,
+						0.8328318518739046
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_042",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.4067000990447527,
+						1.1864334455318015,
+						-5.539166537936298
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.6884682322807749,
+						0.004692581250575867,
+						0.806839186468649
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_043",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						7.052575974933212,
+						0.9658857183381426,
+						6.1215716957133495
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7081392820915404,
+						0.0022191330058023984,
+						0.789641584902657
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_044",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.465210199368302,
+						0.3260821356672288,
+						0.3527744848701104
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.19215196357622472,
+						0.9951309786516176,
+						0.31271705777215786
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_045",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.44125849155871,
+						0.923269747530111,
+						-4.411629219019404
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.47119384706262596,
+						0.9466965579887205,
+						0.08210959494865372
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_046",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.130301526826756,
+						1.189234252382574,
+						-1.055446444665531
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9613620479618294,
+						0.10240943307635852,
+						0.4362285189618117
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_047",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.100012626426665,
+						0.5041612440576551,
+						-2.7072822927626783
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5922635600177496,
+						0.8794449776032373,
+						0.0282914623790132
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_048",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.065876731613655,
+						1.1102775040957027,
+						-5.91253273447554
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.14437876070999056,
+						0.373425747116197,
+						0.9821954921738123
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_049",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						6.808710545585797,
+						1.019679370364694,
+						-0.4105314747692361
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.21372737926171792,
+						0.2881208318872489,
+						0.9981517888510332
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_050",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.304430270992398,
+						1.004072595688281,
+						3.2117130040978825
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9217883935879694,
+						0.05657427141761451,
+						0.521637334994416
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_051",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						5.002809196609167,
+						1.0102218879182487,
+						-0.43934510811999417
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.717082562656931,
+						0.7815309821596282,
+						0.0013864551834409378
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_052",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.3496560027078015,
+						0.6562546455625033,
+						6.016471377933822
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9920925860608132,
+						0.17724865460675465,
+						0.33065875933243194
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_053",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.97226364264597,
+						0.4530032939747059,
+						8.935940129297858
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.42115810692134925,
+						0.1118253818735645,
+						0.9670165112050864
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_054",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.459232654042713,
+						1.0258517838289765,
+						-6.976985992370204
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9132789337764253,
+						0.0496385764224776,
+						0.5370824898010971
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_055",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.076513825122516,
+						0.8915414634624179,
+						6.53020957050774
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9961768980571564,
+						0.19846658511135556,
+						0.3053565168314882
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_056",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.991849756849943,
+						0.312818644340495,
+						0.9732008797355824
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8400138859544699,
+						0.6474720610822551,
+						0.01251405296327518
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_057",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.417803544755287,
+						1.1402623245516839,
+						2.993493393476612
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.006957195046472631,
+						0.6745381102301007,
+						0.8185046947234268
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_058",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.3238112648502884,
+						0.4899381035953339,
+						7.434858559788083
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7302229987750328,
+						0.000508443733522379,
+						0.7692685574914444
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_059",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-4.9633037726909235,
+						0.8277934513493654,
+						-4.140666946595621
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5297038748110785,
+						0.9173959774140765,
+						0.05290014777484503
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_060",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-4.812704094595796,
+						1.1190153506840008,
+						-1.6197489449091265
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8398069325112965,
+						0.6477416761012711,
+						0.012451391387432564
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_061",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.924319520934821,
+						1.1138670970878357,
+						-0.8367802705653276
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.06701155121165842,
+						0.4999514978668192,
+						0.9330369509215223
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_062",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.5874345858186967,
+						0.7786424661923403,
+						8.354421686853286
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						2.6835281609904893e-05,
+						0.7455003900864368,
+						0.7544727746319535
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_063",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.4701317117433277,
+						0.46479709854497886,
+						-9.6259026418916
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.03496743940578256,
+						0.8916028548104507,
+						0.573429705783767
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_064",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.92135036348716,
+						0.7261436392157606,
+						5.983409009844433
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7343903916042065,
+						0.7652912199602349,
+						0.000318388435558814
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_065",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.503865408947558,
+						0.766513841432733,
+						1.1295124980442655
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.27025987261624307,
+						0.9994667425676474,
+						0.2302733848161097
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_066",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.108837497604938,
+						0.804266520225557,
+						5.68544950730951
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.892931737659094,
+						0.5713091993809827,
+						0.03575906295992337
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_067",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.030113579138201,
+						0.7569425926130884,
+						-4.461658590704369
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5697074940321792,
+						0.03636233425932106,
+						0.8939301717084998
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_068",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.2345877331295245,
+						0.6989235542196949,
+						5.199862851800333
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9263004428753445,
+						0.06057351090879354,
+						0.5131260462158619
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_069",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						2.2505576868892074,
+						0.9234579022934062,
+						0.11106261702443376
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0014590182939804297,
+						0.7162149743739299,
+						0.7823260073320897
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_070",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.9530841547018056,
+						1.1473510147846506,
+						0.6657087515834181
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.004753578660866453,
+						0.8071902872562688,
+						0.6880561340828648
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_071",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						3.9843576436057155,
+						0.5336330647059215,
+						7.530709635611867
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9673663753467774,
+						0.11244510148796721,
+						0.42018852316525535
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_072",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.190276129954297,
+						0.42342099230716634,
+						8.865340680269675
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7679128229322756,
+						0.0004385564550567489,
+						0.7316486206126676
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_073",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.567560912316386,
+						0.5165748826079428,
+						-1.157638234499128
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9489500542646258,
+						0.4661368470566847,
+						0.08491309867868951
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_074",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.537584660546514,
+						1.10732378959089,
+						3.389442906197914
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.605807107710103,
+						0.02389006390512799,
+						0.8703028283847687
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_075",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.911067524626158,
+						0.42868109813181343,
+						4.322397655763924
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.23276736556397326,
+						0.2676381220761638,
+						0.9995945123598629
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_076",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						7.656656673141509,
+						1.1572537160270875,
+						9.350895653327676
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5949622737497083,
+						0.8776501662812579,
+						0.027387559969033748
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_077",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.034862505654562,
+						1.0492002025346527,
+						-0.25478450018239585
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.998987844330101,
+						0.22296795138998,
+						0.2780442042799187
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_078",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.770678802382417,
+						0.6052045299049378,
+						-1.3695636400472218
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0024014997712042963,
+						0.7064105791333454,
+						0.7911879210954504
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_079",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.085106677321377,
+						0.3175346352471538,
+						-3.6294886332461207
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.4129550579305198,
+						0.11712197438271849,
+						0.9699229676867616
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_080",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.0810049561665593,
+						0.5983481002277915,
+						-1.1908379639459596
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9967765231498777,
+						0.30070160026372583,
+						0.2025218765863962
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_081",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						2.478541477837279,
+						1.1865749197206892,
+						0.24524568926911172
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9597576157337668,
+						0.44031872760617086,
+						0.09992365666006242
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_082",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						5.767261121951616,
+						0.5390078451091678,
+						9.433919172941483
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8955015193853049,
+						0.5671717027806844,
+						0.03732677783401078
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_083",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.208236201718647,
+						0.41660000337510955,
+						5.579948601357845
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.43594322541178343,
+						0.9614728507838777,
+						0.10258392380433912
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_084",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.554916374446778,
+						0.5327481133144575,
+						8.22827632367218
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7099829348572221,
+						0.002032228830869842,
+						0.787984836311908
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_085",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.012641051918436,
+						0.9303757018919561,
+						8.383430170235428
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0483854197967763,
+						0.5399761753471134,
+						0.9116384048561104
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_086",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.210755843063847,
+						0.6827853367161503,
+						-8.849469751181074
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.3107080451655831,
+						0.19386372122786083,
+						0.995428233606556
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_087",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.55171810553619,
+						1.0214657324142506,
+						8.766994180803255
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.16802529275648348,
+						0.3421902021319153,
+						0.989784505111601
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_088",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.325149475309638,
+						1.0764974721484615,
+						7.1245727274429775
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9568291029018177,
+						0.4475978857699887,
+						0.09557301132819357
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_089",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.9245295805415026,
+						1.1340023556641043,
+						-3.216964454307276
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.027534347143344795,
+						0.5945213055379956,
+						0.8779443473186594
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_090",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-4.642805066450917,
+						0.5145925525152185,
+						-7.415504002093423
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0071327022358698144,
+						0.673554501686086,
+						0.8193127960780442
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_091",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.810970698414323,
+						0.48159142389165005,
+						-6.771018168047773
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9751582735336943,
+						0.3972112980546162,
+						0.12763042841168937
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_092",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.760151918430463,
+						0.5609647512519224,
+						-3.8998920424154644
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5298219383728253,
+						0.05284721308447682,
+						0.9173308485426976
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_093",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.001771997236787115,
+						0.31634679656512354,
+						-6.442002315741426
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.2137813042527038,
+						0.9981574342697552,
+						0.28806126147754124
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_094",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-4.991024876095452,
+						0.7959442152101281,
+						-9.693077650899607
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.4469455224181698,
+						0.09595910619586412,
+						0.9570953713859658
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_095",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.210870070124432,
+						0.39565321052438224,
+						-0.5047872296453253
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9584305372113782,
+						0.0979232784498636,
+						0.44364618433875813
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_096",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						6.378402806834277,
+						1.0511525399972004,
+						-1.3564482843116785
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.00024656457305854973,
+						0.7634736965774462,
+						0.7362797388494953
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_097",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.1382784887682815,
+						1.1841964863733172,
+						0.13371904310331217
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.3093601307745377,
+						0.19501713647577806,
+						0.9956227327496838
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_098",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.14590749165051,
+						0.8723792539965132,
+						6.645730865288989
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.3657178229308294,
+						0.15003651808351348,
+						0.9842456589856567
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_099",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.906045825863174,
+						0.41683672303579455,
+						-3.0489563968953597
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9710876157363881,
+						0.40956767935750393,
+						0.11934470490610788
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_100",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.585543688319877,
+						0.44692186824873814,
+						4.817783963658551
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.4824299358490295,
+						0.9415303031464678,
+						0.07603976100450288
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_101",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.310302545841386,
+						0.9034889681178107,
+						6.8253796370151285
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8435032729093058,
+						0.013599152318866714,
+						0.6428975747718273
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_102",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-4.361334353867409,
+						0.7135076490552485,
+						-5.155741320150269
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.36637192062761326,
+						0.9840761303467701,
+						0.14955194902561686
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_103",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.849341203415886,
+						1.1656078800263519,
+						-1.0835078353251948
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.4584436705505596,
+						0.952292710959279,
+						0.08926361849016146
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_104",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.452459958927527,
+						1.1691000930529065,
+						0.9414674823781688
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5174433135859479,
+						0.9240274600268721,
+						0.05852922638718017
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_105",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.809041646440945,
+						0.643463945951324,
+						-2.8683216597202588
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9999887232380877,
+						0.25291381238885047,
+						0.24709746437306174
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_106",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.5071274520562792,
+						0.7542620755628813,
+						0.05528012752799327
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.6515773488133363,
+						0.8368470372023008,
+						0.01157561398436302
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_107",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.900989369921135,
+						0.6595600532600332,
+						-4.716626283966859
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9225785733818141,
+						0.5201637581992888,
+						0.057257668418896956
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_108",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.166660846176946,
+						0.5095286099317254,
+						-9.55011706059485
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.3328659167439827,
+						0.9916719897242404,
+						0.175462093531777
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_109",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.7116656836326687,
+						0.8917893059814053,
+						0.5837909658621996
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5016984365543008,
+						0.0661405780498261,
+						0.9321609853958729
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_110",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.31986880064623,
+						0.5935212787137145,
+						7.581813871347801
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.11571343461898653,
+						0.969168329844637,
+						0.41511823553637667
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_111",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.694581701485923,
+						0.8788975047340764,
+						-7.01073701915494
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.4191643171391133,
+						0.11310157181002428,
+						0.9677341110508623
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_112",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.124238666168283,
+						0.8645989118987338,
+						6.705790864677873
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8891174538980091,
+						0.03352087053594327,
+						0.5773616755660474
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_113",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.677042469539236,
+						0.7713815560756656,
+						6.244378314247882
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8203849996164841,
+						0.6722455982123656,
+						0.007369402171150341
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_114",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.08742102510921512,
+						1.0437682093517822,
+						6.698751868740526
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.6684156596908013,
+						0.008082562494706014,
+						0.8235017778144926
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_115",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.6812303361247753,
+						0.9239935217693509,
+						7.8565947281101565
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.29537549923328354,
+						0.20722161487742907,
+						0.9974028858892875
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_116",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.401185589270041,
+						0.6246367287901375,
+						-9.37678947420983
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.835125556284821,
+						0.6537908372777246,
+						0.011083606437454596
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_117",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.901670578626058,
+						0.8649903976690516,
+						6.7164239959994205
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.03342844954894281,
+						0.577615478661693,
+						0.8889560717893641
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_118",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						2.524529178655719,
+						0.30298289441506315,
+						3.6132835216164096
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0011307456302605545,
+						0.7785396144453915,
+						0.7203296399243481
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_119",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						5.953951041417051,
+						0.7816798328067938,
+						4.965307404474116
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						8.711796964994134e-05,
+						0.7418735711608475,
+						0.7580393108695025
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_120",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						3.1859897860869975,
+						0.526974178316421,
+						-8.678992875556961
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.45854196210399856,
+						0.08920738180756677,
+						0.9522506560884345
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_121",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.511000000516532,
+						0.48469577437387784,
+						-4.688835556092021
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.43526136930297143,
+						0.10300154493298169,
+						0.9617370857640465
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_122",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.796571828414837,
+						0.6443044295092364,
+						9.514701882055409
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0003613545082406522,
+						0.7662789080495864,
+						0.7333597374421729
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_123",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.41979671858747913,
+						0.8552766142004247,
+						3.67393125404703
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5532121960970335,
+						0.04284036679017689,
+						0.9039474371127892
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_124",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						2.8552595076397242,
+						0.5285462534903058,
+						-8.450563609643986
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8003983175586664,
+						0.6959520193292239,
+						0.0036496631121097356
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_125",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.86434514714581,
+						0.3112222919924455,
+						-3.91165724081535
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.044637303321788946,
+						0.5488417250576283,
+						0.9065209716205829
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_126",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.786779718727164,
+						0.922966655313403,
+						-4.6245446842150395
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.26465240964491843,
+						0.2356284656869912,
+						0.9997191246680903
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_127",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						3.514153136255489,
+						0.7181965680368829,
+						-4.18287043141262
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0026962111385635534,
+						0.7037441424490738,
+						0.7935596464123627
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_128",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.6732169140622375,
+						0.4793250268735527,
+						-7.629942745968641
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8924890532316508,
+						0.03549392690389408,
+						0.5720170198644549
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_129",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.562514735140539,
+						0.7130737406672374,
+						8.725086819074328
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9969789414323302,
+						0.2990389295262201,
+						0.20398212904144958
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_130",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						6.397953853997365,
+						0.5417915161562228,
+						9.36216503301399
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.025007571914329063,
+						0.8727243359182761,
+						0.6022680921673949
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_131",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.803255600250548,
+						0.8233251309489666,
+						8.911745537897357
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.6221869220214817,
+						0.8587907695399996,
+						0.019022308438518876
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_132",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.165186442809377,
+						0.41934456559292344,
+						0.4813142510963928
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9781179745986814,
+						0.13424293941522641,
+						0.38763908598609215
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_133",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						6.404340212295679,
+						0.9330033349146669,
+						0.17488707297561845
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8788985464747004,
+						0.02801414752109488,
+						0.5930873060042043
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_134",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.372327938990602,
+						0.3223509627815987,
+						7.9541139120079905
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0018945697976207598,
+						0.7867121800758414,
+						0.711393250126538
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_135",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.928190566605394,
+						0.5717559371476209,
+						-0.16607781028924684
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.023739066690169952,
+						0.8699699241482513,
+						0.6062910091615789
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_136",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.185855594846428,
+						1.0562079302831882,
+						-3.1207970714410926
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.29832240134053517,
+						0.9970642523854566,
+						0.20461334627400835
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_137",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.965172361649934,
+						0.40803721283296424,
+						5.014680823426339
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7655505805223645,
+						0.0003294019353839994,
+						0.7341200175422515
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_138",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						8.52797719772773,
+						0.5608496630779727,
+						4.260471315938474
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9073816422327987,
+						0.045251121496905744,
+						0.5473672362702952
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_139",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.555560012910165,
+						0.8302589898464128,
+						-2.14201235917791
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9999856097685451,
+						0.2467219982750296,
+						0.25329239195642506
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_140",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.785813521531897,
+						0.3434412870747888,
+						-1.438944972208681
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.42130106916726057,
+						0.9669647816929711,
+						0.11173414913976853
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_141",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.9658028406474735,
+						1.142030899480156,
+						6.693519899543848
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.38901856138059865,
+						0.9777019700023795,
+						0.133279468617022
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_142",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.01350567176363,
+						0.47086414244670616,
+						-4.685439700448404
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.0011857301989181557,
+						0.7196037259997095,
+						0.7792105438013724
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_143",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.5330142996992677,
+						1.030766040723695,
+						9.123305295072143
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8735277736098568,
+						0.025385888674492818,
+						0.6010863377156502
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_144",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						2.6179160773816186,
+						0.7943053333691673,
+						8.268477749187703
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9656924895644186,
+						0.10952165546501069,
+						0.4247858549705707
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_145",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.391451639022961,
+						0.7057743806646961,
+						-9.010479311128654
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.4446721830681688,
+						0.09731042061532502,
+						0.958017396316506
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_146",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						5.053360184814412,
+						0.3440792144888245,
+						2.8898142083702734
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.3872269293167041,
+						0.9782415766727849,
+						0.13453149401051112
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_147",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						8.535540930942922,
+						0.6092965673921363,
+						-7.453773592298807
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.007616941362785068,
+						0.8214855707514841,
+						0.670897487885731
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_148",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-4.0445626891042625,
+						0.5341521491526688,
+						4.780650099924992
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9944647960950972,
+						0.18851478826327878,
+						0.31702041564162403
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_149",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						3.1199065206445766,
+						0.6549309999329467,
+						-3.98327417922288
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.032080283345753746,
+						0.5813546353671685,
+						0.8865650812870778
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_150",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.653350644826139,
+						1.1153639192182114,
+						-6.766860771898838
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.6308073337358214,
+						0.8525282427545708,
+						0.016664423509607784
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_151",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.05848429346285222,
+						1.1968276022622217,
+						-5.599494955988815
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9157511948712242,
+						0.05157667762739754,
+						0.5326721275013783
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_152",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.0007911283637565,
+						0.3816430572958706,
+						-7.208078720005558
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.6770104172635268,
+						0.8164645237373904,
+						0.006525058999082789
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_153",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.160895324368167,
+						0.5325218113394274,
+						-8.178113204346936
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5341332863487894,
+						0.9149358904666405,
+						0.05093082318457026
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_154",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.3923548463198294,
+						0.6715034927767074,
+						7.745029184234397
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.49892434339593184,
+						0.06752612843452177,
+						0.9335495281695465
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_155",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.7223285517334137,
+						0.6043827904529862,
+						0.4833628550179192
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.14232620347601643,
+						0.9814126597831189,
+						0.37626113674086487
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_156",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.758809641279893,
+						0.4132864215826828,
+						-4.449673060434945
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9897290997367345,
+						0.16781960590341916,
+						0.3424512943598461
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_157",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.06791495222236144,
+						0.49436682673795773,
+						2.592538116918785
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8255864080916759,
+						0.008580689034047628,
+						0.6658329028742763
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_158",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-4.579582378746549,
+						0.7012725531209484,
+						-5.030927004730589
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.09594044046782702,
+						0.9570825277673572,
+						0.4469770317648159
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_159",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.078871505262853,
+						0.31962945919128,
+						6.973673524609051
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8488374360265246,
+						0.015364692456406093,
+						0.6357978715170692
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_160",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.355130132257958,
+						0.7259414499361301,
+						4.19023569877308
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8964148695417906,
+						0.03789592181615059,
+						0.5656892086420588
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_161",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.7435298099852137,
+						1.1341445463548945,
+						-9.996426243612486
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.11171498549497244,
+						0.9669539084679375,
+						0.4213311060370902
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_162",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						6.51178412554583,
+						0.5236187547802661,
+						7.109253476284653
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.992414183407623,
+						0.17865168136813797,
+						0.32893413522423914
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_163",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.81908002141112,
+						0.9138675555437903,
+						-6.912432290305461
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.004928858043248552,
+						0.6868855643730294,
+						0.8081855775837221
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_164",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						8.829811189382575,
+						0.9883204929932816,
+						4.434705779105975
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.19940845763995924,
+						0.30427042023560025,
+						0.9963211221244401
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_165",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.8534991614515519,
+						1.0040687562010182,
+						1.0300182963701499
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9846441119697644,
+						0.3641676784958593,
+						0.15118820953437628
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_166",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.348463420661944,
+						0.5734040354653551,
+						8.398402189849573
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.19480353002139428,
+						0.3096094071326967,
+						0.9955870628459089
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_167",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.4406630357395525,
+						0.9287237255831036,
+						-4.964121054373214
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.17239744083806902,
+						0.33668138959731575,
+						0.9909211695646153
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_168",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-7.757346317254785,
+						0.8246018765310315,
+						-8.592961832828927
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.005882079104940929,
+						0.6808350207598446,
+						0.8132829001352144
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_169",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.2383610515472485,
+						0.30941547590292007,
+						-5.528339327799204
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.09745950839462891,
+						0.44442230544968264,
+						0.9581181861556883
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_170",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.969573975149685,
+						0.8801180754264448,
+						-0.7861874582464026
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9834526638481398,
+						0.14779678649610284,
+						0.3687505496557574
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_171",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						7.675480580681203,
+						0.5223525459047612,
+						-0.49391559864912793
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.54777941881959,
+						0.907141432565987,
+						0.04507914861442319
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_172",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.212284596534094,
+						0.31960864569771064,
+						4.093073256261643
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.3235628761974155,
+						0.993375884441813,
+						0.18306123936077168
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_173",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.033795105688493976,
+						0.5315305099267993,
+						3.4892652403069064
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.06182264010551647,
+						0.9276562971770628,
+						0.510521062717421
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_174",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						3.347100976753591,
+						0.33068768103599916,
+						8.503216560217442
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5726703911666097,
+						0.8920796275563352,
+						0.03524998127705531
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_175",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.2389685931306733,
+						0.47827167441009066,
+						-1.588863080394285
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.2944337692803384,
+						0.20805929597368955,
+						0.9975069347459722
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_176",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						5.941284342424751,
+						0.48469672833476996,
+						4.782584435515062
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.00023486500166591817,
+						0.736612021916084,
+						0.7631531130822501
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_177",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.397174447836548,
+						0.5077279315784772,
+						-3.765685146174267
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7129024215925347,
+						0.0017523890670979592,
+						0.7853451893403672
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_178",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.571143736687012,
+						1.156734195807854,
+						5.209414793451707
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.36070703941344784,
+						0.9855167765976346,
+						0.15377618398891785
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_179",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.08470541088308359,
+						0.6753261738967626,
+						-6.253735736537549
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5834128549301477,
+						0.8852382079670881,
+						0.031348937102764374
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_180",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						3.305885055127302,
+						0.654113978512008,
+						8.97522607368263
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8030087816976695,
+						0.6929361100516409,
+						0.00405510825068961
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_181",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.74101850038339,
+						0.3466564874267036,
+						9.482394098658432
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8140631012535917,
+						0.679900603260648,
+						0.006036295485760235
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_182",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-8.79729491709101,
+						1.0952252736894783,
+						-2.1335660741266675
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9010977233388504,
+						0.040915913942691395,
+						0.5579863627184583
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_183",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.654475318373077,
+						0.5963184838862357,
+						9.950596105957207
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.954524935870867,
+						0.0923066256109098,
+						0.4531684385182232
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_184",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.289756200839842,
+						0.3287043190050455,
+						8.717631030797598
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.48840366825568654,
+						0.07290193833308839,
+						0.9386943934112251
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_185",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						3.2885972746278807,
+						0.5985277406736584,
+						-2.4276116730083537
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.1489352601140782,
+						0.9838587575691622,
+						0.3672059823167597
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_186",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.614781154847497,
+						0.616320174024737,
+						-9.942585516237914
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.40690676387443786,
+						0.9719878443687807,
+						0.12110539175678164
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_187",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.110296649511554,
+						0.48666218997625044,
+						-7.525834357570275
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9874538186012825,
+						0.15988024320396077,
+						0.3526659381947565
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_188",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.8674155818325175,
+						0.689204400621237,
+						6.43147234748292
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.7185804380157288,
+						0.0012653766317197168,
+						0.7801541853525514
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_189",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.014853282979656,
+						1.127555777145272,
+						-0.5307189828580867
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.15156024206965096,
+						0.9847714871079755,
+						0.36366827082237374
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_190",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-6.139476251109066,
+						0.32725384956967757,
+						-2.7150227520883385
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.8988846515810232,
+						0.039467122772225194,
+						0.5616482256467514
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_191",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.7839634048919333,
+						0.3365845355243302,
+						6.2364905514431435
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.5522684047959063,
+						0.04322556446646475,
+						0.9045060307376287
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_192",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-9.302912285320371,
+						0.5313143571872063,
+						-8.748401134708812
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9382694041495911,
+						0.07244277745351513,
+						0.4892878183968935
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_193",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						4.9457360897737335,
+						0.5450831964721814,
+						7.971035779359383
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.2345592625092347,
+						0.9996752858132276,
+						0.26576545167753796
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_194",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						9.153792106175782,
+						0.9449721717880637,
+						2.339569634733431
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.46179631718927183,
+						0.9508487104904484,
+						0.08735497232027983
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_195",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-3.670327376689304,
+						0.9800871352554212,
+						-4.487393454103787
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9998596105913793,
+						0.2603306661640463,
+						0.2398097232445744
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_196",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						8.32919207299625,
+						0.3218310344473756,
+						2.679600856674867
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9685498308554041,
+						0.11457683944841601,
+						0.4168733296961795
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_197",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-5.322674794903195,
+						1.1585195220911577,
+						-0.49621884292793617
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.9816749295892315,
+						0.14300769607284275,
+						0.37531737433792567
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_198",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-2.269704224199227,
+						0.7441264593559245,
+						-4.979063583382375
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.04766932839882848,
+						0.9106855857641734,
+						0.5416450858369983
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "light_199",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						8.56198839791724,
+						0.9646392119898146,
+						-6.3412153707884
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.6621617659806032,
+						0.009312389476398397,
+						0.8285258445429983
+					],
+					"intensity": 1.5,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 2.5,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0,
+					"cast_shadows": false
+				}
+			}
+		},
+		{
+			"name": "camera",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						9,
+						13
+					],
+					"rotation_deg": [
+						-35,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Camera": {
+					"fov_degrees": 50,
+					"near_plane": 0.1,
+					"far_plane": 100
+				}
+			}
+		}
+	],
+	"environment": {
+		"hdri": null,
+		"use_ibl": false,
+		"show_skybox": false,
+		"sky_blur": 0,
+		"ambient_strength": 0.02,
+		"exposure": 1,
+		"ssao": false
+	}
+}

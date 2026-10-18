@@ -36,7 +36,7 @@ scene_render_settings_default(void)
 }
 
 static const char* const DEBUG_VIEW_NAMES[SCENE_VIEW_COUNT] = {
-    "lit", "albedo", "normals", "roughness", "metallic", "ao", "shadow", "lighting", "wireframe"
+    "lit", "albedo", "normals", "roughness", "metallic", "ao", "shadow", "lighting", "wireframe", "lights"
 };
 
 const char*
@@ -130,7 +130,9 @@ scene_renderer_shader_defines(char* out, size_t size)
 {
     snprintf(out, size,
              "#define CSM_MAX_CASCADES %d\n"
-             "#define MAX_LIGHTS %d\n"
+             "#define CLUSTER_X %d\n"
+             "#define CLUSTER_Y %d\n"
+             "#define CLUSTER_Z %d\n"
              "#define LIGHT_DIRECTIONAL %d\n"
              "#define LIGHT_POINT %d\n"
              "#define LIGHT_SPOT %d\n"
@@ -143,13 +145,14 @@ scene_renderer_shader_defines(char* out, size_t size)
              "#define DEBUG_VIEW_SHADOW %d\n"
              "#define DEBUG_VIEW_LIGHTING %d\n"
              "#define DEBUG_VIEW_WIREFRAME %d\n"
+             "#define DEBUG_VIEW_LIGHTS %d\n"
              "#define SPOT_SHADOW_MAX %d\n"
              "#define POINT_SHADOW_MAX %d\n",
-             CSM_MAX_CASCADES, LIGHTING_MAX_LIGHTS,
+             CSM_MAX_CASCADES, CLUSTER_X, CLUSTER_Y, CLUSTER_Z,
              (int)LIGHT_DIRECTIONAL, (int)LIGHT_POINT, (int)LIGHT_SPOT,
              (int)SCENE_VIEW_LIT, (int)SCENE_VIEW_ALBEDO, (int)SCENE_VIEW_NORMALS, (int)SCENE_VIEW_ROUGHNESS,
              (int)SCENE_VIEW_METALLIC, (int)SCENE_VIEW_AO, (int)SCENE_VIEW_SHADOW, (int)SCENE_VIEW_LIGHTING,
-             (int)SCENE_VIEW_WIREFRAME, SPOT_SHADOW_MAX, POINT_SHADOW_MAX);
+             (int)SCENE_VIEW_WIREFRAME, (int)SCENE_VIEW_LIGHTS, SPOT_SHADOW_MAX, POINT_SHADOW_MAX);
 }
 
 // pbr.vert with `fragment` (pbr.frag, or the depth pre-pass's).
@@ -220,8 +223,9 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     if (!post_create(&r->post, width, height))
         return false;
 
-    r->light_buffer  = rhi_uniform_buffer_create(sizeof(gpu_light_block));
     r->shadow_buffer = rhi_uniform_buffer_create(sizeof(gpu_shadow_block));
+    if (!light_clusters_create(&r->clusters))
+        return false;
 
     // Without timings the frame still renders: only the numbers are missing.
     if (!gpu_profiler_create(&r->profiler))
@@ -261,25 +265,15 @@ draw_entities(const world* w, rhi_shader shader, const model_draw_pass* passes, 
     }
 }
 
-// World-space direction of the first LIGHT_DIRECTIONAL in world order that
-// casts shadows -- the light lighting_bind() marks as shadowed. False if
-// there is none.
+// World-space direction of the cascades' light (Renderer/Lighting.h: the
+// first directional light with cast_shadows). False if there is none.
 static b8
-find_shadow_light(const world* w, vec3 out_direction)
+find_shadow_light(const light_clusters* lc, vec3 out_direction)
 {
-    light  lights[LIGHTING_MAX_LIGHTS];
-    uint32 count = world_gather_lights(w, lights, NULL, LIGHTING_MAX_LIGHTS);
-
-    for (uint32 i = 0; i < count; ++i)
-    {
-        if (lights[i].type == LIGHT_DIRECTIONAL && lights[i].cast_shadows)
-        {
-            glm_vec3_copy(lights[i].direction, out_direction);
-            return true;
-        }
-    }
-
-    return false;
+    if (lc->shadow_light_index < 0)
+        return false;
+    glm_vec3_copy(lc->lights[lc->shadow_light_index].direction, out_direction);
+    return true;
 }
 
 rhi_shader
@@ -291,8 +285,12 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     // framebuffers and leaves the default one bound when it's done.
     gpu_profiler_begin_frame(&r->profiler);
 
+    // The frame's lights, once: the shadows and the clusters both use them,
+    // and their order is what the shadows' light indices refer to.
+    light_clusters_gather(&r->clusters, w);
+
     vec3 shadow_dir;
-    b8   shadowed = settings->shadows && find_shadow_light(w, shadow_dir);
+    b8   shadowed = settings->shadows && find_shadow_light(&r->clusters, shadow_dir);
 
     if (shadowed)
     {
@@ -302,15 +300,14 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
         gpu_profiler_end(&r->profiler, scope);
     }
 
-    // Spot lights, each into its tile of the atlas. Same order as
-    // lighting_bind() gathers them, so the tiles' light indices match.
+    // Spot and point lights, each into its tiles of an atlas.
     r->spot.count  = 0;
     r->point.count = 0;
     if (settings->shadows)
     {
-        light  lights[LIGHTING_MAX_LIGHTS];
-        vec3   positions[LIGHTING_MAX_LIGHTS];
-        uint32 count = world_gather_lights(w, lights, positions, LIGHTING_MAX_LIGHTS);
+        const light* lights    = r->clusters.lights;
+        const vec3*  positions = (const vec3*)r->clusters.positions;
+        uint32       count     = r->clusters.count;
         spot_shadows_update(&r->spot, lights, positions, count);
         if (r->spot.count)
         {
@@ -335,6 +332,12 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     camera_get_view(cam, view);
     camera_get_projection(cam, projection);
     glm_mat4_mul(projection, view, view_projection);
+
+    // --- Lights by cluster ---------------------------------------------------------------
+    // With the un-jittered camera (TAA's shift is a fraction of a pixel; the
+    // clusters allow for it).
+    light_clusters_build(&r->clusters, view, projection, cam->near_plane, cam->far_plane, r->post.width,
+                         r->post.height, settings->debug_unclustered);
 
     // --- TAA: the reprojection, and this frame's sub-pixel shift ---------------------
     // The reprojection uses the un-jittered matrices: where the surface
@@ -422,11 +425,8 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     if (ao)
         rhi_texture_bind(ao, POST_SSAO_SLOT);
 
-    // The lights and the shadows, as pbr.frag's two uniform blocks.
-    gpu_light_block lights;
-    lighting_fill(w, &lights);
-    rhi_buffer_update(r->light_buffer, &lights, sizeof(lights), 0);
-    rhi_uniform_buffer_bind(r->light_buffer, FRAME_LIGHT_BINDING);
+    // The lights, by cluster.
+    light_clusters_bind(&r->clusters, shader);
 
     // Always bound, even unshadowed: they point the shadow samplers at their
     // own units. Left at the default unit 0, those sampler2DShadow uniforms
@@ -643,8 +643,7 @@ scene_renderer_destroy(scene_renderer* r)
 {
     gpu_profiler_destroy(&r->profiler);
     post_destroy(&r->post);
-    if (r->light_buffer)
-        rhi_buffer_destroy(r->light_buffer);
+    light_clusters_destroy(&r->clusters);
     if (r->shadow_buffer)
         rhi_buffer_destroy(r->shadow_buffer);
     spot_shadows_destroy(&r->spot);
