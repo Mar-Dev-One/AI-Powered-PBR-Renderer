@@ -29,11 +29,11 @@
 //     their own (they read what's behind them).
 //
 // Each frame's passes are timed on the GPU ("Shadows", "Depth", "SSAO", "Sky",
-// "Scene", "Bloom", "Exposure", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
+// "Scene", "TAA", "Bloom", "Exposure", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
 // begin() to end(), so it includes whatever the app draws in between.
 //
-// Its shaders are hot-reloaded -- PBR, depth pre-pass, SSAO, tone mapping,
-// bloom, FXAA, auto-exposure and shadow depth:
+// Its shaders are hot-reloaded -- PBR, depth pre-pass, SSAO, TAA, tone
+// mapping, bloom, FXAA, auto-exposure and shadow depth:
 // scene_renderer_poll_hot_reload() rebuilds one when its files change on
 // disk, keeping the old program if the new source fails to compile. (The
 // IBL's own shaders reload through ibl_cache_poll_hot_reload().)
@@ -63,6 +63,24 @@ const char* scene_debug_view_name(scene_debug_view view);
 // The inverse; false if `name` isn't one.
 b8 scene_debug_view_from_name(const char* name, scene_debug_view* out_view);
 
+// How jagged edges are smoothed: FXAA (a cheap pass over the finished
+// picture) or TAA (several sub-pixel camera positions blended over frames:
+// steadier and closer to supersampling, a little softer; camera motion is
+// followed, moving objects can smear slightly). Not in the data views.
+typedef enum scene_antialiasing
+{
+    SCENE_AA_OFF,
+    SCENE_AA_FXAA,
+    SCENE_AA_TAA,
+    SCENE_AA_COUNT
+} scene_antialiasing;
+
+// "off", "fxaa", "taa" (the render.set command's names); NULL out of range.
+const char* scene_antialiasing_name(scene_antialiasing aa);
+
+// The inverse; false if `name` isn't one.
+b8 scene_antialiasing_from_name(const char* name, scene_antialiasing* out_aa);
+
 typedef struct scene_render_settings
 {
     const ibl_environment* ibl;   // NULL = pbr.frag's hemisphere ambient and no skybox
@@ -74,7 +92,7 @@ typedef struct scene_render_settings
     f32 delta_time;               // seconds since the last frame, for auto-exposure to adapt by; < 0 jumps
                                   // straight to the scene's brightness, 0 holds (a screenshot)
     f32 bloom;                    // 0 = off; see Renderer/PostProcess.h
-    b8  fxaa;                     // anti-aliasing (not in data views)
+    scene_antialiasing antialiasing;
     scene_tonemap tonemap;        // World/Environment.h
     b8  ssao;                     // depth pre-pass + ambient occlusion (not in the wireframe view)
     f32 ssao_radius;              // meters
@@ -86,7 +104,7 @@ typedef struct scene_render_settings
 } scene_render_settings;
 
 // Sensible defaults: no IBL, skybox on, ambient 0.5, exposure 1, bloom 0.04,
-// FXAA on, SSAO on (0.5 m), shadows on.
+// FXAA, SSAO on (0.5 m), shadows on.
 scene_render_settings scene_render_settings_default(void);
 
 // Copies a scene's environment into `settings`: the lighting values, and
@@ -104,6 +122,14 @@ typedef struct scene_renderer
     gpu_profiler profiler;
     uint32       scene_scope;    // "Scene": from begin() to end()
 
+    // TAA: this frame's step in the jitter sequence, and the camera's
+    // un-jittered view-projection, kept for the next frame's reprojection.
+    uint32       taa_frame;
+    b8           taa_active;            // this frame is jittered (begin() to end())
+    mat4         taa_reprojection;      // this frame's NDC -> last frame's clip space
+    mat4         previous_view_projection;
+    b8           has_previous;
+
     // Hot reload: each shader's files.
     file_watch pbr_files;
     file_watch prepass_files;
@@ -111,6 +137,7 @@ typedef struct scene_renderer
     file_watch post_files;
     file_watch bloom_files;
     file_watch fxaa_files;
+    file_watch taa_files;
     file_watch exposure_files;
     file_watch shadow_files;
 } scene_renderer;

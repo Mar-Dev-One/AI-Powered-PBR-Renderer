@@ -402,7 +402,12 @@ images (the check only proves the scene loads and renders); scene switching in t
       rotations cancelled by an edge-aware blur), applied to ambient light only. The scene
       environment's `ssao` (on by default) and `ssao_radius`. About 4.4 ms at full resolution
       on the sample scene (2.0 pre-pass, 2.4 SSAO): half-resolution SSAO would cut most of it
-- [ ] Rendering: TAA (also cleans up shadow/SSAO noise), GTAO, height or volumetric fog
+- [x] TAA: Halton (2, 3) sub-pixel jitter, reprojection through depth (camera motion; moving
+      objects aren't tracked), variance clipping in YCoCg, brightness-weighted blend
+      (`taa.frag`). Anti-aliasing is now one setting, off / fxaa (default) / taa: View menu,
+      `render.set`'s `antialiasing`, the game's `--antialiasing`
+- [ ] Per-object motion vectors for TAA (`Spin` and other moving entities)
+- [ ] Rendering: GTAO, height or volumetric fog
 - [ ] Shadows for point lights (cube maps) and spot lights (perspective maps)
 - [ ] Screen-space reflections, local reflection probes with parallax correction
 - [ ] Materials: `KHR_texture_transform` and a second UV set, clearcoat,

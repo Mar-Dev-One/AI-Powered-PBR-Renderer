@@ -58,6 +58,7 @@ typedef struct golden_case
     const char* name;    // tests/golden/<name>.png
     const char* scene;   // under tests/golden/scenes/
     const char* view;    // the Game's --view, or NULL for the lit scene
+    const char* aa;      // the Game's --antialiasing, or NULL for its default (FXAA)
 } golden_case;
 
 // Each covers something the others don't.
@@ -71,6 +72,7 @@ static const golden_case CASES[] = {
     { "avocado_neutral", "avocado_neutral.json", NULL },  // Khronos PBR Neutral tone mapping
     { "avocado_auto",    "avocado_auto.json",    NULL },  // auto-exposure on a bright scene
     { "dark_auto",       "dark_auto.json",       NULL },  // auto-exposure on a dark one
+    { "avocado_taa",     "avocado.json",   NULL, "taa" }, // temporal anti-aliasing over the 8-frame jitter
 };
 
 #define CASE_COUNT (sizeof(CASES) / sizeof(CASES[0]))
@@ -86,7 +88,7 @@ render(const golden_case* c, const char* png)
     remove(png);
     remove(log);
 
-    const char* argv[10];
+    const char* argv[12];
     int         argc = 0;
     argv[argc++] = GAME_EXE;
     argv[argc++] = "--project";
@@ -97,6 +99,11 @@ render(const golden_case* c, const char* png)
     {
         argv[argc++] = "--view";
         argv[argc++] = c->view;
+    }
+    if (c->aa)
+    {
+        argv[argc++] = "--antialiasing";
+        argv[argc++] = c->aa;
     }
     argv[argc++] = scene;
     argv[argc]   = NULL;

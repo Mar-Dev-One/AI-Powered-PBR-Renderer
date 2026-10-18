@@ -23,6 +23,10 @@ static const uint32 TRIANGLE_INDICES[] = { 0, 1, 2 };
 #define POST_SLOT_BLOOM   1
 #define POST_SLOT_ADAPTED 2
 
+// How much of each new frame TAA mixes into its history: about the last
+// ten frames show, enough to cover the 8-step jitter cycle.
+#define TAA_BLEND 0.1f
+
 // How fast auto-exposure adapts: the fraction of the way to the measured
 // brightness covered per second is 1 - e^-ADAPT_SPEED (about 78% for 1.5).
 #define ADAPT_SPEED 1.5f
@@ -69,6 +73,15 @@ create_float_target(uint16 width, uint16 height)
         .color_attachments      = &color,
         .color_attachment_count = 1,
     });
+}
+
+// The scene's color as it stands: TAA's result once post_taa() has run this
+// frame, else the scene target.
+static rhi_texture
+scene_color(const post_process* post)
+{
+    return post->taa_ready ? rhi_framebuffer_get_color_texture(post->taa_history[post->taa_current], 0)
+                           : rhi_framebuffer_get_color_texture(post->scene_target, 0);
 }
 
 static rhi_shader
@@ -133,9 +146,10 @@ post_create(post_process* post, uint16 width, uint16 height)
     post->adapt_shader      = load_shader(POST_VERTEX_PATH, POST_ADAPT_PATH);
     post->ssao_shader       = load_shader(POST_VERTEX_PATH, POST_SSAO_PATH);
     post->ssao_blur_shader  = load_shader(POST_VERTEX_PATH, POST_SSAO_BLUR_PATH);
+    post->taa_shader        = load_shader(POST_VERTEX_PATH, POST_TAA_PATH);
     if (!post->tonemap_shader || !post->bloom_down_shader || !post->bloom_up_shader || !post->fxaa_shader
         || !post->luminance_shader || !post->reduce_shader || !post->adapt_shader || !post->ssao_shader
-        || !post->ssao_blur_shader)
+        || !post->ssao_blur_shader || !post->taa_shader)
         return false;
 
     // The meter and the adapted value don't depend on the window's size.
@@ -158,6 +172,8 @@ post_create(post_process* post, uint16 width, uint16 height)
     post->ldr_target   = create_ldr_target(post->width, post->height);
     post->ssao_raw     = create_ldr_target(post->width, post->height);
     post->ssao_target  = create_ldr_target(post->width, post->height);
+    post->taa_history[0] = create_float_target(post->width, post->height);
+    post->taa_history[1] = create_float_target(post->width, post->height);
     create_bloom_chain(post);
 
     return true;
@@ -176,6 +192,8 @@ post_resize(post_process* post, uint16 width, uint16 height)
     rhi_framebuffer_destroy(post->ldr_target);
     rhi_framebuffer_destroy(post->ssao_raw);
     rhi_framebuffer_destroy(post->ssao_target);
+    rhi_framebuffer_destroy(post->taa_history[0]);
+    rhi_framebuffer_destroy(post->taa_history[1]);
     destroy_bloom_chain(post);
 
     post->width        = width;
@@ -184,6 +202,9 @@ post_resize(post_process* post, uint16 width, uint16 height)
     post->ldr_target   = create_ldr_target(width, height);
     post->ssao_raw     = create_ldr_target(width, height);
     post->ssao_target  = create_ldr_target(width, height);
+    post->taa_history[0] = create_float_target(width, height);
+    post->taa_history[1] = create_float_target(width, height);
+    post->taa_valid      = false;   // the history was a different size
     create_bloom_chain(post);
 }
 
@@ -193,8 +214,14 @@ post_begin_scene(post_process* post, f32 r, f32 g, f32 b)
     if (!post->scene_target)
         return;
 
+    // A frame without TAA breaks the history: it no longer belongs to the
+    // frame just before.
+    if (!post->taa_ready)
+        post->taa_valid = false;
+
     post->bloom_ready = false;
     post->ssao_ready  = false;
+    post->taa_ready   = false;
     rhi_framebuffer_bind(post->scene_target);
     rhi_clear(r, g, b, 1.0f);
 }
@@ -257,6 +284,36 @@ post_ssao_texture(const post_process* post)
 }
 
 void
+post_taa(post_process* post, const f32* reprojection)
+{
+    if (!post->scene_target || !post->taa_history[0])
+        return;
+
+    rhi_render_state state = rhi_render_state_default();
+    state.depth_write = false;
+    rhi_set_render_state(state);
+
+    uint32     next   = 1 - post->taa_current;
+    rhi_shader shader = post->taa_shader;
+    rhi_framebuffer_bind(post->taa_history[next]);
+    rhi_shader_bind(shader);
+    rhi_shader_set_int(shader, "u_current", POST_SLOT_SCENE);
+    rhi_shader_set_int(shader, "u_history", POST_SLOT_BLOOM);
+    rhi_shader_set_int(shader, "u_depth", POST_SLOT_ADAPTED);
+    rhi_shader_set_mat4(shader, "u_reprojection", reprojection);
+    rhi_shader_set_float(shader, "u_blend", post->taa_valid ? TAA_BLEND : 1.0f);
+    rhi_texture_bind(rhi_framebuffer_get_color_texture(post->scene_target, 0), POST_SLOT_SCENE);
+    rhi_texture_bind(rhi_framebuffer_get_color_texture(post->taa_history[post->taa_current], 0), POST_SLOT_BLOOM);
+    rhi_texture_bind(rhi_framebuffer_get_depth_texture(post->scene_target), POST_SLOT_ADAPTED);
+    draw_triangle(post);
+
+    rhi_set_render_state(rhi_render_state_default());
+    post->taa_current = next;
+    post->taa_valid   = true;
+    post->taa_ready   = true;
+}
+
+void
 post_bloom(post_process* post)
 {
     if (!post->scene_target || post->bloom_mip_count == 0)
@@ -272,18 +329,18 @@ post_bloom(post_process* post)
     rhi_shader_bind(down);
     rhi_shader_set_int(down, "u_source", POST_SLOT_SCENE);
 
-    rhi_framebuffer source        = post->scene_target;
-    uint16          source_width  = post->width;
-    uint16          source_height = post->height;
+    rhi_texture source        = scene_color(post);
+    uint16      source_width  = post->width;
+    uint16      source_height = post->height;
     for (uint32 i = 0; i < post->bloom_mip_count; ++i)
     {
         rhi_framebuffer_bind(post->bloom_mips[i]);
         rhi_shader_set_vec2(down, "u_source_texel", 1.0f / (f32)source_width, 1.0f / (f32)source_height);
         rhi_shader_set_int(down, "u_first", i == 0);
-        rhi_texture_bind(rhi_framebuffer_get_color_texture(source, 0), POST_SLOT_SCENE);
+        rhi_texture_bind(source, POST_SLOT_SCENE);
         draw_triangle(post);
 
-        source        = post->bloom_mips[i];
+        source        = rhi_framebuffer_get_color_texture(post->bloom_mips[i], 0);
         source_width  = post->bloom_widths[i];
         source_height = post->bloom_heights[i];
     }
@@ -329,7 +386,7 @@ post_meter_exposure(post_process* post, f32 delta_time)
     rhi_shader_bind(shader);
     rhi_shader_set_int(shader, "u_scene", POST_SLOT_SCENE);
     rhi_shader_set_vec2(shader, "u_scene_texel", 1.0f / (f32)post->width, 1.0f / (f32)post->height);
-    rhi_texture_bind(rhi_framebuffer_get_color_texture(post->scene_target, 0), POST_SLOT_SCENE);
+    rhi_texture_bind(scene_color(post), POST_SLOT_SCENE);
     draw_triangle(post);
 
     // ...averaged down to 1 x 1...
@@ -409,7 +466,7 @@ post_end_scene_to(post_process* post, const post_settings* settings, rhi_framebu
     rhi_shader_set_int(shader, "u_luma_alpha", fxaa);
     rhi_shader_set_float(shader, "u_bloom_strength", bloom ? settings->bloom : 0.0f);
     rhi_shader_set_float(shader, "u_bloom_scale", post->bloom_mip_count ? 1.0f / (f32)post->bloom_mip_count : 0.0f);
-    rhi_texture_bind(rhi_framebuffer_get_color_texture(post->scene_target, 0), POST_SLOT_SCENE);
+    rhi_texture_bind(scene_color(post), POST_SLOT_SCENE);
     if (bloom)
         rhi_texture_bind(rhi_framebuffer_get_color_texture(post->bloom_mips[0], 0), POST_SLOT_BLOOM);
 
@@ -439,6 +496,11 @@ post_destroy(post_process* post)
         rhi_framebuffer_destroy(post->scene_target);
     if (post->ldr_target)
         rhi_framebuffer_destroy(post->ldr_target);
+    for (uint32 i = 0; i < 2; ++i)
+        if (post->taa_history[i])
+            rhi_framebuffer_destroy(post->taa_history[i]);
+    if (post->taa_shader)
+        rhi_shader_destroy(post->taa_shader);
     if (post->ssao_raw)
         rhi_framebuffer_destroy(post->ssao_raw);
     if (post->ssao_target)

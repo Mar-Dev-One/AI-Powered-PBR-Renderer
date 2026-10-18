@@ -2126,6 +2126,70 @@
 					"cast_shadows":	true
 				}
 			}
+		}, {
+			"id":	1048694,
+			"name":	"avocado",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.00075901, 16.2491],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[15.8993, 15.8993, 15.8993]
+				},
+				"MeshRenderer":	{
+					"model":	"models/Avocado.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048695,
+			"name":	"sphere",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.90017, 0.5, 12.7773],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 0.5, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"models/sphere.obj",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048696,
+			"name":	"lord_krishna_statue_3d_model_free_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.30125, 0.500526, 12.7773],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.52667, 0.52667, 0.52667]
+				},
+				"MeshRenderer":	{
+					"model":	"models/lord_krishna_statue_3d_model_free.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048697,
+			"name":	"bulky_knight",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.0230125, 12.7773],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[13.7602, 13.7602, 13.7602]
+				},
+				"MeshRenderer":	{
+					"model":	"models/bulky_knight.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
 		}],
 	"format":	"pbr-scene",
 	"version":	1,
@@ -2136,7 +2200,10 @@
 		"sky_blur":	0,
 		"ambient_strength":	0.35,
 		"exposure":	1,
+		"auto_exposure":	false,
 		"bloom":	0.04,
-		"tonemap":	"aces"
+		"tonemap":	"aces",
+		"ssao":	true,
+		"ssao_radius":	0.5
 	}
 }

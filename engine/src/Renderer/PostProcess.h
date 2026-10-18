@@ -23,7 +23,13 @@
 // pixel's surface sees, ssao_blur.frag cleans it up, and pbr.frag reads it
 // (POST_SSAO_SLOT) to darken its ambient light in creases and contact areas.
 //
-// Anti-aliasing (post_settings.fxaa): tone mapping writes into an RGBA8
+// Temporal anti-aliasing (post_taa(), first after the scene pass): the
+// frame, rendered with a sub-pixel camera shift that changes every frame
+// (SceneRenderer.c), is blended into a history reprojected from the last
+// frame (taa.frag). Everything after it -- bloom, auto-exposure, tone
+// mapping -- reads the result instead of the scene target.
+//
+// FXAA (post_settings.fxaa): tone mapping writes into an RGBA8
 // target with each pixel's luma in alpha instead, and fxaa.frag smooths its
 // edges into the final picture.
 //
@@ -45,6 +51,7 @@
 #define POST_ADAPT_PATH           "shaders/exposure_adapt.frag"
 #define POST_SSAO_PATH            "shaders/ssao.frag"
 #define POST_SSAO_BLUR_PATH       "shaders/ssao_blur.frag"
+#define POST_TAA_PATH             "shaders/taa.frag"
 
 // The texture unit pbr.frag reads the AO from: after IBL.h's units (9..12).
 #define POST_SSAO_SLOT 13
@@ -90,6 +97,12 @@ typedef struct post_process
     rhi_framebuffer ssao_raw;       // RGBA8, window-sized: ssao.frag's noisy output
     rhi_framebuffer ssao_target;    // RGBA8, window-sized: blurred, what pbr.frag reads
     b8              ssao_ready;     // post_ssao() ran since post_begin_scene()
+
+    rhi_shader      taa_shader;
+    rhi_framebuffer taa_history[2]; // RGBA16F, window-sized, ping-pong: the last result and the next
+    uint32          taa_current;    // taa_history[taa_current] holds the last result
+    b8              taa_valid;      // ...and it's from the frame just before this one
+    b8              taa_ready;      // post_taa() ran since post_begin_scene()
 } post_process;
 
 // How post_end_scene() turns the scene into the picture.
@@ -130,6 +143,14 @@ void post_ssao(post_process* post, const f32* projection, const f32* inverse_pro
 
 // This frame's AO (one texel per pixel), or NULL if post_ssao() hasn't run.
 rhi_texture post_ssao_texture(const post_process* post);
+
+// Temporal anti-aliasing: blends the finished scene (rendered with this
+// frame's jitter) into the history. `reprojection` (a column-major mat4)
+// takes this frame's NDC to last frame's clip space. The first frame, and
+// any frame after one without post_taa(), starts the history over. Call
+// before post_bloom() / post_meter_exposure(), which then read the result.
+// Leaves a history target bound.
+void post_taa(post_process* post, const f32* reprojection);
 
 // Blurs the finished scene down and back up the bloom chain, for
 // post_end_scene() to mix in. Only worth calling when settings.bloom > 0.

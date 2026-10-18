@@ -147,7 +147,7 @@ typedef struct editor_state
     scene_renderer renderer;
     b8             debug_show_cascades;   // tints shading by cascade index; see pbr.frag's u_debug_show_cascades
     scene_debug_view debug_view;          // lit, or one input to the shading (SceneRenderer.h)
-    b8             no_fxaa;               // anti-aliasing turned off (View menu, render.set); on by default
+    scene_antialiasing antialiasing;      // View menu, render.set; FXAA from on_init()
 
     // --- Image-based lighting -------------------------------------------------
     // doc.env (World/Environment.h) is the single source of truth for the
@@ -497,7 +497,7 @@ host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
     cJSON_AddItemToObject(*out_result, "ssao_radius", number_json(state->doc.env.ssao_radius));
     cJSON_AddStringToObject(*out_result, "tonemap", scene_tonemap_name(state->doc.env.tonemap));
     cJSON_AddStringToObject(*out_result, "debug_view", scene_debug_view_name(state->debug_view));
-    cJSON_AddBoolToObject(*out_result, "fxaa", !state->no_fxaa);
+    cJSON_AddStringToObject(*out_result, "antialiasing", scene_antialiasing_name(state->antialiasing));
     return true;
 }
 
@@ -591,7 +591,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     const cJSON* bloom    = cJSON_GetObjectItem(args, "bloom");
     const cJSON* cascades = cJSON_GetObjectItem(args, "debug_show_cascades");
     const cJSON* view     = cJSON_GetObjectItem(args, "debug_view");
-    const cJSON* fxaa     = cJSON_GetObjectItem(args, "fxaa");
+    const cJSON* aa       = cJSON_GetObjectItem(args, "antialiasing");
     const cJSON* tonemap  = cJSON_GetObjectItem(args, "tonemap");
     const cJSON* auto_exp = cJSON_GetObjectItem(args, "auto_exposure");
     const cJSON* ssao     = cJSON_GetObjectItem(args, "ssao");
@@ -600,13 +600,20 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     if ((exposure && (!cJSON_IsNumber(exposure) || exposure->valuedouble <= 0.0 || exposure->valuedouble > 16.0))
         || (ambient && (!cJSON_IsNumber(ambient) || ambient->valuedouble < 0.0 || ambient->valuedouble > 4.0))
         || (bloom && (!cJSON_IsNumber(bloom) || bloom->valuedouble < 0.0 || bloom->valuedouble > 1.0))
-        || (cascades && !cJSON_IsBool(cascades)) || (fxaa && !cJSON_IsBool(fxaa))
+        || (cascades && !cJSON_IsBool(cascades))
         || (auto_exp && !cJSON_IsBool(auto_exp)) || (ssao && !cJSON_IsBool(ssao))
         || (radius && (!cJSON_IsNumber(radius) || radius->valuedouble < 0.05 || radius->valuedouble > 5.0)))
     {
         snprintf(error, error_size, "exposure must be in (0, 16], ambient_strength in [0, 4], bloom in [0, 1], "
-                                    "ssao_radius in [0.05, 5]; debug_show_cascades, fxaa, auto_exposure and ssao "
+                                    "ssao_radius in [0.05, 5]; debug_show_cascades, auto_exposure and ssao "
                                     "true/false");
+        return false;
+    }
+
+    scene_antialiasing aa_value = state->antialiasing;
+    if (aa && !scene_antialiasing_from_name(cJSON_GetStringValue(aa), &aa_value))
+    {
+        snprintf(error, error_size, "antialiasing must be off, fxaa or taa");
         return false;
     }
 
@@ -633,7 +640,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     if (ssao)     state->doc.env.ssao          = cJSON_IsTrue(ssao);
     if (radius)   state->doc.env.ssao_radius   = (f32)radius->valuedouble;
     if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
-    if (fxaa)     state->no_fxaa             = !cJSON_IsTrue(fxaa);
+    state->antialiasing = aa_value;
     state->debug_view = debug_view;
 
     return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
@@ -1016,7 +1023,8 @@ static const cmd_arg ARGS_RENDER_SET[] = {
     { "bloom",               "number",  false, "How much bright light spreads into its surroundings, 0 (none) to 1; "
                                                 "0.04 is subtle, 0.1 strong" },
     { "debug_show_cascades", "boolean", false, "Tint shading by shadow cascade" },
-    { "fxaa",                "boolean", false, "Anti-aliasing: smooth jagged edges (default true)" },
+    { "antialiasing",        "string",  false, "How jagged edges are smoothed: fxaa (the default), taa (steadier, "
+                                                "a little softer), off" },
     { "tonemap",             "string",  false, "How light becomes screen color: aces (contrasty, the default), agx "
                                                 "(softer, bright colors keep their hue), neutral (materials show their "
                                                 "true color)" },
@@ -2307,8 +2315,14 @@ draw_main_menu(editor_state* state)
         igMenuItem_BoolPtr("GPU timings", NULL, &state->show_gpu_timings, true);
         igMenuItem_BoolPtr("Log", NULL, &state->show_log, true);
         igMenuItem_BoolPtr("Shadow cascades (debug)", NULL, &state->debug_show_cascades, true);
-        if (igMenuItem_Bool("Anti-aliasing (FXAA)", NULL, !state->no_fxaa, true))
-            state->no_fxaa = !state->no_fxaa;
+        if (igBeginMenu("Anti-aliasing", true))
+        {
+            static const char* const labels[SCENE_AA_COUNT] = { "Off", "FXAA", "TAA" };
+            for (int a = 0; a < SCENE_AA_COUNT; ++a)
+                if (igMenuItem_Bool(labels[a], NULL, state->antialiasing == (scene_antialiasing)a, true))
+                    state->antialiasing = (scene_antialiasing)a;
+            igEndMenu();
+        }
         if (igBeginMenu("Debug view", true))
         {
             for (int v = 0; v < SCENE_VIEW_COUNT; ++v)
@@ -2732,6 +2746,7 @@ on_init(App* app)
     inspector_init(&state->inspector);
 
     state->gizmo_op     = GIZMO_TRANSLATE;
+    state->antialiasing = SCENE_AA_FXAA;
     state->gizmo_space  = GIZMO_WORLD;
     state->snap_move    = 0.25f;
     state->snap_rotate  = 15.0f;
@@ -3015,7 +3030,7 @@ build_render_settings(const editor_state* state)
     scene_render_settings_apply_environment(&settings, &state->doc.env, ibl_cache_maps(&state->ibl));
     settings.debug_show_cascades = state->debug_show_cascades;
     settings.debug_view          = state->debug_view;
-    settings.fxaa                = !state->no_fxaa;
+    settings.antialiasing        = state->antialiasing;
 
     // Where nothing (not even the skybox) is drawn -- a scene without an
     // HDRI: a neutral dark grey, so an empty background never reads as an

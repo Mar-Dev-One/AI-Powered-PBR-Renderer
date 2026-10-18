@@ -22,7 +22,7 @@ scene_render_settings_default(void)
         .auto_exposure        = false,
         .delta_time           = -1.0f,
         .bloom                = 0.04f,
-        .fxaa                 = true,
+        .antialiasing         = SCENE_AA_FXAA,
         .tonemap              = SCENE_TONEMAP_ACES,
         .ssao                 = true,
         .ssao_radius          = 0.5f,
@@ -56,6 +56,45 @@ scene_debug_view_from_name(const char* name, scene_debug_view* out_view)
         }
     }
     return false;
+}
+
+static const char* const AA_NAMES[SCENE_AA_COUNT] = { "off", "fxaa", "taa" };
+
+const char*
+scene_antialiasing_name(scene_antialiasing aa)
+{
+    return (uint32)aa < SCENE_AA_COUNT ? AA_NAMES[aa] : NULL;
+}
+
+b8
+scene_antialiasing_from_name(const char* name, scene_antialiasing* out_aa)
+{
+    for (uint32 i = 0; name && i < SCENE_AA_COUNT; ++i)
+    {
+        if (strcmp(name, AA_NAMES[i]) == 0)
+        {
+            *out_aa = (scene_antialiasing)i;
+            return true;
+        }
+    }
+    return false;
+}
+
+// TAA's jitter: the Halton (2, 3) sequence's first 8 points, centred on
+// the pixel -- evenly spread over its area, never repeating a position
+// within the cycle.
+#define TAA_JITTER_COUNT 8
+
+static f32
+halton(uint32 index, uint32 base)
+{
+    f32 result = 0.0f, fraction = 1.0f;
+    for (uint32 i = index; i > 0; i /= base)
+    {
+        fraction /= (f32)base;
+        result   += fraction * (f32)(i % base);
+    }
+    return result;
 }
 
 // The views whose pixels are data, not light: shown without exposure, tone
@@ -140,6 +179,7 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     static const char* const post_files[]   = { POST_VERTEX_PATH, POST_FRAGMENT_PATH };
     static const char* const bloom_files[]  = { POST_VERTEX_PATH, POST_BLOOM_DOWN_PATH, POST_BLOOM_UP_PATH };
     static const char* const fxaa_files[]   = { POST_VERTEX_PATH, POST_FXAA_PATH };
+    static const char* const taa_files[]    = { POST_VERTEX_PATH, POST_TAA_PATH };
     static const char* const exposure_files[] = { POST_VERTEX_PATH, POST_LUMINANCE_PATH, POST_REDUCE_PATH,
                                                   POST_ADAPT_PATH };
     static const char* const shadow_files[] = { CSM_VERTEX_PATH, CSM_FRAGMENT_PATH };
@@ -149,6 +189,7 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     file_watch_init(&r->post_files, post_files, 2);
     file_watch_init(&r->bloom_files, bloom_files, 3);
     file_watch_init(&r->fxaa_files, fxaa_files, 2);
+    file_watch_init(&r->taa_files, taa_files, 2);
     file_watch_init(&r->exposure_files, exposure_files, 4);
     file_watch_init(&r->shadow_files, shadow_files, 2);
 
@@ -252,6 +293,35 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     camera_get_projection(cam, projection);
     glm_mat4_mul(projection, view, view_projection);
 
+    // --- TAA: the reprojection, and this frame's sub-pixel shift ---------------------
+    // The reprojection uses the un-jittered matrices: where the surface
+    // under a pixel sat on screen last frame, as the camera moved.
+    r->taa_active = settings->antialiasing == SCENE_AA_TAA && !debug_view_is_data(settings->debug_view);
+    if (r->taa_active)
+    {
+        mat4 inverse_view_projection;
+        glm_mat4_inv(view_projection, inverse_view_projection);
+        glm_mat4_mul(r->has_previous ? r->previous_view_projection : view_projection, inverse_view_projection,
+                     r->taa_reprojection);
+
+        // Shift the whole image by a fraction of a pixel: offsetting the
+        // projection's third column moves clip x/y by a constant in NDC.
+        uint32 step = r->taa_frame++ % TAA_JITTER_COUNT;
+        f32    jx   = (halton(step + 1, 2) - 0.5f) * 2.0f / (f32)r->post.width;
+        f32    jy   = (halton(step + 1, 3) - 0.5f) * 2.0f / (f32)r->post.height;
+        glm_mat4_copy(view_projection, r->previous_view_projection);
+        r->has_previous = true;
+
+        projection[2][0] -= jx;
+        projection[2][1] -= jy;
+        glm_mat4_mul(projection, view, view_projection);
+    }
+    else
+    {
+        glm_mat4_copy(view_projection, r->previous_view_projection);
+        r->has_previous = true;
+    }
+
     // --- Depth pre-pass + ambient occlusion --------------------------------------
     // Not in the wireframe view: the pre-pass's solid depth would hide the
     // edges behind the front faces.
@@ -330,11 +400,18 @@ finish_frame(scene_renderer* r, const scene_render_settings* settings, rhi_frame
     gpu_profiler_end(&r->profiler, r->scene_scope);
     rhi_set_wireframe(false);
 
+    if (r->taa_active)
+    {
+        uint32 scope = gpu_profiler_begin(&r->profiler, "TAA");
+        post_taa(&r->post, (const f32*)r->taa_reprojection);
+        gpu_profiler_end(&r->profiler, scope);
+    }
+
     post_settings post = {
         .exposure = settings->exposure,
         .raw      = debug_view_is_data(settings->debug_view),
         .bloom    = settings->bloom,
-        .fxaa     = settings->fxaa,
+        .fxaa     = settings->antialiasing == SCENE_AA_FXAA,
         .tonemap  = (int)settings->tonemap,
         .auto_exposure = settings->auto_exposure && !debug_view_is_data(settings->debug_view),
     };
@@ -476,7 +553,8 @@ scene_renderer_reload_shaders(scene_renderer* r)
     b8 post   = shader_rebuild(&r->post.tonemap_shader, POST_VERTEX_PATH, POST_FRAGMENT_PATH, NULL);
     b8 shadow = shader_rebuild(&r->csm.depth_shader, CSM_VERTEX_PATH, CSM_FRAGMENT_PATH, NULL);
     b8 bloom  = reload_bloom(r);
-    b8 fxaa   = shader_rebuild(&r->post.fxaa_shader, POST_VERTEX_PATH, POST_FXAA_PATH, NULL);
+    b8 fxaa   = shader_rebuild(&r->post.fxaa_shader, POST_VERTEX_PATH, POST_FXAA_PATH, NULL)
+             && shader_rebuild(&r->post.taa_shader, POST_VERTEX_PATH, POST_TAA_PATH, NULL);
     b8 exposure = reload_exposure(r);
     b8 prepass  = reload_prepass(r);
     b8 ssao     = reload_ssao(r);
@@ -498,6 +576,8 @@ scene_renderer_poll_hot_reload(scene_renderer* r)
         reload_bloom(r);
     if (file_watch_changed(&r->exposure_files))
         reload_exposure(r);
+    if (file_watch_changed(&r->taa_files))
+        shader_rebuild(&r->post.taa_shader, POST_VERTEX_PATH, POST_TAA_PATH, NULL);
     if (file_watch_changed(&r->fxaa_files))
         shader_rebuild(&r->post.fxaa_shader, POST_VERTEX_PATH, POST_FXAA_PATH, NULL);
     if (file_watch_changed(&r->shadow_files))

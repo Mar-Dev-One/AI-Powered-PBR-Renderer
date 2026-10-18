@@ -25,6 +25,8 @@
 //     --view NAME   show a debug view instead of the lit scene: albedo,
 //                   normals, roughness, metallic, ao, shadow, lighting,
 //                   wireframe (Renderer/SceneRenderer.h)
+//     --antialiasing NAME
+//                   fxaa (the default), taa or off
 //
 // The project: --project, else a project.json next to the executable (an
 // exported game, Project/Project.h project_export()), else the source tree's
@@ -82,9 +84,9 @@
 #define SHADOW_MAP_SIZE 2048
 #define CASCADE_COUNT   4
 
-// --check renders this many frames (the shadows and IBL settle) before the
-// picture is taken.
-#define CHECK_FRAMES 3
+// --check renders this many frames before the picture is taken: the
+// shadows and IBL settle, and TAA goes once through its 8-step jitter.
+#define CHECK_FRAMES 8
 
 typedef struct game_state
 {
@@ -100,7 +102,8 @@ typedef struct game_state
     uint32      check_frames;
     b8          check_passed;
 
-    scene_debug_view debug_view;   // --view; SCENE_VIEW_LIT normally
+    scene_debug_view   debug_view;     // --view; SCENE_VIEW_LIT normally
+    scene_antialiasing antialiasing;   // --antialiasing; FXAA normally
 
     asset_cache     assets;
     world           world;
@@ -414,7 +417,8 @@ on_frame(App* app, f32 dt)
 
     scene_render_settings settings = scene_render_settings_default();
     scene_render_settings_apply_environment(&settings, &state->env, ibl_cache_maps(&state->ibl));
-    settings.debug_view = state->debug_view;
+    settings.debug_view   = state->debug_view;
+    settings.antialiasing = state->antialiasing;
     // Auto-exposure adapts by the frame time; a check's picture mustn't
     // depend on frame times, so it goes straight to the scene's level.
     settings.delta_time = state->check_path ? -1.0f : dt;
@@ -451,10 +455,12 @@ parse_size(const char* text, uint16 max)
 static void
 print_usage(void)
 {
-    printf("usage: Game [--width N] [--height N] [--fullscreen] [--project DIR] [--check PNG] [--view NAME] [scene] [hdri]\n"
+    printf("usage: Game [--width N] [--height N] [--fullscreen] [--project DIR] [--check PNG] [--view NAME]\n"
+           "            [--antialiasing NAME] [scene] [hdri]\n"
            "  --project  the project folder (default: one next to the program, else the source tree's assets/)\n"
            "  --check    render the scene once, hidden, into PNG and exit (0 = it loaded and rendered)\n"
            "  --view     a debug view: albedo, normals, roughness, metallic, ao, shadow, lighting, wireframe\n"
+           "  --antialiasing  fxaa (default), taa or off\n"
            "  scene      name under the project's scenes/ or a path to a .json file\n"
            "             (default: the project's startup scene, else %s)\n"
            "  hdri       .hdr under the project, overriding the scene's own\n", DEFAULT_SCENE);
@@ -490,7 +496,8 @@ int main(int argc, char** argv)
     log_to_file();
 #endif
 
-    game_state state = { 0 };
+    game_state state   = { 0 };
+    state.antialiasing = SCENE_AA_FXAA;
 
     uint16 width       = 0;
     uint16 height      = 0;
@@ -531,6 +538,15 @@ int main(int argc, char** argv)
             if (!scene_debug_view_from_name(i + 1 < argc ? argv[++i] : NULL, &state.debug_view))
             {
                 fprintf(stderr, "--view needs one of: lit, albedo, normals, roughness, metallic, ao, shadow, lighting, wireframe\n");
+                print_usage();
+                return 1;
+            }
+        }
+        else if (strcmp(arg, "--antialiasing") == 0)
+        {
+            if (!scene_antialiasing_from_name(i + 1 < argc ? argv[++i] : NULL, &state.antialiasing))
+            {
+                fprintf(stderr, "--antialiasing needs one of: fxaa, taa, off\n");
                 print_usage();
                 return 1;
             }
