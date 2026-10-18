@@ -61,31 +61,7 @@ spot_shadows_update(spot_shadows* ss, const light* lights, const vec3* positions
 
         // At a meter from the light the tile spans 2 tan(fov/2) meters.
         ss->texel_scale[tile] = 2.0f * tanf(fov * 0.5f) / (f32)ss->tile_size;
-
-        glm_vec3_copy((f32*)positions[i], ss->position[tile]);
-        glm_vec3_normalize_to((f32*)l->direction, ss->direction[tile]);
-        ss->far[tile] = far;
     }
-}
-
-// Can tile `t`'s light reach anything inside the box? A sphere around the
-// box against the light's range, and against the plane behind the light:
-// conservative -- it never skips a caster that could cast into the map.
-static b8
-in_reach(const spot_shadows* ss, uint32 t, const vec3 box_min, const vec3 box_max)
-{
-    vec3 center, half, to_center;
-    glm_vec3_add((f32*)box_min, (f32*)box_max, center);
-    glm_vec3_scale(center, 0.5f, center);
-    glm_vec3_sub((f32*)box_max, center, half);
-    f32 radius = glm_vec3_norm(half);
-
-    glm_vec3_sub(center, (f32*)ss->position[t], to_center);
-    if (glm_vec3_norm(to_center) - radius > ss->far[t])
-        return false;   // beyond the light's range
-    if (glm_vec3_dot(to_center, (f32*)ss->direction[t]) < -radius)
-        return false;   // wholly behind the light
-    return true;
 }
 
 void
@@ -105,6 +81,10 @@ spot_shadows_render(spot_shadows* ss, const world* w, rhi_shader depth_shader)
         rhi_set_draw_region((uint16)((t & 1) * ss->tile_size), (uint16)((t >> 1) * ss->tile_size),
                             (uint16)ss->tile_size, (uint16)ss->tile_size);
 
+        // Only what the light's cone can see, out to its range.
+        vec4 planes[6];
+        glm_frustum_planes(ss->view_projection[t], planes);
+
         for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
         {
             const c_mesh_renderer* mr = world_mesh_renderer(w, e);
@@ -112,8 +92,8 @@ spot_shadows_render(spot_shadows* ss, const world* w, rhi_shader depth_shader)
             if (!m || !mr->visible || !mr->cast_shadows)
                 continue;
 
-            vec3 box_min, box_max;
-            if (world_bounds(w, e, box_min, box_max) && !in_reach(ss, t, box_min, box_max))
+            vec3 box[2];
+            if (world_bounds(w, e, box[0], box[1]) && !glm_aabb_frustum(box, planes))
                 continue;
 
             model_draw_depth(m, depth_shader, world_matrix(w, e), ss->view_projection[t]);

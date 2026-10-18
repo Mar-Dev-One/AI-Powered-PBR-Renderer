@@ -30,11 +30,6 @@ typedef struct spot_shadows
     int32  light_index[SPOT_SHADOW_MAX];      // which u_lights[] entry (world_gather_lights() order) each tile is for
     mat4   view_projection[SPOT_SHADOW_MAX];
     f32    texel_scale[SPOT_SHADOW_MAX];      // a texel's world size per meter from the light, for the bias
-
-    // Each tile's light, for skipping casters it can't reach.
-    vec3   position[SPOT_SHADOW_MAX];
-    vec3   direction[SPOT_SHADOW_MAX];
-    f32    far[SPOT_SHADOW_MAX];
 } spot_shadows;
 
 // An atlas of 2 x 2 tiles of `tile_size` texels. False (and `ss` safe to
@@ -47,8 +42,8 @@ void spot_shadows_update(spot_shadows* ss, const light* lights, const vec3* posi
 
 // Renders the shadow casters' depth into each picked light's tile, with the
 // depth-only shader `depth_shader` (Renderer/Shadow.h's) -- only casters
-// within the light's reach (its range, in front of it): a lamp's map
-// doesn't redraw the whole town. Needs world_update(). Leaves the default
+// inside the light's view, out to its range: a lamp's map doesn't redraw
+// the whole town. Needs world_update(). Leaves the default
 // framebuffer bound.
 void spot_shadows_render(spot_shadows* ss, const world* w, rhi_shader depth_shader);
 

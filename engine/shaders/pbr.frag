@@ -16,8 +16,9 @@
 //   LIGHT_DIRECTIONAL / LIGHT_POINT / LIGHT_SPOT  Scene/Light.h's light_type values
 //   DEBUG_VIEW_LIT ... DEBUG_VIEW_WIREFRAME     SceneRenderer.h's scene_debug_view values
 //   SPOT_SHADOW_MAX                             Renderer/SpotShadow.h
+//   POINT_SHADOW_MAX                            Renderer/PointShadow.h
 #if !defined(CSM_MAX_CASCADES) || !defined(MAX_LIGHTS) || !defined(LIGHT_SPOT) || !defined(DEBUG_VIEW_WIREFRAME) \
-    || !defined(SPOT_SHADOW_MAX)
+    || !defined(SPOT_SHADOW_MAX) || !defined(POINT_SHADOW_MAX)
 #error "pbr.frag must be compiled with SceneRenderer's defines"
 #endif
 
@@ -94,6 +95,19 @@ uniform int             u_spot_shadow_count;
 uniform int             u_spot_shadow_light[SPOT_SHADOW_MAX];
 uniform mat4            u_spot_shadow_matrix[SPOT_SHADOW_MAX];
 uniform float           u_spot_shadow_texel_scale[SPOT_SHADOW_MAX];
+
+// Point light shadows (Renderer/PointShadow.h): one atlas of cube faces, 6
+// across (+X, -X, +Y, -Y, +Z, -Z), one light per row. Row r belongs to
+// u_lights[u_point_shadow_light[r]]. Each face looks along its axis with a
+// 90-degree perspective between u_point_shadow_planes[r] (near, far);
+// u_point_shadow_faces[f] (the upper 3x3) turns a world direction into face
+// f's view space -- the same for every light.
+uniform sampler2DShadow u_point_shadow_atlas;   // slot 15
+uniform int             u_point_shadow_count;
+uniform int             u_point_shadow_light[POINT_SHADOW_MAX];
+uniform vec2            u_point_shadow_planes[POINT_SHADOW_MAX];
+uniform mat4            u_point_shadow_faces[6];
+uniform float           u_point_shadow_texel_scale;   // a face texel's world size per meter from the light
 
 // Debug aid: tints each fragment by which cascade it landed in (cascade 0 =
 // red, through to blue) so the split scheme/fit can be sanity-checked
@@ -315,6 +329,54 @@ float spot_shadow(int tile, vec3 world_pos, vec3 geometric_normal, float NoL, fl
     return 1.0 - lit / 12.0;
 }
 
+// Fraction of point light row `row`'s light (at `light_pos`) blocked at
+// `world_pos`: 0 = fully lit .. 1 = fully shadowed. Picks the cube face
+// the surface is seen through, then filters as spot_shadow() does, kept
+// inside that face (so a cube edge is a little harder-edged).
+float point_shadow(int row, vec3 light_pos, vec3 world_pos, vec3 geometric_normal, float NoL, float rotation)
+{
+    float dist        = length(world_pos - light_pos);
+    float texel_world = u_point_shadow_texel_scale * dist;
+    float sin_theta   = sqrt(clamp(1.0 - NoL * NoL, 0.0, 1.0));
+    vec3  to_surface  = world_pos + geometric_normal * texel_world * (0.5 + SHADOW_FILTER_RADIUS * sin_theta)
+                      - light_pos;
+
+    // The face: the axis the direction leans along most.
+    vec3 a = abs(to_surface);
+    int  face = a.x >= a.y && a.x >= a.z ? (to_surface.x > 0.0 ? 0 : 1)
+              : a.y >= a.z               ? (to_surface.y > 0.0 ? 2 : 3)
+                                         : (to_surface.z > 0.0 ? 4 : 5);
+
+    // The face's projection, by hand: x / depth across a 90-degree view,
+    // and the perspective depth glm_perspective() would store.
+    vec3  v    = mat3(u_point_shadow_faces[face]) * to_surface;
+    float d    = -v.z;
+    float near = u_point_shadow_planes[row].x, far = u_point_shadow_planes[row].y;
+    if (d <= near || d >= far)
+        return 0.0;
+    vec2  uv        = v.xy / d * 0.5 + 0.5;
+    float depth     = ((far + near) / (far - near) - 2.0 * far * near / ((far - near) * d)) * 0.5 + 0.5;
+    float reference = depth - 0.0002;
+
+    vec2 atlas_texel = 1.0 / vec2(textureSize(u_point_shadow_atlas, 0));
+    vec2 face_texel  = atlas_texel * vec2(6.0, float(POINT_SHADOW_MAX));   // one texel in face UV
+    vec2 origin      = vec2(float(face), float(row));
+    vec2 scale       = vec2(1.0 / 6.0, 1.0 / float(POINT_SHADOW_MAX));
+
+    float s = sin(rotation), c = cos(rotation);
+    mat2  rotate = mat2(c, s, -s, c);
+
+    float lit = 0.0;
+    for (int i = 0; i < 12; ++i)
+    {
+        vec2 tap = uv + rotate * POISSON_DISK[i] * SHADOW_FILTER_RADIUS * face_texel;
+        tap = clamp(tap, face_texel * 2.0, 1.0 - face_texel * 2.0);
+        lit += texture(u_point_shadow_atlas, vec3((origin + tap) * scale, reference));
+    }
+
+    return 1.0 - lit / 12.0;
+}
+
 // Smooth window that takes punctual light falloff to exactly 0 at `range`
 // (KHR_lights_punctual's recommended form), times inverse-square falloff.
 float distance_attenuation(float dist_sq, float range)
@@ -476,6 +538,22 @@ void main()
             L = to_light * inversesqrt(max(dist_sq, 1e-8));
 
             attenuation = distance_attenuation(dist_sq, light.range);
+
+            if (light.type == LIGHT_POINT)
+            {
+                for (int r = 0; r < u_point_shadow_count && attenuation > 0.0; ++r)
+                {
+                    if (u_point_shadow_light[r] != i)
+                        continue;
+                    float geometric_NoL = clamp(dot(geometric_normal, L), 0.0, 1.0);
+                    float rotation      = interleaved_gradient_noise(gl_FragCoord.xy) * 6.2831853;
+                    float visibility    = 1.0 - point_shadow(r, light.position, v_world_pos, geometric_normal,
+                                                             geometric_NoL, rotation);
+                    shadow_visibility *= visibility;
+                    attenuation       *= visibility;
+                }
+            }
+
             if (light.type == LIGHT_SPOT)
             {
                 attenuation *= spot_attenuation(L, light);

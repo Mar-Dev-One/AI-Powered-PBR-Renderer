@@ -411,7 +411,12 @@ images (the check only proves the scene loads and renders); scene switching in t
 - [x] Shadows for spot lights (`Renderer/SpotShadow.h`): up to 4, perspective maps in one
       2 x 2 depth atlas (one texture unit), casters culled to each light's range. Lights have a
       `cast_shadows` field (on by default), which the sun's cascades respect too
-- [ ] Shadows for point lights (cube maps)
+- [x] Shadows for point lights (`Renderer/PointShadow.h`): up to 4, six 90-degree faces each in
+      one depth atlas (the last of the 16 guaranteed texture units); pbr.frag picks the face
+      and projects into it itself. Spot and point maps cull casters to each view's frustum
+- [ ] Cache local light shadow maps while nothing in a light's range moves: the sample scene's
+      four shadowed point lamps redraw the whole village 24 times a frame (about 3.5 ms)
+- [ ] Texture arrays (or bindless textures) in the RHI: every guaranteed texture unit is used now
 - [ ] Screen-space reflections, local reflection probes with parallax correction
 - [ ] Materials: `KHR_texture_transform` and a second UV set, clearcoat,
       transmission/IOR/volume, sheen, anisotropy, iridescence

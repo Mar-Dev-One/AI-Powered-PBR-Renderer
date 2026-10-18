@@ -142,12 +142,13 @@ scene_renderer_shader_defines(char* out, size_t size)
              "#define DEBUG_VIEW_SHADOW %d\n"
              "#define DEBUG_VIEW_LIGHTING %d\n"
              "#define DEBUG_VIEW_WIREFRAME %d\n"
-             "#define SPOT_SHADOW_MAX %d\n",
+             "#define SPOT_SHADOW_MAX %d\n"
+             "#define POINT_SHADOW_MAX %d\n",
              CSM_MAX_CASCADES, LIGHTING_MAX_LIGHTS,
              (int)LIGHT_DIRECTIONAL, (int)LIGHT_POINT, (int)LIGHT_SPOT,
              (int)SCENE_VIEW_LIT, (int)SCENE_VIEW_ALBEDO, (int)SCENE_VIEW_NORMALS, (int)SCENE_VIEW_ROUGHNESS,
              (int)SCENE_VIEW_METALLIC, (int)SCENE_VIEW_AO, (int)SCENE_VIEW_SHADOW, (int)SCENE_VIEW_LIGHTING,
-             (int)SCENE_VIEW_WIREFRAME, SPOT_SHADOW_MAX);
+             (int)SCENE_VIEW_WIREFRAME, SPOT_SHADOW_MAX, POINT_SHADOW_MAX);
 }
 
 // pbr.vert with `fragment` (pbr.frag, or the depth pre-pass's).
@@ -208,6 +209,11 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     // Each spot light's tile gets half the cascades' resolution: a spot's
     // cone is usually far smaller than a cascade.
     if (!spot_shadows_create(&r->spot, shadow_resolution / 2))
+        return false;
+
+    // A quarter of the cascades' resolution per cube face: six of them per
+    // light, each covering only a 90-degree view.
+    if (!point_shadows_create(&r->point, shadow_resolution / 4))
         return false;
 
     if (!post_create(&r->post, width, height))
@@ -294,7 +300,8 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
 
     // Spot lights, each into its tile of the atlas. Same order as
     // lighting_bind() gathers them, so the tiles' light indices match.
-    r->spot.count = 0;
+    r->spot.count  = 0;
+    r->point.count = 0;
     if (settings->shadows)
     {
         light  lights[LIGHTING_MAX_LIGHTS];
@@ -305,6 +312,14 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
         {
             uint32 scope = gpu_profiler_begin(&r->profiler, "Spot shadows");
             spot_shadows_render(&r->spot, w, r->csm.depth_shader);
+            gpu_profiler_end(&r->profiler, scope);
+        }
+
+        point_shadows_update(&r->point, lights, positions, count);
+        if (r->point.count)
+        {
+            uint32 scope = gpu_profiler_begin(&r->profiler, "Point shadows");
+            point_shadows_render(&r->point, w, r->csm.depth_shader);
             gpu_profiler_end(&r->profiler, scope);
         }
     }
@@ -412,6 +427,7 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     if (!shadowed)
         rhi_shader_set_int(shader, "u_cascade_count", 0);
     spot_shadows_bind(&r->spot, shader);
+    point_shadows_bind(&r->point, shader);
 
     r->scene_scope = gpu_profiler_begin(&r->profiler, "Scene");
     return shader;
@@ -615,6 +631,7 @@ scene_renderer_destroy(scene_renderer* r)
     gpu_profiler_destroy(&r->profiler);
     post_destroy(&r->post);
     spot_shadows_destroy(&r->spot);
+    point_shadows_destroy(&r->point);
     csm_destroy(&r->csm);
 
     if (r->pbr_shader)
