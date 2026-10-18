@@ -73,6 +73,8 @@ static const field_desc LIGHT_FIELDS[] = {
       .min = 0.0f, .max = 89.0f, .doc = "Spot: half-angle of the full-intensity core" },
     { .name = "outer_cone_degrees", .type = FIELD_F32, .offset = offsetof(light, outer_cone_degrees),
       .min = 0.0f, .max = 89.0f, .doc = "Spot: half-angle where the light reaches zero" },
+    { .name = "cast_shadows", .type = FIELD_BOOL, .offset = offsetof(light, cast_shadows),
+      .doc = "Directional/spot: whether it casts shadows (the first directional one, the first 4 spots)" },
 };
 
 static const field_desc CAMERA_FIELDS[] = {

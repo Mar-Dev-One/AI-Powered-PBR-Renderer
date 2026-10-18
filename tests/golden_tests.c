@@ -73,6 +73,7 @@ static const golden_case CASES[] = {
     { "avocado_auto",    "avocado_auto.json",    NULL },  // auto-exposure on a bright scene
     { "dark_auto",       "dark_auto.json",       NULL },  // auto-exposure on a dark one
     { "avocado_taa",     "avocado.json",   NULL, "taa" }, // temporal anti-aliasing over the 8-frame jitter
+    { "spot_shadow",     "spot_shadow.json",     NULL },  // two spot lights' shadows, two atlas tiles
 };
 
 #define CASE_COUNT (sizeof(CASES) / sizeof(CASES[0]))

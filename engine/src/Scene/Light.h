@@ -29,6 +29,10 @@ typedef struct light
     f32 range;                // LIGHT_POINT / LIGHT_SPOT: distance at which attenuation reaches 0; 0 = no cutoff
     f32 inner_cone_degrees;   // LIGHT_SPOT only: full intensity inside this half-angle
     f32 outer_cone_degrees;   // LIGHT_SPOT only: zero intensity outside this half-angle
+
+    b8  cast_shadows;         // directional: the cascades (the first such light); spot: a shadow map
+                              // (Renderer/SpotShadow.h). Point lights cast none yet. The light_init_*
+                              // functions turn it on.
 } light;
 
 void light_init_directional(light* l, vec3 direction, vec3 color, f32 intensity);

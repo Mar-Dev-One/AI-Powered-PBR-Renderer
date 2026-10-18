@@ -11,6 +11,7 @@ light_init_directional(light* l, vec3 direction, vec3 color, f32 intensity)
     l->range               = 0.0f;
     l->inner_cone_degrees  = 0.0f;
     l->outer_cone_degrees  = 0.0f;
+    l->cast_shadows        = true;
 }
 
 void
@@ -27,6 +28,7 @@ light_init_point(light* l, vec3 color, f32 intensity, f32 range)
     l->range               = range;
     l->inner_cone_degrees  = 0.0f;
     l->outer_cone_degrees  = 0.0f;
+    l->cast_shadows        = true;
 }
 
 void
@@ -41,4 +43,5 @@ light_init_spot(light* l, vec3 direction, vec3 color, f32 intensity,
     l->range              = range;
     l->inner_cone_degrees = inner_cone_degrees;
     l->outer_cone_degrees = outer_cone_degrees;
+    l->cast_shadows       = true;
 }

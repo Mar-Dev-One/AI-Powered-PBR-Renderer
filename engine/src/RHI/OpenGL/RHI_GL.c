@@ -81,6 +81,11 @@ void gl_set_wireframe(b8 enabled)
     glPolygonMode(GL_FRONT_AND_BACK, enabled ? GL_LINE : GL_FILL);
 }
 
+void gl_set_draw_region(uint16 x, uint16 y, uint16 width, uint16 height)
+{
+    glViewport(x, y, width, height);   // not g_gl_screen_viewport: that's the window's
+}
+
 void gl_set_color_write(b8 enabled)
 {
     GLboolean on = enabled ? GL_TRUE : GL_FALSE;
@@ -178,6 +183,7 @@ void rhi_gl_get_backend(rhi_backend_api* out_api)
     out_api->set_render_state = gl_set_render_state;
     out_api->set_wireframe = gl_set_wireframe;
     out_api->set_color_write = gl_set_color_write;
+    out_api->set_draw_region = gl_set_draw_region;
 
     out_api->timestamp_create = gl_timestamp_create;
     out_api->timestamp_write = gl_timestamp_write;

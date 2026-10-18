@@ -10,9 +10,10 @@
 #include "PostProcess.h"
 #include "ShaderReload.h"
 #include "Shadow.h"
+#include "SpotShadow.h"
 
 // The lit frame, as one unit: cascaded shadows for the world's first
-// directional light, a depth pre-pass and screen-space ambient occlusion
+// directional light, shadow maps for up to 4 spot lights (SpotShadow.h), a depth pre-pass and screen-space ambient occlusion
 // (when settings.ssao), an HDR scene target with optional skybox, the PBR
 // shader with every per-frame uniform (camera, lights, IBL, cascades), every
 // visible MeshRenderer, and the final tone-mapping pass. An app supplies a
@@ -28,7 +29,7 @@
 //     material. They aren't in the depth pre-pass, so they get no SSAO of
 //     their own (they read what's behind them).
 //
-// Each frame's passes are timed on the GPU ("Shadows", "Depth", "SSAO", "Sky",
+// Each frame's passes are timed on the GPU ("Shadows", "Spot shadows", "Depth", "SSAO", "Sky",
 // "Scene", "TAA", "Bloom", "Exposure", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
 // begin() to end(), so it includes whatever the app draws in between.
 //
@@ -96,7 +97,7 @@ typedef struct scene_render_settings
     scene_tonemap tonemap;        // World/Environment.h
     b8  ssao;                     // depth pre-pass + ambient occlusion (not in the wireframe view)
     f32 ssao_radius;              // meters
-    b8  shadows;                  // cascaded shadows for the first directional light
+    b8  shadows;                  // cascaded shadows for the first directional light, and spot light shadows
     f32 cascade_split_lambda;     // see csm_update(); 0.5 is a good default
     b8  debug_show_cascades;      // tint shading by cascade, see pbr.frag
     scene_debug_view debug_view;  // SCENE_VIEW_LIT for the real thing
@@ -118,6 +119,7 @@ typedef struct scene_renderer
     rhi_shader   pbr_shader;
     rhi_shader   prepass_shader;   // pbr.vert + depth_prepass.frag
     csm_state    csm;
+    spot_shadows spot;
     post_process post;
     gpu_profiler profiler;
     uint32       scene_scope;    // "Scene": from begin() to end()

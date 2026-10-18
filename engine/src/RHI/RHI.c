@@ -264,6 +264,11 @@ void rhi_set_color_write(b8 enabled)
     backend.set_color_write(enabled);
 }
 
+void rhi_set_draw_region(uint16 x, uint16 y, uint16 width, uint16 height)
+{
+    backend.set_draw_region(x, y, width, height);
+}
+
 rhi_query rhi_timestamp_create(void)
 {
     return backend.timestamp_create();

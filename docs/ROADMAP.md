@@ -408,7 +408,10 @@ images (the check only proves the scene loads and renders); scene switching in t
       `render.set`'s `antialiasing`, the game's `--antialiasing`
 - [ ] Per-object motion vectors for TAA (`Spin` and other moving entities)
 - [ ] Rendering: GTAO, height or volumetric fog
-- [ ] Shadows for point lights (cube maps) and spot lights (perspective maps)
+- [x] Shadows for spot lights (`Renderer/SpotShadow.h`): up to 4, perspective maps in one
+      2 x 2 depth atlas (one texture unit), casters culled to each light's range. Lights have a
+      `cast_shadows` field (on by default), which the sun's cascades respect too
+- [ ] Shadows for point lights (cube maps)
 - [ ] Screen-space reflections, local reflection probes with parallax correction
 - [ ] Materials: `KHR_texture_transform` and a second UV set, clearcoat,
       transmission/IOR/volume, sheen, anisotropy, iridescence

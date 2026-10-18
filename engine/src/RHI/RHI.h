@@ -258,6 +258,11 @@ void             rhi_set_wireframe(b8 enabled);
 // Off: draws write depth only (a depth pre-pass), until turned back on.
 void             rhi_set_color_write(b8 enabled);
 
+// Limits drawing to a rectangle of the bound framebuffer (a tile of a
+// shadow atlas), until the next framebuffer bind. Unlike rhi_set_viewport(),
+// not remembered as the screen's viewport.
+void             rhi_set_draw_region(uint16 x, uint16 y, uint16 width, uint16 height);
+
 // --- GPU timestamps ------------------------------------------------------
 // rhi_timestamp_write() records when the GPU gets to that point in the work
 // submitted so far; two of them time what's between. The GPU runs behind

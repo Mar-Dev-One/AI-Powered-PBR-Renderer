@@ -141,12 +141,13 @@ scene_renderer_shader_defines(char* out, size_t size)
              "#define DEBUG_VIEW_AO %d\n"
              "#define DEBUG_VIEW_SHADOW %d\n"
              "#define DEBUG_VIEW_LIGHTING %d\n"
-             "#define DEBUG_VIEW_WIREFRAME %d\n",
+             "#define DEBUG_VIEW_WIREFRAME %d\n"
+             "#define SPOT_SHADOW_MAX %d\n",
              CSM_MAX_CASCADES, LIGHTING_MAX_LIGHTS,
              (int)LIGHT_DIRECTIONAL, (int)LIGHT_POINT, (int)LIGHT_SPOT,
              (int)SCENE_VIEW_LIT, (int)SCENE_VIEW_ALBEDO, (int)SCENE_VIEW_NORMALS, (int)SCENE_VIEW_ROUGHNESS,
              (int)SCENE_VIEW_METALLIC, (int)SCENE_VIEW_AO, (int)SCENE_VIEW_SHADOW, (int)SCENE_VIEW_LIGHTING,
-             (int)SCENE_VIEW_WIREFRAME);
+             (int)SCENE_VIEW_WIREFRAME, SPOT_SHADOW_MAX);
 }
 
 // pbr.vert with `fragment` (pbr.frag, or the depth pre-pass's).
@@ -204,6 +205,11 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     if (!csm_create(&r->csm, cascade_count, shadow_resolution))
         return false;
 
+    // Each spot light's tile gets half the cascades' resolution: a spot's
+    // cone is usually far smaller than a cascade.
+    if (!spot_shadows_create(&r->spot, shadow_resolution / 2))
+        return false;
+
     if (!post_create(&r->post, width, height))
         return false;
 
@@ -245,8 +251,9 @@ draw_entities(const world* w, rhi_shader shader, const model_draw_pass* passes, 
     }
 }
 
-// World-space direction of the first LIGHT_DIRECTIONAL in world order --
-// the light lighting_bind() marks as shadowed. False if there is none.
+// World-space direction of the first LIGHT_DIRECTIONAL in world order that
+// casts shadows -- the light lighting_bind() marks as shadowed. False if
+// there is none.
 static b8
 find_shadow_light(const world* w, vec3 out_direction)
 {
@@ -255,7 +262,7 @@ find_shadow_light(const world* w, vec3 out_direction)
 
     for (uint32 i = 0; i < count; ++i)
     {
-        if (lights[i].type == LIGHT_DIRECTIONAL)
+        if (lights[i].type == LIGHT_DIRECTIONAL && lights[i].cast_shadows)
         {
             glm_vec3_copy(lights[i].direction, out_direction);
             return true;
@@ -283,6 +290,23 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
         csm_update(&r->csm, cam, shadow_dir, settings->cascade_split_lambda);
         csm_render(&r->csm, w);
         gpu_profiler_end(&r->profiler, scope);
+    }
+
+    // Spot lights, each into its tile of the atlas. Same order as
+    // lighting_bind() gathers them, so the tiles' light indices match.
+    r->spot.count = 0;
+    if (settings->shadows)
+    {
+        light  lights[LIGHTING_MAX_LIGHTS];
+        vec3   positions[LIGHTING_MAX_LIGHTS];
+        uint32 count = world_gather_lights(w, lights, positions, LIGHTING_MAX_LIGHTS);
+        spot_shadows_update(&r->spot, lights, positions, count);
+        if (r->spot.count)
+        {
+            uint32 scope = gpu_profiler_begin(&r->profiler, "Spot shadows");
+            spot_shadows_render(&r->spot, w, r->csm.depth_shader);
+            gpu_profiler_end(&r->profiler, scope);
+        }
     }
 
     // --- Scene target + background ----------------------------------------------
@@ -387,6 +411,7 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     csm_bind(&r->csm, shader);
     if (!shadowed)
         rhi_shader_set_int(shader, "u_cascade_count", 0);
+    spot_shadows_bind(&r->spot, shader);
 
     r->scene_scope = gpu_profiler_begin(&r->profiler, "Scene");
     return shader;
@@ -589,6 +614,7 @@ scene_renderer_destroy(scene_renderer* r)
 {
     gpu_profiler_destroy(&r->profiler);
     post_destroy(&r->post);
+    spot_shadows_destroy(&r->spot);
     csm_destroy(&r->csm);
 
     if (r->pbr_shader)

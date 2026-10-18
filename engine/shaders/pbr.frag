@@ -15,7 +15,9 @@
 //   MAX_LIGHTS                                  Renderer/Lighting.h's LIGHTING_MAX_LIGHTS
 //   LIGHT_DIRECTIONAL / LIGHT_POINT / LIGHT_SPOT  Scene/Light.h's light_type values
 //   DEBUG_VIEW_LIT ... DEBUG_VIEW_WIREFRAME     SceneRenderer.h's scene_debug_view values
-#if !defined(CSM_MAX_CASCADES) || !defined(MAX_LIGHTS) || !defined(LIGHT_SPOT) || !defined(DEBUG_VIEW_WIREFRAME)
+//   SPOT_SHADOW_MAX                             Renderer/SpotShadow.h
+#if !defined(CSM_MAX_CASCADES) || !defined(MAX_LIGHTS) || !defined(LIGHT_SPOT) || !defined(DEBUG_VIEW_WIREFRAME) \
+    || !defined(SPOT_SHADOW_MAX)
 #error "pbr.frag must be compiled with SceneRenderer's defines"
 #endif
 
@@ -82,6 +84,16 @@ uniform mat4            u_light_view_projection[CSM_MAX_CASCADES];
 uniform float           u_cascade_splits[CSM_MAX_CASCADES];
 uniform float           u_cascade_texel_sizes[CSM_MAX_CASCADES];
 uniform int             u_cascade_count;
+
+// Spot light shadows (Renderer/SpotShadow.h): one atlas of 2 x 2 perspective
+// depth maps. Tile t belongs to u_lights[u_spot_shadow_light[t]]; tiles
+// >= u_spot_shadow_count are unused. u_spot_shadow_texel_scale[t] is a
+// texel's world size per meter from the light.
+uniform sampler2DShadow u_spot_shadow_atlas;   // slot 14
+uniform int             u_spot_shadow_count;
+uniform int             u_spot_shadow_light[SPOT_SHADOW_MAX];
+uniform mat4            u_spot_shadow_matrix[SPOT_SHADOW_MAX];
+uniform float           u_spot_shadow_texel_scale[SPOT_SHADOW_MAX];
 
 // Debug aid: tints each fragment by which cascade it landed in (cascade 0 =
 // red, through to blue) so the split scheme/fit can be sanity-checked
@@ -265,6 +277,44 @@ float shadow_calculation(int cascade_index, vec3 geometric_normal, float NoL)
     return shadow;
 }
 
+// Fraction of spot light tile `tile`'s light blocked at `world_pos`, which is
+// `dist` meters from the light: 0 = fully lit .. 1 = fully shadowed. The
+// same normal offset and rotated Poisson filter as sample_cascade(), with
+// the texel size growing with distance, as a perspective map's does.
+float spot_shadow(int tile, vec3 world_pos, vec3 geometric_normal, float NoL, float dist, float rotation)
+{
+    float texel_world = u_spot_shadow_texel_scale[tile] * dist;
+    float sin_theta   = sqrt(clamp(1.0 - NoL * NoL, 0.0, 1.0));
+    vec3  offset_pos  = world_pos + geometric_normal * texel_world * (0.5 + SHADOW_FILTER_RADIUS * sin_theta);
+
+    vec4 clip = u_spot_shadow_matrix[tile] * vec4(offset_pos, 1.0);
+    if (clip.w <= 0.0)
+        return 0.0;   // behind the light
+    vec3 proj = clip.xyz / clip.w * 0.5 + 0.5;
+    if (proj.z > 1.0 || any(lessThan(proj.xy, vec2(0.0))) || any(greaterThan(proj.xy, vec2(1.0))))
+        return 0.0;   // outside the map: outside the cone too
+
+    // The tile's corner in the atlas, and a margin of half a texel inside
+    // it, so the filter never reads a neighbouring tile.
+    vec2  atlas_texel = 1.0 / vec2(textureSize(u_spot_shadow_atlas, 0));
+    vec2  origin      = vec2(float(tile & 1), float(tile >> 1)) * 0.5;
+    vec2  margin      = atlas_texel * 2.0;   // in tile UV (a tile is half the atlas)
+    float reference   = proj.z - 0.0002;
+
+    float s = sin(rotation), c = cos(rotation);
+    mat2  rotate = mat2(c, s, -s, c);
+
+    float lit = 0.0;
+    for (int i = 0; i < 12; ++i)
+    {
+        vec2 uv = proj.xy + rotate * POISSON_DISK[i] * SHADOW_FILTER_RADIUS * atlas_texel * 2.0;
+        uv = clamp(uv, margin, 1.0 - margin);
+        lit += texture(u_spot_shadow_atlas, vec3(origin + uv * 0.5, reference));
+    }
+
+    return 1.0 - lit / 12.0;
+}
+
 // Smooth window that takes punctual light falloff to exactly 0 at `range`
 // (KHR_lights_punctual's recommended form), times inverse-square falloff.
 float distance_attenuation(float dist_sq, float range)
@@ -407,7 +457,7 @@ void main()
     // --- Direct light ----------------------------------------------------------
     int   cascade_index     = pick_cascade(v_view_depth);
     vec3  direct            = vec3(0.0);
-    float shadow_visibility = 1.0;   // the shadowed light's, for DEBUG_VIEW_SHADOW
+    float shadow_visibility = 1.0;   // every shadowed light's together, for DEBUG_VIEW_SHADOW
 
     for (int i = 0; i < u_light_count; ++i)
     {
@@ -427,7 +477,21 @@ void main()
 
             attenuation = distance_attenuation(dist_sq, light.range);
             if (light.type == LIGHT_SPOT)
+            {
                 attenuation *= spot_attenuation(L, light);
+
+                for (int t = 0; t < u_spot_shadow_count && attenuation > 0.0; ++t)
+                {
+                    if (u_spot_shadow_light[t] != i)
+                        continue;
+                    float geometric_NoL = clamp(dot(geometric_normal, L), 0.0, 1.0);
+                    float rotation      = interleaved_gradient_noise(gl_FragCoord.xy) * 6.2831853;
+                    float visibility    = 1.0 - spot_shadow(t, v_world_pos, geometric_normal, geometric_NoL,
+                                                            sqrt(dist_sq), rotation);
+                    shadow_visibility *= visibility;
+                    attenuation       *= visibility;
+                }
+            }
         }
 
         if (attenuation <= 0.0)
@@ -436,8 +500,9 @@ void main()
         if (i == u_shadow_light_index && cascade_index >= 0)
         {
             float geometric_NoL = clamp(dot(geometric_normal, L), 0.0, 1.0);
-            shadow_visibility = 1.0 - shadow_calculation(cascade_index, geometric_normal, geometric_NoL);
-            attenuation *= shadow_visibility;
+            float visibility = 1.0 - shadow_calculation(cascade_index, geometric_normal, geometric_NoL);
+            shadow_visibility *= visibility;
+            attenuation       *= visibility;
         }
 
         vec3 radiance = light.color * light.intensity * attenuation;

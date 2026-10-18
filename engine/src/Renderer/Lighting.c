@@ -20,7 +20,8 @@ lighting_bind(rhi_shader shader, const world* w)
     rhi_shader_set_int(shader, "u_light_count", (int32)count);
 
     // The cascades (Renderer/Shadow.h) are fit to the first directional
-    // light in world order -- tell pbr.frag which u_lights[] entry that is.
+    // light in world order that casts shadows -- tell pbr.frag which
+    // u_lights[] entry that is.
     int32 shadow_light_index = -1;
 
     for (uint32 i = 0; i < count; ++i)
@@ -28,7 +29,7 @@ lighting_bind(rhi_shader shader, const world* w)
         const light* l = &lights[i];
         char         name[48];
 
-        if (shadow_light_index < 0 && l->type == LIGHT_DIRECTIONAL)
+        if (shadow_light_index < 0 && l->type == LIGHT_DIRECTIONAL && l->cast_shadows)
             shadow_light_index = (int32)i;
 
         snprintf(name, sizeof(name), "u_lights[%u].type", i);

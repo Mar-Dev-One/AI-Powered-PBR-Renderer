@@ -64,6 +64,7 @@ void gl_clear(f32 r, f32 g, f32 b, f32 a);
 void gl_set_render_state(rhi_render_state state);
 void gl_set_wireframe(b8 enabled);
 void gl_set_color_write(b8 enabled);
+void gl_set_draw_region(uint16 x, uint16 y, uint16 width, uint16 height);
 
 rhi_query gl_timestamp_create(void);
 void      gl_timestamp_write(rhi_query query);
