@@ -1,4 +1,5 @@
 #include "PointShadow.h"
+#include "FrameData.h"
 
 #include "../Assets/AssetCache.h"
 #include "../Scene/Model.h"
@@ -115,28 +116,22 @@ point_shadows_render(point_shadows* ps, const world* w, rhi_shader depth_shader)
 }
 
 void
-point_shadows_bind(const point_shadows* ps, rhi_shader pbr_shader)
+point_shadows_bind(const point_shadows* ps, rhi_shader pbr_shader, struct gpu_shadow_block* block)
 {
     rhi_shader_set_int(pbr_shader, "u_point_shadow_atlas", POINT_SHADOW_SLOT);
-    rhi_shader_set_int(pbr_shader, "u_point_shadow_count", (int32)ps->count);
-    rhi_shader_set_float(pbr_shader, "u_point_shadow_texel_scale", ps->face_size ? 2.0f / (f32)ps->face_size : 0.0f);
     if (ps->atlas)
         rhi_texture_bind(rhi_framebuffer_get_depth_texture(ps->atlas), POINT_SHADOW_SLOT);
 
-    char name[48];
+    block->point_count       = (int32)ps->count;
+    block->point_texel_scale = ps->face_size ? 2.0f / (f32)ps->face_size : 0.0f;
     for (uint32 f = 0; f < POINT_SHADOW_FACES; ++f)
-    {
-        snprintf(name, sizeof(name), "u_point_shadow_faces[%u]", f);
-        rhi_shader_set_mat4(pbr_shader, name, (const f32*)ps->face_rotation[f]);
-    }
+        glm_mat4_copy((vec4*)ps->face_rotation[f], block->point_faces[f]);
 
     for (uint32 r = 0; r < ps->count; ++r)
     {
-        snprintf(name, sizeof(name), "u_point_shadow_light[%u]", r);
-        rhi_shader_set_int(pbr_shader, name, ps->light_index[r]);
-
-        snprintf(name, sizeof(name), "u_point_shadow_planes[%u]", r);
-        rhi_shader_set_vec2(pbr_shader, name, ps->near[r], ps->far[r]);
+        block->point_light[r][0]  = ps->light_index[r];
+        block->point_planes[r][0] = ps->near[r];
+        block->point_planes[r][1] = ps->far[r];
     }
 }
 

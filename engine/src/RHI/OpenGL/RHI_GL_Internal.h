@@ -84,6 +84,8 @@ rhi_buffer gl_vertex_buffer_create(const void* data, uint64 size,
                                     const rhi_vertex_layout* layout,
                                     rhi_buffer_usage usage);
 rhi_buffer gl_index_buffer_create(const void* data, uint64 size, rhi_buffer_usage usage);
+rhi_buffer gl_uniform_buffer_create(uint64 size);
+void       gl_uniform_buffer_bind(rhi_buffer buffer, uint32 binding);
 void       gl_buffer_update(rhi_buffer buffer, const void* data, uint64 size, uint64 offset);
 void       gl_buffer_destroy(rhi_buffer buffer);
 

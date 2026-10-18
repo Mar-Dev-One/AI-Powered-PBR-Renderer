@@ -125,6 +125,11 @@ typedef struct scene_renderer
     point_shadows point;
     post_process post;
     gpu_profiler profiler;
+
+    // pbr.frag's uniform blocks (Renderer/FrameData.h): the lights, and every
+    // shadow's matrices and parameters.
+    rhi_buffer   light_buffer;
+    rhi_buffer   shadow_buffer;
     uint32       scene_scope;    // "Scene": from begin() to end()
 
     // TAA: this frame's step in the jitter sequence, and the camera's

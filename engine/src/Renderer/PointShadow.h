@@ -51,9 +51,12 @@ void point_shadows_update(point_shadows* ps, const light* lights, const vec3* po
 // default framebuffer bound.
 void point_shadows_render(point_shadows* ps, const world* w, rhi_shader depth_shader);
 
-// Binds the atlas to POINT_SHADOW_SLOT and sets pbr.frag's u_point_shadow_*
-// uniforms. Always call it -- with count 0 nothing is shadowed.
-void point_shadows_bind(const point_shadows* ps, rhi_shader pbr_shader);
+struct gpu_shadow_block;   // Renderer/FrameData.h
+
+// Binds the atlas to POINT_SHADOW_SLOT (pointing u_point_shadow_atlas
+// there) and fills the point lights' part of `block`, pbr.frag's
+// u_point_shadow_*. Always call it -- with count 0 nothing is shadowed.
+void point_shadows_bind(const point_shadows* ps, rhi_shader pbr_shader, struct gpu_shadow_block* block);
 
 // Safe on a zeroed / failed / already-destroyed point_shadows.
 void point_shadows_destroy(point_shadows* ps);

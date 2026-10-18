@@ -77,9 +77,13 @@ void csm_update(csm_state* csm, const camera* cam, const vec3 light_dir, f32 lam
 // world_update() on `w` this frame.
 void csm_render(csm_state* csm, const world* w);
 
+struct gpu_shadow_block;   // Renderer/FrameData.h
+
 // Per-frame setup for the PBR shader (engine/shaders/pbr.frag): binds each
-// cascade's depth texture to CSM_SLOT_FIRST + i and sets u_cascade_count,
-// u_cascade_splits[], u_cascade_texel_sizes[] and u_light_view_projection[].
-// Call after csm_update() (and, for the frame's shadows to be current, after
-// csm_render()) and before drawing lit geometry.
-void csm_bind(const csm_state* csm, rhi_shader pbr_shader);
+// cascade's depth texture to CSM_SLOT_FIRST + i (pointing u_shadow_maps[]
+// there), and fills the cascades' part of `block` -- u_cascade_count,
+// u_cascade_splits[], u_cascade_texel_sizes[], u_light_view_projection[] --
+// for SceneRenderer to upload. Call after csm_update() (and, for the
+// frame's shadows to be current, after csm_render()) and before drawing lit
+// geometry.
+void csm_bind(const csm_state* csm, rhi_shader pbr_shader, struct gpu_shadow_block* block);

@@ -48,7 +48,10 @@ uniform sampler2D u_occlusion_tex;           // slot 3, R = occlusion
 uniform sampler2D u_emissive_tex;            // slot 4, sRGB
 
 // --- Scene -------------------------------------------------------------------
-// Layout set by lighting_bind() (Renderer/Lighting.h). Units follow glTF's
+// The lights and every shadow's parameters come in two std140 uniform blocks
+// (Renderer/FrameData.h holds their CPU copies, filled by lighting_fill()
+// and the shadow modules' *_bind()); members keep their u_ names.
+// Lights: Renderer/Lighting.h. Units follow glTF's
 // KHR_lights_punctual: directional intensity is illuminance, point/spot
 // intensity is luminous intensity, falling off with 1/d^2.
 struct scene_light
@@ -63,12 +66,15 @@ struct scene_light
     float outer_cos;   // LIGHT_SPOT: cos of the zero-intensity half-angle
 };
 
-uniform scene_light u_lights[MAX_LIGHTS];
-uniform int         u_light_count;
+layout(std140, binding = 0) uniform LightBlock
+{
+    scene_light u_lights[MAX_LIGHTS];
+    int         u_light_count;
 
-// Index into u_lights[] of the light the cascades below were rendered for,
-// or -1 if no light is shadowed (set by lighting_bind()).
-uniform int u_shadow_light_index;
+    // Index into u_lights[] of the light the cascades below were rendered
+    // for, or -1 if no light is shadowed.
+    int         u_shadow_light_index;
+};
 
 uniform vec3  u_view_pos;
 uniform float u_ambient_strength;
@@ -81,20 +87,12 @@ uniform float u_ambient_strength;
 // each texture() call does a 2x2 bilinear PCF in hardware.
 // u_cascade_texel_sizes[i] is one texel's world-space width in cascade i.
 uniform sampler2DShadow u_shadow_maps[CSM_MAX_CASCADES];
-uniform mat4            u_light_view_projection[CSM_MAX_CASCADES];
-uniform float           u_cascade_splits[CSM_MAX_CASCADES];
-uniform float           u_cascade_texel_sizes[CSM_MAX_CASCADES];
-uniform int             u_cascade_count;
 
 // Spot light shadows (Renderer/SpotShadow.h): one atlas of 2 x 2 perspective
 // depth maps. Tile t belongs to u_lights[u_spot_shadow_light[t]]; tiles
 // >= u_spot_shadow_count are unused. u_spot_shadow_texel_scale[t] is a
 // texel's world size per meter from the light.
 uniform sampler2DShadow u_spot_shadow_atlas;   // slot 14
-uniform int             u_spot_shadow_count;
-uniform int             u_spot_shadow_light[SPOT_SHADOW_MAX];
-uniform mat4            u_spot_shadow_matrix[SPOT_SHADOW_MAX];
-uniform float           u_spot_shadow_texel_scale[SPOT_SHADOW_MAX];
 
 // Point light shadows (Renderer/PointShadow.h): one atlas of cube faces, 6
 // across (+X, -X, +Y, -Y, +Z, -Z), one light per row. Row r belongs to
@@ -103,11 +101,27 @@ uniform float           u_spot_shadow_texel_scale[SPOT_SHADOW_MAX];
 // u_point_shadow_faces[f] (the upper 3x3) turns a world direction into face
 // f's view space -- the same for every light.
 uniform sampler2DShadow u_point_shadow_atlas;   // slot 15
-uniform int             u_point_shadow_count;
-uniform int             u_point_shadow_light[POINT_SHADOW_MAX];
-uniform vec2            u_point_shadow_planes[POINT_SHADOW_MAX];
-uniform mat4            u_point_shadow_faces[6];
-uniform float           u_point_shadow_texel_scale;   // a face texel's world size per meter from the light
+
+// Everything about the shadows above but their samplers: Renderer/FrameData.h's
+// gpu_shadow_block, member for member.
+layout(std140, binding = 1) uniform ShadowBlock
+{
+    mat4  u_light_view_projection[CSM_MAX_CASCADES];
+    float u_cascade_splits[CSM_MAX_CASCADES];
+    float u_cascade_texel_sizes[CSM_MAX_CASCADES];
+    int   u_cascade_count;
+    int   u_spot_shadow_count;
+    int   u_point_shadow_count;
+    float u_point_shadow_texel_scale;   // a face texel's world size per meter from the light
+
+    int   u_spot_shadow_light[SPOT_SHADOW_MAX];
+    mat4  u_spot_shadow_matrix[SPOT_SHADOW_MAX];
+    float u_spot_shadow_texel_scale[SPOT_SHADOW_MAX];
+
+    int   u_point_shadow_light[POINT_SHADOW_MAX];
+    vec2  u_point_shadow_planes[POINT_SHADOW_MAX];
+    mat4  u_point_shadow_faces[6];
+};
 
 // Debug aid: tints each fragment by which cascade it landed in (cascade 0 =
 // red, through to blue) so the split scheme/fit can be sanity-checked

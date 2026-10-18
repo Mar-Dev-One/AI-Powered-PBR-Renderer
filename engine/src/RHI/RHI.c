@@ -53,6 +53,16 @@ rhi_buffer rhi_index_buffer_create(const void* data, uint64 size, rhi_buffer_usa
     return backend.index_buffer_create(data, size, usage);
 }
 
+rhi_buffer rhi_uniform_buffer_create(uint64 size)
+{
+    return backend.uniform_buffer_create(size);
+}
+
+void rhi_uniform_buffer_bind(rhi_buffer buffer, uint32 binding)
+{
+    backend.uniform_buffer_bind(buffer, binding);
+}
+
 void rhi_buffer_update(rhi_buffer buffer, const void* data, uint64 size, uint64 offset)
 {
     backend.buffer_update(buffer, data, size, offset);

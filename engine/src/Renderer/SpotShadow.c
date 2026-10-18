@@ -1,4 +1,5 @@
 #include "SpotShadow.h"
+#include "FrameData.h"
 
 #include "../Assets/AssetCache.h"
 #include "../Scene/Model.h"
@@ -104,25 +105,18 @@ spot_shadows_render(spot_shadows* ss, const world* w, rhi_shader depth_shader)
 }
 
 void
-spot_shadows_bind(const spot_shadows* ss, rhi_shader pbr_shader)
+spot_shadows_bind(const spot_shadows* ss, rhi_shader pbr_shader, struct gpu_shadow_block* block)
 {
     rhi_shader_set_int(pbr_shader, "u_spot_shadow_atlas", SPOT_SHADOW_SLOT);
-    rhi_shader_set_int(pbr_shader, "u_spot_shadow_count", (int32)ss->count);
     if (ss->atlas)
         rhi_texture_bind(rhi_framebuffer_get_depth_texture(ss->atlas), SPOT_SHADOW_SLOT);
 
+    block->spot_count = (int32)ss->count;
     for (uint32 t = 0; t < ss->count; ++t)
     {
-        char name[48];
-
-        snprintf(name, sizeof(name), "u_spot_shadow_light[%u]", t);
-        rhi_shader_set_int(pbr_shader, name, ss->light_index[t]);
-
-        snprintf(name, sizeof(name), "u_spot_shadow_matrix[%u]", t);
-        rhi_shader_set_mat4(pbr_shader, name, (const f32*)ss->view_projection[t]);
-
-        snprintf(name, sizeof(name), "u_spot_shadow_texel_scale[%u]", t);
-        rhi_shader_set_float(pbr_shader, name, ss->texel_scale[t]);
+        block->spot_light[t][0]       = ss->light_index[t];
+        block->spot_texel_scale[t][0] = ss->texel_scale[t];
+        glm_mat4_copy((vec4*)ss->view_projection[t], block->spot_matrix[t]);
     }
 }
 

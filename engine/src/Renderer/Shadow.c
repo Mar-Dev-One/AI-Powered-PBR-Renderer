@@ -1,4 +1,5 @@
 #include "Shadow.h"
+#include "FrameData.h"
 
 #include "../Core/Paths.h"
 
@@ -250,26 +251,23 @@ csm_render(csm_state* csm, const world* w)
 }
 
 void
-csm_bind(const csm_state* csm, rhi_shader pbr_shader)
+csm_bind(const csm_state* csm, rhi_shader pbr_shader, struct gpu_shadow_block* block)
 {
-    rhi_shader_set_int(pbr_shader, "u_cascade_count", (int32)csm->cascade_count);
+    block->cascade_count = (int32)csm->cascade_count;
 
     for (uint32 i = 0; i < csm->cascade_count; ++i)
     {
-        char name[48];
+        // Samplers can't live in a uniform block: still a uniform each.
+        static const char* const names[CSM_MAX_CASCADES] = {
+            "u_shadow_maps[0]", "u_shadow_maps[1]", "u_shadow_maps[2]", "u_shadow_maps[3]"
+        };
+        STATIC_ASSERT(CSM_MAX_CASCADES == 4, "one name per cascade above");
 
         rhi_texture_bind(rhi_framebuffer_get_depth_texture(csm->cascades[i].map), CSM_SLOT_FIRST + i);
+        rhi_shader_set_int(pbr_shader, names[i], (int32)(CSM_SLOT_FIRST + i));
 
-        snprintf(name, sizeof(name), "u_shadow_maps[%u]", i);
-        rhi_shader_set_int(pbr_shader, name, (int32)(CSM_SLOT_FIRST + i));
-
-        snprintf(name, sizeof(name), "u_light_view_projection[%u]", i);
-        rhi_shader_set_mat4(pbr_shader, name, (const f32*)csm->cascades[i].view_projection);
-
-        snprintf(name, sizeof(name), "u_cascade_splits[%u]", i);
-        rhi_shader_set_float(pbr_shader, name, csm->cascades[i].split_far);
-
-        snprintf(name, sizeof(name), "u_cascade_texel_sizes[%u]", i);
-        rhi_shader_set_float(pbr_shader, name, csm->cascades[i].texel_world_size);
+        glm_mat4_copy((vec4*)csm->cascades[i].view_projection, block->light_view_projection[i]);
+        block->cascade_splits[i][0]      = csm->cascades[i].split_far;
+        block->cascade_texel_sizes[i][0] = csm->cascades[i].texel_world_size;
     }
 }

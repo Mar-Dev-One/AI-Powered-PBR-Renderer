@@ -422,6 +422,8 @@ images (the check only proves the scene loads and renders); scene switching in t
       transmission/IOR/volume, sheen, anisotropy, iridescence
 - [ ] glTF skinning and animation, morph targets
 - [ ] Clustered forward lighting (once scenes have dozens of lights)
-- [ ] Per-frame data in UBOs (removes `snprintf` uniform names in `lighting_bind`)
+- [x] Per-frame data in UBOs (removes `snprintf` uniform names in `lighting_bind`): pbr.frag's
+      LightBlock and ShadowBlock, std140 copies in `Renderer/FrameData.h` checked by static
+      asserts; `rhi_uniform_buffer_create()` / `rhi_uniform_buffer_bind()`
 - [ ] RenderDoc capture hotkey
 - [ ] AI: `generate_asset(prompt)` behind the catalog interface

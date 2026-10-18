@@ -1,6 +1,7 @@
 #include "SceneRenderer.h"
 
 #include "../Core/Paths.h"
+#include "FrameData.h"
 #include "Lighting.h"
 
 #include <stdio.h>
@@ -219,6 +220,9 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     if (!post_create(&r->post, width, height))
         return false;
 
+    r->light_buffer  = rhi_uniform_buffer_create(sizeof(gpu_light_block));
+    r->shadow_buffer = rhi_uniform_buffer_create(sizeof(gpu_shadow_block));
+
     // Without timings the frame still renders: only the numbers are missing.
     if (!gpu_profiler_create(&r->profiler))
     {
@@ -408,7 +412,6 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     rhi_shader_set_int(shader, "u_debug_show_cascades", settings->debug_show_cascades);
     rhi_shader_set_int(shader, "u_debug_view", (int)settings->debug_view);
 
-    lighting_bind(shader, w);
     ibl_bind(settings->ibl, shader);
 
     // Like the shadow maps below, always pointed at its own unit, so it
@@ -419,15 +422,25 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     if (ao)
         rhi_texture_bind(ao, POST_SSAO_SLOT);
 
-    // Always bound, even unshadowed: it points u_shadow_maps[] at their own
-    // units. Left at the default unit 0, those sampler2DShadow uniforms would
-    // share a unit with the material's sampler2D base color, which GL
-    // rejects at draw time. u_cascade_count = 0 then turns shadowing off.
-    csm_bind(&r->csm, shader);
+    // The lights and the shadows, as pbr.frag's two uniform blocks.
+    gpu_light_block lights;
+    lighting_fill(w, &lights);
+    rhi_buffer_update(r->light_buffer, &lights, sizeof(lights), 0);
+    rhi_uniform_buffer_bind(r->light_buffer, FRAME_LIGHT_BINDING);
+
+    // Always bound, even unshadowed: they point the shadow samplers at their
+    // own units. Left at the default unit 0, those sampler2DShadow uniforms
+    // would share a unit with the material's sampler2D base color, which GL
+    // rejects at draw time. A cascade count of 0 then turns shadowing off.
+    gpu_shadow_block shadows;
+    memset(&shadows, 0, sizeof(shadows));
+    csm_bind(&r->csm, shader, &shadows);
     if (!shadowed)
-        rhi_shader_set_int(shader, "u_cascade_count", 0);
-    spot_shadows_bind(&r->spot, shader);
-    point_shadows_bind(&r->point, shader);
+        shadows.cascade_count = 0;
+    spot_shadows_bind(&r->spot, shader, &shadows);
+    point_shadows_bind(&r->point, shader, &shadows);
+    rhi_buffer_update(r->shadow_buffer, &shadows, sizeof(shadows), 0);
+    rhi_uniform_buffer_bind(r->shadow_buffer, FRAME_SHADOW_BINDING);
 
     r->scene_scope = gpu_profiler_begin(&r->profiler, "Scene");
     return shader;
@@ -630,6 +643,10 @@ scene_renderer_destroy(scene_renderer* r)
 {
     gpu_profiler_destroy(&r->profiler);
     post_destroy(&r->post);
+    if (r->light_buffer)
+        rhi_buffer_destroy(r->light_buffer);
+    if (r->shadow_buffer)
+        rhi_buffer_destroy(r->shadow_buffer);
     spot_shadows_destroy(&r->spot);
     point_shadows_destroy(&r->point);
     csm_destroy(&r->csm);

@@ -16,7 +16,8 @@
 					"direction":	[0, -1, 0],
 					"range":	8,
 					"inner_cone_degrees":	20,
-					"outer_cone_degrees":	30
+					"outer_cone_degrees":	30,
+					"cast_shadows":	true
 				}
 			}
 		}, {
@@ -634,7 +635,8 @@
 					"direction":	[0, -1, 0],
 					"range":	12,
 					"inner_cone_degrees":	20,
-					"outer_cone_degrees":	30
+					"outer_cone_degrees":	30,
+					"cast_shadows":	true
 				}
 			}
 		}, {
@@ -668,7 +670,8 @@
 					"direction":	[1, -0.14, 0],
 					"range":	70,
 					"inner_cone_degrees":	3,
-					"outer_cone_degrees":	7
+					"outer_cone_degrees":	7,
+					"cast_shadows":	true
 				}
 			}
 		}, {
@@ -688,7 +691,8 @@
 					"direction":	[-1, -0.14, 0],
 					"range":	70,
 					"inner_cone_degrees":	3,
-					"outer_cone_degrees":	7
+					"outer_cone_degrees":	7,
+					"cast_shadows":	true
 				}
 			}
 		}, {
@@ -1411,7 +1415,8 @@
 					"direction":	[0, -1, 0],
 					"range":	8,
 					"inner_cone_degrees":	20,
-					"outer_cone_degrees":	30
+					"outer_cone_degrees":	30,
+					"cast_shadows":	true
 				}
 			}
 		}, {
@@ -1468,7 +1473,8 @@
 					"direction":	[0, -1, 0],
 					"range":	8,
 					"inner_cone_degrees":	20,
-					"outer_cone_degrees":	30
+					"outer_cone_degrees":	30,
+					"cast_shadows":	true
 				}
 			}
 		}, {
@@ -1525,7 +1531,8 @@
 					"direction":	[0, -1, 0],
 					"range":	8,
 					"inner_cone_degrees":	20,
-					"outer_cone_degrees":	30
+					"outer_cone_degrees":	30,
+					"cast_shadows":	true
 				}
 			}
 		}, {
@@ -1582,7 +1589,8 @@
 					"direction":	[0, -1, 0],
 					"range":	8,
 					"inner_cone_degrees":	20,
-					"outer_cone_degrees":	30
+					"outer_cone_degrees":	30,
+					"cast_shadows":	true
 				}
 			}
 		}, {
@@ -1847,7 +1855,8 @@
 					"direction":	[0, -1, 0],
 					"range":	7,
 					"inner_cone_degrees":	20,
-					"outer_cone_degrees":	30
+					"outer_cone_degrees":	30,
+					"cast_shadows":	true
 				}
 			}
 		}, {
@@ -2075,7 +2084,8 @@
 					"direction":	[0.6, -0.3, -0.75],
 					"range":	0,
 					"inner_cone_degrees":	20,
-					"outer_cone_degrees":	30
+					"outer_cone_degrees":	30,
+					"cast_shadows":	true
 				}
 			}
 		}, {
@@ -2124,6 +2134,9 @@
 					"model":	"builtin:cube",
 					"visible":	true,
 					"cast_shadows":	true
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 30, 0]
 				}
 			}
 		}, {

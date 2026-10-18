@@ -47,10 +47,13 @@ void spot_shadows_update(spot_shadows* ss, const light* lights, const vec3* posi
 // framebuffer bound.
 void spot_shadows_render(spot_shadows* ss, const world* w, rhi_shader depth_shader);
 
-// Binds the atlas to SPOT_SHADOW_SLOT and sets pbr.frag's u_spot_shadow_*
-// uniforms. Always call it -- with count 0 nothing is shadowed -- so the
-// sampler always has its own unit.
-void spot_shadows_bind(const spot_shadows* ss, rhi_shader pbr_shader);
+struct gpu_shadow_block;   // Renderer/FrameData.h
+
+// Binds the atlas to SPOT_SHADOW_SLOT (pointing u_spot_shadow_atlas there)
+// and fills the spot lights' part of `block`, pbr.frag's u_spot_shadow_*.
+// Always call it -- with count 0 nothing is shadowed -- so the sampler
+// always has its own unit.
+void spot_shadows_bind(const spot_shadows* ss, rhi_shader pbr_shader, struct gpu_shadow_block* block);
 
 // Safe on a zeroed / failed / already-destroyed spot_shadows.
 void spot_shadows_destroy(spot_shadows* ss);

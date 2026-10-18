@@ -48,12 +48,28 @@ rhi_buffer gl_index_buffer_create(const void* data, uint64 size, rhi_buffer_usag
     return buf;
 }
 
+rhi_buffer gl_uniform_buffer_create(uint64 size)
+{
+    rhi_buffer buf = malloc(sizeof(*buf));
+    if (!buf)
+        FATAL("Out of memory creating uniform buffer");
+
+    buf->vao = 0;
+    glCreateBuffers(1, &buf->handle);
+    glNamedBufferData(buf->handle, (GLsizeiptr)size, NULL, GL_DYNAMIC_DRAW);
+    return buf;
+}
+
+void gl_uniform_buffer_bind(rhi_buffer buffer, uint32 binding)
+{
+    glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer->handle);
+}
+
 void gl_buffer_update(rhi_buffer buffer, const void* data, uint64 size, uint64 offset)
 {
-    GLenum target = buffer->vao ? GL_ARRAY_BUFFER : GL_ELEMENT_ARRAY_BUFFER;
-
-    glBindBuffer(target, buffer->handle);
-    glBufferSubData(target, (GLintptr)offset, (GLsizeiptr)size, data);
+    // Direct state access: binding the buffer to update it would, for an
+    // index or uniform buffer, replace the bound vertex array's index buffer.
+    glNamedBufferSubData(buffer->handle, (GLintptr)offset, (GLsizeiptr)size, data);
 }
 
 void gl_buffer_destroy(rhi_buffer buffer)

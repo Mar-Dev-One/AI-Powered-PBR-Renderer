@@ -139,6 +139,15 @@ rhi_buffer rhi_vertex_buffer_create(const void* data, uint64 size,
 rhi_buffer rhi_index_buffer_create(const void* data, uint64 size,
                                     rhi_buffer_usage usage);
 
+// A uniform buffer of `size` bytes, contents undefined until updated
+// (rhi_buffer_update()): the data behind a shader's uniform block, laid out
+// to the block's std140 rules (e.g. Renderer/FrameData.h).
+rhi_buffer rhi_uniform_buffer_create(uint64 size);
+
+// Makes `buffer` what the uniform blocks declared with
+// layout(binding = `binding`) read, in every shader, until rebound.
+void       rhi_uniform_buffer_bind(rhi_buffer buffer, uint32 binding);
+
 ////
 void rhi_read_pixels(uint16 x, uint16 y, uint16 width, uint16 height, void* out_pixels);
 
