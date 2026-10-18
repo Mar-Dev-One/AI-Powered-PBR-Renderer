@@ -61,6 +61,7 @@ typedef struct post_settings
     b8  raw;     // a debug view's data (0..1): gamma only -- no bloom, exposure or ACES
     f32 bloom;   // 0 (none) .. 1: how much of the blurred scene is mixed in; needs post_bloom() first
     b8  fxaa;    // smooth jagged edges (not with raw: a data view's values stay exact)
+    int tonemap; // World/Environment.h's scene_tonemap
 } post_settings;
 
 // Loads the shaders and allocates a width x height scene target (and its
@@ -83,7 +84,7 @@ void post_begin_scene(post_process* post, f32 r, f32 g, f32 b);
 void post_bloom(post_process* post);
 
 // Binds the default framebuffer and resolves the scene target onto it:
-// mix(color, bloom, settings.bloom) * exposure -> ACES -> gamma 2.2, then
+// mix(color, bloom, settings.bloom) * exposure -> tone mapping -> gamma 2.2, then
 // FXAA if settings.fxaa. Leaves
 // the default render state active, so UI drawn afterwards lands on top of
 // the tone-mapped image.

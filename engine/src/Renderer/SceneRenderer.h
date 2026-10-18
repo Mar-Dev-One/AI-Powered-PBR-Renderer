@@ -69,6 +69,7 @@ typedef struct scene_render_settings
     f32 exposure;
     f32 bloom;                    // 0 = off; see Renderer/PostProcess.h
     b8  fxaa;                     // anti-aliasing (not in data views)
+    scene_tonemap tonemap;        // World/Environment.h
     b8  shadows;                  // cascaded shadows for the first directional light
     f32 cascade_split_lambda;     // see csm_update(); 0.5 is a good default
     b8  debug_show_cascades;      // tint shading by cascade, see pbr.frag

@@ -67,6 +67,8 @@ static const golden_case CASES[] = {
     { "avocado_shadow",  "avocado.json",   "shadow" },    // the shadow term alone
     { "materials",       "materials.json", NULL },        // metallic x roughness grid
     { "bloom",           "bloom.json",     NULL },        // a glowing emissive sphere in the dark
+    { "avocado_agx",     "avocado_agx.json",     NULL },  // AgX tone mapping
+    { "avocado_neutral", "avocado_neutral.json", NULL },  // Khronos PBR Neutral tone mapping
 };
 
 #define CASE_COUNT (sizeof(CASES) / sizeof(CASES[0]))

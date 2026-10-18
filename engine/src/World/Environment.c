@@ -26,6 +26,28 @@ round6(f32 value)
     return strtod(buffer, NULL);
 }
 
+static const char* const TONEMAP_NAMES[SCENE_TONEMAP_COUNT] = { "aces", "agx", "neutral" };
+
+const char*
+scene_tonemap_name(scene_tonemap tonemap)
+{
+    return (uint32)tonemap < SCENE_TONEMAP_COUNT ? TONEMAP_NAMES[tonemap] : NULL;
+}
+
+b8
+scene_tonemap_from_name(const char* name, scene_tonemap* out_tonemap)
+{
+    for (uint32 i = 0; name && i < SCENE_TONEMAP_COUNT; ++i)
+    {
+        if (strcmp(name, TONEMAP_NAMES[i]) == 0)
+        {
+            *out_tonemap = (scene_tonemap)i;
+            return true;
+        }
+    }
+    return false;
+}
+
 scene_environment
 scene_environment_default(void)
 {
@@ -36,6 +58,7 @@ scene_environment_default(void)
     env.ambient_strength = 0.5f;
     env.exposure         = 1.0f;
     env.bloom            = 0.04f;
+    env.tonemap          = SCENE_TONEMAP_ACES;
     return env;
 }
 
@@ -53,6 +76,7 @@ serialize_environment(const scene_environment* env)
     cJSON_AddNumberToObject(object, "ambient_strength", round6(env->ambient_strength));
     cJSON_AddNumberToObject(object, "exposure", round6(env->exposure));
     cJSON_AddNumberToObject(object, "bloom", round6(env->bloom));
+    cJSON_AddStringToObject(object, "tonemap", scene_tonemap_name(env->tonemap));
     return object;
 }
 
@@ -131,6 +155,13 @@ deserialize_environment(const cJSON* fields, scene_environment* env, char* error
         || !read_number(fields, "exposure", 0.0, true, 16.0, &next.exposure, error, error_size)
         || !read_number(fields, "bloom", 0.0, false, 1.0, &next.bloom, error, error_size))
         return false;
+
+    const cJSON* tonemap = cJSON_GetObjectItem(fields, "tonemap");
+    if (tonemap && !scene_tonemap_from_name(cJSON_GetStringValue(tonemap), &next.tonemap))
+    {
+        set_error(error, error_size, "environment: \"tonemap\" must be \"aces\", \"agx\" or \"neutral\"");
+        return false;
+    }
 
     *env = next;
     return true;

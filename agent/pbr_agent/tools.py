@@ -324,11 +324,15 @@ TOOLS: list[Tool] = [
     Tool(
         "set_render",
         "Overall brightness (exposure, about 0.5-2), the strength of the environment's ambient light, "
-        "and bloom: how much bright light (the sun, lamps, emissive surfaces) glows into its surroundings.",
+        "bloom: how much bright light (the sun, lamps, emissive surfaces) glows into its surroundings, "
+        "and the tone mapping curve.",
         _schema({"exposure": {"type": "number", "exclusiveMinimum": 0, "maximum": 16},
                  "ambient_strength": {"type": "number", "minimum": 0, "maximum": 4},
                  "bloom": {"type": "number", "minimum": 0, "maximum": 1,
-                           "description": "0 = none, 0.04 = subtle (the default), 0.1 = strong."}}),
+                           "description": "0 = none, 0.04 = subtle (the default), 0.1 = strong."},
+                 "tonemap": {"type": "string", "enum": ["aces", "agx", "neutral"],
+                             "description": "aces: contrasty (the default); agx: softer, bright colors keep "
+                                            "their hue; neutral: materials show their true color."}}),
         "render.set", example={"exposure": 1.0}, app_command=True,
     ),
 

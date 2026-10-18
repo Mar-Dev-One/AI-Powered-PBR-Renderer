@@ -254,6 +254,7 @@ post_end_scene_to(post_process* post, const post_settings* settings, rhi_framebu
     rhi_shader_set_int(shader, "u_scene", POST_SLOT_SCENE);
     rhi_shader_set_int(shader, "u_bloom", POST_SLOT_BLOOM);
     rhi_shader_set_float(shader, "u_exposure", settings->exposure);
+    rhi_shader_set_int(shader, "u_tonemap", settings->tonemap);
     rhi_shader_set_int(shader, "u_raw", settings->raw);
     rhi_shader_set_int(shader, "u_luma_alpha", fxaa);
     rhi_shader_set_float(shader, "u_bloom_strength", bloom ? settings->bloom : 0.0f);

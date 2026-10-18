@@ -20,6 +20,7 @@ scene_render_settings_default(void)
         .exposure             = 1.0f,
         .bloom                = 0.04f,
         .fxaa                 = true,
+        .tonemap              = SCENE_TONEMAP_ACES,
         .shadows              = true,
         .cascade_split_lambda = 0.5f,
         .debug_show_cascades  = false,
@@ -70,6 +71,7 @@ scene_render_settings_apply_environment(scene_render_settings* settings, const s
     settings->ambient_strength = env->ambient_strength;
     settings->exposure         = env->exposure;
     settings->bloom            = env->bloom;
+    settings->tonemap          = env->tonemap;
 }
 
 // The constants pbr.vert/pbr.frag size their arrays with, generated from
@@ -261,6 +263,7 @@ finish_frame(scene_renderer* r, const scene_render_settings* settings, rhi_frame
         .raw      = debug_view_is_data(settings->debug_view),
         .bloom    = settings->bloom,
         .fxaa     = settings->fxaa,
+        .tonemap  = (int)settings->tonemap,
     };
 
     if (post.bloom > 0.0f && !post.raw)

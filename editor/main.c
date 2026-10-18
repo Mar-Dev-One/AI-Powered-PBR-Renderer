@@ -492,6 +492,7 @@ host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
     cJSON_AddItemToObject(*out_result, "exposure", number_json(state->doc.env.exposure));
     cJSON_AddItemToObject(*out_result, "ambient_strength", number_json(state->doc.env.ambient_strength));
     cJSON_AddItemToObject(*out_result, "bloom", number_json(state->doc.env.bloom));
+    cJSON_AddStringToObject(*out_result, "tonemap", scene_tonemap_name(state->doc.env.tonemap));
     cJSON_AddStringToObject(*out_result, "debug_view", scene_debug_view_name(state->debug_view));
     cJSON_AddBoolToObject(*out_result, "fxaa", !state->no_fxaa);
     return true;
@@ -588,6 +589,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     const cJSON* cascades = cJSON_GetObjectItem(args, "debug_show_cascades");
     const cJSON* view     = cJSON_GetObjectItem(args, "debug_view");
     const cJSON* fxaa     = cJSON_GetObjectItem(args, "fxaa");
+    const cJSON* tonemap  = cJSON_GetObjectItem(args, "tonemap");
 
     if ((exposure && (!cJSON_IsNumber(exposure) || exposure->valuedouble <= 0.0 || exposure->valuedouble > 16.0))
         || (ambient && (!cJSON_IsNumber(ambient) || ambient->valuedouble < 0.0 || ambient->valuedouble > 4.0))
@@ -596,6 +598,13 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     {
         snprintf(error, error_size, "exposure must be in (0, 16], ambient_strength in [0, 4], bloom in [0, 1], "
                                     "debug_show_cascades and fxaa true/false");
+        return false;
+    }
+
+    scene_tonemap tonemap_value = state->doc.env.tonemap;
+    if (tonemap && !scene_tonemap_from_name(cJSON_GetStringValue(tonemap), &tonemap_value))
+    {
+        snprintf(error, error_size, "tonemap must be aces, agx or neutral");
         return false;
     }
 
@@ -610,6 +619,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     if (exposure) state->doc.env.exposure         = (f32)exposure->valuedouble;
     if (ambient)  state->doc.env.ambient_strength = (f32)ambient->valuedouble;
     if (bloom)    state->doc.env.bloom            = (f32)bloom->valuedouble;
+    state->doc.env.tonemap = tonemap_value;
     if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
     if (fxaa)     state->no_fxaa             = !cJSON_IsTrue(fxaa);
     state->debug_view = debug_view;
@@ -989,6 +999,9 @@ static const cmd_arg ARGS_RENDER_SET[] = {
                                                 "0.04 is subtle, 0.1 strong" },
     { "debug_show_cascades", "boolean", false, "Tint shading by shadow cascade" },
     { "fxaa",                "boolean", false, "Anti-aliasing: smooth jagged edges (default true)" },
+    { "tonemap",             "string",  false, "How light becomes screen color: aces (contrasty, the default), agx "
+                                                "(softer, bright colors keep their hue), neutral (materials show their "
+                                                "true color)" },
     { "debug_view",          "string",  false, "What the view shows: lit (normal), or one input to the shading -- albedo, "
                                                 "normals, roughness, metallic, ao, shadow, lighting (white surfaces), "
                                                 "wireframe" },
@@ -1007,7 +1020,7 @@ static const cmd_host_command HOST_COMMANDS[] = {
     { "view.get",         "Where the camera is and what it looks at",                       NULL, 0, false, host_view_get },
     { "view.set_camera",  "Moves the camera and/or what it looks at",                       HOST_ARGS(ARGS_SET_CAMERA),      false, host_view_set_camera },
     { "view.frame",       "Points the camera at an entity (or everything) so it fills the view", HOST_ARGS(ARGS_FRAME),     false, host_view_frame },
-    { "render.set",       "Exposure, ambient strength, bloom and debug views",                      HOST_ARGS(ARGS_RENDER_SET),      false, host_render_set },
+    { "render.set",       "Exposure, ambient strength, bloom, tone mapping and debug views",                      HOST_ARGS(ARGS_RENDER_SET),      false, host_render_set },
     { "log.get",          "The engine's latest log lines: shader errors, models that failed to load, warnings",
                                                                                                HOST_ARGS(ARGS_LOG_GET),         false, host_log_get },
     { "render.timings",   "How long each render pass takes on the GPU, and the frame on the CPU, in ms",
@@ -2862,6 +2875,11 @@ draw_environment_controls(editor_state* state)
     igSliderFloat("Bloom", &state->doc.env.bloom, 0.0f, 0.3f, "%.3f", 0);
     if (igIsItemHovered(0))
         igSetTooltip("How much bright light (the sun, lamps, emissive surfaces) spreads into its surroundings");
+    static const char* const tonemaps[SCENE_TONEMAP_COUNT] = { "ACES", "AgX", "PBR Neutral" };
+    igCombo_Str_arr("Tone mapping", (int*)&state->doc.env.tonemap, tonemaps, SCENE_TONEMAP_COUNT, -1);
+    if (igIsItemHovered(0))
+        igSetTooltip("ACES: contrasty, bright colors turn yellow-white. AgX: softer, bright colors keep their hue.\n"
+                     "PBR Neutral: materials show their true color; for product shots.");
 
     if (igBeginCombo("HDRI", state->doc.env.hdri[0] ? state->doc.env.hdri : "(none)", 0))
     {
