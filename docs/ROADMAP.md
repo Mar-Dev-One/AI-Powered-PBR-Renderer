@@ -416,8 +416,13 @@ images (the check only proves the scene loads and renders); scene switching in t
       and projects into it itself. Spot and point maps cull casters to each view's frustum
 - [ ] Cache local light shadow maps while nothing in a light's range moves: the sample scene's
       four shadowed point lamps redraw the whole village 24 times a frame (about 3.5 ms)
-- [ ] Texture arrays (or bindless textures) in the RHI: every guaranteed texture unit is used now
-- [ ] Screen-space reflections, local reflection probes with parallax correction
+- [ ] Texture arrays (or bindless textures) in the RHI: every guaranteed texture unit is used now.
+      Cube map arrays exist (`rhi_cubemap_array_create()`, for the probes); 2D arrays don't yet
+- [x] Local reflection probes with parallax correction (`Renderer/ReflectionProbes.h`): a
+      `ReflectionProbe` component (a box), up to 8 baked into one cube map array (two bounces),
+      box-projected in pbr.frag, full strength inside the box and fading over 0.5 m outside.
+      Re-baked when a probe or the environment changes, or on `render.bake_reflections`
+- [ ] Screen-space reflections
 - [ ] Materials: `KHR_texture_transform` and a second UV set, clearcoat,
       transmission/IOR/volume, sheen, anisotropy, iridescence
 - [ ] glTF skinning and animation, morph targets

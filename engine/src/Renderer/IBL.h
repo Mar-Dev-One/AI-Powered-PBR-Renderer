@@ -62,6 +62,18 @@ b8   ibl_create(ibl_environment* ibl, const char* hdr_path);
 // Safe on a zeroed / failed / already-destroyed environment.
 void ibl_destroy(ibl_environment* ibl);
 
+// The view from the origin through cube map face `face` (+X -X +Y -Y +Z -Z):
+// what's rendered with it (and a 90-degree, square projection) into a face
+// is what a samplerCube reads back for those directions. For capturing a
+// scene into a cube map (Renderer/ReflectionProbes.h).
+void ibl_face_view(uint32 face, mat4 out_view);
+
+// GGX-prefilters the cube map `source` (with its mip chain generated) into
+// cube map `layer` of `array`, one roughness per mip (roughness = mip /
+// (mip_count - 1)) -- the same convolution as the environment's specular
+// map, so pbr.frag reads both the same way. False if the shader won't build.
+b8 ibl_prefilter_into_array(rhi_texture source, rhi_texture array, uint32 layer, uint32 mip_count, uint32 size);
+
 // The environment a scene's HDRI setting (World/Environment.h's `hdri`)
 // bakes to, rebaked only when that setting changes -- baking takes a while.
 // A zeroed ibl_cache is empty and valid.

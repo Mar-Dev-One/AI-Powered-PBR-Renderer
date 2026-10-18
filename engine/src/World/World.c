@@ -59,6 +59,7 @@ grow(world* w)
     w->lights         = grow_array(w->lights,         new_capacity, sizeof(*w->lights));
     w->cameras        = grow_array(w->cameras,        new_capacity, sizeof(*w->cameras));
     w->spins          = grow_array(w->spins,          new_capacity, sizeof(*w->spins));
+    w->reflection_probes = grow_array(w->reflection_probes, new_capacity, sizeof(*w->reflection_probes));
     w->world_matrices = grow_array(w->world_matrices, new_capacity, sizeof(*w->world_matrices));
     w->bounds_min     = grow_array(w->bounds_min,     new_capacity, sizeof(*w->bounds_min));
     w->bounds_max     = grow_array(w->bounds_max,     new_capacity, sizeof(*w->bounds_max));
@@ -100,6 +101,7 @@ world_shutdown(world* w)
     free(w->lights);
     free(w->cameras);
     free(w->spins);
+    free(w->reflection_probes);
     free(w->world_matrices);
     free(w->bounds_min);
     free(w->bounds_max);
@@ -139,6 +141,7 @@ world_copy(world* dst, const world* src)
     COPY(lights);
     COPY(cameras);
     COPY(spins);
+    COPY(reflection_probes);
     COPY(world_matrices);
     COPY(bounds_min);
     COPY(bounds_max);
@@ -345,6 +348,7 @@ COMPONENT_GETTER(world_mesh_renderer, c_mesh_renderer, mesh_renderers, COMPONENT
 COMPONENT_GETTER(world_light,         c_light,         lights,         COMPONENT_LIGHT)
 COMPONENT_GETTER(world_camera,        c_camera,        cameras,        COMPONENT_CAMERA)
 COMPONENT_GETTER(world_spin,          c_spin,          spins,          COMPONENT_SPIN)
+COMPONENT_GETTER(world_reflection_probe, c_reflection_probe, reflection_probes, COMPONENT_REFLECTION_PROBE)
 
 entity_id
 world_parent(const world* w, entity_id e)
@@ -427,6 +431,19 @@ world_add_spin(world* w, entity_id e, const vec3 degrees_per_second)
     glm_vec3_copy((f32*)degrees_per_second, w->spins[index].degrees_per_second);
     w->masks[index] |= COMPONENT_BIT(COMPONENT_SPIN);
     return &w->spins[index];
+}
+
+c_reflection_probe*
+world_add_reflection_probe(world* w, entity_id e, const vec3 extents)
+{
+    uint32 index = live_index(w, e);
+    if (index == UINT32_MAX)
+        return NULL;
+
+    memset(&w->reflection_probes[index], 0, sizeof(w->reflection_probes[index]));
+    glm_vec3_copy((f32*)extents, w->reflection_probes[index].extents);
+    w->masks[index] |= COMPONENT_BIT(COMPONENT_REFLECTION_PROBE);
+    return &w->reflection_probes[index];
 }
 
 void
@@ -844,6 +861,7 @@ world_capture_states(const world* w, entity_state* out)
         if (s->mask & COMPONENT_BIT(COMPONENT_LIGHT))         s->light         = w->lights[i];
         if (s->mask & COMPONENT_BIT(COMPONENT_CAMERA))        s->camera        = w->cameras[i];
         if (s->mask & COMPONENT_BIT(COMPONENT_SPIN))          s->spin          = w->spins[i];
+        if (s->mask & COMPONENT_BIT(COMPONENT_REFLECTION_PROBE)) s->reflection_probe = w->reflection_probes[i];
     }
 }
 
@@ -870,6 +888,7 @@ entity_state_differs(const entity_state* a, const entity_state* b, uint32* out_c
         DIFF(COMPONENT_LIGHT,         light);
         DIFF(COMPONENT_CAMERA,        camera);
         DIFF(COMPONENT_SPIN,          spin);
+        DIFF(COMPONENT_REFLECTION_PROBE, reflection_probe);
         #undef DIFF
     }
     else if (a->alive != b->alive)
@@ -941,6 +960,7 @@ world_apply_states(world* w, const entity_state* states, uint32 count)
         w->lights[index]         = s->light;
         w->cameras[index]        = s->camera;
         w->spins[index]          = s->spin;
+        w->reflection_probes[index] = s->reflection_probe;
         w->update_stamps[index]  = 0;
     }
 

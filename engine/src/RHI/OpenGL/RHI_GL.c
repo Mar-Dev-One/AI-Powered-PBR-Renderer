@@ -184,6 +184,10 @@ void rhi_gl_get_backend(rhi_backend_api* out_api)
     out_api->framebuffer_create_cubemap_target = gl_framebuffer_create_cubemap_target;
     out_api->framebuffer_set_cubemap_target = gl_framebuffer_set_cubemap_target;
 
+    out_api->cubemap_array_create = gl_cubemap_array_create;
+    out_api->texture_copy_to_cubemap_face = gl_texture_copy_to_cubemap_face;
+    out_api->framebuffer_set_cubemap_array_target = gl_framebuffer_set_cubemap_array_target;
+
     out_api->set_render_state = gl_set_render_state;
     out_api->set_wireframe = gl_set_wireframe;
     out_api->set_color_write = gl_set_color_write;

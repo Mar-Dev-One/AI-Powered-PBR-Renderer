@@ -76,6 +76,7 @@ static const golden_case CASES[] = {
     { "spot_shadow",     "spot_shadow.json",     NULL },  // two spot lights' shadows, two atlas tiles
     { "point_shadow",    "point_shadow.json",    NULL },  // a point light's shadows through five cube faces
     { "many_lights",     "many_lights.json",     NULL },  // 200 point lights, clustered (matches --unclustered exactly)
+    { "probe_room",      "probe_room.json",      NULL },  // a reflection probe in a closed room, box-projected, two bounces
 };
 
 #define CASE_COUNT (sizeof(CASES) / sizeof(CASES[0]))

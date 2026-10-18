@@ -39,6 +39,7 @@ add_library(PBR_Runtime STATIC
     src/Renderer/IBL.c
     src/Renderer/Lighting.c
     src/Renderer/PostProcess.c
+    src/Renderer/ReflectionProbes.c
     src/Renderer/SceneRenderer.c
     src/Renderer/ShaderReload.c
     src/Renderer/Shadow.c

@@ -117,6 +117,62 @@ static void bake_faces(const ibl_environment* ibl, rhi_framebuffer framebuffer,
     }
 }
 
+void ibl_face_view(uint32 face, mat4 out_view)
+{
+    face_view(face, out_view);
+}
+
+b8 ibl_prefilter_into_array(rhi_texture source, rhi_texture array, uint32 layer, uint32 mip_count, uint32 size)
+{
+    rhi_shader shader = load_shader("shaders/ibl_cube.vert", "shaders/prefilter.frag");
+    if (!shader)
+        return false;
+
+    // A bake is rare: its own cube and target, gone when it's done.
+    rhi_vertex_attribute position = { .location = 0, .component_count = 3, .offset = 0 };
+    rhi_vertex_layout    layout   = { .attributes = &position, .attribute_count = 1, .stride = 3 * sizeof(f32) };
+    rhi_buffer      vertices = rhi_vertex_buffer_create(CUBE_VERTICES, sizeof(CUBE_VERTICES), &layout, RHI_USAGE_STATIC);
+    rhi_buffer      indices  = rhi_index_buffer_create(CUBE_INDICES, sizeof(CUBE_INDICES), RHI_USAGE_STATIC);
+    rhi_framebuffer target   = rhi_framebuffer_create_cubemap_target();
+
+    rhi_render_state state = rhi_render_state_default();
+    state.cull_back_faces = false;
+    state.depth_write     = false;
+    rhi_set_render_state(state);
+
+    rhi_shader_bind(shader);
+    rhi_shader_set_int(shader, "u_environment", IBL_SLOT_ENVIRONMENT);
+    rhi_texture_bind(source, IBL_SLOT_ENVIRONMENT);
+
+    mat4 projection;
+    glm_perspective(glm_rad(90.0f), 1.0f, 0.1f, 10.0f, projection);
+
+    for (uint32 mip = 0; mip < mip_count; ++mip)
+    {
+        rhi_shader_set_float(shader, "u_roughness", mip_count > 1 ? (f32)mip / (f32)(mip_count - 1) : 0.0f);
+        rhi_shader_set_float(shader, "u_target_size", (f32)(size >> mip));
+
+        for (uint32 face = 0; face < 6; ++face)
+        {
+            mat4 view, view_projection;
+            face_view(face, view);
+            glm_mat4_mul(projection, view, view_projection);
+
+            rhi_framebuffer_set_cubemap_array_target(target, array, layer, face, mip);
+            rhi_shader_set_mat4(shader, "u_view_projection", (const f32*)view_projection);
+            rhi_draw_indexed(vertices, indices, CUBE_INDEX_COUNT);
+        }
+    }
+
+    rhi_framebuffer_bind_default();
+    rhi_set_render_state(rhi_render_state_default());
+    rhi_framebuffer_destroy(target);
+    rhi_buffer_destroy(vertices);
+    rhi_buffer_destroy(indices);
+    rhi_shader_destroy(shader);
+    return true;
+}
+
 b8 ibl_create(ibl_environment* ibl, const char* hdr_path)
 {
     memset(ibl, 0, sizeof(*ibl));

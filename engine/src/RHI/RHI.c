@@ -269,6 +269,22 @@ rhi_render_state rhi_render_state_default(void)
                                .depth_write = true, .front_face_cw = false };
 }
 
+rhi_texture rhi_cubemap_array_create(uint16 size, uint32 layers, uint32 mip_count, rhi_texture_format format)
+{
+    return backend.cubemap_array_create(size, layers, mip_count, format);
+}
+
+void rhi_texture_copy_to_cubemap_face(rhi_texture source, rhi_texture cubemap, uint32 face)
+{
+    backend.texture_copy_to_cubemap_face(source, cubemap, face);
+}
+
+void rhi_framebuffer_set_cubemap_array_target(rhi_framebuffer framebuffer, rhi_texture array,
+                                              uint32 layer, uint32 face, uint32 mip)
+{
+    backend.framebuffer_set_cubemap_array_target(framebuffer, array, layer, face, mip);
+}
+
 void rhi_set_render_state(rhi_render_state state)
 {
     backend.set_render_state(state);

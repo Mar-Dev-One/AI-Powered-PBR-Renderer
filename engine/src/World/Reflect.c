@@ -92,6 +92,12 @@ static const field_desc SPIN_FIELDS[] = {
       .doc = "Turn rate in degrees per second about each axis (x = pitch, y = yaw, z = roll); the game turns the entity; the editor previews it without changing the saved rotation" },
 };
 
+static const field_desc REFLECTION_PROBE_FIELDS[] = {
+    { .name = "extents", .type = FIELD_VEC3, .offset = offsetof(c_reflection_probe, extents),
+      .min = 0.1f, .max = 500.0f,
+      .doc = "Half the size of the probe's box along x, y, z in meters: shiny surfaces inside it reflect what the probe sees, lined up with the box's walls" },
+};
+
 static const component_desc COMPONENTS[COMPONENT_TYPE_COUNT] = {
     [COMPONENT_NAME]          = { "Name",         COMPONENT_NAME,          sizeof(c_name),          NAME_FIELDS,          COUNT_OF(NAME_FIELDS) },
     [COMPONENT_TRANSFORM]     = { "Transform",    COMPONENT_TRANSFORM,     sizeof(c_transform),     TRANSFORM_FIELDS,     COUNT_OF(TRANSFORM_FIELDS) },
@@ -100,6 +106,8 @@ static const component_desc COMPONENTS[COMPONENT_TYPE_COUNT] = {
     [COMPONENT_LIGHT]         = { "Light",        COMPONENT_LIGHT,         sizeof(c_light),         LIGHT_FIELDS,         COUNT_OF(LIGHT_FIELDS) },
     [COMPONENT_CAMERA]        = { "Camera",       COMPONENT_CAMERA,        sizeof(c_camera),        CAMERA_FIELDS,        COUNT_OF(CAMERA_FIELDS) },
     [COMPONENT_SPIN]          = { "Spin",         COMPONENT_SPIN,          sizeof(c_spin),          SPIN_FIELDS,          COUNT_OF(SPIN_FIELDS) },
+    [COMPONENT_REFLECTION_PROBE] = { "ReflectionProbe", COMPONENT_REFLECTION_PROBE, sizeof(c_reflection_probe),
+                                     REFLECTION_PROBE_FIELDS, COUNT_OF(REFLECTION_PROBE_FIELDS) },
 };
 
 const component_desc*
@@ -154,6 +162,7 @@ reflect_component_data(const world* w, entity_id e, component_type type)
         case COMPONENT_LIGHT:         return &w->lights[index];
         case COMPONENT_CAMERA:        return &w->cameras[index];
         case COMPONENT_SPIN:          return &w->spins[index];
+        case COMPONENT_REFLECTION_PROBE: return &w->reflection_probes[index];
         default:                      return NULL;
     }
 }

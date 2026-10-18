@@ -18,8 +18,9 @@
 //   DEBUG_VIEW_LIT ... DEBUG_VIEW_WIREFRAME     SceneRenderer.h's scene_debug_view values
 //   SPOT_SHADOW_MAX                             Renderer/SpotShadow.h
 //   POINT_SHADOW_MAX                            Renderer/PointShadow.h
+//   PROBE_MAX / PROBE_MIPS                      Renderer/ReflectionProbes.h
 #if !defined(CSM_MAX_CASCADES) || !defined(CLUSTER_Z) || !defined(LIGHT_SPOT) || !defined(DEBUG_VIEW_LIGHTS) \
-    || !defined(SPOT_SHADOW_MAX) || !defined(POINT_SHADOW_MAX)
+    || !defined(SPOT_SHADOW_MAX) || !defined(POINT_SHADOW_MAX) || !defined(PROBE_MAX)
 #error "pbr.frag must be compiled with SceneRenderer's defines"
 #endif
 
@@ -159,6 +160,17 @@ uniform sampler2D   u_brdf_lut;             // slot 12, split-sum BRDF: (N.V, ro
 // occlusion texture.
 uniform int       u_use_ssao;
 uniform sampler2D u_ssao;                     // slot 13
+
+// --- Reflection probes (Renderer/ReflectionProbes.h) ---------------------------
+// Probe p's captured surroundings are layer p of u_probe_maps, prefiltered
+// like u_prefiltered_map (mip = roughness * (PROBE_MIPS - 1)). Its box is
+// u_probe_box_min/max[p] (world space, axis-aligned), captured from
+// u_probe_position[p].
+uniform samplerCubeArray u_probe_maps;   // slot 11
+uniform int              u_probe_count;
+uniform vec3             u_probe_position[PROBE_MAX];
+uniform vec3             u_probe_box_min[PROBE_MAX];
+uniform vec3             u_probe_box_max[PROBE_MAX];
 
 const float PI = 3.14159265359;
 
@@ -449,6 +461,51 @@ vec3 shade_light(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 diffuse_color, vec3
     return (diffuse + specular) * radiance * NoL;
 }
 
+// Box projection ("parallax correction"): where a ray from `pos` along `dir`
+// leaves the box, as a direction from the probe's capture point -- so the
+// reflection shows what's at that spot of the room, not what the probe saw
+// straight along `dir` from its own position.
+vec3 box_project(vec3 pos, vec3 dir, vec3 box_min, vec3 box_max, vec3 probe)
+{
+    vec3  to_max = (box_max - pos) / dir;
+    vec3  to_min = (box_min - pos) / dir;
+    vec3  exits  = max(to_max, to_min);
+    float t      = min(min(exits.x, exits.y), exits.z);
+    return pos + dir * t - probe;
+}
+
+// How far outside a probe's box its reflections still reach, fading out:
+// inside the box a probe applies fully (its walls are real -- a point by the
+// floor reflects the room, not the sky), and the margin softens where its
+// area ends.
+const float PROBE_BLEND = 0.5;   // meters
+
+// The probe for `pos`: its index, or -1, and in *weight how much it applies
+// (1 inside its box, fading to 0 over PROBE_BLEND outside). Where several
+// apply fully, the smallest box wins -- a probe placed inside a larger one
+// takes over its own corner.
+int pick_probe(vec3 pos, out float weight)
+{
+    int   best        = -1;
+    float best_volume = 0.0;
+    weight = 0.0;
+    for (int p = 0; p < u_probe_count; ++p)
+    {
+        vec3  lo = u_probe_box_min[p], hi = u_probe_box_max[p];
+        vec3  outside = max(max(lo - pos, pos - hi), 0.0);
+        float w       = 1.0 - clamp(length(outside) / PROBE_BLEND, 0.0, 1.0);
+        vec3  size    = hi - lo;
+        float volume  = size.x * size.y * size.z;
+        if (w > weight || (w > 0.0 && w == weight && volume < best_volume))
+        {
+            weight      = w;
+            best        = p;
+            best_volume = volume;
+        }
+    }
+    return best;
+}
+
 // This pixel's cluster: its screen tile and depth slice.
 uint cluster_index()
 {
@@ -668,8 +725,25 @@ void main()
 
     float specular_ao = specular_occlusion(NoV, occlusion, roughness);
 
-    vec3 ambient = (FssEss * reflection * specular_ao + (FmsEms + k_d) * irradiance * occlusion)
-                 * u_ambient_strength;
+    vec3 specular_ambient = FssEss * reflection * specular_ao * u_ambient_strength;
+
+    // A reflection probe's capture, where one covers this point. It's what
+    // the scene really looks like from there (the sky at full strength, lit
+    // surfaces as lit), so u_ambient_strength -- a scale on the environment's
+    // lighting -- doesn't apply to it.
+    float probe_weight;
+    int   probe = pick_probe(v_world_pos, probe_weight);
+    if (probe >= 0)
+    {
+        // From the nearest point in the box: outside it (in the blend
+        // margin) the projection has no wall to reach.
+        vec3 lo    = u_probe_box_min[probe], hi = u_probe_box_max[probe];
+        vec3 dir   = box_project(clamp(v_world_pos, lo, hi), R, lo, hi, u_probe_position[probe]);
+        vec3 local = textureLod(u_probe_maps, vec4(dir, float(probe)), roughness * float(PROBE_MIPS - 1)).rgb;
+        specular_ambient = mix(specular_ambient, FssEss * local * specular_ao, probe_weight);
+    }
+
+    vec3 ambient = specular_ambient + (FmsEms + k_d) * irradiance * occlusion * u_ambient_strength;
 
     vec3 color = direct + ambient + emissive;
 

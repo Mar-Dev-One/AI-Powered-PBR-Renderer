@@ -147,12 +147,15 @@ scene_renderer_shader_defines(char* out, size_t size)
              "#define DEBUG_VIEW_WIREFRAME %d\n"
              "#define DEBUG_VIEW_LIGHTS %d\n"
              "#define SPOT_SHADOW_MAX %d\n"
-             "#define POINT_SHADOW_MAX %d\n",
+             "#define POINT_SHADOW_MAX %d\n"
+             "#define PROBE_MAX %d\n"
+             "#define PROBE_MIPS %d\n",
              CSM_MAX_CASCADES, CLUSTER_X, CLUSTER_Y, CLUSTER_Z,
              (int)LIGHT_DIRECTIONAL, (int)LIGHT_POINT, (int)LIGHT_SPOT,
              (int)SCENE_VIEW_LIT, (int)SCENE_VIEW_ALBEDO, (int)SCENE_VIEW_NORMALS, (int)SCENE_VIEW_ROUGHNESS,
              (int)SCENE_VIEW_METALLIC, (int)SCENE_VIEW_AO, (int)SCENE_VIEW_SHADOW, (int)SCENE_VIEW_LIGHTING,
-             (int)SCENE_VIEW_WIREFRAME, (int)SCENE_VIEW_LIGHTS, SPOT_SHADOW_MAX, POINT_SHADOW_MAX);
+             (int)SCENE_VIEW_WIREFRAME, (int)SCENE_VIEW_LIGHTS, SPOT_SHADOW_MAX, POINT_SHADOW_MAX, PROBE_MAX,
+             PROBE_MIPS);
 }
 
 // pbr.vert with `fragment` (pbr.frag, or the depth pre-pass's).
@@ -226,6 +229,8 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     r->shadow_buffer = rhi_uniform_buffer_create(sizeof(gpu_shadow_block));
     if (!light_clusters_create(&r->clusters))
         return false;
+    if (!reflection_probes_create(&r->probes))
+        return false;
 
     // Without timings the frame still renders: only the numbers are missing.
     if (!gpu_profiler_create(&r->profiler))
@@ -276,6 +281,137 @@ find_shadow_light(const light_clusters* lc, vec3 out_direction)
     return true;
 }
 
+// Binds the PBR shader with everything a lit draw needs: the camera
+// (`view_projection`, `eye`; `depth_view` is the main camera's view, which
+// picks the shadow cascade), the IBL, AO (`ao`, or NULL), the clustered
+// lights as last built, every shadow, and the reflection probes when
+// `probes`. Returns the shader.
+static rhi_shader
+bind_lit_shader(scene_renderer* r, const scene_render_settings* settings, const mat4 depth_view,
+                const mat4 view_projection, const vec3 eye, scene_debug_view debug_view, rhi_texture ao, b8 probes)
+{
+    rhi_shader shader = r->pbr_shader;
+
+    rhi_shader_bind(shader);
+    rhi_shader_set_mat4(shader, "u_view_projection", (const f32*)view_projection);
+    rhi_shader_set_mat4(shader, "u_view", (const f32*)depth_view);   // pbr.vert: v_view_depth, for cascade selection
+    rhi_shader_set_vec3(shader, "u_view_pos", eye[0], eye[1], eye[2]);
+    rhi_shader_set_float(shader, "u_ambient_strength", settings->ambient_strength);
+    rhi_shader_set_int(shader, "u_debug_show_cascades", settings->debug_show_cascades);
+    rhi_shader_set_int(shader, "u_debug_view", (int)debug_view);
+
+    ibl_bind(settings->ibl, shader);
+
+    // Like the shadow maps below, always pointed at its own unit, so it
+    // never shares one with a sampler of another type.
+    rhi_shader_set_int(shader, "u_ssao", POST_SSAO_SLOT);
+    rhi_shader_set_int(shader, "u_use_ssao", ao != NULL);
+    if (ao)
+        rhi_texture_bind(ao, POST_SSAO_SLOT);
+
+    // The lights, by cluster.
+    light_clusters_bind(&r->clusters, shader);
+
+    // Always bound, even unshadowed: they point the shadow samplers at their
+    // own units. Left at the default unit 0, those sampler2DShadow uniforms
+    // would share a unit with the material's sampler2D base color, which GL
+    // rejects at draw time. A cascade count of 0 then turns shadowing off.
+    gpu_shadow_block shadows;
+    memset(&shadows, 0, sizeof(shadows));
+    csm_bind(&r->csm, shader, &shadows);
+    if (!r->shadowed)
+        shadows.cascade_count = 0;
+    spot_shadows_bind(&r->spot, shader, &shadows);
+    point_shadows_bind(&r->point, shader, &shadows);
+    rhi_buffer_update(r->shadow_buffer, &shadows, sizeof(shadows), 0);
+    rhi_uniform_buffer_bind(r->shadow_buffer, FRAME_SHADOW_BINDING);
+
+    reflection_probes_bind(&r->probes, shader, probes && r->probes.baked_signature != 0);
+    return shader;
+}
+
+// How many times the probes are captured: the first sees shiny surfaces
+// reflecting the environment (a chrome ball in the room shows the sky);
+// each later capture sees them reflecting the previous one -- the room.
+#define PROBE_BOUNCES 2
+
+// Captures every reflection probe: the lit scene in its six directions
+// (lights evaluated everywhere -- the clusters are laid out for the main
+// camera's screen), each prefiltered into its layer of the array, then
+// again with the probes on (PROBE_BOUNCES). `main_view` picks the shadow
+// cascades, which are fit to the main camera.
+static void
+bake_probes(scene_renderer* r, const world* w, const scene_render_settings* settings, const mat4 main_view,
+            const mat4 main_projection, f32 near, f32 far)
+{
+    reflection_probes* rp = &r->probes;
+    light_clusters_build(&r->clusters, main_view, main_projection, near, far, PROBE_SIZE, PROBE_SIZE, true);
+
+    mat4 projection;
+    glm_perspective(glm_rad(90.0f), 1.0f, 0.05f, 500.0f, projection);
+    const model_draw_pass passes[2] = { MODEL_PASS_OPAQUE, MODEL_PASS_BLEND };
+
+    // Nothing to reflect yet on the first bounce: bind_lit_shader() leaves
+    // the probes off while baked_signature is 0.
+    uint64 signature     = rp->baked_signature;
+    rp->baked_signature  = 0;
+
+    for (uint32 bounce = 0; bounce < PROBE_BOUNCES; ++bounce)
+    for (uint32 p = 0; p < rp->count; ++p)
+    {
+        for (uint32 face = 0; face < 6; ++face)
+        {
+            mat4 rotation, translation, view, view_projection;
+            ibl_face_view(face, rotation);
+            glm_translate_make(translation, (vec3){ -rp->position[p][0], -rp->position[p][1], -rp->position[p][2] });
+            glm_mat4_mul(rotation, translation, view);
+            glm_mat4_mul(projection, view, view_projection);
+
+            rhi_framebuffer_bind(rp->capture);
+            rhi_clear(settings->clear_color[0], settings->clear_color[1], settings->clear_color[2], 1.0f);
+            if (settings->ibl && settings->show_skybox)
+                ibl_draw_skybox(settings->ibl, view, projection, settings->sky_blur);
+
+            rhi_shader shader = bind_lit_shader(r, settings, main_view, view_projection, rp->position[p],
+                                                SCENE_VIEW_LIT, NULL, bounce > 0);
+            draw_entities(w, shader, passes, 2);
+
+            rhi_texture_copy_to_cubemap_face(rhi_framebuffer_get_color_texture(rp->capture, 0), rp->capture_cube, face);
+        }
+
+        rhi_cubemap_generate_mipmaps(rp->capture_cube);
+        ibl_prefilter_into_array(rp->capture_cube, rp->maps, p, PROBE_MIPS, PROBE_SIZE);
+
+        // After the first bounce every layer holds a capture to reflect.
+        if (p + 1 == rp->count)
+            rp->baked_signature = 1;
+    }
+
+    rp->baked_signature = signature;
+    rhi_framebuffer_bind_default();
+    LOG_INFO("Reflection probes: baked %u\n", rp->count);
+}
+
+// What the probes' captures depend on besides the probes themselves: the
+// environment that lights and backs the scene.
+static uint64
+environment_key(const scene_render_settings* settings)
+{
+    uint64 key = (uint64)(uintptr_t)settings->ibl;
+    if (settings->ibl)
+        key = key * 31u + (uint64)(uintptr_t)settings->ibl->irradiance;
+    key = key * 31u + (uint64)settings->show_skybox;
+    uint32 bits;
+    memcpy(&bits, &settings->ambient_strength, sizeof(bits));
+    return key * 31u + bits;
+}
+
+void
+scene_renderer_bake_probes(scene_renderer* r)
+{
+    r->probes.force_bake = true;
+}
+
 rhi_shader
 scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
                      const scene_render_settings* settings)
@@ -291,6 +427,7 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
 
     vec3 shadow_dir;
     b8   shadowed = settings->shadows && find_shadow_light(&r->clusters, shadow_dir);
+    r->shadowed   = shadowed;
 
     if (shadowed)
     {
@@ -325,13 +462,27 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
         }
     }
 
-    // --- Scene target + background ----------------------------------------------
-    post_begin_scene(&r->post, settings->clear_color[0], settings->clear_color[1], settings->clear_color[2]);
-
     mat4 view, projection, view_projection;
     camera_get_view(cam, view);
     camera_get_projection(cam, projection);
     glm_mat4_mul(projection, view, view_projection);
+
+    // --- Reflection probes: baked again when they or the environment changed -----------
+    uint64 probe_signature = reflection_probes_gather(&r->probes, w, environment_key(settings));
+    if (probe_signature != r->probes.baked_signature || r->probes.force_bake)
+    {
+        if (r->probes.count)
+        {
+            uint32 scope = gpu_profiler_begin(&r->profiler, "Probe bake");
+            bake_probes(r, w, settings, view, projection, cam->near_plane, cam->far_plane);
+            gpu_profiler_end(&r->profiler, scope);
+        }
+        r->probes.baked_signature = probe_signature;
+        r->probes.force_bake      = false;
+    }
+
+    // --- Scene target + background ----------------------------------------------
+    post_begin_scene(&r->post, settings->clear_color[0], settings->clear_color[1], settings->clear_color[2]);
 
     // --- Lights by cluster ---------------------------------------------------------------
     // With the un-jittered camera (TAA's shift is a fraction of a pixel; the
@@ -405,42 +556,9 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
         rhi_set_wireframe(true);
 
     // --- PBR shader -------------------------------------------------------------
-    rhi_shader shader = r->pbr_shader;
-
-    rhi_shader_bind(shader);
-    rhi_shader_set_mat4(shader, "u_view_projection", (const f32*)view_projection);
-    rhi_shader_set_mat4(shader, "u_view", (const f32*)view);   // pbr.vert: v_view_depth, for cascade selection
-    rhi_shader_set_vec3(shader, "u_view_pos", cam->position[0], cam->position[1], cam->position[2]);
-    rhi_shader_set_float(shader, "u_ambient_strength", settings->ambient_strength);
-    rhi_shader_set_int(shader, "u_debug_show_cascades", settings->debug_show_cascades);
-    rhi_shader_set_int(shader, "u_debug_view", (int)settings->debug_view);
-
-    ibl_bind(settings->ibl, shader);
-
-    // Like the shadow maps below, always pointed at its own unit, so it
-    // never shares one with a sampler of another type.
-    rhi_texture ao = ssao ? post_ssao_texture(&r->post) : NULL;
-    rhi_shader_set_int(shader, "u_ssao", POST_SSAO_SLOT);
-    rhi_shader_set_int(shader, "u_use_ssao", ao != NULL);
-    if (ao)
-        rhi_texture_bind(ao, POST_SSAO_SLOT);
-
-    // The lights, by cluster.
-    light_clusters_bind(&r->clusters, shader);
-
-    // Always bound, even unshadowed: they point the shadow samplers at their
-    // own units. Left at the default unit 0, those sampler2DShadow uniforms
-    // would share a unit with the material's sampler2D base color, which GL
-    // rejects at draw time. A cascade count of 0 then turns shadowing off.
-    gpu_shadow_block shadows;
-    memset(&shadows, 0, sizeof(shadows));
-    csm_bind(&r->csm, shader, &shadows);
-    if (!shadowed)
-        shadows.cascade_count = 0;
-    spot_shadows_bind(&r->spot, shader, &shadows);
-    point_shadows_bind(&r->point, shader, &shadows);
-    rhi_buffer_update(r->shadow_buffer, &shadows, sizeof(shadows), 0);
-    rhi_uniform_buffer_bind(r->shadow_buffer, FRAME_SHADOW_BINDING);
+    rhi_texture ao     = ssao ? post_ssao_texture(&r->post) : NULL;
+    rhi_shader  shader = bind_lit_shader(r, settings, view, view_projection, cam->position, settings->debug_view,
+                                         ao, true);
 
     r->scene_scope = gpu_profiler_begin(&r->profiler, "Scene");
     return shader;
@@ -644,6 +762,7 @@ scene_renderer_destroy(scene_renderer* r)
     gpu_profiler_destroy(&r->profiler);
     post_destroy(&r->post);
     light_clusters_destroy(&r->clusters);
+    reflection_probes_destroy(&r->probes);
     if (r->shadow_buffer)
         rhi_buffer_destroy(r->shadow_buffer);
     spot_shadows_destroy(&r->spot);

@@ -212,6 +212,53 @@ rhi_texture gl_cubemap_create(rhi_cubemap_desc desc)
     return tex;
 }
 
+rhi_texture gl_cubemap_array_create(uint16 size, uint32 layers, uint32 mip_count, rhi_texture_format format)
+{
+    ASSERT(size > 0 && layers > 0);
+    ASSERT(format != RHI_FORMAT_DEPTH24);
+
+    GLenum internal_format, upload_format, upload_type;
+    gl_texture_format_info(format, &internal_format, &upload_format, &upload_type);
+
+    uint32 max_mips = 1;
+    for (uint32 s = size; s > 1; s >>= 1)
+        ++max_mips;
+    if (mip_count < 1)
+        mip_count = 1;
+    if (mip_count > max_mips)
+        mip_count = max_mips;
+
+    rhi_texture tex = malloc(sizeof(*tex));
+    if (!tex)
+        FATAL("Out of memory creating cubemap array");
+
+    tex->target    = GL_TEXTURE_CUBE_MAP_ARRAY;
+    tex->width     = size;
+    tex->height    = size;
+    tex->mip_count = mip_count;
+
+    // Six layer-faces per cube map, all levels allocated up front so any
+    // (layer, face, level) can be rendered into.
+    glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &tex->handle);
+    glTextureStorage3D(tex->handle, (GLsizei)mip_count, internal_format, size, size, (GLsizei)(layers * 6));
+    glTextureParameteri(tex->handle, GL_TEXTURE_MIN_FILTER, mip_count > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+    glTextureParameteri(tex->handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(tex->handle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(tex->handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(tex->handle, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(tex->handle, GL_TEXTURE_BASE_LEVEL, 0);
+    glTextureParameteri(tex->handle, GL_TEXTURE_MAX_LEVEL, (GLint)(mip_count - 1));
+    return tex;
+}
+
+void gl_texture_copy_to_cubemap_face(rhi_texture source, rhi_texture cubemap, uint32 face)
+{
+    ASSERT(source->target == GL_TEXTURE_2D && cubemap->target == GL_TEXTURE_CUBE_MAP && face < 6);
+    glCopyImageSubData(source->handle, GL_TEXTURE_2D, 0, 0, 0, 0,
+                       cubemap->handle, GL_TEXTURE_CUBE_MAP, 0, 0, 0, (GLint)face,
+                       source->width, source->height, 1);
+}
+
 void gl_cubemap_generate_mipmaps(rhi_texture cubemap)
 {
     ASSERT(cubemap->target == GL_TEXTURE_CUBE_MAP);

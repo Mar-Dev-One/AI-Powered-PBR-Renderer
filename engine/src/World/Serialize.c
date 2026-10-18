@@ -448,6 +448,10 @@ ensure_component(world* w, entity_id e, component_type type)
             world_add_spin(w, e, (vec3){ 0.0f, 30.0f, 0.0f });   // a slow turn about Y
             break;
 
+        case COMPONENT_REFLECTION_PROBE:
+            world_add_reflection_probe(w, e, (vec3){ 2.0f, 2.0f, 2.0f });   // a 4 m room
+            break;
+
         default:
             break;   // Name and Transform always exist; Parent is added by world_set_parent()
     }

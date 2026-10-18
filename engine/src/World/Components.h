@@ -34,6 +34,7 @@ typedef enum component_type
     COMPONENT_LIGHT,
     COMPONENT_CAMERA,
     COMPONENT_SPIN,
+    COMPONENT_REFLECTION_PROBE,
     COMPONENT_TYPE_COUNT
 } component_type;
 
@@ -90,3 +91,12 @@ typedef struct c_spin
 {
     vec3 degrees_per_second;   // added to rotation_deg (x = pitch, y = yaw, z = roll) each second
 } c_spin;
+
+// Captures the scene around the entity's position into a cube map
+// (Renderer/ReflectionProbes.h), which shiny surfaces inside the box --
+// the position +- extents, along the world axes -- reflect instead of the
+// distant sky, as if the box's walls were what they see.
+typedef struct c_reflection_probe
+{
+    vec3 extents;   // half the box's size along x, y, z, in meters
+} c_reflection_probe;

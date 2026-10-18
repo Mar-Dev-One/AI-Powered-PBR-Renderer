@@ -62,6 +62,11 @@ void gl_shutdown(void);
 void gl_set_viewport(uint16 x, uint16 y, uint16 width, uint16 height);
 void gl_clear(f32 r, f32 g, f32 b, f32 a);
 void gl_set_render_state(rhi_render_state state);
+
+rhi_texture gl_cubemap_array_create(uint16 size, uint32 layers, uint32 mip_count, rhi_texture_format format);
+void        gl_texture_copy_to_cubemap_face(rhi_texture source, rhi_texture cubemap, uint32 face);
+void        gl_framebuffer_set_cubemap_array_target(rhi_framebuffer framebuffer, rhi_texture array,
+                                                    uint32 layer, uint32 face, uint32 mip);
 void gl_set_wireframe(b8 enabled);
 void gl_set_color_write(b8 enabled);
 void gl_set_draw_region(uint16 x, uint16 y, uint16 width, uint16 height);

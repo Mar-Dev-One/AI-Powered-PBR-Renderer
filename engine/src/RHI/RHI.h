@@ -229,6 +229,17 @@ rhi_texture rhi_cubemap_create(rhi_cubemap_desc desc);
 // of mip 0.
 void        rhi_cubemap_generate_mipmaps(rhi_texture cubemap);
 
+// `layers` cube maps of one size, format and mip count in one texture --
+// sampled with a `samplerCubeArray` (vec4(direction, layer)), so they take
+// a single texture unit. Contents undefined until rendered into
+// (rhi_framebuffer_set_cubemap_array_target()). Same filtering as
+// rhi_cubemap_create(). Free with rhi_texture_destroy().
+rhi_texture rhi_cubemap_array_create(uint16 size, uint32 layers, uint32 mip_count, rhi_texture_format format);
+
+// Copies mip 0 of the 2D texture `source` (the cube map's size, same
+// format) into `face` of `cubemap`'s mip 0.
+void        rhi_texture_copy_to_cubemap_face(rhi_texture source, rhi_texture cubemap, uint32 face);
+
 // --- Framebuffers --------------------------------------------------------
 // Render targets for offscreen passes: shadow maps, HDR scene color,
 // G-buffer, IBL convolution, etc. Rendering to the screen doesn't need
@@ -251,6 +262,10 @@ rhi_framebuffer rhi_framebuffer_create_cubemap_target(void);
 void            rhi_framebuffer_set_cubemap_target(rhi_framebuffer framebuffer,
                                                    rhi_texture cubemap,
                                                    uint32 face, uint32 mip);
+
+// The same, for `face` of cube map `layer` in a cube map array.
+void            rhi_framebuffer_set_cubemap_array_target(rhi_framebuffer framebuffer, rhi_texture array,
+                                                         uint32 layer, uint32 face, uint32 mip);
 
 // --- Render state --------------------------------------------------------
 // The handful of per-draw switches a material can change (glTF's

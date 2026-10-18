@@ -649,6 +649,23 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     return host_view_get(user_data, ctx, NULL, out_result, error, error_size);
 }
 
+// Captures the reflection probes again (Renderer/ReflectionProbes.h) -- they
+// re-bake by themselves only when a probe or the environment changes.
+static b8
+host_render_bake_reflections(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error,
+                             size_t error_size)
+{
+    (void)ctx; (void)args; (void)error; (void)error_size;
+    editor_state* state = user_data;
+    scene_renderer_bake_probes(&state->renderer);
+
+    *out_result = cJSON_CreateObject();
+    cJSON_AddNumberToObject(*out_result, "probes", state->renderer.probes.count);
+    cJSON_AddStringToObject(*out_result, "note", "Baked at the next frame. Probes also re-bake by themselves when one "
+                                                 "moves or resizes, or the environment changes.");
+    return true;
+}
+
 // How long the last frames took: each render pass on the GPU (smoothed
 // over about 20 frames) and the whole frame on the CPU.
 static b8
@@ -1054,6 +1071,8 @@ static const cmd_host_command HOST_COMMANDS[] = {
     { "render.set",       "Exposure, ambient strength, bloom, tone mapping, ambient occlusion and debug views",                      HOST_ARGS(ARGS_RENDER_SET),      false, host_render_set },
     { "log.get",          "The engine's latest log lines: shader errors, models that failed to load, warnings",
                                                                                                HOST_ARGS(ARGS_LOG_GET),         false, host_log_get },
+    { "render.bake_reflections", "Captures the reflection probes again -- after lights or objects moved",
+                                                                                               NULL, 0,                         false, host_render_bake_reflections },
     { "render.timings",   "How long each render pass takes on the GPU, and the frame on the CPU, in ms",
                                                                                                NULL, 0,                         false, host_render_timings },
     { "view.screenshot",  "The scene as a PNG (base64), rendered now without the editor's panels -- to check how it looks",
@@ -2958,6 +2977,15 @@ draw_environment_controls(editor_state* state)
     else if (state->doc.env.hdri[0])
     {
         igTextWrapped("Couldn't load %s; lit by the hemisphere ambient light.", state->doc.env.hdri);
+    }
+
+    if (state->renderer.probes.count)
+    {
+        if (igButton("Bake reflections", (ImVec2_c){ 0, 0 }))
+            scene_renderer_bake_probes(&state->renderer);
+        if (igIsItemHovered(0))
+            igSetTooltip("Capture the %u reflection probe(s) again, after moving lights or objects",
+                         state->renderer.probes.count);
     }
     igSeparator();
 }

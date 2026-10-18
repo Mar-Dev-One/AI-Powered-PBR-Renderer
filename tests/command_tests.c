@@ -239,7 +239,7 @@ test_components_describe(void)
 {
     CHECK(run("{\"cmd\": \"components.describe\"}"));
     const cJSON* components = cJSON_GetObjectItem(result(), "components");
-    CHECK(cJSON_GetArraySize(components) == 5);   // Transform, MeshRenderer, Light, Camera, Spin
+    CHECK(cJSON_GetArraySize(components) == 6);   // Transform, MeshRenderer, Light, Camera, Spin, ReflectionProbe
 
     const cJSON* light = NULL;
     const cJSON* c;

@@ -119,6 +119,30 @@ void gl_framebuffer_destroy(rhi_framebuffer framebuffer)
     free(framebuffer);
 }
 
+void gl_framebuffer_set_cubemap_array_target(rhi_framebuffer framebuffer, rhi_texture array,
+                                             uint32 layer, uint32 face, uint32 mip)
+{
+    ASSERT(array->target == GL_TEXTURE_CUBE_MAP_ARRAY);
+    ASSERT(face < 6);
+    ASSERT(mip < array->mip_count);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->fbo);
+    // An array's layer-faces run layer 0's +X..-Z, then layer 1's, ...
+    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, array->handle, (GLint)mip, (GLint)(layer * 6 + face));
+
+    const GLenum draw_buffer = GL_COLOR_ATTACHMENT0;
+    glDrawBuffers(1, &draw_buffer);
+
+    uint16 size = (uint16)(array->width >> mip);
+    framebuffer->width  = size ? size : 1;
+    framebuffer->height = framebuffer->width;
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        FATAL("Cubemap array framebuffer incomplete");
+
+    glViewport(0, 0, framebuffer->width, framebuffer->height);
+}
+
 rhi_framebuffer gl_framebuffer_create_cubemap_target(void)
 {
     rhi_framebuffer fb = malloc(sizeof(*fb));

@@ -57,6 +57,11 @@ typedef struct rhi_backend_api
                                                        rhi_texture cubemap,
                                                        uint32 face, uint32 mip);
 
+    rhi_texture (*cubemap_array_create)(uint16 size, uint32 layers, uint32 mip_count, rhi_texture_format format);
+    void        (*texture_copy_to_cubemap_face)(rhi_texture source, rhi_texture cubemap, uint32 face);
+    void        (*framebuffer_set_cubemap_array_target)(rhi_framebuffer framebuffer, rhi_texture array,
+                                                        uint32 layer, uint32 face, uint32 mip);
+
     void (*set_render_state)(rhi_render_state state);
     void (*set_wireframe)(b8 enabled);
     void (*set_color_write)(b8 enabled);

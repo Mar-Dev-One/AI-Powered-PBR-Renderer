@@ -12,11 +12,13 @@
 #include "ShaderReload.h"
 #include "Shadow.h"
 #include "PointShadow.h"
+#include "ReflectionProbes.h"
 #include "SpotShadow.h"
 
 // The lit frame, as one unit: cascaded shadows for the world's first
 // directional light, shadow maps for up to 4 spot lights (SpotShadow.h) and
-// 4 point lights (PointShadow.h), a depth pre-pass and screen-space ambient occlusion
+// 4 point lights (PointShadow.h), local reflections from up to 8
+// ReflectionProbe entities (ReflectionProbes.h), a depth pre-pass and screen-space ambient occlusion
 // (when settings.ssao), an HDR scene target with optional skybox, the PBR
 // shader with every per-frame uniform (camera, lights, IBL, cascades), every
 // visible MeshRenderer, and the final tone-mapping pass. An app supplies a
@@ -32,7 +34,7 @@
 //     material. They aren't in the depth pre-pass, so they get no SSAO of
 //     their own (they read what's behind them).
 //
-// Each frame's passes are timed on the GPU ("Shadows", "Spot shadows", "Point shadows", "Depth", "SSAO", "Sky",
+// Each frame's passes are timed on the GPU ("Shadows", "Spot shadows", "Point shadows", "Probe bake", "Depth", "SSAO", "Sky",
 // "Scene", "TAA", "Bloom", "Exposure", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
 // begin() to end(), so it includes whatever the app draws in between.
 //
@@ -133,6 +135,9 @@ typedef struct scene_renderer
     // ShadowBlock uniform block (Renderer/FrameData.h).
     light_clusters clusters;
     rhi_buffer     shadow_buffer;
+    b8             shadowed;        // this frame has the cascades' light
+
+    reflection_probes probes;
     uint32       scene_scope;    // "Scene": from begin() to end()
 
     // TAA: this frame's step in the jitter sequence, and the camera's
@@ -204,6 +209,11 @@ b8 scene_renderer_reload_shaders(scene_renderer* r);
 // Cheap enough to call every frame (a stat() per shader file): rebuilds
 // each shader whose files changed since it was last built.
 void scene_renderer_poll_hot_reload(scene_renderer* r);
+
+// Bakes the reflection probes again at the next frame -- after lights or
+// objects moved: the automatic re-bake only follows the probes themselves
+// and the environment.
+void scene_renderer_bake_probes(scene_renderer* r);
 
 // Safe on a zeroed / failed / already-destroyed scene_renderer.
 void scene_renderer_destroy(scene_renderer* r);
