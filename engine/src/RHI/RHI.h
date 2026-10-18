@@ -295,6 +295,17 @@ void             rhi_set_color_write(b8 enabled);
 // not remembered as the screen's viewport.
 void             rhi_set_draw_region(uint16 x, uint16 y, uint16 width, uint16 height);
 
+// Clears the depth of just that rectangle of the bound framebuffer to 1.0
+// (rhi_clear() clears all of it): one tile of a shadow atlas, leaving the
+// others as they are.
+void             rhi_clear_depth_region(uint16 x, uint16 y, uint16 width, uint16 height);
+
+// Copies the depth of a rectangle from one framebuffer to the same place in
+// another of the same size (both with depth attachments): a shadow atlas
+// tile from a cached copy. Nothing needs to be bound.
+void             rhi_framebuffer_copy_depth(rhi_framebuffer source, rhi_framebuffer destination,
+                                            uint16 x, uint16 y, uint16 width, uint16 height);
+
 // --- GPU timestamps ------------------------------------------------------
 // rhi_timestamp_write() records when the GPU gets to that point in the work
 // submitted so far; two of them time what's between. The GPU runs behind

@@ -4,6 +4,7 @@
 #include "../RHI/RHI.h"
 #include "../Scene/Light.h"
 #include "../World/World.h"
+#include "ShadowCache.h"
 
 #include <cglm/cglm.h>
 
@@ -18,6 +19,12 @@
 //
 // Which lights: the first POINT_SHADOW_MAX point lights, in world order,
 // with cast_shadows set and some intensity.
+//
+// A light's row is drawn again only when the light or a caster within its
+// range changed, and casters turned by a Spin are drawn over a kept copy of
+// the rest (Renderer/ShadowCache.h); otherwise last frame's stays. (A
+// caster beyond the range, in a face's corner, is drawn but not watched: it
+// can't shadow anything the light reaches.)
 
 #define POINT_SHADOW_MAX   4     // rows of the atlas
 #define POINT_SHADOW_SLOT  15    // texture unit: after SpotShadow.h's SPOT_SHADOW_SLOT
@@ -35,6 +42,12 @@ typedef struct point_shadows
     vec3   position[POINT_SHADOW_MAX];
     f32    near[POINT_SHADOW_MAX];
     f32    far[POINT_SHADOW_MAX];
+
+    // The cache (Renderer/ShadowCache.h): each row's layers, and the atlas
+    // of static layers -- made the first time a row has moving casters.
+    shadow_layers   layers[POINT_SHADOW_MAX];
+    rhi_framebuffer static_atlas;
+    uint32          rendered;               // rows drawn by the last point_shadows_render()
 } point_shadows;
 
 // An atlas of 6 x POINT_SHADOW_MAX faces of `face_size` texels. False (and
@@ -42,14 +55,19 @@ typedef struct point_shadows
 b8 point_shadows_create(point_shadows* ps, uint32 face_size);
 
 // Picks this frame's shadowed point lights from `lights` / `positions` (as
-// world_gather_lights() returns them).
-void point_shadows_update(point_shadows* ps, const light* lights, const vec3* positions, uint32 count);
+// world_gather_lights() returns them), and works out what each row should
+// show -- with `w`'s casters (needs world_update()).
+void point_shadows_update(point_shadows* ps, const light* lights, const vec3* positions, uint32 count,
+                          const world* w);
 
 // Renders each picked light's six faces with the depth-only shader
 // `depth_shader` (Renderer/Shadow.h's) -- per face, only casters inside
 // that face's view, out to the light's range. Needs world_update(). Leaves the
 // default framebuffer bound.
 void point_shadows_render(point_shadows* ps, const world* w, rhi_shader depth_shader);
+
+// Every row is drawn again next frame (the depth shader was rebuilt).
+void point_shadows_invalidate(point_shadows* ps);
 
 struct gpu_shadow_block;   // Renderer/FrameData.h
 

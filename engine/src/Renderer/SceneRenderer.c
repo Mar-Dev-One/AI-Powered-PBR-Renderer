@@ -445,7 +445,7 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
         const light* lights    = r->clusters.lights;
         const vec3*  positions = (const vec3*)r->clusters.positions;
         uint32       count     = r->clusters.count;
-        spot_shadows_update(&r->spot, lights, positions, count);
+        spot_shadows_update(&r->spot, lights, positions, count, w);
         if (r->spot.count)
         {
             uint32 scope = gpu_profiler_begin(&r->profiler, "Spot shadows");
@@ -453,7 +453,7 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
             gpu_profiler_end(&r->profiler, scope);
         }
 
-        point_shadows_update(&r->point, lights, positions, count);
+        point_shadows_update(&r->point, lights, positions, count, w);
         if (r->point.count)
         {
             uint32 scope = gpu_profiler_begin(&r->profiler, "Point shadows");
@@ -724,6 +724,8 @@ scene_renderer_reload_shaders(scene_renderer* r)
     b8 pbr    = reload_pbr(r);
     b8 post   = shader_rebuild(&r->post.tonemap_shader, POST_VERTEX_PATH, POST_FRAGMENT_PATH, NULL);
     b8 shadow = shader_rebuild(&r->csm.depth_shader, CSM_VERTEX_PATH, CSM_FRAGMENT_PATH, NULL);
+    spot_shadows_invalidate(&r->spot);     // the kept maps were drawn by the old one
+    point_shadows_invalidate(&r->point);
     b8 bloom  = reload_bloom(r);
     b8 fxaa   = shader_rebuild(&r->post.fxaa_shader, POST_VERTEX_PATH, POST_FXAA_PATH, NULL)
              && shader_rebuild(&r->post.taa_shader, POST_VERTEX_PATH, POST_TAA_PATH, NULL);
@@ -753,7 +755,11 @@ scene_renderer_poll_hot_reload(scene_renderer* r)
     if (file_watch_changed(&r->fxaa_files))
         shader_rebuild(&r->post.fxaa_shader, POST_VERTEX_PATH, POST_FXAA_PATH, NULL);
     if (file_watch_changed(&r->shadow_files))
+    {
         shader_rebuild(&r->csm.depth_shader, CSM_VERTEX_PATH, CSM_FRAGMENT_PATH, NULL);
+        spot_shadows_invalidate(&r->spot);
+        point_shadows_invalidate(&r->point);
+    }
 }
 
 void

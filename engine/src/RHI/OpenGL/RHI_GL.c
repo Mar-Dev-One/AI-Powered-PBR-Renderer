@@ -86,6 +86,21 @@ void gl_set_draw_region(uint16 x, uint16 y, uint16 width, uint16 height)
     glViewport(x, y, width, height);   // not g_gl_screen_viewport: that's the window's
 }
 
+void gl_clear_depth_region(uint16 x, uint16 y, uint16 width, uint16 height)
+{
+    // A clear ignores the viewport; the scissor limits it.
+    // Depth writes must be on for it, as they were.
+    GLboolean depth_write;
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &depth_write);
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(x, y, width, height);
+    glDepthMask(GL_TRUE);
+    glClearDepth(1.0);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_SCISSOR_TEST);
+    glDepthMask(depth_write);
+}
+
 void gl_set_color_write(b8 enabled)
 {
     GLboolean on = enabled ? GL_TRUE : GL_FALSE;
@@ -192,6 +207,8 @@ void rhi_gl_get_backend(rhi_backend_api* out_api)
     out_api->set_wireframe = gl_set_wireframe;
     out_api->set_color_write = gl_set_color_write;
     out_api->set_draw_region = gl_set_draw_region;
+    out_api->clear_depth_region = gl_clear_depth_region;
+    out_api->framebuffer_copy_depth = gl_framebuffer_copy_depth;
 
     out_api->timestamp_create = gl_timestamp_create;
     out_api->timestamp_write = gl_timestamp_write;

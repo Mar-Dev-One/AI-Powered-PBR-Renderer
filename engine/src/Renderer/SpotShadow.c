@@ -1,5 +1,6 @@
 #include "SpotShadow.h"
 #include "FrameData.h"
+#include "ShadowCache.h"
 
 #include "../Assets/AssetCache.h"
 #include "../Scene/Model.h"
@@ -32,7 +33,7 @@ spot_shadows_create(spot_shadows* ss, uint32 tile_size)
 }
 
 void
-spot_shadows_update(spot_shadows* ss, const light* lights, const vec3* positions, uint32 count)
+spot_shadows_update(spot_shadows* ss, const light* lights, const vec3* positions, uint32 count, const world* w)
 {
     ss->count = 0;
 
@@ -62,46 +63,91 @@ spot_shadows_update(spot_shadows* ss, const light* lights, const vec3* positions
 
         // At a meter from the light the tile spans 2 tan(fov/2) meters.
         ss->texel_scale[tile] = 2.0f * tanf(fov * 0.5f) / (f32)ss->tile_size;
+
+        // What the tile shows: this view of these casters (the ones the
+        // render below draws).
+        vec4 planes[6];
+        glm_frustum_planes(ss->view_projection[tile], planes);
+        shadow_layers_plan(&ss->layers[tile], ss->view_projection[tile], sizeof(mat4), w, planes, NULL);
     }
+}
+
+void
+spot_shadows_invalidate(spot_shadows* ss)
+{
+    for (uint32 t = 0; t < SPOT_SHADOW_MAX; ++t)
+        ss->layers[t].drawn = ss->layers[t].static_drawn = 0;
+}
+
+// The atlas of static layers, the first time it's needed. False if it
+// couldn't be made (every tile then draws all of its casters).
+static b8
+ensure_static_atlas(spot_shadows* ss)
+{
+    if (!ss->static_atlas)
+        ss->static_atlas = rhi_framebuffer_create((rhi_framebuffer_desc){
+            .width                = (uint16)(ss->tile_size * 2),
+            .height               = (uint16)(ss->tile_size * 2),
+            .has_depth_attachment = true,
+        });
+    return ss->static_atlas != NULL;
 }
 
 void
 spot_shadows_render(spot_shadows* ss, const world* w, rhi_shader depth_shader)
 {
+    ss->rendered = 0;
     if (!ss->atlas || ss->count == 0)
         return;
 
-    rhi_framebuffer_bind(ss->atlas);
-    rhi_clear(0.0f, 0.0f, 0.0f, 1.0f);   // depth to 1.0 everywhere (there's no color)
-    rhi_shader_bind(depth_shader);
-
-    const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
+    b8 bound = false;
     for (uint32 t = 0; t < ss->count; ++t)
     {
-        // Drawn into its tile only: x and y pick one of the 2 x 2.
-        rhi_set_draw_region((uint16)((t & 1) * ss->tile_size), (uint16)((t >> 1) * ss->tile_size),
-                            (uint16)ss->tile_size, (uint16)ss->tile_size);
+        shadow_work work = shadow_layers_work(&ss->layers[t]);
+        if (work == SHADOW_WORK_NONE)
+            continue;   // already shows exactly this
+        if (work != SHADOW_WORK_DRAW_ALL && !ensure_static_atlas(ss))
+        {
+            work = SHADOW_WORK_DRAW_ALL;
+            ss->layers[t].static_drawn = 0;
+        }
+        ++ss->rendered;
+        bound = true;
 
-        // Only what the light's cone can see, out to its range.
-        vec4 planes[6];
+        // Only what the light's cone can see, out to its range, into its tile:
+        // x and y pick one of the 2 x 2.
+        vec4   planes[6];
+        uint16 size = (uint16)ss->tile_size;
+        uint16 x = (uint16)((t & 1) * ss->tile_size), y = (uint16)((t >> 1) * ss->tile_size);
         glm_frustum_planes(ss->view_projection[t], planes);
 
-        for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+        if (work == SHADOW_WORK_DRAW_STATIC)
         {
-            const c_mesh_renderer* mr = world_mesh_renderer(w, e);
-            const model*           m  = assets_model(w->assets, mr->model);
-            if (!m || !mr->visible || !mr->cast_shadows)
-                continue;
+            rhi_framebuffer_bind(ss->static_atlas);
+            rhi_shader_bind(depth_shader);
+            rhi_set_draw_region(x, y, size, size);
+            rhi_clear_depth_region(x, y, size, size);
+            shadow_draw_casters(w, depth_shader, ss->view_projection[t], planes, SHADOW_CASTERS_STATIC);
+        }
 
-            vec3 box[2];
-            if (world_bounds(w, e, box[0], box[1]) && !glm_aabb_frustum(box, planes))
-                continue;
-
-            model_draw_depth(m, depth_shader, world_matrix(w, e), ss->view_projection[t]);
+        rhi_framebuffer_bind(ss->atlas);
+        rhi_shader_bind(depth_shader);
+        rhi_set_draw_region(x, y, size, size);
+        if (work == SHADOW_WORK_DRAW_ALL)
+        {
+            rhi_clear_depth_region(x, y, size, size);
+            shadow_draw_casters(w, depth_shader, ss->view_projection[t], planes, SHADOW_CASTERS_ALL);
+        }
+        else
+        {
+            // The kept static layer, then what moves on top of it.
+            rhi_framebuffer_copy_depth(ss->static_atlas, ss->atlas, x, y, size, size);
+            shadow_draw_casters(w, depth_shader, ss->view_projection[t], planes, SHADOW_CASTERS_MOVING);
         }
     }
 
-    rhi_framebuffer_bind_default();
+    if (bound)
+        rhi_framebuffer_bind_default();
 }
 
 void
@@ -125,5 +171,7 @@ spot_shadows_destroy(spot_shadows* ss)
 {
     if (ss->atlas)
         rhi_framebuffer_destroy(ss->atlas);
+    if (ss->static_atlas)
+        rhi_framebuffer_destroy(ss->static_atlas);
     memset(ss, 0, sizeof(*ss));
 }

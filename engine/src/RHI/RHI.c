@@ -305,6 +305,17 @@ void rhi_set_draw_region(uint16 x, uint16 y, uint16 width, uint16 height)
     backend.set_draw_region(x, y, width, height);
 }
 
+void rhi_clear_depth_region(uint16 x, uint16 y, uint16 width, uint16 height)
+{
+    backend.clear_depth_region(x, y, width, height);
+}
+
+void rhi_framebuffer_copy_depth(rhi_framebuffer source, rhi_framebuffer destination,
+                                uint16 x, uint16 y, uint16 width, uint16 height)
+{
+    backend.framebuffer_copy_depth(source, destination, x, y, width, height);
+}
+
 rhi_query rhi_timestamp_create(void)
 {
     return backend.timestamp_create();

@@ -70,6 +70,9 @@ void        gl_framebuffer_set_cubemap_array_target(rhi_framebuffer framebuffer,
 void gl_set_wireframe(b8 enabled);
 void gl_set_color_write(b8 enabled);
 void gl_set_draw_region(uint16 x, uint16 y, uint16 width, uint16 height);
+void gl_clear_depth_region(uint16 x, uint16 y, uint16 width, uint16 height);
+void gl_framebuffer_copy_depth(rhi_framebuffer source, rhi_framebuffer destination,
+                               uint16 x, uint16 y, uint16 width, uint16 height);
 
 rhi_query gl_timestamp_create(void);
 void      gl_timestamp_write(rhi_query query);

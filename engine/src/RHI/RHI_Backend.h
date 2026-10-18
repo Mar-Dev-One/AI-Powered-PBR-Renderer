@@ -66,6 +66,9 @@ typedef struct rhi_backend_api
     void (*set_wireframe)(b8 enabled);
     void (*set_color_write)(b8 enabled);
     void (*set_draw_region)(uint16 x, uint16 y, uint16 width, uint16 height);
+    void (*clear_depth_region)(uint16 x, uint16 y, uint16 width, uint16 height);
+    void (*framebuffer_copy_depth)(rhi_framebuffer source, rhi_framebuffer destination,
+                                   uint16 x, uint16 y, uint16 width, uint16 height);
 
     rhi_query (*timestamp_create)(void);
     void      (*timestamp_write)(rhi_query query);

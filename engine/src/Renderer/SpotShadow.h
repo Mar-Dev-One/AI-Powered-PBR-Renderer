@@ -4,6 +4,7 @@
 #include "../RHI/RHI.h"
 #include "../Scene/Light.h"
 #include "../World/World.h"
+#include "ShadowCache.h"
 
 #include <cglm/cglm.h>
 
@@ -16,6 +17,10 @@
 //
 // Which lights: the first SPOT_SHADOW_MAX spot lights, in world order,
 // with cast_shadows set and some intensity.
+//
+// A tile is drawn again only when its light or a caster it can see changed,
+// and casters turned by a Spin are drawn over a kept copy of the rest
+// (Renderer/ShadowCache.h); otherwise last frame's stays.
 
 #define SPOT_SHADOW_MAX  4    // tiles in the atlas, 2 x 2
 #define SPOT_SHADOW_SLOT 14   // texture unit: after Renderer/PostProcess.h's POST_SSAO_SLOT
@@ -30,6 +35,12 @@ typedef struct spot_shadows
     int32  light_index[SPOT_SHADOW_MAX];      // which u_lights[] entry (world_gather_lights() order) each tile is for
     mat4   view_projection[SPOT_SHADOW_MAX];
     f32    texel_scale[SPOT_SHADOW_MAX];      // a texel's world size per meter from the light, for the bias
+
+    // The cache (Renderer/ShadowCache.h): each tile's layers, and the atlas
+    // of static layers -- made the first time a tile has moving casters.
+    shadow_layers   layers[SPOT_SHADOW_MAX];
+    rhi_framebuffer static_atlas;
+    uint32          rendered;                 // tiles drawn by the last spot_shadows_render()
 } spot_shadows;
 
 // An atlas of 2 x 2 tiles of `tile_size` texels. False (and `ss` safe to
@@ -37,15 +48,20 @@ typedef struct spot_shadows
 b8 spot_shadows_create(spot_shadows* ss, uint32 tile_size);
 
 // Picks this frame's shadowed spot lights from `lights` / `positions` (as
-// world_gather_lights() returns them) and aims a tile at each.
-void spot_shadows_update(spot_shadows* ss, const light* lights, const vec3* positions, uint32 count);
+// world_gather_lights() returns them), aims a tile at each, and works out
+// what each tile should show -- with `w`'s casters (needs world_update()).
+void spot_shadows_update(spot_shadows* ss, const light* lights, const vec3* positions, uint32 count,
+                         const world* w);
 
-// Renders the shadow casters' depth into each picked light's tile, with the
-// depth-only shader `depth_shader` (Renderer/Shadow.h's) -- only casters
-// inside the light's view, out to its range: a lamp's map doesn't redraw
-// the whole town. Needs world_update(). Leaves the default
+// Renders the shadow casters' depth into each picked light's tile that
+// changed, with the depth-only shader `depth_shader` (Renderer/Shadow.h's) --
+// only casters inside the light's view, out to its range: a lamp's map
+// doesn't redraw the whole town. Needs world_update(). Leaves the default
 // framebuffer bound.
 void spot_shadows_render(spot_shadows* ss, const world* w, rhi_shader depth_shader);
+
+// Every tile is drawn again next frame (the depth shader was rebuilt).
+void spot_shadows_invalidate(spot_shadows* ss);
 
 struct gpu_shadow_block;   // Renderer/FrameData.h
 

@@ -76,6 +76,14 @@ rhi_framebuffer gl_framebuffer_create(rhi_framebuffer_desc desc)
     return fb;
 }
 
+void gl_framebuffer_copy_depth(rhi_framebuffer source, rhi_framebuffer destination,
+                               uint16 x, uint16 y, uint16 width, uint16 height)
+{
+    // Texture to texture, no framebuffer binds (GL 4.3).
+    glCopyImageSubData(source->depth_texture->handle, GL_TEXTURE_2D, 0, x, y, 0,
+                       destination->depth_texture->handle, GL_TEXTURE_2D, 0, x, y, 0, width, height, 1);
+}
+
 void gl_framebuffer_bind(rhi_framebuffer framebuffer)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->fbo);

@@ -244,8 +244,8 @@ draw_renderer_panel(editor_state* state)
                  100.0 * r->clusters.index_count / CLUSTER_MAX_INDICES);
         stat_row("Sun shadows", state->shadows ? (r->shadowed ? "%u cascades, %u px" : "no shadowed sun")
                                                : "off", r->csm.cascade_count, r->csm.resolution);
-        stat_row("Spot shadows", "%u of %u", r->spot.count, SPOT_SHADOW_MAX);
-        stat_row("Point shadows", "%u of %u", r->point.count, POINT_SHADOW_MAX);
+        stat_row("Spot shadows", "%u of %u, %u redrawn", r->spot.count, SPOT_SHADOW_MAX, r->spot.rendered);
+        stat_row("Point shadows", "%u of %u, %u redrawn", r->point.count, POINT_SHADOW_MAX, r->point.rendered);
         stat_row("Reflection probes", "%u of %u%s", r->probes.count, PROBE_MAX,
                  r->probes.count && !r->probes.baked_signature ? " (not baked yet)" : "");
         stat_row("Environment", ibl_cache_maps(&state->ibl) ? "%s" : "hemisphere ambient",

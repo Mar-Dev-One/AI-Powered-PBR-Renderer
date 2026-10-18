@@ -519,7 +519,9 @@ host_render_stats(void* user_data, command_context* ctx, const cJSON* args, cJSO
     cJSON_AddBoolToObject(*out_result, "sun_shadows", r->shadowed);
     cJSON_AddNumberToObject(*out_result, "shadow_cascades", r->csm.cascade_count);
     cJSON_AddNumberToObject(*out_result, "spot_shadows", r->spot.count);
+    cJSON_AddNumberToObject(*out_result, "spot_shadows_redrawn", r->spot.rendered);
     cJSON_AddNumberToObject(*out_result, "point_shadows", r->point.count);
+    cJSON_AddNumberToObject(*out_result, "point_shadows_redrawn", r->point.rendered);
     cJSON_AddNumberToObject(*out_result, "reflection_probes", r->probes.count);
     cJSON_AddNumberToObject(*out_result, "view_width", state->view_target_width);
     cJSON_AddNumberToObject(*out_result, "view_height", state->view_target_height);
@@ -930,7 +932,8 @@ static const cmd_host_command HOST_COMMANDS[] = {
       HOST_ARGS(ARGS_SCREENSHOT), false, host_view_screenshot },
     { "render.set", "Exposure, ambient strength, bloom, tone mapping, ambient occlusion, shadows and debug views",
       HOST_ARGS(ARGS_RENDER_SET), false, host_render_set },
-    { "render.stats", "What the last frame drew: lights, shadow maps, reflection probes, cluster use",
+    { "render.stats", "What the last frame drew: lights, shadow maps (and how many were redrawn rather than kept), "
+                      "reflection probes, cluster use",
       NULL, 0, false, host_render_stats },
     { "render.timings", "How long each render pass takes on the GPU, and the frame on the CPU, in ms",
       NULL, 0, false, host_render_timings },

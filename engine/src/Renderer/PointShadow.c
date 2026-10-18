@@ -1,5 +1,6 @@
 #include "PointShadow.h"
 #include "FrameData.h"
+#include "ShadowCache.h"
 
 #include "../Assets/AssetCache.h"
 #include "../Scene/Model.h"
@@ -46,7 +47,7 @@ point_shadows_create(point_shadows* ps, uint32 face_size)
 }
 
 void
-point_shadows_update(point_shadows* ps, const light* lights, const vec3* positions, uint32 count)
+point_shadows_update(point_shadows* ps, const light* lights, const vec3* positions, uint32 count, const world* w)
 {
     ps->count = 0;
 
@@ -61,58 +62,106 @@ point_shadows_update(point_shadows* ps, const light* lights, const vec3* positio
         glm_vec3_copy((f32*)positions[i], ps->position[row]);
         ps->near[row] = POINT_NEAR;
         ps->far[row]  = l->range > 0.0f ? l->range : POINT_DEFAULT_FAR;
+
+        // What the row shows: the light where it is, out to its range, and
+        // the casters within that range.
+        f32 sphere[4] = { ps->position[row][0], ps->position[row][1], ps->position[row][2], ps->far[row] };
+        shadow_layers_plan(&ps->layers[row], sphere, sizeof(sphere), w, NULL, sphere);
+    }
+}
+
+void
+point_shadows_invalidate(point_shadows* ps)
+{
+    for (uint32 r = 0; r < POINT_SHADOW_MAX; ++r)
+        ps->layers[r].drawn = ps->layers[r].static_drawn = 0;
+}
+
+// The atlas of static layers, the first time it's needed. False if it
+// couldn't be made (every row then draws all of its casters).
+static b8
+ensure_static_atlas(point_shadows* ps)
+{
+    if (!ps->static_atlas)
+        ps->static_atlas = rhi_framebuffer_create((rhi_framebuffer_desc){
+            .width                = (uint16)(ps->face_size * POINT_SHADOW_FACES),
+            .height               = (uint16)(ps->face_size * POINT_SHADOW_MAX),
+            .has_depth_attachment = true,
+        });
+    return ps->static_atlas != NULL;
+}
+
+// Row r's six faces of `which` casters into `target` (bound here), clearing
+// the row first if `clear`.
+static void
+draw_row(point_shadows* ps, uint32 r, const world* w, rhi_shader depth_shader, rhi_framebuffer target,
+         shadow_casters which, b8 clear)
+{
+    rhi_framebuffer_bind(target);
+    rhi_shader_bind(depth_shader);
+    if (clear)
+        rhi_clear_depth_region(0, (uint16)(r * ps->face_size), (uint16)(ps->face_size * POINT_SHADOW_FACES),
+                               (uint16)ps->face_size);
+
+    mat4 projection;
+    glm_perspective(glm_rad(90.0f), 1.0f, ps->near[r], ps->far[r], projection);
+
+    for (uint32 f = 0; f < POINT_SHADOW_FACES; ++f)
+    {
+        vec3 target_point;
+        glm_vec3_add(ps->position[r], (f32*)FACE_DIRECTIONS[f], target_point);
+        mat4 view, view_projection;
+        glm_lookat(ps->position[r], target_point, (f32*)FACE_UPS[f], view);
+        glm_mat4_mul(projection, view, view_projection);
+
+        // Only what this face's 90-degree view can see (its far plane
+        // being the light's range).
+        vec4 planes[6];
+        glm_frustum_planes(view_projection, planes);
+
+        rhi_set_draw_region((uint16)(f * ps->face_size), (uint16)(r * ps->face_size),
+                            (uint16)ps->face_size, (uint16)ps->face_size);
+        shadow_draw_casters(w, depth_shader, view_projection, planes, which);
     }
 }
 
 void
 point_shadows_render(point_shadows* ps, const world* w, rhi_shader depth_shader)
 {
+    ps->rendered = 0;
     if (!ps->atlas || ps->count == 0)
         return;
 
-    rhi_framebuffer_bind(ps->atlas);
-    rhi_clear(0.0f, 0.0f, 0.0f, 1.0f);
-    rhi_shader_bind(depth_shader);
-
-    const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
+    b8 bound = false;
     for (uint32 r = 0; r < ps->count; ++r)
     {
-        mat4 projection;
-        glm_perspective(glm_rad(90.0f), 1.0f, ps->near[r], ps->far[r], projection);
-
-        for (uint32 f = 0; f < POINT_SHADOW_FACES; ++f)
+        shadow_work work = shadow_layers_work(&ps->layers[r]);
+        if (work == SHADOW_WORK_NONE)
+            continue;   // already shows exactly this
+        if (work != SHADOW_WORK_DRAW_ALL && !ensure_static_atlas(ps))
         {
-            vec3 target;
-            glm_vec3_add(ps->position[r], (f32*)FACE_DIRECTIONS[f], target);
-            mat4 view, view_projection;
-            glm_lookat(ps->position[r], target, (f32*)FACE_UPS[f], view);
-            glm_mat4_mul(projection, view, view_projection);
-
-            // Only what this face's 90-degree view can see (its far plane
-            // being the light's range).
-            vec4 planes[6];
-            glm_frustum_planes(view_projection, planes);
-
-            rhi_set_draw_region((uint16)(f * ps->face_size), (uint16)(r * ps->face_size),
-                                (uint16)ps->face_size, (uint16)ps->face_size);
-
-            for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
-            {
-                const c_mesh_renderer* mr = world_mesh_renderer(w, e);
-                const model*           m  = assets_model(w->assets, mr->model);
-                if (!m || !mr->visible || !mr->cast_shadows)
-                    continue;
-
-                vec3 box[2];
-                if (world_bounds(w, e, box[0], box[1]) && !glm_aabb_frustum(box, planes))
-                    continue;
-
-                model_draw_depth(m, depth_shader, world_matrix(w, e), view_projection);
-            }
+            work = SHADOW_WORK_DRAW_ALL;
+            ps->layers[r].static_drawn = 0;
         }
+        ++ps->rendered;
+        bound = true;
+
+        if (work == SHADOW_WORK_DRAW_ALL)
+        {
+            draw_row(ps, r, w, depth_shader, ps->atlas, SHADOW_CASTERS_ALL, true);
+            continue;
+        }
+        if (work == SHADOW_WORK_DRAW_STATIC)
+            draw_row(ps, r, w, depth_shader, ps->static_atlas, SHADOW_CASTERS_STATIC, true);
+
+        // The kept static layer, then what moves on top of it.
+        rhi_framebuffer_copy_depth(ps->static_atlas, ps->atlas, 0, (uint16)(r * ps->face_size),
+                                   (uint16)(ps->face_size * POINT_SHADOW_FACES), (uint16)ps->face_size);
+        draw_row(ps, r, w, depth_shader, ps->atlas, SHADOW_CASTERS_MOVING, false);
     }
 
-    rhi_framebuffer_bind_default();
+    if (bound)
+        rhi_framebuffer_bind_default();
 }
 
 void
@@ -140,5 +189,7 @@ point_shadows_destroy(point_shadows* ps)
 {
     if (ps->atlas)
         rhi_framebuffer_destroy(ps->atlas);
+    if (ps->static_atlas)
+        rhi_framebuffer_destroy(ps->static_atlas);
     memset(ps, 0, sizeof(*ps));
 }

@@ -409,9 +409,17 @@ or phase 4.**
 
 Smallest and most useful first.
 
-- **Shadow map cache:** re-render a spot or point light's maps only when something in its range
-  moves. The sample scene's four shadowed point lamps redraw the whole village 24 times a frame
-  (about 3.5 ms); most scenes are static.
+- ~~**Shadow map cache:** re-render a spot or point light's maps only when something in its range
+  moves.~~ Done (`Renderer/ShadowCache.h`): each spot tile and point row keeps a signature (the
+  light's view and its casters' entity, model and world matrix) and is redrawn only when it
+  changes; casters turned by a Spin are drawn each frame over a kept copy of the static layer
+  (`rhi_framebuffer_copy_depth()`). Sample scene, on a GPU running about 4x slower than the
+  3.5 ms figure was measured on: point shadows 14-18 ms -> 1-2 ms; layered and direct maps give
+  identical pictures. `render.stats` / the Renderer panel say how many maps were redrawn.
+- **Sun shadow cascades:** now the biggest pass -- about half the GPU frame in the sample scene
+  (31 of 62 ms on that slow GPU): 4 cascades redraw the whole scene every frame. They follow the
+  camera, so a cache helps only while it's still; the same static/moving split would keep a
+  Spin from forcing a full redraw. Or fewer / smaller cascades for distant ones.
 - **Tighter light-to-cluster test:** test each light's sphere against each cluster's box rather than
   its screen rectangle; dense scenes still put 32+ lights in many clusters.
 - **Half-resolution SSAO:** about 2.4 ms of the 4.4 ms SSAO costs at full resolution.
@@ -514,8 +522,8 @@ scene builder, phases 4-5 are the engine work and phase 6 can wait.
 - [x] Shadows for point lights (`Renderer/PointShadow.h`): up to 4, six 90-degree faces each in
       one depth atlas (the last of the 16 guaranteed texture units); pbr.frag picks the face
       and projects into it itself. Spot and point maps cull casters to each view's frustum
-- [ ] Cache local light shadow maps while nothing in a light's range moves: the sample scene's
-      four shadowed point lamps redraw the whole village 24 times a frame (about 3.5 ms)
+- [x] Cache local light shadow maps while nothing in a light's range moves
+      (`Renderer/ShadowCache.h`; moving casters drawn over a kept static layer)
 - [ ] Texture arrays (or bindless textures) in the RHI: every guaranteed texture unit is used now.
       Cube map arrays exist (`rhi_cubemap_array_create()`, for the probes); 2D arrays don't yet
 - [x] Local reflection probes with parallax correction (`Renderer/ReflectionProbes.h`): a
