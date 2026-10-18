@@ -25,7 +25,7 @@ os.environ["LANGSMITH_TRACING_V2"] = "false"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pbr_agent import EngineClient, EngineError  # noqa: E402
-from pbr_agent.agent import ROLE, ChatAgent, ModelReply, serve, tool_definitions  # noqa: E402
+from pbr_agent.agent import ROLE, ChatAgent, ModelReply, TurnError, describe_error, serve, tool_definitions  # noqa: E402
 
 from test_engine_client import SERVER_HOST, Host  # noqa: E402
 
@@ -297,6 +297,27 @@ class ToolDefinitionTests(unittest.TestCase):
         self.assertNotIn("undo", names)
         self.assertNotIn("redo", names)
         self.assertIn("place_model", names)
+
+
+class DescribeErrorTests(unittest.TestCase):
+    def test_an_sdk_error_gets_its_explanation(self):
+        import anthropic
+        import httpx
+
+        error = anthropic.APIConnectionError(request=httpx.Request("POST", "https://api.anthropic.com/v1/messages"))
+        self.assertIn("Couldn't reach the Claude API", describe_error(error))
+
+    def test_other_errors_never_load_an_sdk(self):
+        # Loading one just to rule it out took seconds -- long enough for the
+        # app to give up on the turn before the error arrived.
+        import subprocess
+
+        code = ("import sys; sys.path.insert(0, sys.argv[1]); from pbr_agent.agent import TurnError, describe_error; "
+                "print(describe_error(TurnError('nope'))); print('anthropic' in sys.modules, 'openai' in sys.modules)")
+        out = subprocess.run([sys.executable, "-c", code, str(Path(__file__).resolve().parents[1])],
+                             capture_output=True, text=True, check=True).stdout.splitlines()
+        self.assertEqual(out[0], "nope")
+        self.assertEqual(out[1], "False False")
 
 
 if __name__ == "__main__":

@@ -174,10 +174,10 @@ class ClaudeModel:
 
 def describe_error(error: Exception) -> str:
     """What the user is told when a turn fails."""
-    try:
-        import anthropic
-    except ImportError:   # pragma: no cover
-        anthropic = None
+    # Only the SDKs already loaded: an error from one means it was imported,
+    # and importing one here just to rule it out takes seconds (about 7 s for
+    # anthropic on Windows) -- long enough for the app to give up on the turn.
+    anthropic = sys.modules.get("anthropic")
 
     if anthropic is not None:
         if isinstance(error, anthropic.AuthenticationError):
@@ -192,10 +192,7 @@ def describe_error(error: Exception) -> str:
             return f"The Claude API returned an error ({error.status_code}): {error.message}"
         if isinstance(error, anthropic.APIConnectionError):
             return "Couldn't reach the Claude API. Check the network connection."
-    try:
-        import openai
-    except ImportError:
-        openai = None
+    openai = sys.modules.get("openai")
 
     if openai is not None:
         if isinstance(error, openai.AuthenticationError):
