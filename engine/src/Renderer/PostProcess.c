@@ -131,8 +131,11 @@ post_create(post_process* post, uint16 width, uint16 height)
     post->luminance_shader  = load_shader(POST_VERTEX_PATH, POST_LUMINANCE_PATH);
     post->reduce_shader     = load_shader(POST_VERTEX_PATH, POST_REDUCE_PATH);
     post->adapt_shader      = load_shader(POST_VERTEX_PATH, POST_ADAPT_PATH);
+    post->ssao_shader       = load_shader(POST_VERTEX_PATH, POST_SSAO_PATH);
+    post->ssao_blur_shader  = load_shader(POST_VERTEX_PATH, POST_SSAO_BLUR_PATH);
     if (!post->tonemap_shader || !post->bloom_down_shader || !post->bloom_up_shader || !post->fxaa_shader
-        || !post->luminance_shader || !post->reduce_shader || !post->adapt_shader)
+        || !post->luminance_shader || !post->reduce_shader || !post->adapt_shader || !post->ssao_shader
+        || !post->ssao_blur_shader)
         return false;
 
     // The meter and the adapted value don't depend on the window's size.
@@ -153,6 +156,8 @@ post_create(post_process* post, uint16 width, uint16 height)
     post->height       = height ? height : 1;
     post->scene_target = create_scene_target(post->width, post->height);
     post->ldr_target   = create_ldr_target(post->width, post->height);
+    post->ssao_raw     = create_ldr_target(post->width, post->height);
+    post->ssao_target  = create_ldr_target(post->width, post->height);
     create_bloom_chain(post);
 
     return true;
@@ -169,12 +174,16 @@ post_resize(post_process* post, uint16 width, uint16 height)
 
     rhi_framebuffer_destroy(post->scene_target);
     rhi_framebuffer_destroy(post->ldr_target);
+    rhi_framebuffer_destroy(post->ssao_raw);
+    rhi_framebuffer_destroy(post->ssao_target);
     destroy_bloom_chain(post);
 
     post->width        = width;
     post->height       = height;
     post->scene_target = create_scene_target(width, height);
     post->ldr_target   = create_ldr_target(width, height);
+    post->ssao_raw     = create_ldr_target(width, height);
+    post->ssao_target  = create_ldr_target(width, height);
     create_bloom_chain(post);
 }
 
@@ -185,14 +194,66 @@ post_begin_scene(post_process* post, f32 r, f32 g, f32 b)
         return;
 
     post->bloom_ready = false;
+    post->ssao_ready  = false;
     rhi_framebuffer_bind(post->scene_target);
     rhi_clear(r, g, b, 1.0f);
+}
+
+void
+post_resume_scene(post_process* post)
+{
+    if (post->scene_target)
+        rhi_framebuffer_bind(post->scene_target);
 }
 
 static void
 draw_triangle(const post_process* post)
 {
     rhi_draw_indexed(post->triangle_vertices, post->triangle_indices, 3);
+}
+
+void
+post_ssao(post_process* post, const f32* projection, const f32* inverse_projection, f32 radius)
+{
+    if (!post->scene_target || !post->ssao_raw)
+        return;
+
+    rhi_render_state state = rhi_render_state_default();
+    state.depth_write = false;
+    rhi_set_render_state(state);
+
+    rhi_texture depth = rhi_framebuffer_get_depth_texture(post->scene_target);
+
+    // The occlusion, noisy...
+    rhi_shader shader = post->ssao_shader;
+    rhi_framebuffer_bind(post->ssao_raw);
+    rhi_shader_bind(shader);
+    rhi_shader_set_int(shader, "u_depth", POST_SLOT_SCENE);
+    rhi_shader_set_mat4(shader, "u_projection", projection);
+    rhi_shader_set_mat4(shader, "u_inverse_projection", inverse_projection);
+    rhi_shader_set_float(shader, "u_radius", radius);
+    rhi_texture_bind(depth, POST_SLOT_SCENE);
+    draw_triangle(post);
+
+    // ...then averaged over its 4 x 4 tile, edge-aware.
+    shader = post->ssao_blur_shader;
+    rhi_framebuffer_bind(post->ssao_target);
+    rhi_shader_bind(shader);
+    rhi_shader_set_int(shader, "u_ssao", POST_SLOT_SCENE);
+    rhi_shader_set_int(shader, "u_depth", POST_SLOT_BLOOM);
+    rhi_shader_set_mat4(shader, "u_inverse_projection", inverse_projection);
+    rhi_texture_bind(rhi_framebuffer_get_color_texture(post->ssao_raw, 0), POST_SLOT_SCENE);
+    rhi_texture_bind(depth, POST_SLOT_BLOOM);
+    draw_triangle(post);
+
+    rhi_set_render_state(rhi_render_state_default());
+    post->ssao_ready = true;
+}
+
+rhi_texture
+post_ssao_texture(const post_process* post)
+{
+    return post->ssao_ready ? rhi_framebuffer_get_color_texture(post->ssao_target, 0) : NULL;
 }
 
 void
@@ -378,6 +439,14 @@ post_destroy(post_process* post)
         rhi_framebuffer_destroy(post->scene_target);
     if (post->ldr_target)
         rhi_framebuffer_destroy(post->ldr_target);
+    if (post->ssao_raw)
+        rhi_framebuffer_destroy(post->ssao_raw);
+    if (post->ssao_target)
+        rhi_framebuffer_destroy(post->ssao_target);
+    if (post->ssao_shader)
+        rhi_shader_destroy(post->ssao_shader);
+    if (post->ssao_blur_shader)
+        rhi_shader_destroy(post->ssao_blur_shader);
     destroy_bloom_chain(post);
     if (post->triangle_vertices)
         rhi_buffer_destroy(post->triangle_vertices);

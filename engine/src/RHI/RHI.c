@@ -259,6 +259,11 @@ void rhi_set_wireframe(b8 enabled)
     backend.set_wireframe(enabled);
 }
 
+void rhi_set_color_write(b8 enabled)
+{
+    backend.set_color_write(enabled);
+}
+
 rhi_query rhi_timestamp_create(void)
 {
     return backend.timestamp_create();

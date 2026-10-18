@@ -330,6 +330,10 @@ TOOLS: list[Tool] = [
                  "ambient_strength": {"type": "number", "minimum": 0, "maximum": 4},
                  "bloom": {"type": "number", "minimum": 0, "maximum": 1,
                            "description": "0 = none, 0.04 = subtle (the default), 0.1 = strong."},
+                 "ssao": {"type": "boolean",
+                          "description": "Ambient occlusion: creases and contact areas get less sky light."},
+                 "ssao_radius": {"type": "number", "minimum": 0.05, "maximum": 5,
+                                 "description": "Meters; scale with the scene (0.5 for room-sized objects)."},
                  "auto_exposure": {"type": "boolean",
                                    "description": "Adapt to the scene's brightness like an eye; exposure "
                                                   "then brightens or darkens on top of it."},

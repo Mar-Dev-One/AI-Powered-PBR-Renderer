@@ -19,6 +19,11 @@ out vec4 v_tangent;
 out vec2 v_uv;
 out float v_view_depth;
 
+// The depth pre-pass draws with this same shader (and depth_prepass.frag),
+// and the main pass then tests GL_LEQUAL against what it wrote: both must
+// compute exactly the same depth, which only `invariant` promises.
+invariant gl_Position;
+
 uniform mat4 u_model;
 uniform mat4 u_view;                   // camera view only (no projection) -- just for v_view_depth below
 uniform mat4 u_view_projection;

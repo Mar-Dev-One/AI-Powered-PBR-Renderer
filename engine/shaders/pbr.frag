@@ -101,6 +101,13 @@ uniform samplerCube u_prefiltered_map;      // slot 10, mip N = GGX-blurred at r
 uniform float       u_prefiltered_max_lod;  // last mip index of u_prefiltered_map
 uniform sampler2D   u_brdf_lut;             // slot 12, split-sum BRDF: (N.V, roughness) -> (F0 scale, bias)
 
+// --- Screen-space ambient occlusion (Renderer/PostProcess.h post_ssao()) -------
+// One texel per screen pixel: how much of the sky the visible surface there
+// sees. Multiplied into the ambient light only, with the material's own
+// occlusion texture.
+uniform int       u_use_ssao;
+uniform sampler2D u_ssao;                     // slot 13
+
 const float PI = 3.14159265359;
 
 bool has_texture(int slot) { return (u_texture_mask & (1 << slot)) != 0; }
@@ -342,6 +349,11 @@ void main()
     float occlusion = 1.0;
     if (has_texture(3))
         occlusion = 1.0 + u_occlusion_strength * (texture(u_occlusion_tex, v_uv).r - 1.0);
+
+    // Blended surfaces aren't in the depth pre-pass: the AO there is what's
+    // behind them.
+    if (u_use_ssao != 0 && u_alpha_mode != 2)
+        occlusion *= texelFetch(u_ssao, ivec2(gl_FragCoord.xy), 0).r;
 
     vec3 emissive = u_emissive;
     if (has_texture(4))

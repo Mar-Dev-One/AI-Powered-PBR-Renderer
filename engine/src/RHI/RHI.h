@@ -255,6 +255,9 @@ void             rhi_set_render_state(rhi_render_state state);
 // Separate from rhi_render_state, which every material sets per draw.
 void             rhi_set_wireframe(b8 enabled);
 
+// Off: draws write depth only (a depth pre-pass), until turned back on.
+void             rhi_set_color_write(b8 enabled);
+
 // --- GPU timestamps ------------------------------------------------------
 // rhi_timestamp_write() records when the GPU gets to that point in the work
 // submitted so far; two of them time what's between. The GPU runs behind

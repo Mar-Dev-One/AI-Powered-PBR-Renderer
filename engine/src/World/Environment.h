@@ -12,7 +12,8 @@
 // Format (every key optional when read; omitted ones keep their value):
 //   { "hdri": "hdri/sky.hdr" | null, "use_ibl": true, "show_skybox": true,
 //     "sky_blur": 0, "ambient_strength": 0.5, "exposure": 1, "bloom": 0.04,
-//     "tonemap": "aces" | "agx" | "neutral", "auto_exposure": false }
+//     "tonemap": "aces" | "agx" | "neutral", "auto_exposure": false,
+//     "ssao": true, "ssao_radius": 0.5 }
 
 #define ENVIRONMENT_HDRI_MAX 256
 
@@ -43,10 +44,12 @@ typedef struct scene_environment
     b8   auto_exposure;                // adapt to the scene's brightness, as an eye does (Renderer/PostProcess.h)
     f32  bloom;                        // 0 (none) .. 1: how much bright light spreads (Renderer/PostProcess.h)
     scene_tonemap tonemap;
+    b8   ssao;                         // ambient occlusion: creases and contacts darken (Renderer/PostProcess.h)
+    f32  ssao_radius;                  // [0.05, 5] meters: how far nearby geometry darkens a point
 } scene_environment;
 
 // No HDRI, IBL and skybox on (for when one is set), no blur, ambient 0.5,
-// exposure 1 (no auto-exposure), bloom 0.04, ACES.
+// exposure 1 (no auto-exposure), bloom 0.04, ACES, SSAO on with a 0.5 m radius.
 scene_environment scene_environment_default(void);
 
 // Caller owns the result (cJSON_Delete).

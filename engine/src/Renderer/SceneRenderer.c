@@ -8,6 +8,7 @@
 
 #define PBR_VERTEX_PATH   "shaders/pbr.vert"
 #define PBR_FRAGMENT_PATH "shaders/pbr.frag"
+#define PREPASS_FRAGMENT_PATH "shaders/depth_prepass.frag"
 
 scene_render_settings
 scene_render_settings_default(void)
@@ -23,6 +24,8 @@ scene_render_settings_default(void)
         .bloom                = 0.04f,
         .fxaa                 = true,
         .tonemap              = SCENE_TONEMAP_ACES,
+        .ssao                 = true,
+        .ssao_radius          = 0.5f,
         .shadows              = true,
         .cascade_split_lambda = 0.5f,
         .debug_show_cascades  = false,
@@ -75,6 +78,8 @@ scene_render_settings_apply_environment(scene_render_settings* settings, const s
     settings->auto_exposure    = env->auto_exposure;
     settings->bloom            = env->bloom;
     settings->tonemap          = env->tonemap;
+    settings->ssao             = env->ssao;
+    settings->ssao_radius      = env->ssao_radius;
 }
 
 // The constants pbr.vert/pbr.frag size their arrays with, generated from
@@ -105,14 +110,15 @@ scene_renderer_shader_defines(char* out, size_t size)
              (int)SCENE_VIEW_WIREFRAME);
 }
 
+// pbr.vert with `fragment` (pbr.frag, or the depth pre-pass's).
 static rhi_shader
-build_pbr_shader(void)
+build_pbr_shader(const char* fragment)
 {
     char defines[1024];
     scene_renderer_shader_defines(defines, sizeof(defines));
 
     char* vertex_path   = engine_path(PBR_VERTEX_PATH);
-    char* fragment_path = engine_path(PBR_FRAGMENT_PATH);
+    char* fragment_path = engine_path(fragment);
 
     rhi_shader shader = rhi_shader_create_from_files_with_defines(vertex_path, fragment_path, defines);
 
@@ -129,6 +135,8 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     memset(r, 0, sizeof(*r));
 
     static const char* const pbr_files[]    = { PBR_VERTEX_PATH, PBR_FRAGMENT_PATH };
+    static const char* const prepass_files[] = { PBR_VERTEX_PATH, PREPASS_FRAGMENT_PATH };
+    static const char* const ssao_files[]   = { POST_VERTEX_PATH, POST_SSAO_PATH, POST_SSAO_BLUR_PATH };
     static const char* const post_files[]   = { POST_VERTEX_PATH, POST_FRAGMENT_PATH };
     static const char* const bloom_files[]  = { POST_VERTEX_PATH, POST_BLOOM_DOWN_PATH, POST_BLOOM_UP_PATH };
     static const char* const fxaa_files[]   = { POST_VERTEX_PATH, POST_FXAA_PATH };
@@ -136,16 +144,19 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
                                                   POST_ADAPT_PATH };
     static const char* const shadow_files[] = { CSM_VERTEX_PATH, CSM_FRAGMENT_PATH };
     file_watch_init(&r->pbr_files, pbr_files, 2);
+    file_watch_init(&r->prepass_files, prepass_files, 2);
+    file_watch_init(&r->ssao_files, ssao_files, 3);
     file_watch_init(&r->post_files, post_files, 2);
     file_watch_init(&r->bloom_files, bloom_files, 3);
     file_watch_init(&r->fxaa_files, fxaa_files, 2);
     file_watch_init(&r->exposure_files, exposure_files, 4);
     file_watch_init(&r->shadow_files, shadow_files, 2);
 
-    r->pbr_shader = build_pbr_shader();
-    if (!r->pbr_shader)
+    r->pbr_shader     = build_pbr_shader(PBR_FRAGMENT_PATH);
+    r->prepass_shader = build_pbr_shader(PREPASS_FRAGMENT_PATH);
+    if (!r->pbr_shader || !r->prepass_shader)
     {
-        LOG_ERROR("scene_renderer_create: failed to build the PBR shader\n");
+        LOG_ERROR("scene_renderer_create: failed to build the PBR or depth pre-pass shader\n");
         return false;
     }
 
@@ -169,6 +180,28 @@ void
 scene_renderer_resize(scene_renderer* r, uint16 width, uint16 height)
 {
     post_resize(&r->post, width, height);
+}
+
+// Every visible MeshRenderer's submeshes of the given passes, in order:
+// all of the first pass, then all of the next, so one entity's
+// transparency never gets drawn before another entity's opaque surfaces.
+static void
+draw_entities(const world* w, rhi_shader shader, const model_draw_pass* passes, int pass_count)
+{
+    const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
+
+    for (int p = 0; p < pass_count; ++p)
+    {
+        for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+        {
+            const c_mesh_renderer* mr = world_mesh_renderer(w, e);
+            const model*           m  = assets_model(w->assets, mr->model);
+            if (!m || !mr->visible)
+                continue;
+
+            model_draw_ex(m, shader, world_matrix(w, e), &mr->material, passes[p]);
+        }
+    }
 }
 
 // World-space direction of the first LIGHT_DIRECTIONAL in world order --
@@ -219,6 +252,31 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
     camera_get_projection(cam, projection);
     glm_mat4_mul(projection, view, view_projection);
 
+    // --- Depth pre-pass + ambient occlusion --------------------------------------
+    // Not in the wireframe view: the pre-pass's solid depth would hide the
+    // edges behind the front faces.
+    b8 ssao = settings->ssao && settings->debug_view != SCENE_VIEW_WIREFRAME;
+    if (ssao)
+    {
+        uint32 scope = gpu_profiler_begin(&r->profiler, "Depth");
+        rhi_set_color_write(false);
+        rhi_shader_bind(r->prepass_shader);
+        rhi_shader_set_mat4(r->prepass_shader, "u_view_projection", (const f32*)view_projection);
+        rhi_shader_set_mat4(r->prepass_shader, "u_view", (const f32*)view);
+        const model_draw_pass opaque = MODEL_PASS_OPAQUE;
+        draw_entities(w, r->prepass_shader, &opaque, 1);
+        rhi_set_color_write(true);
+        gpu_profiler_end(&r->profiler, scope);
+
+        mat4 inverse_projection;
+        glm_mat4_inv(projection, inverse_projection);
+        scope = gpu_profiler_begin(&r->profiler, "SSAO");
+        post_ssao(&r->post, (const f32*)projection, (const f32*)inverse_projection, settings->ssao_radius);
+        gpu_profiler_end(&r->profiler, scope);
+
+        post_resume_scene(&r->post);
+    }
+
     if (settings->ibl && settings->show_skybox && !debug_view_is_data(settings->debug_view))
     {
         uint32 scope = gpu_profiler_begin(&r->profiler, "Sky");
@@ -243,6 +301,14 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
 
     lighting_bind(shader, w);
     ibl_bind(settings->ibl, shader);
+
+    // Like the shadow maps below, always pointed at its own unit, so it
+    // never shares one with a sampler of another type.
+    rhi_texture ao = ssao ? post_ssao_texture(&r->post) : NULL;
+    rhi_shader_set_int(shader, "u_ssao", POST_SSAO_SLOT);
+    rhi_shader_set_int(shader, "u_use_ssao", ao != NULL);
+    if (ao)
+        rhi_texture_bind(ao, POST_SSAO_SLOT);
 
     // Always bound, even unshadowed: it points u_shadow_maps[] at their own
     // units. Left at the default unit 0, those sampler2DShadow uniforms would
@@ -301,21 +367,8 @@ scene_renderer_end(scene_renderer* r, const scene_render_settings* settings)
 void
 scene_renderer_draw_world(const world* w, rhi_shader shader)
 {
-    const uint32          mask      = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
     const model_draw_pass passes[2] = { MODEL_PASS_OPAQUE, MODEL_PASS_BLEND };
-
-    for (int p = 0; p < 2; ++p)
-    {
-        for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
-        {
-            const c_mesh_renderer* mr = world_mesh_renderer(w, e);
-            const model*           m  = assets_model(w->assets, mr->model);
-            if (!m || !mr->visible)
-                continue;
-
-            model_draw_ex(m, shader, world_matrix(w, e), &mr->material, passes[p]);
-        }
-    }
+    draw_entities(w, shader, passes, 2);
 }
 
 void
@@ -397,6 +450,22 @@ reload_pbr(scene_renderer* r)
     return shader_rebuild(&r->pbr_shader, PBR_VERTEX_PATH, PBR_FRAGMENT_PATH, defines);
 }
 
+static b8
+reload_prepass(scene_renderer* r)
+{
+    char defines[1024];
+    scene_renderer_shader_defines(defines, sizeof(defines));
+    return shader_rebuild(&r->prepass_shader, PBR_VERTEX_PATH, PREPASS_FRAGMENT_PATH, defines);
+}
+
+static b8
+reload_ssao(scene_renderer* r)
+{
+    b8 ssao = shader_rebuild(&r->post.ssao_shader, POST_VERTEX_PATH, POST_SSAO_PATH, NULL);
+    b8 blur = shader_rebuild(&r->post.ssao_blur_shader, POST_VERTEX_PATH, POST_SSAO_BLUR_PATH, NULL);
+    return ssao && blur;
+}
+
 // Every shader keeps its uniforms' values per program, and each pass sets
 // all of its own every time it runs, so a swapped-in program needs nothing
 // carried over.
@@ -409,12 +478,18 @@ scene_renderer_reload_shaders(scene_renderer* r)
     b8 bloom  = reload_bloom(r);
     b8 fxaa   = shader_rebuild(&r->post.fxaa_shader, POST_VERTEX_PATH, POST_FXAA_PATH, NULL);
     b8 exposure = reload_exposure(r);
-    return pbr && post && shadow && bloom && fxaa && exposure;
+    b8 prepass  = reload_prepass(r);
+    b8 ssao     = reload_ssao(r);
+    return pbr && post && shadow && bloom && fxaa && exposure && prepass && ssao;
 }
 
 void
 scene_renderer_poll_hot_reload(scene_renderer* r)
 {
+    if (file_watch_changed(&r->prepass_files))
+        reload_prepass(r);
+    if (file_watch_changed(&r->ssao_files))
+        reload_ssao(r);
     if (file_watch_changed(&r->pbr_files))
         reload_pbr(r);
     if (file_watch_changed(&r->post_files))
@@ -438,6 +513,8 @@ scene_renderer_destroy(scene_renderer* r)
 
     if (r->pbr_shader)
         rhi_shader_destroy(r->pbr_shader);
+    if (r->prepass_shader)
+        rhi_shader_destroy(r->prepass_shader);
 
     memset(r, 0, sizeof(*r));
 }

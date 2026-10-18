@@ -59,6 +59,8 @@ scene_environment_default(void)
     env.exposure         = 1.0f;
     env.bloom            = 0.04f;
     env.tonemap          = SCENE_TONEMAP_ACES;
+    env.ssao             = true;
+    env.ssao_radius      = 0.5f;
     return env;
 }
 
@@ -78,6 +80,8 @@ serialize_environment(const scene_environment* env)
     cJSON_AddBoolToObject(object, "auto_exposure", env->auto_exposure);
     cJSON_AddNumberToObject(object, "bloom", round6(env->bloom));
     cJSON_AddStringToObject(object, "tonemap", scene_tonemap_name(env->tonemap));
+    cJSON_AddBoolToObject(object, "ssao", env->ssao);
+    cJSON_AddNumberToObject(object, "ssao_radius", round6(env->ssao_radius));
     return object;
 }
 
@@ -152,6 +156,8 @@ deserialize_environment(const cJSON* fields, scene_environment* env, char* error
     if (!read_bool(fields, "use_ibl", &next.use_ibl, error, error_size)
         || !read_bool(fields, "show_skybox", &next.show_skybox, error, error_size)
         || !read_bool(fields, "auto_exposure", &next.auto_exposure, error, error_size)
+        || !read_bool(fields, "ssao", &next.ssao, error, error_size)
+        || !read_number(fields, "ssao_radius", 0.05, false, 5.0, &next.ssao_radius, error, error_size)
         || !read_number(fields, "sky_blur", 0.0, false, 1.0, &next.sky_blur, error, error_size)
         || !read_number(fields, "ambient_strength", 0.0, false, 4.0, &next.ambient_strength, error, error_size)
         || !read_number(fields, "exposure", 0.0, true, 16.0, &next.exposure, error, error_size)

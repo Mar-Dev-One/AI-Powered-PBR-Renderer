@@ -18,6 +18,11 @@
 // adapted value (exposure_adapt.frag) that tone mapping exposes to middle
 // grey. Nothing is read back to the CPU, so it never stalls.
 //
+// Ambient occlusion (post_ssao(), between a depth pre-pass and the main
+// pass): ssao.frag estimates from the scene's depth how much sky each
+// pixel's surface sees, ssao_blur.frag cleans it up, and pbr.frag reads it
+// (POST_SSAO_SLOT) to darken its ambient light in creases and contact areas.
+//
 // Anti-aliasing (post_settings.fxaa): tone mapping writes into an RGBA8
 // target with each pixel's luma in alpha instead, and fxaa.frag smooths its
 // edges into the final picture.
@@ -38,6 +43,11 @@
 #define POST_LUMINANCE_PATH       "shaders/exposure_luminance.frag"
 #define POST_REDUCE_PATH          "shaders/exposure_reduce.frag"
 #define POST_ADAPT_PATH           "shaders/exposure_adapt.frag"
+#define POST_SSAO_PATH            "shaders/ssao.frag"
+#define POST_SSAO_BLUR_PATH       "shaders/ssao_blur.frag"
+
+// The texture unit pbr.frag reads the AO from: after IBL.h's units (9..12).
+#define POST_SSAO_SLOT 13
 
 // Auto-exposure measures the scene at this size (a power of two), then
 // halves it down to 1 x 1.
@@ -74,6 +84,12 @@ typedef struct post_process
     rhi_framebuffer adapted[2];     // 1 x 1 RGBA16F, ping-pong: r = adapted log2 luminance
     uint32          adapted_current;
     b8              adapted_valid;  // adapted[adapted_current] holds a value
+
+    rhi_shader      ssao_shader;
+    rhi_shader      ssao_blur_shader;
+    rhi_framebuffer ssao_raw;       // RGBA8, window-sized: ssao.frag's noisy output
+    rhi_framebuffer ssao_target;    // RGBA8, window-sized: blurred, what pbr.frag reads
+    b8              ssao_ready;     // post_ssao() ran since post_begin_scene()
 } post_process;
 
 // How post_end_scene() turns the scene into the picture.
@@ -100,6 +116,20 @@ void post_resize(post_process* post, uint16 width, uint16 height);
 // framebuffer -- csm_render() and the IBL bake both rebind the default one
 // when they finish.
 void post_begin_scene(post_process* post, f32 r, f32 g, f32 b);
+
+// Binds the scene target again (and its viewport) without clearing it, to
+// carry on drawing after a pass that bound its own framebuffer.
+void post_resume_scene(post_process* post);
+
+// Ambient occlusion from the scene target's depth -- which must hold the
+// opaque scene by now (a depth pre-pass) -- for pbr.frag to read through
+// post_ssao_texture(). `projection` and `inverse_projection` are the
+// camera's (column-major mat4s); `radius` is how far, in meters, nearby
+// geometry darkens a point. Leaves an SSAO target bound.
+void post_ssao(post_process* post, const f32* projection, const f32* inverse_projection, f32 radius);
+
+// This frame's AO (one texel per pixel), or NULL if post_ssao() hasn't run.
+rhi_texture post_ssao_texture(const post_process* post);
 
 // Blurs the finished scene down and back up the bloom chain, for
 // post_end_scene() to mix in. Only worth calling when settings.bloom > 0.

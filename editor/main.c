@@ -493,6 +493,8 @@ host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
     cJSON_AddItemToObject(*out_result, "ambient_strength", number_json(state->doc.env.ambient_strength));
     cJSON_AddItemToObject(*out_result, "bloom", number_json(state->doc.env.bloom));
     cJSON_AddBoolToObject(*out_result, "auto_exposure", state->doc.env.auto_exposure);
+    cJSON_AddBoolToObject(*out_result, "ssao", state->doc.env.ssao);
+    cJSON_AddItemToObject(*out_result, "ssao_radius", number_json(state->doc.env.ssao_radius));
     cJSON_AddStringToObject(*out_result, "tonemap", scene_tonemap_name(state->doc.env.tonemap));
     cJSON_AddStringToObject(*out_result, "debug_view", scene_debug_view_name(state->debug_view));
     cJSON_AddBoolToObject(*out_result, "fxaa", !state->no_fxaa);
@@ -592,15 +594,19 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     const cJSON* fxaa     = cJSON_GetObjectItem(args, "fxaa");
     const cJSON* tonemap  = cJSON_GetObjectItem(args, "tonemap");
     const cJSON* auto_exp = cJSON_GetObjectItem(args, "auto_exposure");
+    const cJSON* ssao     = cJSON_GetObjectItem(args, "ssao");
+    const cJSON* radius   = cJSON_GetObjectItem(args, "ssao_radius");
 
     if ((exposure && (!cJSON_IsNumber(exposure) || exposure->valuedouble <= 0.0 || exposure->valuedouble > 16.0))
         || (ambient && (!cJSON_IsNumber(ambient) || ambient->valuedouble < 0.0 || ambient->valuedouble > 4.0))
         || (bloom && (!cJSON_IsNumber(bloom) || bloom->valuedouble < 0.0 || bloom->valuedouble > 1.0))
         || (cascades && !cJSON_IsBool(cascades)) || (fxaa && !cJSON_IsBool(fxaa))
-        || (auto_exp && !cJSON_IsBool(auto_exp)))
+        || (auto_exp && !cJSON_IsBool(auto_exp)) || (ssao && !cJSON_IsBool(ssao))
+        || (radius && (!cJSON_IsNumber(radius) || radius->valuedouble < 0.05 || radius->valuedouble > 5.0)))
     {
         snprintf(error, error_size, "exposure must be in (0, 16], ambient_strength in [0, 4], bloom in [0, 1], "
-                                    "debug_show_cascades, fxaa and auto_exposure true/false");
+                                    "ssao_radius in [0.05, 5]; debug_show_cascades, fxaa, auto_exposure and ssao "
+                                    "true/false");
         return false;
     }
 
@@ -624,6 +630,8 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     if (bloom)    state->doc.env.bloom            = (f32)bloom->valuedouble;
     state->doc.env.tonemap = tonemap_value;
     if (auto_exp) state->doc.env.auto_exposure = cJSON_IsTrue(auto_exp);
+    if (ssao)     state->doc.env.ssao          = cJSON_IsTrue(ssao);
+    if (radius)   state->doc.env.ssao_radius   = (f32)radius->valuedouble;
     if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
     if (fxaa)     state->no_fxaa             = !cJSON_IsTrue(fxaa);
     state->debug_view = debug_view;
@@ -1001,6 +1009,9 @@ static const cmd_arg ARGS_RENDER_SET[] = {
     { "exposure",            "number",  false, "Brightness multiplier before tone mapping, e.g. 1 (with "
                                                 "auto_exposure: brighter or darker than the automatic level)" },
     { "auto_exposure",       "boolean", false, "Adapt to the scene's brightness, as an eye does" },
+    { "ssao",                "boolean", false, "Ambient occlusion: creases, corners and contact areas get less sky "
+                                                "light (default true)" },
+    { "ssao_radius",         "number",  false, "How far, in meters, nearby geometry darkens a point (default 0.5)" },
     { "ambient_strength",    "number",  false, "Strength of the image-based / ambient light, e.g. 0.5" },
     { "bloom",               "number",  false, "How much bright light spreads into its surroundings, 0 (none) to 1; "
                                                 "0.04 is subtle, 0.1 strong" },
@@ -1027,7 +1038,7 @@ static const cmd_host_command HOST_COMMANDS[] = {
     { "view.get",         "Where the camera is and what it looks at",                       NULL, 0, false, host_view_get },
     { "view.set_camera",  "Moves the camera and/or what it looks at",                       HOST_ARGS(ARGS_SET_CAMERA),      false, host_view_set_camera },
     { "view.frame",       "Points the camera at an entity (or everything) so it fills the view", HOST_ARGS(ARGS_FRAME),     false, host_view_frame },
-    { "render.set",       "Exposure, ambient strength, bloom, tone mapping and debug views",                      HOST_ARGS(ARGS_RENDER_SET),      false, host_render_set },
+    { "render.set",       "Exposure, ambient strength, bloom, tone mapping, ambient occlusion and debug views",                      HOST_ARGS(ARGS_RENDER_SET),      false, host_render_set },
     { "log.get",          "The engine's latest log lines: shader errors, models that failed to load, warnings",
                                                                                                HOST_ARGS(ARGS_LOG_GET),         false, host_log_get },
     { "render.timings",   "How long each render pass takes on the GPU, and the frame on the CPU, in ms",
@@ -2887,6 +2898,15 @@ draw_environment_controls(editor_state* state)
     igSliderFloat("Bloom", &state->doc.env.bloom, 0.0f, 0.3f, "%.3f", 0);
     if (igIsItemHovered(0))
         igSetTooltip("How much bright light (the sun, lamps, emissive surfaces) spreads into its surroundings");
+    igCheckbox("Ambient occlusion", &state->doc.env.ssao);
+    if (igIsItemHovered(0))
+        igSetTooltip("Creases, corners and where objects meet the ground get less sky light (SSAO)");
+    if (state->doc.env.ssao)
+    {
+        igSliderFloat("AO radius", &state->doc.env.ssao_radius, 0.05f, 2.0f, "%.2f m", 0);
+        if (igIsItemHovered(0))
+            igSetTooltip("How far, in meters, nearby geometry darkens a point");
+    }
     static const char* const tonemaps[SCENE_TONEMAP_COUNT] = { "ACES", "AgX", "PBR Neutral" };
     igCombo_Str_arr("Tone mapping", (int*)&state->doc.env.tonemap, tonemaps, SCENE_TONEMAP_COUNT, -1);
     if (igIsItemHovered(0))

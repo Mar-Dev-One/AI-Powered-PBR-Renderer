@@ -19,7 +19,10 @@ b8 gl_init(rhi_proc_loader loader)
     // triangles are rasterized in submission order regardless of distance
     // from the camera.
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    // LEQUAL, not LESS: after the depth pre-pass (Renderer/SceneRenderer.h)
+    // the main pass draws each surface again at exactly the depth it laid
+    // down, which LESS would reject.
+    glDepthFunc(GL_LEQUAL);
 
     // Standard back-face culling. Safe to enable now (nothing currently
     // relies on seeing back faces) and needed once real meshes show up.
@@ -76,6 +79,12 @@ void gl_set_render_state(rhi_render_state state)
 void gl_set_wireframe(b8 enabled)
 {
     glPolygonMode(GL_FRONT_AND_BACK, enabled ? GL_LINE : GL_FILL);
+}
+
+void gl_set_color_write(b8 enabled)
+{
+    GLboolean on = enabled ? GL_TRUE : GL_FALSE;
+    glColorMask(on, on, on, on);
 }
 
 rhi_query gl_timestamp_create(void)
@@ -168,6 +177,7 @@ void rhi_gl_get_backend(rhi_backend_api* out_api)
 
     out_api->set_render_state = gl_set_render_state;
     out_api->set_wireframe = gl_set_wireframe;
+    out_api->set_color_write = gl_set_color_write;
 
     out_api->timestamp_create = gl_timestamp_create;
     out_api->timestamp_write = gl_timestamp_write;

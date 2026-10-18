@@ -16,8 +16,7 @@ void main()
 
     vec4 pos = u_projection * mat4(mat3(u_view)) * vec4(in_pos, 1.0);
 
-    // Force the sky to the far plane so it never covers geometry. Not exactly
-    // 1.0: the depth test is GL_LESS against a buffer cleared to 1.0, so a
-    // fragment at exactly 1.0 would fail it.
+    // Force the sky to the far plane so it never covers geometry: just in
+    // front of the cleared 1.0, behind anything the depth pre-pass drew.
     gl_Position = vec4(pos.xy, pos.w * 0.99999, pos.w);
 }

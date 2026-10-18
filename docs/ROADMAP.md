@@ -398,7 +398,11 @@ images (the check only proves the scene loads and renders); scene switching in t
       default; the Scene panel, `render.set`)
 - [x] Auto-exposure: the scene environment's `auto_exposure` (off by default; `exposure` is then
       compensation). Measured on the GPU, adapts over about a second, Krawczyk's key, +-4 EV
-- [ ] Rendering: TAA (also cleans up shadow/SSAO noise), SSAO/GTAO, height or volumetric fog
+- [x] SSAO: a depth pre-pass, then hemisphere SSAO from depth (`ssao.frag`, 4 x 4 tiled
+      rotations cancelled by an edge-aware blur), applied to ambient light only. The scene
+      environment's `ssao` (on by default) and `ssao_radius`. About 4.4 ms at full resolution
+      on the sample scene (2.0 pre-pass, 2.4 SSAO): half-resolution SSAO would cut most of it
+- [ ] Rendering: TAA (also cleans up shadow/SSAO noise), GTAO, height or volumetric fog
 - [ ] Shadows for point lights (cube maps) and spot lights (perspective maps)
 - [ ] Screen-space reflections, local reflection probes with parallax correction
 - [ ] Materials: `KHR_texture_transform` and a second UV set, clearcoat,

@@ -12,7 +12,8 @@
 #include "Shadow.h"
 
 // The lit frame, as one unit: cascaded shadows for the world's first
-// directional light, an HDR scene target with optional skybox, the PBR
+// directional light, a depth pre-pass and screen-space ambient occlusion
+// (when settings.ssao), an HDR scene target with optional skybox, the PBR
 // shader with every per-frame uniform (camera, lights, IBL, cascades), every
 // visible MeshRenderer, and the final tone-mapping pass. An app supplies a
 // World, a camera and scene_render_settings; it never touches pbr.frag's
@@ -24,14 +25,15 @@
 //     scene_renderer_end(): the same frame in pieces, for an app that also
 //     draws geometry that isn't in the World. begin() hands back the bound
 //     PBR shader; such draws only set u_model / u_normal_matrix and a
-//     material.
+//     material. They aren't in the depth pre-pass, so they get no SSAO of
+//     their own (they read what's behind them).
 //
-// Each frame's passes are timed on the GPU ("Shadows", "Sky", "Scene",
-// "Bloom", "Exposure", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
+// Each frame's passes are timed on the GPU ("Shadows", "Depth", "SSAO", "Sky",
+// "Scene", "Bloom", "Exposure", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
 // begin() to end(), so it includes whatever the app draws in between.
 //
-// Its shaders are hot-reloaded -- PBR, tone mapping, bloom, FXAA, auto-exposure
-// and shadow depth:
+// Its shaders are hot-reloaded -- PBR, depth pre-pass, SSAO, tone mapping,
+// bloom, FXAA, auto-exposure and shadow depth:
 // scene_renderer_poll_hot_reload() rebuilds one when its files change on
 // disk, keeping the old program if the new source fails to compile. (The
 // IBL's own shaders reload through ibl_cache_poll_hot_reload().)
@@ -74,6 +76,8 @@ typedef struct scene_render_settings
     f32 bloom;                    // 0 = off; see Renderer/PostProcess.h
     b8  fxaa;                     // anti-aliasing (not in data views)
     scene_tonemap tonemap;        // World/Environment.h
+    b8  ssao;                     // depth pre-pass + ambient occlusion (not in the wireframe view)
+    f32 ssao_radius;              // meters
     b8  shadows;                  // cascaded shadows for the first directional light
     f32 cascade_split_lambda;     // see csm_update(); 0.5 is a good default
     b8  debug_show_cascades;      // tint shading by cascade, see pbr.frag
@@ -82,7 +86,7 @@ typedef struct scene_render_settings
 } scene_render_settings;
 
 // Sensible defaults: no IBL, skybox on, ambient 0.5, exposure 1, bloom 0.04,
-// FXAA on, shadows on.
+// FXAA on, SSAO on (0.5 m), shadows on.
 scene_render_settings scene_render_settings_default(void);
 
 // Copies a scene's environment into `settings`: the lighting values, and
@@ -94,6 +98,7 @@ void scene_render_settings_apply_environment(scene_render_settings* settings, co
 typedef struct scene_renderer
 {
     rhi_shader   pbr_shader;
+    rhi_shader   prepass_shader;   // pbr.vert + depth_prepass.frag
     csm_state    csm;
     post_process post;
     gpu_profiler profiler;
@@ -101,6 +106,8 @@ typedef struct scene_renderer
 
     // Hot reload: each shader's files.
     file_watch pbr_files;
+    file_watch prepass_files;
+    file_watch ssao_files;
     file_watch post_files;
     file_watch bloom_files;
     file_watch fxaa_files;
