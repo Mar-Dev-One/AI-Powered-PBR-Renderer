@@ -2110,6 +2110,22 @@
 					"cast_shadows":	true
 				}
 			}
+		}, {
+			"id":	1048693,
+			"name":	"cube_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.5, 39.8853],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[17.8952, 8.94431, 17.3384]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
 		}],
 	"format":	"pbr-scene",
 	"version":	1,
@@ -2120,6 +2136,7 @@
 		"sky_blur":	0,
 		"ambient_strength":	0.35,
 		"exposure":	1,
-		"bloom":	0.04
+		"bloom":	0.04,
+		"tonemap":	"aces"
 	}
 }

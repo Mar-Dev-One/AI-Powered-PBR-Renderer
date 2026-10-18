@@ -18,6 +18,8 @@ scene_render_settings_default(void)
         .sky_blur             = 0.0f,
         .ambient_strength     = 0.5f,
         .exposure             = 1.0f,
+        .auto_exposure        = false,
+        .delta_time           = -1.0f,
         .bloom                = 0.04f,
         .fxaa                 = true,
         .tonemap              = SCENE_TONEMAP_ACES,
@@ -70,6 +72,7 @@ scene_render_settings_apply_environment(scene_render_settings* settings, const s
     settings->sky_blur         = env->sky_blur;
     settings->ambient_strength = env->ambient_strength;
     settings->exposure         = env->exposure;
+    settings->auto_exposure    = env->auto_exposure;
     settings->bloom            = env->bloom;
     settings->tonemap          = env->tonemap;
 }
@@ -129,11 +132,14 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     static const char* const post_files[]   = { POST_VERTEX_PATH, POST_FRAGMENT_PATH };
     static const char* const bloom_files[]  = { POST_VERTEX_PATH, POST_BLOOM_DOWN_PATH, POST_BLOOM_UP_PATH };
     static const char* const fxaa_files[]   = { POST_VERTEX_PATH, POST_FXAA_PATH };
+    static const char* const exposure_files[] = { POST_VERTEX_PATH, POST_LUMINANCE_PATH, POST_REDUCE_PATH,
+                                                  POST_ADAPT_PATH };
     static const char* const shadow_files[] = { CSM_VERTEX_PATH, CSM_FRAGMENT_PATH };
     file_watch_init(&r->pbr_files, pbr_files, 2);
     file_watch_init(&r->post_files, post_files, 2);
     file_watch_init(&r->bloom_files, bloom_files, 3);
     file_watch_init(&r->fxaa_files, fxaa_files, 2);
+    file_watch_init(&r->exposure_files, exposure_files, 4);
     file_watch_init(&r->shadow_files, shadow_files, 2);
 
     r->pbr_shader = build_pbr_shader();
@@ -264,7 +270,15 @@ finish_frame(scene_renderer* r, const scene_render_settings* settings, rhi_frame
         .bloom    = settings->bloom,
         .fxaa     = settings->fxaa,
         .tonemap  = (int)settings->tonemap,
+        .auto_exposure = settings->auto_exposure && !debug_view_is_data(settings->debug_view),
     };
+
+    if (post.auto_exposure)
+    {
+        uint32 scope = gpu_profiler_begin(&r->profiler, "Exposure");
+        post_meter_exposure(&r->post, settings->delta_time);
+        gpu_profiler_end(&r->profiler, scope);
+    }
 
     if (post.bloom > 0.0f && !post.raw)
     {
@@ -367,6 +381,15 @@ reload_bloom(scene_renderer* r)
 }
 
 static b8
+reload_exposure(scene_renderer* r)
+{
+    b8 luminance = shader_rebuild(&r->post.luminance_shader, POST_VERTEX_PATH, POST_LUMINANCE_PATH, NULL);
+    b8 reduce    = shader_rebuild(&r->post.reduce_shader, POST_VERTEX_PATH, POST_REDUCE_PATH, NULL);
+    b8 adapt     = shader_rebuild(&r->post.adapt_shader, POST_VERTEX_PATH, POST_ADAPT_PATH, NULL);
+    return luminance && reduce && adapt;
+}
+
+static b8
 reload_pbr(scene_renderer* r)
 {
     char defines[1024];
@@ -385,7 +408,8 @@ scene_renderer_reload_shaders(scene_renderer* r)
     b8 shadow = shader_rebuild(&r->csm.depth_shader, CSM_VERTEX_PATH, CSM_FRAGMENT_PATH, NULL);
     b8 bloom  = reload_bloom(r);
     b8 fxaa   = shader_rebuild(&r->post.fxaa_shader, POST_VERTEX_PATH, POST_FXAA_PATH, NULL);
-    return pbr && post && shadow && bloom && fxaa;
+    b8 exposure = reload_exposure(r);
+    return pbr && post && shadow && bloom && fxaa && exposure;
 }
 
 void
@@ -397,6 +421,8 @@ scene_renderer_poll_hot_reload(scene_renderer* r)
         shader_rebuild(&r->post.tonemap_shader, POST_VERTEX_PATH, POST_FRAGMENT_PATH, NULL);
     if (file_watch_changed(&r->bloom_files))
         reload_bloom(r);
+    if (file_watch_changed(&r->exposure_files))
+        reload_exposure(r);
     if (file_watch_changed(&r->fxaa_files))
         shader_rebuild(&r->post.fxaa_shader, POST_VERTEX_PATH, POST_FXAA_PATH, NULL);
     if (file_watch_changed(&r->shadow_files))

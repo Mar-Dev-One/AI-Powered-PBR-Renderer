@@ -12,6 +12,12 @@
 // blend in linear HDR space, and leaves a single place for later post
 // effects (auto-exposure) to hook into.
 //
+// Auto-exposure (post_meter_exposure(), post_settings.auto_exposure): the
+// scene's center-weighted average log luminance, measured on the GPU
+// (exposure_luminance.frag, then halved down to 1 x 1), drifts into an
+// adapted value (exposure_adapt.frag) that tone mapping exposes to middle
+// grey. Nothing is read back to the CPU, so it never stalls.
+//
 // Anti-aliasing (post_settings.fxaa): tone mapping writes into an RGBA8
 // target with each pixel's luma in alpha instead, and fxaa.frag smooths its
 // edges into the final picture.
@@ -29,6 +35,14 @@
 #define POST_BLOOM_DOWN_PATH      "shaders/bloom_downsample.frag"
 #define POST_BLOOM_UP_PATH        "shaders/bloom_upsample.frag"
 #define POST_FXAA_PATH            "shaders/fxaa.frag"
+#define POST_LUMINANCE_PATH       "shaders/exposure_luminance.frag"
+#define POST_REDUCE_PATH          "shaders/exposure_reduce.frag"
+#define POST_ADAPT_PATH           "shaders/exposure_adapt.frag"
+
+// Auto-exposure measures the scene at this size (a power of two), then
+// halves it down to 1 x 1.
+#define POST_METER_SIZE   128
+#define POST_METER_LEVELS 8   // 128, 64, ..., 1
 
 #define POST_BLOOM_MAX_MIPS 6
 
@@ -52,6 +66,14 @@ typedef struct post_process
 
     rhi_shader      fxaa_shader;
     rhi_framebuffer ldr_target;     // RGBA8, window-sized: the tone-mapped picture FXAA reads
+
+    rhi_shader      luminance_shader;
+    rhi_shader      reduce_shader;
+    rhi_shader      adapt_shader;
+    rhi_framebuffer meter[POST_METER_LEVELS];   // RGBA16F, POST_METER_SIZE down to 1 x 1
+    rhi_framebuffer adapted[2];     // 1 x 1 RGBA16F, ping-pong: r = adapted log2 luminance
+    uint32          adapted_current;
+    b8              adapted_valid;  // adapted[adapted_current] holds a value
 } post_process;
 
 // How post_end_scene() turns the scene into the picture.
@@ -62,6 +84,7 @@ typedef struct post_settings
     f32 bloom;   // 0 (none) .. 1: how much of the blurred scene is mixed in; needs post_bloom() first
     b8  fxaa;    // smooth jagged edges (not with raw: a data view's values stay exact)
     int tonemap; // World/Environment.h's scene_tonemap
+    b8  auto_exposure;   // expose to the adapted brightness (post_meter_exposure()), `exposure` on top
 } post_settings;
 
 // Loads the shaders and allocates a width x height scene target (and its
@@ -82,6 +105,14 @@ void post_begin_scene(post_process* post, f32 r, f32 g, f32 b);
 // post_end_scene() to mix in. Only worth calling when settings.bloom > 0.
 // Leaves a bloom target bound.
 void post_bloom(post_process* post);
+
+// Measures the finished scene's brightness and adapts towards it, for
+// post_settings.auto_exposure. `delta_time` is the seconds since the last
+// frame: < 0 jumps straight to this frame's brightness (the first frame, a
+// one-off render that must not depend on frame times), 0 keeps the adapted
+// value as it is (a screenshot of what's on screen). Leaves a meter target
+// bound.
+void post_meter_exposure(post_process* post, f32 delta_time);
 
 // Binds the default framebuffer and resolves the scene target onto it:
 // mix(color, bloom, settings.bloom) * exposure -> tone mapping -> gamma 2.2, then

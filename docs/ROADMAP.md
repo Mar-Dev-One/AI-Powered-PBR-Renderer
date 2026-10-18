@@ -396,8 +396,9 @@ images (the check only proves the scene loads and renders); scene switching in t
 
 - [x] AgX / Khronos PBR Neutral tone mapping: the scene environment's `tonemap` (ACES stays the
       default; the Scene panel, `render.set`)
-- [ ] Rendering: TAA (also cleans up shadow/SSAO noise), SSAO/GTAO, auto-exposure,
-      height or volumetric fog
+- [x] Auto-exposure: the scene environment's `auto_exposure` (off by default; `exposure` is then
+      compensation). Measured on the GPU, adapts over about a second, Krawczyk's key, +-4 EV
+- [ ] Rendering: TAA (also cleans up shadow/SSAO noise), SSAO/GTAO, height or volumetric fog
 - [ ] Shadows for point lights (cube maps) and spot lights (perspective maps)
 - [ ] Screen-space reflections, local reflection probes with parallax correction
 - [ ] Materials: `KHR_texture_transform` and a second UV set, clearcoat,

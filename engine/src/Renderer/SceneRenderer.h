@@ -27,10 +27,11 @@
 //     material.
 //
 // Each frame's passes are timed on the GPU ("Shadows", "Sky", "Scene",
-// "Bloom", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
+// "Bloom", "Exposure", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
 // begin() to end(), so it includes whatever the app draws in between.
 //
-// Its shaders are hot-reloaded -- PBR, tone mapping, bloom, FXAA and shadow depth:
+// Its shaders are hot-reloaded -- PBR, tone mapping, bloom, FXAA, auto-exposure
+// and shadow depth:
 // scene_renderer_poll_hot_reload() rebuilds one when its files change on
 // disk, keeping the old program if the new source fails to compile. (The
 // IBL's own shaders reload through ibl_cache_poll_hot_reload().)
@@ -66,7 +67,10 @@ typedef struct scene_render_settings
     b8  show_skybox;              // draw ibl's environment as the background
     f32 sky_blur;                 // 0..1, see ibl_draw_skybox()
     f32 ambient_strength;
-    f32 exposure;
+    f32 exposure;                 // with auto_exposure, compensation on top of it
+    b8  auto_exposure;            // adapt to the scene's brightness (Renderer/PostProcess.h)
+    f32 delta_time;               // seconds since the last frame, for auto-exposure to adapt by; < 0 jumps
+                                  // straight to the scene's brightness, 0 holds (a screenshot)
     f32 bloom;                    // 0 = off; see Renderer/PostProcess.h
     b8  fxaa;                     // anti-aliasing (not in data views)
     scene_tonemap tonemap;        // World/Environment.h
@@ -100,6 +104,7 @@ typedef struct scene_renderer
     file_watch post_files;
     file_watch bloom_files;
     file_watch fxaa_files;
+    file_watch exposure_files;
     file_watch shadow_files;
 } scene_renderer;
 

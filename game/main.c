@@ -415,6 +415,9 @@ on_frame(App* app, f32 dt)
     scene_render_settings settings = scene_render_settings_default();
     scene_render_settings_apply_environment(&settings, &state->env, ibl_cache_maps(&state->ibl));
     settings.debug_view = state->debug_view;
+    // Auto-exposure adapts by the frame time; a check's picture mustn't
+    // depend on frame times, so it goes straight to the scene's level.
+    settings.delta_time = state->check_path ? -1.0f : dt;
 
     scene_renderer_draw(&state->renderer, &state->world, &state->cam, &settings);
 

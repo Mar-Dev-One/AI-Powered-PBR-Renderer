@@ -330,6 +330,9 @@ TOOLS: list[Tool] = [
                  "ambient_strength": {"type": "number", "minimum": 0, "maximum": 4},
                  "bloom": {"type": "number", "minimum": 0, "maximum": 1,
                            "description": "0 = none, 0.04 = subtle (the default), 0.1 = strong."},
+                 "auto_exposure": {"type": "boolean",
+                                   "description": "Adapt to the scene's brightness like an eye; exposure "
+                                                  "then brightens or darkens on top of it."},
                  "tonemap": {"type": "string", "enum": ["aces", "agx", "neutral"],
                              "description": "aces: contrasty (the default); agx: softer, bright colors keep "
                                             "their hue; neutral: materials show their true color."}}),

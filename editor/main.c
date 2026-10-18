@@ -492,6 +492,7 @@ host_view_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** 
     cJSON_AddItemToObject(*out_result, "exposure", number_json(state->doc.env.exposure));
     cJSON_AddItemToObject(*out_result, "ambient_strength", number_json(state->doc.env.ambient_strength));
     cJSON_AddItemToObject(*out_result, "bloom", number_json(state->doc.env.bloom));
+    cJSON_AddBoolToObject(*out_result, "auto_exposure", state->doc.env.auto_exposure);
     cJSON_AddStringToObject(*out_result, "tonemap", scene_tonemap_name(state->doc.env.tonemap));
     cJSON_AddStringToObject(*out_result, "debug_view", scene_debug_view_name(state->debug_view));
     cJSON_AddBoolToObject(*out_result, "fxaa", !state->no_fxaa);
@@ -590,14 +591,16 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     const cJSON* view     = cJSON_GetObjectItem(args, "debug_view");
     const cJSON* fxaa     = cJSON_GetObjectItem(args, "fxaa");
     const cJSON* tonemap  = cJSON_GetObjectItem(args, "tonemap");
+    const cJSON* auto_exp = cJSON_GetObjectItem(args, "auto_exposure");
 
     if ((exposure && (!cJSON_IsNumber(exposure) || exposure->valuedouble <= 0.0 || exposure->valuedouble > 16.0))
         || (ambient && (!cJSON_IsNumber(ambient) || ambient->valuedouble < 0.0 || ambient->valuedouble > 4.0))
         || (bloom && (!cJSON_IsNumber(bloom) || bloom->valuedouble < 0.0 || bloom->valuedouble > 1.0))
-        || (cascades && !cJSON_IsBool(cascades)) || (fxaa && !cJSON_IsBool(fxaa)))
+        || (cascades && !cJSON_IsBool(cascades)) || (fxaa && !cJSON_IsBool(fxaa))
+        || (auto_exp && !cJSON_IsBool(auto_exp)))
     {
         snprintf(error, error_size, "exposure must be in (0, 16], ambient_strength in [0, 4], bloom in [0, 1], "
-                                    "debug_show_cascades and fxaa true/false");
+                                    "debug_show_cascades, fxaa and auto_exposure true/false");
         return false;
     }
 
@@ -620,6 +623,7 @@ host_render_set(void* user_data, command_context* ctx, const cJSON* args, cJSON*
     if (ambient)  state->doc.env.ambient_strength = (f32)ambient->valuedouble;
     if (bloom)    state->doc.env.bloom            = (f32)bloom->valuedouble;
     state->doc.env.tonemap = tonemap_value;
+    if (auto_exp) state->doc.env.auto_exposure = cJSON_IsTrue(auto_exp);
     if (cascades) state->debug_show_cascades = cJSON_IsTrue(cascades);
     if (fxaa)     state->no_fxaa             = !cJSON_IsTrue(fxaa);
     state->debug_view = debug_view;
@@ -727,6 +731,7 @@ host_view_screenshot(void* user_data, command_context* ctx, const cJSON* args, c
     }
 
     scene_render_settings settings = build_render_settings(state);
+    settings.delta_time            = 0.0f;   // auto-exposure as on screen, not adapted a step further
 
     world_update(ctx->w);
 
@@ -993,7 +998,9 @@ static const cmd_arg ARGS_FRAME[] = {
 };
 
 static const cmd_arg ARGS_RENDER_SET[] = {
-    { "exposure",            "number",  false, "Brightness multiplier before tone mapping, e.g. 1" },
+    { "exposure",            "number",  false, "Brightness multiplier before tone mapping, e.g. 1 (with "
+                                                "auto_exposure: brighter or darker than the automatic level)" },
+    { "auto_exposure",       "boolean", false, "Adapt to the scene's brightness, as an eye does" },
     { "ambient_strength",    "number",  false, "Strength of the image-based / ambient light, e.g. 0.5" },
     { "bloom",               "number",  false, "How much bright light spreads into its surroundings, 0 (none) to 1; "
                                                 "0.04 is subtle, 0.1 strong" },
@@ -2872,6 +2879,11 @@ draw_environment_controls(editor_state* state)
     igText("Environment");
     igSliderFloat("Ambient", &state->doc.env.ambient_strength, 0.0f, 2.0f, "%.2f", 0);
     igSliderFloat("Exposure", &state->doc.env.exposure, 0.1f, 4.0f, "%.2f", 0);
+    if (state->doc.env.auto_exposure && igIsItemHovered(0))
+        igSetTooltip("With auto exposure: brighter or darker than the automatic level");
+    igCheckbox("Auto exposure", &state->doc.env.auto_exposure);
+    if (igIsItemHovered(0))
+        igSetTooltip("Adapt to the scene's brightness, as an eye does: dark scenes brighten, bright ones darken");
     igSliderFloat("Bloom", &state->doc.env.bloom, 0.0f, 0.3f, "%.3f", 0);
     if (igIsItemHovered(0))
         igSetTooltip("How much bright light (the sun, lamps, emissive surfaces) spreads into its surroundings");
@@ -3149,6 +3161,7 @@ draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt)
     world_update(shown);
 
     scene_render_settings settings = build_render_settings(state);
+    settings.delta_time            = dt;     // auto-exposure adapts at the eye's pace
     scene_renderer_draw_to(&state->renderer, shown, &state->cam, &settings, state->view_target);
 
     // GL's rows run bottom-up: flip V.

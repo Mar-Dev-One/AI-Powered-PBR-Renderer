@@ -75,6 +75,7 @@ serialize_environment(const scene_environment* env)
     cJSON_AddNumberToObject(object, "sky_blur", round6(env->sky_blur));
     cJSON_AddNumberToObject(object, "ambient_strength", round6(env->ambient_strength));
     cJSON_AddNumberToObject(object, "exposure", round6(env->exposure));
+    cJSON_AddBoolToObject(object, "auto_exposure", env->auto_exposure);
     cJSON_AddNumberToObject(object, "bloom", round6(env->bloom));
     cJSON_AddStringToObject(object, "tonemap", scene_tonemap_name(env->tonemap));
     return object;
@@ -150,6 +151,7 @@ deserialize_environment(const cJSON* fields, scene_environment* env, char* error
 
     if (!read_bool(fields, "use_ibl", &next.use_ibl, error, error_size)
         || !read_bool(fields, "show_skybox", &next.show_skybox, error, error_size)
+        || !read_bool(fields, "auto_exposure", &next.auto_exposure, error, error_size)
         || !read_number(fields, "sky_blur", 0.0, false, 1.0, &next.sky_blur, error, error_size)
         || !read_number(fields, "ambient_strength", 0.0, false, 4.0, &next.ambient_strength, error, error_size)
         || !read_number(fields, "exposure", 0.0, true, 16.0, &next.exposure, error, error_size)

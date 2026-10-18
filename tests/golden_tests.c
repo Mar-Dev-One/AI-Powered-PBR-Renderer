@@ -69,6 +69,8 @@ static const golden_case CASES[] = {
     { "bloom",           "bloom.json",     NULL },        // a glowing emissive sphere in the dark
     { "avocado_agx",     "avocado_agx.json",     NULL },  // AgX tone mapping
     { "avocado_neutral", "avocado_neutral.json", NULL },  // Khronos PBR Neutral tone mapping
+    { "avocado_auto",    "avocado_auto.json",    NULL },  // auto-exposure on a bright scene
+    { "dark_auto",       "dark_auto.json",       NULL },  // auto-exposure on a dark one
 };
 
 #define CASE_COUNT (sizeof(CASES) / sizeof(CASES[0]))

@@ -13,7 +13,9 @@ uniform sampler2D u_scene;      // RGBA16F, linear radiance
 uniform sampler2D u_bloom;      // the scene blurred (post_bloom()), half size
 uniform float     u_bloom_strength;   // 0 = none
 uniform float     u_bloom_scale;      // 1 / the chain's levels: u_bloom holds every level's blur added up
-uniform float     u_exposure;
+uniform float     u_exposure;       // with auto-exposure: compensation on top of it
+uniform int       u_auto_exposure;
+uniform sampler2D u_adapted;        // 1 x 1: the adapted log2 luminance (post_meter_exposure())
 uniform int       u_tonemap;    // World/Environment.h's scene_tonemap: 0 ACES, 1 AgX, 2 PBR Neutral
 uniform int       u_raw;        // a debug view's data (0..1): gamma only, no exposure or tone mapping
 uniform int       u_luma_alpha; // write the pixel's luma to alpha, for fxaa.frag (otherwise alpha = 1)
@@ -105,7 +107,20 @@ void main()
     if (u_bloom_strength > 0.0)
         color = mix(color, texture(u_bloom, v_uv).rgb * u_bloom_scale, u_bloom_strength);
 
-    color = u_raw != 0 ? clamp(color, 0.0, 1.0) : tonemap(color * u_exposure);
+    // Auto-exposure: scale the adapted average brightness to a "key" -- not
+    // a fixed middle grey (0.18), which would make a night scene look like
+    // day, but Krawczyk et al.'s (2005) key that falls for dark scenes and
+    // rises for bright ones, as the eye's adaptation does. At most 4 stops
+    // either way.
+    float exposure = u_exposure;
+    if (u_auto_exposure != 0)
+    {
+        float average = exp2(texelFetch(u_adapted, ivec2(0), 0).r);
+        float key     = 1.03 - 2.0 / (2.0 + log(average + 1.0) / log(10.0));
+        exposure *= clamp(key / average, 1.0 / 16.0, 16.0);
+    }
+
+    color = u_raw != 0 ? clamp(color, 0.0, 1.0) : tonemap(color * exposure);
     color = pow(color, vec3(1.0 / 2.2));
 
     // FXAA finds edges by luma, measured on the gamma-encoded picture as

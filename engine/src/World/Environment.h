@@ -12,7 +12,7 @@
 // Format (every key optional when read; omitted ones keep their value):
 //   { "hdri": "hdri/sky.hdr" | null, "use_ibl": true, "show_skybox": true,
 //     "sky_blur": 0, "ambient_strength": 0.5, "exposure": 1, "bloom": 0.04,
-//     "tonemap": "aces" | "agx" | "neutral" }
+//     "tonemap": "aces" | "agx" | "neutral", "auto_exposure": false }
 
 #define ENVIRONMENT_HDRI_MAX 256
 
@@ -39,13 +39,14 @@ typedef struct scene_environment
     b8   show_skybox;                  // draw the HDRI as the background
     f32  sky_blur;                     // 0 (sharp) .. 1 (blurriest)
     f32  ambient_strength;             // 0 .. 4
-    f32  exposure;                     // (0, 16]
+    f32  exposure;                     // (0, 16]; with auto_exposure, compensation on top of it
+    b8   auto_exposure;                // adapt to the scene's brightness, as an eye does (Renderer/PostProcess.h)
     f32  bloom;                        // 0 (none) .. 1: how much bright light spreads (Renderer/PostProcess.h)
     scene_tonemap tonemap;
 } scene_environment;
 
 // No HDRI, IBL and skybox on (for when one is set), no blur, ambient 0.5,
-// exposure 1, bloom 0.04, ACES.
+// exposure 1 (no auto-exposure), bloom 0.04, ACES.
 scene_environment scene_environment_default(void);
 
 // Caller owns the result (cJSON_Delete).
