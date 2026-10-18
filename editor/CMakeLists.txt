@@ -1,7 +1,9 @@
 # The editor: the scene panels, command console, chat with the AI agent and
 # the command server -- engine/'s PBR_Tools, on top of the PBR_Runtime the
 # game (game/) uses. It's the only app with a UI layer (App.ui = imgui_layer()).
-add_executable(Editor main.c SceneDocument.c PlaySession.c)
+# Editor.h says which file holds which part.
+add_executable(Editor main.c Actions.c Agent.c Export.c HostCommands.c Menus.c Panels.c Viewport.c
+                      SceneDocument.c PlaySession.c)
 
 target_link_libraries(Editor PRIVATE PBR_Tools)
 

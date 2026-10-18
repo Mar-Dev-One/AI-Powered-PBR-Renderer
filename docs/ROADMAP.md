@@ -21,8 +21,10 @@ building the export.
    and stop writing terminal color codes into `log.txt`.~~ Done: a Release game shows a message
    box (`Platform/Dialog.h`) on a `FATAL` (`log_set_fatal_hook()`, `Core/Log.c`) or a startup scene
    that doesn't load, then closes; never under `--check`. Logs are in color only on a terminal.
-3. **Play through the scene's camera.** Play keeps the editor's orbit camera; the game looks
-   through the first Camera entity. A toolbar toggle to see what the player will see.
+3. ~~**Play through the scene's camera.** Play keeps the editor's orbit camera; the game looks
+   through the first Camera entity. A toolbar toggle to see what the player will see.~~ Done with
+   the editor rewrite (below): **Game camera** on the Viewport toolbar (`play.set`'s
+   `game_camera`), and looking through any Camera entity while editing (`view.look_through`).
 4. **Exercise the in-app agent against the live Claude API.** Its loop is only tested with a
    scripted model (Phase 5).
 5. ~~**Trim the export's runtime DLLs.** Since the library split the game has no C++ code, so it
@@ -208,6 +210,34 @@ progress notes between tool calls. Tested end to end against `ServerHost` with a
 
 ---
 
+## Editor rewrite (2026-10-18)
+
+The editor was one 3,400-line `editor/main.c`; it is now split by job (`editor/Editor.h` lists
+the files: HostCommands, Actions, Viewport, Panels, Menus, Export, Agent) and covers every engine
+feature that had no UI:
+
+- [x] **Edit** menu (undo / redo naming the step, duplicate with children, delete, unparent,
+      select parent) and a **History** panel that jumps to any step
+- [x] Shortcuts read through ImGui every frame, so they work whichever panel has focus (the GLFW
+      key callback only got keys when the Viewport was focused); Ctrl+D and Delete are new
+- [x] Outliner: name filter, each entity's kind, drag-and-drop parenting that keeps the world
+      pose, right-click menu (`UI/EntityPanel.h` returns the request; the editor runs it as
+      commands, one undo step)
+- [x] Viewport overlays: light markers with the selected light's range / cone / direction,
+      camera frustums, reflection probe boxes, an optional ground grid -- lines clipped to the
+      near plane
+- [x] Look through any Camera entity, and Play through the game camera (`view.look_through`,
+      `play.set` `game_camera`); picking, the gizmo and screenshots use the camera on screen
+- [x] **Renderer** panel: anti-aliasing, debug view, shadows on/off and the cascade split (new in
+      `render.set`), cascade tint, unclustered lighting, Reload shaders (`render.reload_shaders`),
+      Bake reflections, and the last frame's numbers (`render.stats`)
+- [x] **Assets** panel: the project's models and HDRIs, Import, the asset cache with reference
+      counts and Unload unused
+- [x] Add > Reflection probe; Add, Play and Help menus; a status bar; new panels dock beside
+      the old ones in an existing imgui.ini
+- [ ] Not yet: thumbnails in Assets, multi-selection, copy / paste between scenes, the agent tools
+      for `view.look_through` / `render.stats` (the commands exist; `tools.py` doesn't list them)
+
 ## Editor / runtime split
 
 The editor (`editor/`) and the game runtime (`game/`, the `Game` target: a console program in
@@ -317,8 +347,8 @@ view, selection, gizmo, Inspector, Entities, console, server, agent, Add -- work
 (`command_context.save_refused`, also for the agent and scripts); opening a scene or project
 stops play first; Play waits while a chat turn runs. `play.set` / `play.status` commands and a
 `set_play` tool. First run without an imgui.ini gets a default layout (`default_layout()`).
-Not yet: viewing through the scene's Camera entity while playing (the editor camera stays).
-Separate-window play was F5, removed since (Editor / runtime split).
+Viewing through the scene's Camera entity while playing came with the editor rewrite (see
+"Editor rewrite" below). Separate-window play was F5, removed since (Editor / runtime split).
 
 ### Stage 4: Game export
 

@@ -86,15 +86,47 @@ path in a scene is relative to it. Without `--project` the editor opens the samp
 - **Project Settings** sets the name, the startup scene the game plays, its window size, and the
   HDRI new scenes start with.
 
-The **Scene** window's **Add** section puts a model from the project, a cube, sphere or plane
-(at the size given), a light, a camera matching the current view, or an empty entity at the
-centre of the view, on the ground. Its **Environment** section sets ambient strength, exposure,
-the HDRI (from the project's `hdri/`), IBL, the skybox and its blur.
+**Panels.** Every panel can be closed, re-docked or pulled out into its own window; **View** turns
+each one back on. The first time, they're arranged around the Viewport:
+
+- **Scene**: the project and scene, **Save** and **Frame all**; **Add** puts a model from the
+  project, a cube, sphere or plane (at the size given), a point light, spot light or sun, a camera
+  matching the current view, a reflection probe or an empty entity at the centre of the view; and
+  the scene's **Environment**, saved with it: HDRI, IBL, skybox and its blur, ambient strength,
+  exposure and auto-exposure, tone mapping (ACES, AgX, PBR Neutral), bloom, and ambient occlusion
+  with its radius.
+- **Renderer**: how the editor views the scene (not saved with it): anti-aliasing (off, FXAA, TAA),
+  the debug view, shadows on or off, where the sun's cascades split, tinting by cascade, and
+  unclustered lighting (the reference clustered lighting must match). **Reload shaders** rebuilds
+  every shader now; **Bake reflections** captures the reflection probes again. Below, what the
+  last frame drew: lights (and how full the cluster lists are), which lights got shadow maps,
+  reflection probes, the environment and the GPU frame time.
+- **Entities**: the scene as a tree, with each entity's kind (sun, spot light, camera, probe,
+  empty) and its ID. Type in the filter to list only matching names. Drag an entity onto another
+  to parent it there, or onto *scene root* to unparent it; it stays where it is in the world.
+  Right-click for Frame, Duplicate, Unparent and Delete.
+- **Inspector**: the selected entity's fields (see Editing below).
+- **Assets**: the project's models (**Add** places one) and HDRIs (**Use** lights the scene with
+  one), **Import...**, and the models in memory with their reference counts, triangles and
+  materials; **Unload unused** frees the ones nothing uses.
+- **History**: every undo step, newest last; click one to go back (or forward) to it.
+- **Console** (F1), **Chat**, **Log** (opens by itself on an error) and **GPU timings**.
+
+The status bar along the bottom shows the scene (`*` when unsaved), whether it's playing, the
+selection, the command server and its clients, and the frame time.
 
 **Viewport:** the scene is drawn in the **Viewport** panel, docked in the middle the first time;
-like any panel it can be resized, re-docked or pulled out into its own window, and the image
-always matches its size. Orbit, zoom, picking and the gizmo work inside it. Its toolbar holds
-Play / Pause / Step, the gizmo's mode, space and snapping, and Export (coming with game export).
+the image always matches its size. Orbit, zoom, picking and the gizmo work inside it. Its toolbar
+holds Play / Pause / Step, the gizmo's mode, space and snapping; then the camera, the debug view,
+**Overlays** and **Export**.
+
+- **Camera:** look through the editor's own camera or any Camera entity, to see what a player
+  sees from it. Dragging or zooming goes back to the editor camera from that view. **Game camera**
+  makes Play look through the scene's first Camera, as the exported game does.
+- **Overlays**, drawn over the picture: a marker per light in its color (a sun has rays), with
+  the selected light's reach — a point light's range as three rings, a spot light's cone out to
+  its range, a sun's direction; each Camera's view as a small pyramid; each reflection probe's
+  box; and, when turned on, a 1 m grid on the ground.
 
 **Play:** **Play** (Ctrl+P) runs a copy of the scene in the Viewport — Spin components turn — with
 a green border (amber while paused; Ctrl+Shift+P pauses, F10 steps one frame). While playing
@@ -103,17 +135,20 @@ throws the copy away, environment changes included, and the edited scene is exac
 There's no undo while playing, and saving waits until you stop.
 
 **Selecting:** click an object in the view (a short click; dragging still orbits) or its name in
-the **Entities** panel. The selection is outlined in orange with its name; lights and cameras are
-picked by clicking where they are. **F** frames the selection, **Esc** clears it (and quits when
-nothing is selected), and clicking empty space deselects.
+the **Entities** panel. The selection is outlined in orange with its name; lights, cameras and
+probes are picked by clicking their marker. **F** frames the selection, **Esc** clears it (and
+quits when nothing is selected), and clicking empty space deselects.
 
 **Editing:** the **Inspector** shows the selected entity's name, parent and every component as
 editing fields — drags for numbers and vectors (within each field's range), color pickers,
 checkboxes, dropdowns for enums and models, and a checkbox per material override. **Add
-component...** adds a MeshRenderer, Light, Camera or Spin; the **X** on a component's header
-removes it; **Delete** removes the entity. Every edit runs as a command, exactly like the console
-or the agent: it is validated (a rejected value shows in red and changes nothing), reaches
-connected clients, and is undoable — a whole drag is one step. **Ctrl+Z** / **Ctrl+Y** undo and redo.
+component...** adds a MeshRenderer, Light, Camera, Spin or ReflectionProbe; the **X** on a
+component's header removes it; **Delete** removes the entity. **Edit** (and the shortcuts below)
+also undoes and redoes (naming the step), duplicates the selection with its children beside it
+(**Ctrl+D**), deletes it (**Delete**), unparents it and selects its parent. Every edit runs as a
+command, exactly like the console or the agent: it is validated (a rejected value shows in red
+and changes nothing), reaches connected clients, and is undoable — a whole drag, a duplicate or a
+reparent is one step.
 
 **Gizmo:** the selection gets move / rotate / scale handles in the view —
 **W** / **E** / **R** switch between them. The Viewport toolbar has the **Local / World** toggle (scale
@@ -121,12 +156,17 @@ always uses the object's own axes) and **Snap** with its step (meters, degrees o
 holding **Ctrl** while dragging flips snapping. A drag is one undoable step, like an Inspector edit,
 and works on parented entities (the result is stored relative to the parent).
 
-Lights are edited like any entity: select one and change it in the Inspector.
+Shortcuts work whichever panel has focus, except while typing in a text field (Help > Keyboard
+shortcuts lists them):
 
 | Input | Action |
 |---|---|
 | Left mouse drag | Orbit the camera |
 | Mouse wheel | Zoom |
+| W / E / R | Move / rotate / scale gizmo |
+| F | Frame the selection |
+| Ctrl+D / Delete | Duplicate / delete the selection |
+| Ctrl+Z / Ctrl+Y | Undo / redo |
 | Ctrl+S | Save the scene |
 | Ctrl+P / Ctrl+Shift+P / F10 | Play or stop / pause or resume / step one frame |
 | F1 | Command console |
@@ -144,7 +184,10 @@ The console (F1) runs the same JSON commands that remote clients send:
 Commands cover entities and components (`entity.create`, `component.set`, ...), high-level
 placement (`place_model`, `entity.place` relative to other entities), scene files (`scene.save`,
 `scene.load`, `scene.list`), undo/redo (`history.*`), batches, and app-level settings such as the
-camera and environment. `scene.describe` shows the current world. Saved scenes live in
+camera and environment. Whatever the panels can set, a command can too: `view.look_through` picks
+the camera, `render.set` the render settings (shadows and cascade splits included), `render.stats`
+reports what the last frame drew, `render.reload_shaders` rebuilds the shaders, and `play.set`
+takes `game_camera`. `scene.describe` shows the current world. Saved scenes live in
 [assets/scenes/](assets/scenes/); two example scenes built by an AI are included. A saved scene
 holds the entities and the environment (HDRI, IBL and skybox switches, sky blur, exposure, ambient
 strength); loading it with `replace` restores both, while merging into the current scene adds the
