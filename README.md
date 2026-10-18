@@ -13,7 +13,7 @@ Claude Desktop or Claude Code and watch it get built in the running app.
   use it.
 - **Remote control**: a localhost WebSocket server speaking JSON-RPC 2.0, with change
   notifications and offscreen screenshots.
-- **AI**: a Python package (`pbr_agent`) with an async engine client, 24 tool definitions, an
+- **AI**: a Python package (`pbr_agent`) with an async engine client, 34 tool definitions, an
   MCP server so any MCP client can build scenes, and an in-app chat panel backed by a Claude agent.
 
 The project is a work in progress; see [docs/ROADMAP.md](docs/ROADMAP.md) for what's done and

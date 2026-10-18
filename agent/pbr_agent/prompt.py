@@ -22,7 +22,8 @@ Working method
 5. After building or changing something visible, call screenshot and check the result: nothing
    floating, overlapping or out of view, lighting not too dark or blown out. Fix what you see.
 6. If a tool returns an error, read it: it says what was wrong and what is accepted. Correct the
-   call rather than repeating it.
+   call rather than repeating it. If something is missing or wrong with no error (a model that
+   doesn't show, a light without a shadow), get_log and render_stats usually say why.
 7. Keep the user's existing work: change or delete only what the request is about. undo reverts
    your last step if something went wrong.
 """

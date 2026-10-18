@@ -160,8 +160,9 @@ Tested end to end with a stdlib-only Python client (`tests/server_test.py`).
 **Done when:** "add a red sphere left of the avocado" in Claude Desktop appears in the running app.
 
 Status: done (in `agent/`). `EngineClient` (async, discovery with stale-pid check, safe
-reconnect), `tools.py` (24 tools then; 30 now, 11 of them editor-only: camera, environment,
-screenshot, project, play, export -- examples run against the engine as a drift test),
+reconnect), `tools.py` (24 tools then; 34 now, 15 of them editor-only: camera and
+look-through, environment, render settings and stats, reflection bake, log, screenshot, project,
+play, export -- examples run against the engine as a drift test),
 `prompt.py` (shared instructions), `mcp_server.py` / `pbr-mcp` on MCP SDK 2.x (low-level Server,
 stdio, screenshots as images, `scene://current`). Verified end to end through a real MCP client
 against the running Testbed. Registration: `agent/README.md`.
@@ -235,8 +236,10 @@ feature that had no UI:
       counts and Unload unused
 - [x] Add > Reflection probe; Add, Play and Help menus; a status bar; new panels dock beside
       the old ones in an existing imgui.ini
-- [ ] Not yet: thumbnails in Assets, multi-selection, copy / paste between scenes, the agent tools
-      for `view.look_through` / `render.stats` (the commands exist; `tools.py` doesn't list them)
+- [x] Agent tools to match: `look_through`, `render_stats`, `bake_reflections`, `get_log`;
+      `shadows` in `set_render`, `game_camera` in `set_play`; ReflectionProbe in `set_component` /
+      `remove_component`
+- [ ] Not yet: thumbnails in Assets, multi-selection, copy / paste between scenes
 
 ## Editor / runtime split
 

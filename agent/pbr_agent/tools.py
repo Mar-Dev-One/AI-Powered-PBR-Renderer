@@ -71,7 +71,7 @@ MATERIAL = {
     "additionalProperties": False,
 }
 
-COMPONENT = {"type": "string", "enum": ["Transform", "MeshRenderer", "Light", "Camera", "Spin"]}
+COMPONENT = {"type": "string", "enum": ["Transform", "MeshRenderer", "Light", "Camera", "Spin", "ReflectionProbe"]}
 
 
 def _schema(properties: dict, required: list[str] | None = None) -> dict:
@@ -165,7 +165,8 @@ TOOLS: list[Tool] = [
         "screenshot",
         "Renders the scene as an image (without the editor's panels). Use it after building or "
         "changing something to check that it looks right: things floating, overlapping, too dark, "
-        "out of view.",
+        "out of view. It shows what the editor's view shows: through look_through's Camera if one "
+        "is set.",
         _schema({"max_size": {"type": "integer", "minimum": 64, "maximum": 4096,
                               "description": "Longest side in pixels (default 768)."}}),
         "view.screenshot", example={"max_size": 256}, read_only=True, app_command=True, returns_image=True,
@@ -217,7 +218,9 @@ TOOLS: list[Tool] = [
     Tool(
         "create_entity",
         "Creates an entity from raw components (see describe_components) -- for anything "
-        "place_model and add_light don't cover, e.g. an empty parent to group things under.",
+        "place_model and add_light don't cover: an empty parent to group things under, a Camera "
+        "(what the exported game looks through), or a ReflectionProbe (a box, e.g. a room, whose "
+        "shiny surfaces then reflect the room instead of the distant sky; at most 8).",
         _schema({
             "name": {"type": "string"},
             "parent": NULLABLE_ENTITY,
@@ -248,8 +251,9 @@ TOOLS: list[Tool] = [
     ),
     Tool(
         "remove_component",
-        "Removes a MeshRenderer, Light, Camera or Spin from an entity (the entity stays).",
-        _schema({"entity": ENTITY, "component": {"type": "string", "enum": ["MeshRenderer", "Light", "Camera", "Spin"]}},
+        "Removes a MeshRenderer, Light, Camera, Spin or ReflectionProbe from an entity (the entity stays).",
+        _schema({"entity": ENTITY, "component": {"type": "string",
+                                                  "enum": ["MeshRenderer", "Light", "Camera", "Spin", "ReflectionProbe"]}},
                 ["entity", "component"]),
         "component.remove", example={"entity": "desk_lamp", "component": "Light"},
     ),
@@ -306,6 +310,16 @@ TOOLS: list[Tool] = [
         _schema({"entity": ENTITY}), "view.frame", example={}, app_command=True,
     ),
     Tool(
+        "look_through",
+        "Views the scene through a Camera entity -- what a player of the exported game sees from it "
+        "-- so screenshot shows that shot; omit camera to go back to the editor's own camera. "
+        "set_camera and frame_view also go back to the editor camera.",
+        _schema({"camera": {"type": ["string", "null"],
+                            "description": "Name of an entity with a Camera component; null or omitted "
+                                           "for the editor camera."}}),
+        "view.look_through", example={}, app_command=True,
+    ),
+    Tool(
         "list_environments",
         "The HDRI environments available to light the scene, and the current one.",
         _schema({}), "environment.list", read_only=True, app_command=True,
@@ -339,8 +353,34 @@ TOOLS: list[Tool] = [
                                                   "then brightens or darkens on top of it."},
                  "tonemap": {"type": "string", "enum": ["aces", "agx", "neutral"],
                              "description": "aces: contrasty (the default); agx: softer, bright colors keep "
-                                            "their hue; neutral: materials show their true color."}}),
+                                            "their hue; neutral: materials show their true color."},
+                 "shadows": {"type": "boolean",
+                             "description": "Shadow maps on or off in the editor's view (default on; not "
+                                            "saved with the scene -- for comparing, not for the look)."}}),
         "render.set", example={"exposure": 1.0}, app_command=True,
+    ),
+    Tool(
+        "render_stats",
+        "What the renderer did with the scene in the last frame: how many lights, which got shadow "
+        "maps (the sun, up to 4 spot and 4 point lights with cast_shadows), how many reflection "
+        "probes. Use it when a light casts no shadow or a reflection is missing.",
+        _schema({}), "render.stats", read_only=True, app_command=True,
+    ),
+    Tool(
+        "bake_reflections",
+        "Captures the reflection probes again. They re-capture by themselves when a probe moves or "
+        "the environment changes, but not when lights or objects move: call this after those.",
+        _schema({}), "render.bake_reflections", app_command=True,
+    ),
+    Tool(
+        "get_log",
+        "The engine's latest log lines: why a model failed to load, a shader error, warnings. Use it "
+        "when something doesn't appear or look as expected and no tool reported an error.",
+        _schema({"count": {"type": "integer", "minimum": 1, "maximum": 500,
+                           "description": "How many lines, newest last (default 50)."},
+                 "min_level": {"type": "string", "enum": ["trace", "debug", "info", "warn", "error", "fatal"],
+                               "description": "Only lines at least this serious (default trace)."}}),
+        "log.get", example={"count": 5, "min_level": "warn"}, read_only=True, app_command=True,
     ),
 
     # --- Files ------------------------------------------------------------------------------
@@ -364,8 +404,11 @@ TOOLS: list[Tool] = [
         "set_play",
         "Play mode: 'play' runs a throwaway copy of the scene so behaviours (Spin) move -- check "
         "them with a screenshot; 'pause', 'resume', 'step' (one frame, while paused); 'stop' drops "
-        "the copy and returns to the edited scene. Saving is refused while playing.",
-        _schema({"action": {"type": "string", "enum": ["play", "pause", "resume", "step", "stop"]}}, ["action"]),
+        "the copy and returns to the edited scene. Saving is refused while playing. game_camera=true "
+        "makes Play look through the scene's first Camera, as the exported game does.",
+        _schema({"action": {"type": "string", "enum": ["play", "pause", "resume", "step", "stop"]},
+                 "game_camera": {"type": "boolean",
+                                 "description": "While playing, view through the scene's first Camera."}}),
         "play.set", example={"action": "stop"}, app_command=True,
     ),
 
