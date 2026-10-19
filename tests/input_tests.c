@@ -295,8 +295,13 @@ test_action_buttons(void)
     CHECK(!input_action_pressed(jump) && !input_action_released(jump));
 
     // A trigger holds a button action from halfway.
-    input_action fire = input_action_add("fire", INPUT_ACTION_BUTTON);
-    CHECK(input_action_bind(fire, input_binding_pad_axis(INPUT_PAD_RIGHT_TRIGGER, 1.0f)));
+    static input_action_map map;
+    memset(&map, 0, sizeof(map));
+    int fire_index = input_action_map_add(&map, "fire", INPUT_ACTION_BUTTON);
+    CHECK(input_action_map_bind(&map, fire_index, input_binding_pad_axis(INPUT_PAD_RIGHT_TRIGGER, 1.0f), NULL, 0));
+    input_actions_load(&map);
+    input_action fire = input_action_find("fire");
+    CHECK(fire != INPUT_ACTION_NONE && input_action_find("jump") == INPUT_ACTION_NONE);
     pad.axes[INPUT_PAD_RIGHT_TRIGGER] = -0.2f;   // 40% pulled
     FRAME(0.016f, input_on_pad(0, &pad));
     CHECK(!input_action_down(fire));
@@ -378,43 +383,183 @@ test_action_look(void)
 }
 
 static void
-test_action_setup(void)
+test_action_maps(void)
 {
-    input_actions_clear();
-    CHECK(input_action_count() == 0);
+    static input_action_map map;
+    memset(&map, 0, sizeof(map));
 
-    input_action a = input_action_add("walk", INPUT_ACTION_AXIS);
-    CHECK(a != INPUT_ACTION_NONE && input_action_count() == 1);
-    CHECK(input_action_add("walk", INPUT_ACTION_AXIS) == a && input_action_count() == 1);   // same one again
-    CHECK(input_action_add("", INPUT_ACTION_BUTTON) == INPUT_ACTION_NONE);
-    CHECK(input_action_add("a_name_far_too_long_for_an_action_slot", INPUT_ACTION_BUTTON) == INPUT_ACTION_NONE);
+    int a = input_action_map_add(&map, "walk", INPUT_ACTION_AXIS);
+    CHECK(a == 0 && map.count == 1);
+    CHECK(input_action_map_add(&map, "walk", INPUT_ACTION_BUTTON) == a && map.count == 1);   // same one, new kind
+    CHECK(map.actions[a].kind == INPUT_ACTION_BUTTON);
+    map.actions[a].kind = INPUT_ACTION_AXIS;
+    CHECK(input_action_map_add(&map, "", INPUT_ACTION_BUTTON) < 0);
+    CHECK(input_action_map_add(&map, "two words", INPUT_ACTION_BUTTON) < 0);
+    CHECK(input_action_map_add(&map, "a_name_far_too_long_for_an_action_slot", INPUT_ACTION_BUTTON) < 0);
 
-    // Mouse motion only fits a delta axis.
-    CHECK(!input_action_bind(a, input_binding_mouse_motion(0, 1.0f)));
-    CHECK(!input_action_bind(INPUT_ACTION_NONE, input_binding_key(INPUT_KEY_W)));
-
+    // Mouse motion only fits a delta axis, and there's room for 8 bindings.
+    char error[160];
+    CHECK(!input_action_map_bind(&map, a, input_binding_mouse_motion(0, 1.0f), error, sizeof(error)));
+    CHECK(strstr(error, "delta") != NULL);
+    CHECK(!input_action_map_bind(&map, 5, input_binding_key(INPUT_KEY_W), NULL, 0));
     for (int i = 0; i < INPUT_ACTION_MAX_BINDINGS; ++i)
-        CHECK(input_action_bind(a, input_binding_key(INPUT_KEY_W)));
-    CHECK(!input_action_bind(a, input_binding_key(INPUT_KEY_W)));   // full
-
-    int count = 0;
-    const input_binding* bindings = input_action_bindings(a, &count);
-    CHECK(count == INPUT_ACTION_MAX_BINDINGS && bindings[0].kind == INPUT_BINDING_KEY && bindings[0].code == INPUT_KEY_W);
-    input_action_unbind_all(a);
-    input_action_bindings(a, &count);
-    CHECK(count == 0);
+        CHECK(input_action_map_bind(&map, a, input_binding_key(INPUT_KEY_W), NULL, 0));
+    CHECK(!input_action_map_bind(&map, a, input_binding_key(INPUT_KEY_W), NULL, 0));
 
     for (int i = 1; i < INPUT_ACTION_MAX; ++i)
     {
         char name[16];
         snprintf(name, sizeof(name), "action_%d", i);
-        CHECK(input_action_add(name, INPUT_ACTION_BUTTON) != INPUT_ACTION_NONE);
+        CHECK(input_action_map_add(&map, name, INPUT_ACTION_BUTTON) == i);
     }
-    CHECK(input_action_add("one_too_many", INPUT_ACTION_BUTTON) == INPUT_ACTION_NONE);
+    CHECK(input_action_map_add(&map, "one_too_many", INPUT_ACTION_BUTTON) < 0);
 
+    // Removing one moves the rest up.
+    input_action_map_remove(&map, 0);
+    CHECK(map.count == INPUT_ACTION_MAX - 1 && strcmp(map.actions[0].name, "action_1") == 0);
+    CHECK(input_action_map_find(&map, "walk") < 0 && input_action_map_find(&map, "action_2") == 1);
+
+    // Loading replaces the live actions.
+    input_actions_load(&map);
+    CHECK(input_action_count() == INPUT_ACTION_MAX - 1 && input_action_find("action_5") == 4);
     input_actions_set_defaults();
     CHECK(input_action_count() == 7 && input_action_find("action_1") == INPUT_ACTION_NONE);
-    CHECK(input_action_get_kind(input_action_find("look_y")) == INPUT_ACTION_AXIS_DELTA);
+    input_actions_clear();
+    CHECK(input_action_count() == 0);
+
+    input_action_map_defaults(&map);
+    CHECK(!map.custom && map.count == 7 && map.stick_dead_zone == 0.2f);
+    CHECK(map.actions[input_action_map_find(&map, "look_y")].kind == INPUT_ACTION_AXIS_DELTA);
+}
+
+static void
+test_binding_text(void)
+{
+    // Every default binding survives being written and read back.
+    static input_action_map map;
+    input_action_map_defaults(&map);
+    for (int i = 0; i < map.count; ++i)
+        for (int j = 0; j < map.actions[i].binding_count; ++j)
+        {
+            const input_binding* b = &map.actions[i].bindings[j];
+            char          text[INPUT_BINDING_TEXT_MAX];
+            input_binding back;
+            input_binding_to_text(b, text, sizeof(text));
+            CHECK(input_binding_from_text(text, &back, NULL, 0));
+            CHECK(back.kind == b->kind && back.code == b->code && back.scale == b->scale);
+            CHECK(b->kind != INPUT_BINDING_KEY_PAIR || back.code2 == b->code2);
+        }
+
+    char text[INPUT_BINDING_TEXT_MAX];
+    input_binding_to_text(&map.actions[input_action_map_find(&map, "move_y")].bindings[1], text, sizeof(text));
+    CHECK(strcmp(text, "pad_axis:left_y*-1") == 0);
+    input_binding_to_text(&map.actions[input_action_map_find(&map, "move_x")].bindings[0], text, sizeof(text));
+    CHECK(strcmp(text, "keys:a/d") == 0);
+    input_binding f5 = input_binding_key(INPUT_KEY_F5), kp = input_binding_key(INPUT_KEY_KP_3);
+    input_binding_to_text(&f5, text, sizeof(text));
+    CHECK(strcmp(text, "key:f5") == 0);
+    input_binding_to_text(&kp, text, sizeof(text));
+    CHECK(strcmp(text, "key:kp_3") == 0);
+
+    // Case doesn't matter.
+    input_binding b;
+    CHECK(input_binding_from_text("KEY:Left_Shift", &b, NULL, 0) && b.kind == INPUT_BINDING_KEY && b.code == INPUT_KEY_LEFT_SHIFT);
+    CHECK(input_binding_from_text("mouse:right", &b, NULL, 0) && b.kind == INPUT_BINDING_MOUSE_BUTTON && b.code == INPUT_MOUSE_RIGHT);
+    CHECK(input_binding_from_text("mouse_motion:y*0.25", &b, NULL, 0) && b.code == 1 && b.scale == 0.25f);
+    CHECK(input_binding_from_text("pad:dpad_left", &b, NULL, 0) && b.code == INPUT_PAD_DPAD_LEFT);
+
+    // Mistakes say what's wrong.
+    char error[160];
+    CHECK(!input_binding_from_text("w", &b, error, sizeof(error)) && strstr(error, "':'"));
+    CHECK(!input_binding_from_text("keyboard:w", &b, error, sizeof(error)) && strstr(error, "isn't a kind"));
+    CHECK(!input_binding_from_text("key:wq", &b, error, sizeof(error)) && strstr(error, "no key"));
+    CHECK(!input_binding_from_text("keys:a", &b, error, sizeof(error)) && strstr(error, "two"));
+    CHECK(!input_binding_from_text("pad:a*", &b, error, sizeof(error)) && strstr(error, "number"));
+    CHECK(!input_binding_from_text("pad:a*0", &b, error, sizeof(error)));
+    CHECK(!input_binding_from_text("mouse_motion:z", &b, error, sizeof(error)));
+    CHECK(!input_binding_from_text("key:a_binding_text_that_is_much_too_long_to_fit_in", &b, error, sizeof(error)));
+
+    // Names both ways.
+    input_key key;
+    CHECK(input_key_from_name("Escape", &key) && key == INPUT_KEY_ESCAPE);
+    CHECK(!input_key_from_name("", &key) && !input_key_from_name("nokey", &key));
+    CHECK(input_key_name((input_key)-1)[0] == '\0' && input_key_name((input_key)200)[0] == '\0');
+}
+
+static void
+test_action_json(void)
+{
+    static input_action_map map, back;
+    char error[256];
+
+    // Missing: the defaults.
+    CHECK(input_action_map_from_json(NULL, &map, error, sizeof(error)) && !map.custom && map.count == 7);
+
+    // Round trip.
+    map.custom          = true;
+    map.stick_dead_zone = 0.3f;
+    input_action_map_remove(&map, input_action_map_find(&map, "sprint"));
+    cJSON* json = input_action_map_to_json(&map);
+    CHECK(input_action_map_from_json(json, &back, error, sizeof(error)));
+    CHECK(back.custom && back.count == 6 && fabsf(back.stick_dead_zone - 0.3f) < 1e-6f);
+    CHECK(input_action_map_find(&back, "sprint") < 0);
+    for (int i = 0; i < map.count; ++i)
+    {
+        CHECK(strcmp(back.actions[i].name, map.actions[i].name) == 0 && back.actions[i].kind == map.actions[i].kind);
+        CHECK(back.actions[i].binding_count == map.actions[i].binding_count);
+    }
+    cJSON_Delete(json);
+
+    // What a person (or an agent) writes.
+    cJSON* written = cJSON_Parse("{\"actions\": {\"fire\": {\"type\": \"button\", \"bindings\": [\"mouse:left\", "
+                                 "\"pad_axis:right_trigger\"]}, \"steer\": {\"type\": \"axis\"}}}");
+    CHECK(input_action_map_from_json(written, &back, error, sizeof(error)));
+    CHECK(back.count == 2 && back.actions[0].binding_count == 2 && back.actions[1].binding_count == 0);
+    CHECK(back.stick_dead_zone == 0.2f);
+    cJSON_Delete(written);
+
+    // Bad values are refused, with the action named, and leave `out` alone.
+    static const char* const BAD[] = {
+        "[]",
+        "{\"stick_dead_zone\": 2}",
+        "{\"actions\": []}",
+        "{\"actions\": {\"bad name\": {\"type\": \"button\"}}}",
+        "{\"actions\": {\"fire\": {\"type\": \"trigger\"}}}",
+        "{\"actions\": {\"fire\": {\"type\": \"button\", \"bindings\": \"key:f\"}}}",
+        "{\"actions\": {\"fire\": {\"type\": \"button\", \"bindings\": [\"key:nope\"]}}}",
+        "{\"actions\": {\"look\": {\"type\": \"axis\", \"bindings\": [\"mouse_motion:x\"]}}}",
+        "{\"actions\": {\"fire\": {\"type\": \"button\"}, \"fire\": {\"type\": \"axis\"}}}",
+    };
+    for (size_t i = 0; i < sizeof(BAD) / sizeof(BAD[0]); ++i)
+    {
+        cJSON* bad = cJSON_Parse(BAD[i]);
+        back.count = 99;
+        error[0]   = '\0';
+        CHECK(!input_action_map_from_json(bad, &back, error, sizeof(error)));
+        CHECK(back.count == 99 && error[0]);
+        cJSON_Delete(bad);
+    }
+    cJSON* bad = cJSON_Parse(BAD[6]);
+    input_action_map_from_json(bad, &back, error, sizeof(error));
+    CHECK(strstr(error, "\"fire\"") != NULL);
+    cJSON_Delete(bad);
+}
+
+static void
+test_raw_press(void)
+{
+    input_reset();
+    CHECK(input_raw_key_pressed() == -1 && input_raw_mouse_pressed() == -1);
+
+    // The UI took the key, so Input never heard of it -- but the raw press is there.
+    input_begin_frame();
+    input_on_raw_press(INPUT_KEY_G, -1);
+    input_on_raw_press(-1, INPUT_MOUSE_MIDDLE);
+    CHECK(input_raw_key_pressed() == INPUT_KEY_G && !input_key_down(INPUT_KEY_G));
+    CHECK(input_raw_mouse_pressed() == INPUT_MOUSE_MIDDLE);
+
+    input_begin_frame();
+    CHECK(input_raw_key_pressed() == -1 && input_raw_mouse_pressed() == -1);
 }
 
 int
@@ -423,7 +568,10 @@ main(void)
     test_action_buttons();
     test_action_axes();
     test_action_look();
-    test_action_setup();
+    test_action_maps();
+    test_binding_text();
+    test_action_json();
+    test_raw_press();
     test_key_edges();
     test_mouse_buttons_and_focus();
     test_mouse_movement();

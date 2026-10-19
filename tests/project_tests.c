@@ -186,6 +186,28 @@ test_settings_round_trip(void)
     CHECK(strcmp(back.default_hdri, "hdri/sky.hdr") == 0);
     CHECK(back.window_width == 1280 && back.window_height == 720);
 
+    // Default input isn't written; changed input is, and comes back.
+    CHECK(!back.input.custom && back.input.count == s.input.count);
+    char* text = file_read_to_string(ROOT "/Settings/project.json");
+    CHECK(text && !strstr(text, "\"input\""));
+    free(text);
+
+    s.input.custom = true;
+    input_action_map_remove(&s.input, input_action_map_find(&s.input, "jump"));
+    int fire = input_action_map_add(&s.input, "fire", INPUT_ACTION_BUTTON);
+    CHECK(input_action_map_bind(&s.input, fire, input_binding_mouse_button(INPUT_MOUSE_LEFT), NULL, 0));
+    CHECK(project_write(dir, &s, error, sizeof(error)));
+    CHECK(project_read(dir, &back, error, sizeof(error)));
+    CHECK(back.input.custom && input_action_map_find(&back.input, "jump") < 0);
+    int fire_back = input_action_map_find(&back.input, "fire");
+    CHECK(fire_back >= 0 && back.input.actions[fire_back].binding_count == 1);
+
+    // A broken "input" section makes the project unreadable, saying where.
+    write(ROOT "/BadInput/project.json",
+          "{\"format\": \"pbr-project\", \"input\": {\"actions\": {\"fire\": {\"type\": \"button\", \"bindings\": [\"key:nope\"]}}}}");
+    CHECK(!project_read(ROOT "/BadInput", &back, error, sizeof(error)));
+    CHECK(strstr(error, "input") && strstr(error, "fire"));
+
     // Bad values are refused, and the file keeps what it had.
     project_settings bad = s;
     snprintf(bad.default_hdri, sizeof(bad.default_hdri), "../outside.hdr");

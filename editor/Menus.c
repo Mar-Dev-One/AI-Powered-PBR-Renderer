@@ -9,6 +9,7 @@
 #include "Core/FileIO.h"
 #include "Core/Paths.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -110,6 +111,9 @@ draw_file_menu(editor_state* state)
     if (igMenuItem_Bool("Project Settings...", NULL, false, true))
     {
         state->settings_edit  = state->project;
+        state->input_capture  = -1;
+        memset(state->input_binding_text, 0, sizeof(state->input_binding_text));
+        state->input_new_action[0] = '\0';
         state->popup_error[0] = '\0';
         state->open_popup     = POPUP_SETTINGS;
     }
@@ -594,6 +598,222 @@ draw_import_popup(editor_state* state)
     igEndPopup();
 }
 
+// --- Project settings: input ---------------------------------------------------------
+
+// A key or stick turns a delta axis (look) at this many units a second, as the
+// default look_x / look_y do.
+#define CAPTURED_DELTA_RATE 150.0f
+
+// What "Press to bind" caught this frame: a key (Esc cancels), a mouse button
+// other than the left one (that one clicks the dialog), a pad button, or a
+// stick or trigger pushed most of the way -- signed, so pushing a stick up
+// for "move_y" binds up as +1. False while nothing has been pressed;
+// *out_cancel when Esc was.
+static b8
+capture_binding(input_action_kind kind, input_binding* out, b8* out_cancel)
+{
+    *out_cancel = false;
+    f32 rate    = kind == INPUT_ACTION_AXIS_DELTA ? CAPTURED_DELTA_RATE : 1.0f;
+
+    int key = input_raw_key_pressed();
+    if (key == INPUT_KEY_ESCAPE)
+    {
+        *out_cancel = true;
+        return false;
+    }
+    if (key >= 0 && input_key_name((input_key)key)[0])
+    {
+        *out       = input_binding_key((input_key)key);
+        out->scale = rate;
+        return true;
+    }
+
+    int button = input_raw_mouse_pressed();
+    if (button > INPUT_MOUSE_LEFT)
+    {
+        *out       = input_binding_mouse_button((input_mouse_button)button);
+        out->scale = rate;
+        return true;
+    }
+
+    for (int b = 0; b < INPUT_PAD_BUTTON_COUNT; ++b)
+        if (input_pad_pressed(INPUT_PAD_ANY, (input_pad_button)b))
+        {
+            *out       = input_binding_pad_button((input_pad_button)b);
+            out->scale = rate;
+            return true;
+        }
+
+    for (int a = 0; a < INPUT_PAD_AXIS_COUNT; ++a)
+    {
+        f32 value = input_pad_axis_value(INPUT_PAD_ANY, (input_pad_axis)a);
+        if (fabsf(value) >= 0.6f)
+        {
+            *out = input_binding_pad_axis((input_pad_axis)a, value < 0.0f ? -rate : rate);
+            return true;
+        }
+    }
+    return false;
+}
+
+static void
+draw_input_action(editor_state* state, input_action_map* map, int index)
+{
+    input_action_def* a = &map->actions[index];
+    char error[160];
+
+    igPushID_Int(index);
+    b8 open = igTreeNodeEx_Str(a->name, ImGuiTreeNodeFlags_SpanAvailWidth);
+    igSameLine(220.0f, -1.0f);
+    igSetNextItemWidth(90.0f);
+    static const char* const kinds[INPUT_ACTION_KIND_COUNT] = { "button", "axis", "delta" };
+    int kind = (int)a->kind;
+    if (igCombo_Str_arr("##kind", &kind, kinds, INPUT_ACTION_KIND_COUNT, -1))
+    {
+        a->kind     = (input_action_kind)kind;
+        map->custom = true;
+    }
+    igSameLine(0.0f, -1.0f);
+    b8 remove = igSmallButton("Remove");
+
+    if (open)
+    {
+        for (int i = 0; i < a->binding_count; ++i)
+        {
+            char text[INPUT_BINDING_TEXT_MAX];
+            input_binding_to_text(&a->bindings[i], text, sizeof(text));
+            igPushID_Int(i);
+            if (igSmallButton("x"))
+            {
+                memmove(&a->bindings[i], &a->bindings[i + 1], (size_t)(a->binding_count - i - 1) * sizeof(a->bindings[0]));
+                --a->binding_count;
+                map->custom = true;
+                --i;
+            }
+            igSameLine(0.0f, -1.0f);
+            igTextUnformatted(text, NULL);
+            igPopID();
+        }
+
+        // Typed: "key:w", "pad_axis:left_y*-1", "mouse_motion:x*0.1".
+        char* typed = state->input_binding_text[index];
+        igSetNextItemWidth(180.0f);
+        b8 entered = igInputText("##binding", typed, INPUT_BINDING_TEXT_MAX, ImGuiInputTextFlags_EnterReturnsTrue, NULL, NULL);
+        igSetItemTooltip("key:w  keys:a/d  mouse:right  pad:a  pad_axis:left_y*-1  mouse_motion:x*0.1");
+        igSameLine(0.0f, -1.0f);
+        if ((igSmallButton("Add") || entered) && typed[0])
+        {
+            input_binding binding;
+            char          reason[160];
+            if (!input_binding_from_text(typed, &binding, reason, sizeof(reason))
+                || !input_action_map_bind(map, index, binding, reason, sizeof(reason)))
+                snprintf(state->popup_error, sizeof(state->popup_error), "%s", reason);
+            else
+            {
+                typed[0]              = '\0';
+                state->popup_error[0] = '\0';
+                map->custom           = true;
+            }
+        }
+        igSameLine(0.0f, -1.0f);
+
+        if (state->input_capture == index)
+        {
+            igTextColored((ImVec4_c){ 1.0f, 0.8f, 0.3f, 1.0f }, "Press a key, button or stick (Esc: cancel)");
+
+            input_binding binding;
+            b8            cancel;
+            if (capture_binding(a->kind, &binding, &cancel))
+            {
+                if (input_action_map_bind(map, index, binding, error, sizeof(error)))
+                {
+                    map->custom           = true;
+                    state->popup_error[0] = '\0';
+                }
+                else
+                    snprintf(state->popup_error, sizeof(state->popup_error), "%s", error);
+                state->input_capture = -1;
+            }
+            else if (cancel)
+                state->input_capture = -1;
+        }
+        else if (igSmallButton("Press to bind"))
+            state->input_capture = index;
+
+        igTreePop();
+    }
+    igPopID();
+
+    if (remove)
+    {
+        input_action_map_remove(map, index);
+        memmove(state->input_binding_text[index], state->input_binding_text[index + 1],
+                (size_t)(INPUT_ACTION_MAX - index - 1) * sizeof(state->input_binding_text[0]));
+        state->input_binding_text[INPUT_ACTION_MAX - 1][0] = '\0';
+        state->input_capture = -1;
+        map->custom          = true;
+    }
+}
+
+// The game's actions (Platform/InputActions.h): what Play and the exported
+// game read. Saved into project.json with the rest of the dialog.
+static void
+draw_input_settings(editor_state* state, input_action_map* map)
+{
+    if (!igCollapsingHeader_TreeNodeFlags("Input", 0))
+    {
+        state->input_capture = -1;
+        return;
+    }
+
+    igTextDisabled(map->custom ? "This project's own actions" : "The default actions (not stored in project.json)");
+    igSameLine(0.0f, -1.0f);
+    if (map->custom && igSmallButton("Reset to defaults"))
+    {
+        input_action_map_defaults(map);
+        memset(state->input_binding_text, 0, sizeof(state->input_binding_text));
+        state->input_capture = -1;
+    }
+
+    igSetNextItemWidth(300.0f);
+    if (igSliderFloat("Stick dead zone", &map->stick_dead_zone, 0.0f, 0.9f, "%.2f", 0))
+        map->custom = true;
+
+    igBeginChild_Str("##actions", (ImVec2_c){ 520.0f, 260.0f }, ImGuiChildFlags_Borders, 0);
+    for (int i = 0; i < map->count; ++i)
+        draw_input_action(state, map, i);
+    igEndChild();
+
+    // A new action.
+    igSetNextItemWidth(180.0f);
+    b8 entered = igInputText("##new_action", state->input_new_action, sizeof(state->input_new_action),
+                             ImGuiInputTextFlags_EnterReturnsTrue, NULL, NULL);
+    igSetItemTooltip("A name: letters, digits and '_'");
+    igSameLine(0.0f, -1.0f);
+    igSetNextItemWidth(90.0f);
+    static const char* const kinds[INPUT_ACTION_KIND_COUNT] = { "button", "axis", "delta" };
+    igCombo_Str_arr("##new_kind", &state->input_new_kind, kinds, INPUT_ACTION_KIND_COUNT, -1);
+    igSameLine(0.0f, -1.0f);
+    if ((igButton("Add action", (ImVec2_c){ 0, 0 }) || entered) && state->input_new_action[0])
+    {
+        if (input_action_map_find(map, state->input_new_action) >= 0)
+            snprintf(state->popup_error, sizeof(state->popup_error), "There's an action called \"%s\" already",
+                     state->input_new_action);
+        else if (input_action_map_add(map, state->input_new_action, (input_action_kind)state->input_new_kind) < 0)
+            snprintf(state->popup_error, sizeof(state->popup_error),
+                     input_action_name_valid(state->input_new_action)
+                         ? "There's no room for more actions (%d at most)"
+                         : "An action's name is letters, digits and '_' (at most 31)",
+                     INPUT_ACTION_MAX);
+        else
+        {
+            state->input_new_action[0] = '\0';
+            state->popup_error[0]      = '\0';
+            map->custom                = true;
+        }
+    }
+}
+
 static void
 draw_settings_popup(editor_state* state)
 {
@@ -644,6 +864,8 @@ draw_settings_popup(editor_state* state)
         }
         igEndCombo();
     }
+
+    draw_input_settings(state, &s->input);
     draw_popup_error(state);
 
     if (dialog_button("Save"))
@@ -651,6 +873,7 @@ draw_settings_popup(editor_state* state)
         if (project_write(paths_project_root(), s, state->popup_error, sizeof(state->popup_error)))
         {
             state->project = *s;
+            input_actions_load(&state->project.input);
             igCloseCurrentPopup();
         }
     }

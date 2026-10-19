@@ -62,6 +62,7 @@
 #include "Core/Paths.h"
 #include "Platform/Dialog.h"
 #include "Platform/Input.h"
+#include "Platform/InputActions.h"
 #include "Platform/Window.h"
 #include "Project/Project.h"
 #include "Renderer/IBL.h"
@@ -95,6 +96,7 @@ typedef struct game_state
     const char* scene_arg;
     const char* hdri_arg;
     const char* fallback_hdri;   // for a scene that names none ("" = the hemisphere ambient)
+    const input_action_map* input;   // the project's actions; NULL = the defaults App starts with
     b8          scene_loaded;
     char        scene_error[768];   // why it didn't, for the player
 
@@ -305,6 +307,9 @@ on_init(App* app)
     state->aspect     = size.height ? (f32)size.width / (f32)size.height : 1.0f;
 
     LOG_INFO("game: project %s, engine data %s\n", paths_project_root(), paths_engine_root());
+
+    if (state->input)
+        input_actions_load(state->input);
 
     if (!scene_renderer_create(&state->renderer, size.width, size.height, CASCADE_COUNT, SHADOW_MAP_SIZE))
         FATAL("game: failed to create the scene renderer");
@@ -590,6 +595,7 @@ int main(int argc, char** argv)
     if (!state.scene_arg)
         state.scene_arg = has_settings ? project.startup_scene : DEFAULT_SCENE;
     state.fallback_hdri = has_settings ? project.default_hdri : DEFAULT_HDRI;
+    state.input         = has_settings ? &project.input : NULL;
 
     // Windowed: the size given, else the project's, else 1920 x 1080 (a
     // check renders smaller: it's only a picture). Fullscreen: the monitor's

@@ -430,6 +430,32 @@ TOOLS: list[Tool] = [
         "project.create", example={"name": "My Game"}, app_command=True, live_example=False,
     ),
     Tool(
+        "get_input",
+        "The game's input actions -- what a player presses, by name: buttons (jump, sprint), axes "
+        "-1..1 (move_x, move_y, up_down) and deltas, an amount a frame (look_x, look_y) -- with each "
+        "one's keyboard, mouse and gamepad bindings. custom=false means the defaults.",
+        _schema({}), "input.get", read_only=True, app_command=True,
+    ),
+    Tool(
+        "set_input",
+        "Adds, rebinds or removes one input action, or resets them all to the defaults; saved in the "
+        "project at once. Bindings are text: key:space, keys:a/d (-1/+1), mouse:right, pad:a, "
+        "pad_axis:left_y*-1 (*n scales or flips), mouse_motion:x*0.1 (delta actions only).",
+        _schema({
+            "action": {"type": "string", "pattern": "^[A-Za-z0-9_]{1,31}$",
+                       "description": "The action, e.g. 'fire'."},
+            "type": {"type": "string", "enum": ["button", "axis", "delta"],
+                     "description": "Needed for a new action."},
+            "bindings": {"type": "array", "items": {"type": "string"},
+                         "description": "Replaces the action's bindings."},
+            "remove": {"type": "boolean", "description": "Remove the action."},
+            "reset": {"type": "boolean", "description": "Every action back to the defaults first."},
+            "stick_dead_zone": {"type": "number", "minimum": 0, "maximum": 0.9},
+        }),
+        "input.set", example={"action": "fire", "type": "button", "bindings": ["mouse:left", "pad:right_bumper"]},
+        app_command=True, live_example=False,
+    ),
+    Tool(
         "export_game",
         "Exports the project as a folder a player can run (the game, its saved scenes and only the "
         "models and HDRIs they use). Only saved scenes go out: save first. The exported game then "

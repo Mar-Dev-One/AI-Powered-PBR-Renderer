@@ -765,6 +765,150 @@ host_export(void* user_data, command_context* ctx, const cJSON* args, cJSON** ou
     return host_export_status(user_data, ctx, NULL, out_result, error, error_size);
 }
 
+// --- Input ------------------------------------------------------------------------------
+
+static b8
+host_input_get(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    (void)ctx; (void)args; (void)error; (void)error_size;
+    editor_state* state = user_data;
+
+    *out_result = input_action_map_to_json(&state->project.input);
+    cJSON_AddBoolToObject(*out_result, "custom", state->project.input.custom);
+    return true;
+}
+
+// Changes the project's actions and saves project.json straight away, as the
+// Project Settings dialog's Save does.
+static b8
+host_input_set(void* user_data, command_context* ctx, const cJSON* args, cJSON** out_result, char* error, size_t error_size)
+{
+    editor_state* state = user_data;
+
+    const cJSON* action_arg = cJSON_GetObjectItem(args, "action");
+    const cJSON* type_arg   = cJSON_GetObjectItem(args, "type");
+    const cJSON* bindings   = cJSON_GetObjectItem(args, "bindings");
+    const cJSON* remove     = cJSON_GetObjectItem(args, "remove");
+    const cJSON* reset      = cJSON_GetObjectItem(args, "reset");
+    const cJSON* dead_zone  = cJSON_GetObjectItem(args, "stick_dead_zone");
+    const char*  name       = cJSON_GetStringValue(action_arg);
+
+    if ((action_arg && !name) || (type_arg && !cJSON_IsString(type_arg)) || (bindings && !cJSON_IsArray(bindings))
+        || (remove && !cJSON_IsBool(remove)) || (reset && !cJSON_IsBool(reset)) || (dead_zone && !cJSON_IsNumber(dead_zone)))
+    {
+        snprintf(error, error_size, "\"action\" and \"type\" are text, \"bindings\" a list of text, \"remove\" and "
+                                    "\"reset\" true or false, \"stick_dead_zone\" a number");
+        return false;
+    }
+    if (!name && !cJSON_IsTrue(reset) && !dead_zone)
+    {
+        snprintf(error, error_size, "pass \"action\" (with \"type\", \"bindings\" or \"remove\"), \"reset\" or "
+                                    "\"stick_dead_zone\"");
+        return false;
+    }
+    if (!name && (type_arg || bindings || remove))
+    {
+        snprintf(error, error_size, "\"type\", \"bindings\" and \"remove\" need \"action\"");
+        return false;
+    }
+
+    // Worked on a copy, so a mistake halfway changes nothing.
+    static project_settings edited;
+    edited = state->project;
+    input_action_map* map = &edited.input;
+
+    if (cJSON_IsTrue(reset))
+        input_action_map_defaults(map);
+    if (dead_zone)
+    {
+        if (dead_zone->valuedouble < 0.0 || dead_zone->valuedouble > 0.9)
+        {
+            snprintf(error, error_size, "\"stick_dead_zone\" is from 0 to 0.9");
+            return false;
+        }
+        map->stick_dead_zone = (f32)dead_zone->valuedouble;
+        map->custom          = true;
+    }
+
+    if (name)
+    {
+        int index = input_action_map_find(map, name);
+        if (cJSON_IsTrue(remove))
+        {
+            if (index < 0)
+            {
+                snprintf(error, error_size, "there's no action \"%s\" (input.get lists them)", name);
+                return false;
+            }
+            input_action_map_remove(map, index);
+        }
+        else
+        {
+            input_action_kind kind = index >= 0 ? map->actions[index].kind : INPUT_ACTION_BUTTON;
+            if (type_arg && !input_action_kind_from_name(type_arg->valuestring, &kind))
+            {
+                snprintf(error, error_size, "\"type\" is \"button\", \"axis\" or \"delta\"");
+                return false;
+            }
+            if (index < 0 && !type_arg)
+            {
+                snprintf(error, error_size, "\"%s\" is a new action: say its \"type\" (button, axis or delta)", name);
+                return false;
+            }
+            index = input_action_map_add(map, name, kind);
+            if (index < 0)
+            {
+                snprintf(error, error_size, input_action_name_valid(name)
+                                                ? "there's no room for more actions"
+                                                : "an action's name is 1-31 letters, digits or '_'");
+                return false;
+            }
+
+            if (bindings)
+            {
+                map->actions[index].binding_count = 0;
+                const cJSON* item;
+                cJSON_ArrayForEach(item, bindings)
+                {
+                    input_binding binding;
+                    char          reason[160];
+                    if (!cJSON_IsString(item))
+                    {
+                        snprintf(error, error_size, "each binding is text like \"key:w\"");
+                        return false;
+                    }
+                    if (!input_binding_from_text(item->valuestring, &binding, reason, sizeof(reason))
+                        || !input_action_map_bind(map, index, binding, reason, sizeof(reason)))
+                    {
+                        snprintf(error, error_size, "%s", reason);
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                // A new type can make a binding no longer fit (mouse motion off a delta axis).
+                input_action_def* a = &map->actions[index];
+                for (int i = 0; i < a->binding_count; ++i)
+                    if (a->bindings[i].kind == INPUT_BINDING_MOUSE_MOTION && a->kind != INPUT_ACTION_AXIS_DELTA)
+                    {
+                        snprintf(error, error_size, "\"%s\" has mouse motion bindings, which only drive a delta axis: "
+                                                    "pass new \"bindings\" too", name);
+                        return false;
+                    }
+            }
+        }
+        map->custom = true;
+    }
+
+    if (!project_write(paths_project_root(), &edited, error, error_size))
+        return false;
+    state->project = edited;
+    input_actions_load(&state->project.input);
+
+    return host_input_get(user_data, ctx, NULL, out_result, error, error_size);
+}
+
 // --- Play ------------------------------------------------------------------------------
 
 static b8
@@ -849,6 +993,18 @@ static const cmd_arg ARGS_PLAY_SET[] = {
                                        "while paused) or \"stop\" (drop the copy, back to the edited scene)" },
     { "game_camera", "boolean", false, "While playing, look through the scene's first Camera, as the exported game does "
                                        "(false: keep the editor's camera)" },
+};
+
+static const cmd_arg ARGS_INPUT_SET[] = {
+    { "action",          "string",  false, "The action to change, add or remove, e.g. \"jump\" (1-31 letters, digits, '_')" },
+    { "type",            "string",  false, "button (jump, fire), axis (-1..1: move_x) or delta (an amount a frame: "
+                                            "look_x); needed for a new action" },
+    { "bindings",        "array",   false, "Replaces the action's bindings: text like \"key:space\", \"keys:a/d\" "
+                                            "(-1/+1), \"mouse:right\", \"pad:a\", \"pad_axis:left_y*-1\", "
+                                            "\"mouse_motion:x*0.1\" (delta only); \"*n\" scales or flips" },
+    { "remove",          "boolean", false, "Remove the action" },
+    { "reset",           "boolean", false, "Every action back to the defaults (move, look, up_down, jump, sprint) first" },
+    { "stick_dead_zone", "number",  false, "How far a stick moves before it counts, 0-0.9 (default 0.2)" },
 };
 
 static const cmd_arg ARGS_LOG_GET[] = {
@@ -947,6 +1103,10 @@ static const cmd_host_command HOST_COMMANDS[] = {
       NULL, 0, false, host_project_info },
     { "project.create", "Creates a new project folder with a starter scene (the user opens it in the editor)",
       HOST_ARGS(ARGS_PROJECT_CREATE), false, host_project_create },
+    { "input.get", "The game's input actions (move_x, jump...) and the keys, mouse and gamepad bindings of each",
+      NULL, 0, false, host_input_get },
+    { "input.set", "Adds, rebinds or removes an input action, or resets them all; saved in project.json",
+      HOST_ARGS(ARGS_INPUT_SET), false, host_input_set },
     { "play.set", "Play mode: runs a throwaway copy of the scene (behaviours like Spin move); pause, step, stop",
       HOST_ARGS(ARGS_PLAY_SET), false, host_play_set },
     { "play.status", "Whether the scene is playing, paused or stopped, and for how long it has played",

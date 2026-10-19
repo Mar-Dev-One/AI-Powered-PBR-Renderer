@@ -6,7 +6,7 @@ app, and expose its commands to AI tools.
 - `pbr_agent.EngineClient`: async client for the app's command server (a localhost WebSocket
   speaking JSON-RPC 2.0). It finds the app through `~/.pbr-renderer/server.json`, which the app
   writes at startup, and reconnects if the app is restarted.
-- `pbr_agent.tools`: the tools an AI gets (24: look, build, change, view, files), defined once
+- `pbr_agent.tools`: the tools an AI gets (36: look, build, change, view, files, project, input), defined once
   with JSON Schemas and mapped onto engine commands.
 - `pbr_agent.prompt`: the conventions and working method an AI should follow in the scene.
 - `pbr_agent.mcp_server` (`pbr-mcp`): an MCP server over stdio exposing those tools, so Claude

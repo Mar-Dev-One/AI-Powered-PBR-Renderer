@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Core/Defines.h"
+#include "../Platform/InputActions.h"
 #include "../World/Environment.h"
 
 #include "cJSON.h"
@@ -20,7 +21,9 @@
 // project.json (every key but "format" optional when read):
 //   { "format": "pbr-project", "version": 1, "name": "Racing Game",
 //     "startup_scene": "main", "window": { "width": 1920, "height": 1080 },
-//     "default_hdri": "hdri/sky.hdr" | null }
+//     "default_hdri": "hdri/sky.hdr" | null,
+//     "input": { ... } }   the game's actions (Platform/InputActions.h
+//                          input_action_map_to_json()); absent = the defaults
 
 #define PROJECT_FILE      "project.json"
 #define PROJECT_FORMAT    "pbr-project"
@@ -36,9 +39,11 @@ typedef struct project_settings
     uint16 window_width;
     uint16 window_height;
     char   default_hdri[ENVIRONMENT_HDRI_MAX];   // under the project; "" = none
+    input_action_map input;                      // written only when input.custom
 } project_settings;
 
-// `name` (NULL = "Untitled"), startup scene "main", 1920 x 1080, no HDRI.
+// `name` (NULL = "Untitled"), startup scene "main", 1920 x 1080, no HDRI,
+// the default input actions.
 project_settings project_settings_default(const char* name);
 
 // A project name: 1-63 characters, none of them a control character or one

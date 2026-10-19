@@ -256,6 +256,13 @@ typedef struct editor_state
     char             open_project_path[PROJECT_PATH_MAX];
     char             import_path[PROJECT_PATH_MAX];
     project_settings settings_edit;     // the Project Settings dialog's copy
+
+    // Its Input section: the action waiting for "Press to bind" (-1 none),
+    // each action's typed binding, and the action being added.
+    int  input_capture;
+    char input_binding_text[INPUT_ACTION_MAX][INPUT_BINDING_TEXT_MAX];
+    char input_new_action[INPUT_ACTION_NAME_MAX];
+    int  input_new_kind;
 } editor_state;
 
 #define POPUP_UNSAVED      "Unsaved changes"

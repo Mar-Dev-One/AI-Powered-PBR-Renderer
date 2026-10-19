@@ -130,6 +130,26 @@ f32 input_pad_axis_value(int pad, input_pad_axis axis);
 // worn sticks drift more). Triggers use a fixed 0.05.
 void input_set_stick_dead_zone(f32 dead_zone);
 
+// --- Names -------------------------------------------------------------------------
+// Lower case, as bindings are written (InputActions.h): "w", "space",
+// "left_shift", "f1", "kp_0"; "left", "right", "middle", "button4".."button8";
+// "a", "left_bumper", "dpad_up"; "left_x", "right_trigger". Unknown codes give
+// ""; reading ignores case.
+
+const char* input_key_name(input_key key);
+const char* input_mouse_button_name(input_mouse_button button);
+const char* input_pad_button_name(input_pad_button button);
+const char* input_pad_axis_name(input_pad_axis axis);
+b8          input_key_from_name(const char* name, input_key* out);
+b8          input_mouse_button_from_name(const char* name, input_mouse_button* out);
+b8          input_pad_button_from_name(const char* name, input_pad_button* out);
+b8          input_pad_axis_from_name(const char* name, input_pad_axis* out);
+
+// The key / mouse button that went down this frame even if the UI took it, or
+// -1: for "press a key to bind it" in a dialog that has the keyboard.
+int input_raw_key_pressed(void);
+int input_raw_mouse_pressed(void);
+
 // --- Cursor ----------------------------------------------------------------------
 
 // Locked hides the cursor and keeps it in the window, for mouse-look; it uses
@@ -147,6 +167,7 @@ void input_begin_frame(void);
 
 void input_on_key(int key, b8 down);
 void input_on_mouse_button(int button, b8 down);
+void input_on_raw_press(int key, int mouse_button);   // before the UI's say; -1 for neither
 void input_on_cursor(f64 x, f64 y, b8 counts_as_movement);   // false: moved over the UI
 void input_on_scroll(f64 dx, f64 dy);
 void input_on_focus(b8 focused);   // losing it releases every key and button, and pads read as at rest

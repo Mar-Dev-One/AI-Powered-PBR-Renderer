@@ -2,6 +2,7 @@
 
 #include "GLFW/glfw3.h"
 
+#include <ctype.h>
 #include <math.h>
 #include <string.h>
 
@@ -49,7 +50,10 @@ static struct
 
     pad_state pads[INPUT_MAX_PADS];
     f32       stick_dead_zone;
-} input = { .stick_dead_zone = DEFAULT_STICK_DEAD_ZONE };
+
+    int raw_key_pressed;     // this frame, whatever the UI said; -1 none
+    int raw_mouse_pressed;
+} input = { .stick_dead_zone = DEFAULT_STICK_DEAD_ZONE, .raw_key_pressed = -1, .raw_mouse_pressed = -1 };
 
 static void
 set_state(uint8* state, b8 down)
@@ -301,7 +305,20 @@ input_begin_frame(void)
 
     input.delta_x = input.delta_y = 0.0f;
     input.scroll_x = input.scroll_y = 0.0f;
+    input.raw_key_pressed = input.raw_mouse_pressed = -1;
 }
+
+void
+input_on_raw_press(int key, int mouse_button)
+{
+    if (key >= 0 && key < INPUT_KEY_COUNT)
+        input.raw_key_pressed = key;
+    if (mouse_button >= 0 && mouse_button < INPUT_MOUSE_BUTTON_COUNT)
+        input.raw_mouse_pressed = mouse_button;
+}
+
+int input_raw_key_pressed(void)   { return input.raw_key_pressed; }
+int input_raw_mouse_pressed(void) { return input.raw_mouse_pressed; }
 
 void
 input_on_key(int key, b8 down)
@@ -358,4 +375,157 @@ input_reset(void)
 {
     memset(&input, 0, sizeof(input));
     input.stick_dead_zone = DEFAULT_STICK_DEAD_ZONE;
+    input.raw_key_pressed = input.raw_mouse_pressed = -1;
+}
+
+// --- Names -----------------------------------------------------------------------
+
+typedef struct code_name
+{
+    int         code;
+    const char* name;
+} code_name;
+
+// Letters, digits, F-keys and the keypad's digits are made up as they're asked for.
+static const code_name KEY_NAMES[] = {
+    { INPUT_KEY_SPACE, "space" }, { INPUT_KEY_APOSTROPHE, "apostrophe" }, { INPUT_KEY_COMMA, "comma" },
+    { INPUT_KEY_MINUS, "minus" }, { INPUT_KEY_PERIOD, "period" }, { INPUT_KEY_SLASH, "slash" },
+    { INPUT_KEY_SEMICOLON, "semicolon" }, { INPUT_KEY_EQUAL, "equal" },
+    { INPUT_KEY_LEFT_BRACKET, "left_bracket" }, { INPUT_KEY_BACKSLASH, "backslash" },
+    { INPUT_KEY_RIGHT_BRACKET, "right_bracket" }, { INPUT_KEY_GRAVE_ACCENT, "grave_accent" },
+    { INPUT_KEY_ESCAPE, "escape" }, { INPUT_KEY_ENTER, "enter" }, { INPUT_KEY_TAB, "tab" },
+    { INPUT_KEY_BACKSPACE, "backspace" }, { INPUT_KEY_INSERT, "insert" }, { INPUT_KEY_DELETE, "delete" },
+    { INPUT_KEY_RIGHT, "right" }, { INPUT_KEY_LEFT, "left" }, { INPUT_KEY_DOWN, "down" }, { INPUT_KEY_UP, "up" },
+    { INPUT_KEY_PAGE_UP, "page_up" }, { INPUT_KEY_PAGE_DOWN, "page_down" }, { INPUT_KEY_HOME, "home" },
+    { INPUT_KEY_END, "end" }, { INPUT_KEY_CAPS_LOCK, "caps_lock" },
+    { INPUT_KEY_LEFT_SHIFT, "left_shift" }, { INPUT_KEY_LEFT_CONTROL, "left_control" },
+    { INPUT_KEY_LEFT_ALT, "left_alt" }, { INPUT_KEY_LEFT_SUPER, "left_super" },
+    { INPUT_KEY_RIGHT_SHIFT, "right_shift" }, { INPUT_KEY_RIGHT_CONTROL, "right_control" },
+    { INPUT_KEY_RIGHT_ALT, "right_alt" }, { INPUT_KEY_RIGHT_SUPER, "right_super" }, { INPUT_KEY_MENU, "menu" },
+};
+
+static const char* const MOUSE_BUTTON_NAMES[INPUT_MOUSE_BUTTON_COUNT] = {
+    "left", "right", "middle", "button4", "button5", "button6", "button7", "button8",
+};
+
+static const char* const PAD_BUTTON_NAMES[INPUT_PAD_BUTTON_COUNT] = {
+    "a", "b", "x", "y", "left_bumper", "right_bumper", "back", "start", "guide",
+    "left_thumb", "right_thumb", "dpad_up", "dpad_right", "dpad_down", "dpad_left",
+};
+
+static const char* const PAD_AXIS_NAMES[INPUT_PAD_AXIS_COUNT] = {
+    "left_x", "left_y", "right_x", "right_y", "left_trigger", "right_trigger",
+};
+
+static b8
+same_name(const char* a, const char* b)
+{
+    for (; *a && *b; ++a, ++b)
+        if (tolower((unsigned char)*a) != tolower((unsigned char)*b))
+            return false;
+    return *a == *b;
+}
+
+const char*
+input_key_name(input_key key)
+{
+    // Each made-up name has its own slot, so what's returned stays valid.
+    static char made[INPUT_KEY_COUNT][6];
+
+    if ((key >= INPUT_KEY_A && key <= INPUT_KEY_Z) || (key >= INPUT_KEY_0 && key <= INPUT_KEY_9))
+    {
+        made[key][0] = (char)tolower(key);
+        return made[key];
+    }
+    if (key >= INPUT_KEY_F1 && key <= INPUT_KEY_F12)
+    {
+        snprintf(made[key], sizeof(made[key]), "f%d", key - INPUT_KEY_F1 + 1);
+        return made[key];
+    }
+    if (key >= INPUT_KEY_KP_0 && key <= INPUT_KEY_KP_9)
+    {
+        snprintf(made[key], sizeof(made[key]), "kp_%d", key - INPUT_KEY_KP_0);
+        return made[key];
+    }
+    for (size_t i = 0; i < sizeof(KEY_NAMES) / sizeof(KEY_NAMES[0]); ++i)
+        if (KEY_NAMES[i].code == (int)key)
+            return KEY_NAMES[i].name;
+    return "";
+}
+
+b8
+input_key_from_name(const char* name, input_key* out)
+{
+    if (!name || !name[0])
+        return false;
+    for (int key = 0; key < INPUT_KEY_COUNT; ++key)
+    {
+        const char* known = input_key_name((input_key)key);
+        if (known[0] && same_name(known, name))
+        {
+            *out = (input_key)key;
+            return true;
+        }
+    }
+    return false;
+}
+
+static b8
+index_from_name(const char* const* names, int count, const char* name, int* out)
+{
+    for (int i = 0; name && i < count; ++i)
+        if (same_name(names[i], name))
+        {
+            *out = i;
+            return true;
+        }
+    return false;
+}
+
+const char*
+input_mouse_button_name(input_mouse_button button)
+{
+    return (int)button >= 0 && button < INPUT_MOUSE_BUTTON_COUNT ? MOUSE_BUTTON_NAMES[button] : "";
+}
+
+const char*
+input_pad_button_name(input_pad_button button)
+{
+    return (int)button >= 0 && button < INPUT_PAD_BUTTON_COUNT ? PAD_BUTTON_NAMES[button] : "";
+}
+
+const char*
+input_pad_axis_name(input_pad_axis axis)
+{
+    return (int)axis >= 0 && axis < INPUT_PAD_AXIS_COUNT ? PAD_AXIS_NAMES[axis] : "";
+}
+
+b8
+input_mouse_button_from_name(const char* name, input_mouse_button* out)
+{
+    int i;
+    if (!index_from_name(MOUSE_BUTTON_NAMES, INPUT_MOUSE_BUTTON_COUNT, name, &i))
+        return false;
+    *out = (input_mouse_button)i;
+    return true;
+}
+
+b8
+input_pad_button_from_name(const char* name, input_pad_button* out)
+{
+    int i;
+    if (!index_from_name(PAD_BUTTON_NAMES, INPUT_PAD_BUTTON_COUNT, name, &i))
+        return false;
+    *out = (input_pad_button)i;
+    return true;
+}
+
+b8
+input_pad_axis_from_name(const char* name, input_pad_axis* out)
+{
+    int i;
+    if (!index_from_name(PAD_AXIS_NAMES, INPUT_PAD_AXIS_COUNT, name, &i))
+        return false;
+    *out = (input_pad_axis)i;
+    return true;
 }

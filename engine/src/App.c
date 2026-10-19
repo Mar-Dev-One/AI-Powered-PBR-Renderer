@@ -24,6 +24,9 @@ static b8 ui_claims_mouse(void)
 
 static void glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    if (action == GLFW_PRESS)
+        input_on_raw_press(key, -1);
+
     // Always forward releases: if the UI grabbed focus between press and
     // release, swallowing the release would leave the app thinking the key
     // is still held.
@@ -39,6 +42,9 @@ static void glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, i
 
 static void glfw_mouse_button_cb(GLFWwindow* window, int button, int action, int mods)
 {
+    if (action == GLFW_PRESS)
+        input_on_raw_press(-1, button);
+
     if (action != GLFW_RELEASE && ui_claims_mouse())
         return;
 

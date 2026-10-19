@@ -192,6 +192,7 @@ on_init(App* app)
     char error[640];
     if (!project_read(paths_project_root(), &state->project, error, sizeof(error)))
         FATAL("editor: %s", error);
+    input_actions_load(&state->project.input);   // what Play and the game read
     project_recent_load(&state->recent, NULL);
     project_recent_add(&state->recent, paths_project_root(), NULL);
 

@@ -555,6 +555,7 @@ open_project(editor_state* state, const char* directory)
 
     paths_set_project_root(directory);
     state->project = settings;
+    input_actions_load(&state->project.input);
     project_recent_add(&state->recent, paths_project_root(), NULL);
 
     char line[PROJECT_PATH_MAX + PROJECT_NAME_MAX + 32];

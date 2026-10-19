@@ -66,6 +66,7 @@ project_settings_default(const char* name)
     snprintf(s.startup_scene, sizeof(s.startup_scene), "%s", PROJECT_DEFAULT_SCENE);
     s.window_width  = 1920;
     s.window_height = 1080;
+    input_action_map_defaults(&s.input);
     return s;
 }
 
@@ -152,6 +153,13 @@ project_read(const char* directory, project_settings* out, char* error, size_t e
     const cJSON* window = cJSON_GetObjectItem(root, "window");
     const cJSON* hdri   = cJSON_GetObjectItem(root, "default_hdri");
 
+    char input_error[256];
+    if (!input_action_map_from_json(cJSON_GetObjectItem(root, "input"), &s.input, input_error, sizeof(input_error)))
+    {
+        cJSON_Delete(root);
+        return fail(error, error_size, "%s: input: %s", path, input_error);
+    }
+
     if (cJSON_IsString(name))
         snprintf(s.name, sizeof(s.name), "%s", name->valuestring);
     if (cJSON_IsString(scene))
@@ -196,6 +204,9 @@ project_write(const char* directory, const project_settings* settings, char* err
         cJSON_AddStringToObject(root, "default_hdri", settings->default_hdri);
     else
         cJSON_AddNullToObject(root, "default_hdri");
+
+    if (settings->input.custom)
+        cJSON_AddItemToObject(root, "input", input_action_map_to_json(&settings->input));
 
     char path[PROJECT_PATH_MAX];
     join_into(path, sizeof(path), directory, PROJECT_FILE);
