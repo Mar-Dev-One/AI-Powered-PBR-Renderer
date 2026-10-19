@@ -341,10 +341,11 @@ parse_field(world* w, entity_id e, const component_desc* component, const field_
 
         case FIELD_STRING:
         {
-            if (!cJSON_IsString(item) || !item->valuestring[0] || strlen(item->valuestring) >= ENTITY_NAME_MAX)
+            if (!cJSON_IsString(item) || (!item->valuestring[0] && !field->may_be_empty)
+                || strlen(item->valuestring) >= ENTITY_NAME_MAX)
             {
-                set_error(error, error_size, "%s.%s: expected a non-empty string under %d characters",
-                          c, f, ENTITY_NAME_MAX);
+                set_error(error, error_size, "%s.%s: expected a %sstring under %d characters",
+                          c, f, field->may_be_empty ? "" : "non-empty ", ENTITY_NAME_MAX);
                 return false;
             }
             snprintf(out->str, sizeof(out->str), "%s", item->valuestring);
@@ -452,6 +453,14 @@ ensure_component(world* w, entity_id e, component_type type)
             world_add_reflection_probe(w, e, (vec3){ 2.0f, 2.0f, 2.0f });   // a 4 m room
             break;
 
+        case COMPONENT_PLAYER_CONTROLLER:
+            world_add_player_controller(w, e, PLAYER_WALK);
+            break;
+
+        case COMPONENT_SCENE_TRIGGER:
+            world_add_scene_trigger(w, e, (vec3){ 1.0f, 1.5f, 1.0f });   // a doorway-sized box
+            break;
+
         default:
             break;   // Name and Transform always exist; Parent is added by world_set_parent()
     }
@@ -495,6 +504,11 @@ apply_field(world* w, entity_id e, component_type type, const parsed_field* p)
         case FIELD_VEC3:
         case FIELD_COLOR3: glm_vec3_copy((f32*)p->v, (f32*)value); break;
         case FIELD_ENUM:   *(int*)value = p->enum_value;        break;
+        case FIELD_STRING:
+            // Zeroed to the end, so the whole array compares equal (states use memcmp).
+            memset(value, 0, ENTITY_NAME_MAX);
+            snprintf((char*)value, ENTITY_NAME_MAX, "%s", p->str);
+            break;
         default:                                                break;
     }
 }

@@ -7,6 +7,8 @@
 
 #include "Scene/OrbitCamera.h"
 #include "World/Reflect.h"
+#include "World/PlayerController.h"
+#include "World/SceneTransition.h"
 #include "World/World.h"
 
 #include <math.h>
@@ -372,6 +374,202 @@ test_tick(asset_cache* assets)
     world_shutdown(&w);
 }
 
+// The way an entity looks: its world matrix's -Z (what a Camera looks down).
+static void
+facing(world* w, entity_id e, vec3 out)
+{
+    world_update(w);
+    const vec4* m = world_matrix(w, e);
+    out[0] = -m[2][0];
+    out[1] = -m[2][1];
+    out[2] = -m[2][2];
+    glm_vec3_normalize(out);
+}
+
+static b8
+vec3_near(const f32* a, f32 x, f32 y, f32 z)
+{
+    return fabsf(a[0] - x) < 1e-3f && fabsf(a[1] - y) < 1e-3f && fabsf(a[2] - z) < 1e-3f;
+}
+
+// player_controller_tick(): looking turns yaw and pitch the way the input
+// says, and moving goes where the entity faces (flat when walking).
+static void
+test_player_controller(asset_cache* assets)
+{
+    world w;
+    world_init(&w, assets);
+
+    entity_id player = world_create(&w, "player");
+    entity_id still  = world_create(&w, "still");
+    c_player_controller* pc = world_add_player_controller(&w, player, PLAYER_WALK);
+    CHECK(pc && pc->move_speed == 4.0f && pc->sprint_multiplier == 2.0f && pc->look_sensitivity == 1.0f);
+    c_transform* t = world_transform(&w, player);
+    t->position[1] = 1.7f;
+
+    // Forward at the start is -Z.
+    player_input in = { .move_y = 1.0f };
+    player_controller_tick(&w, 0.5f, &in);
+    CHECK(vec3_near(t->position, 0.0f, 1.7f, -2.0f));
+    CHECK(vec3_near(world_transform(&w, still)->position, 0.0f, 0.0f, 0.0f));   // only controllers move
+
+    // Turn left 90 degrees (look_x is + right): now facing -X, and forward goes there.
+    in = (player_input){ .look_x = -90.0f };
+    player_controller_tick(&w, 0.016f, &in);
+    CHECK(fabsf(t->rotation_deg[1] - 90.0f) < 1e-4f);
+    vec3 dir;
+    facing(&w, player, dir);
+    CHECK(vec3_near(dir, -1.0f, 0.0f, 0.0f));
+    in = (player_input){ .move_y = 1.0f };
+    player_controller_tick(&w, 1.0f, &in);
+    CHECK(vec3_near(t->position, -4.0f, 1.7f, -2.0f));
+
+    // Facing -X, right is -Z (forward x up).
+    in = (player_input){ .move_x = 1.0f };
+    player_controller_tick(&w, 0.25f, &in);
+    CHECK(vec3_near(t->position, -4.0f, 1.7f, -3.0f));
+
+    // Look down 30 degrees (look_y is + down). Walking stays at its height,
+    // whatever the view's pitch; up_down does nothing.
+    in = (player_input){ .look_y = 30.0f };
+    player_controller_tick(&w, 0.016f, &in);
+    CHECK(fabsf(t->rotation_deg[0] + 30.0f) < 1e-4f);
+    facing(&w, player, dir);
+    CHECK(dir[1] < -0.49f && dir[1] > -0.51f);   // sin(-30)
+    in = (player_input){ .move_y = 1.0f, .up_down = 1.0f };
+    player_controller_tick(&w, 1.0f, &in);
+    CHECK(fabsf(t->position[1] - 1.7f) < 1e-4f && fabsf(t->position[0] + 8.0f) < 1e-3f);
+
+    // Flying follows the view down, and up_down rises.
+    glm_vec3_copy((vec3){ 0.0f, 10.0f, 0.0f }, t->position);
+    pc->mode = PLAYER_FLY;
+    in = (player_input){ .move_y = 1.0f };
+    player_controller_tick(&w, 1.0f, &in);
+    facing(&w, player, dir);
+    CHECK(vec3_near(t->position, dir[0] * 4.0f, 10.0f + dir[1] * 4.0f, dir[2] * 4.0f));
+    glm_vec3_copy((vec3){ 0.0f, 10.0f, 0.0f }, t->position);
+    in = (player_input){ .up_down = 1.0f };
+    player_controller_tick(&w, 0.5f, &in);
+    CHECK(vec3_near(t->position, 0.0f, 12.0f, 0.0f));
+
+    // Sprinting doubles the speed; a diagonal isn't faster than straight on.
+    t->rotation_deg[0] = t->rotation_deg[1] = 0.0f;
+    glm_vec3_copy((vec3){ 0.0f, 0.0f, 0.0f }, t->position);
+    in = (player_input){ .move_y = 1.0f, .sprint = true };
+    player_controller_tick(&w, 1.0f, &in);
+    CHECK(vec3_near(t->position, 0.0f, 0.0f, -8.0f));
+    glm_vec3_copy((vec3){ 0.0f, 0.0f, 0.0f }, t->position);
+    in = (player_input){ .move_x = 1.0f, .move_y = 1.0f };
+    player_controller_tick(&w, 1.0f, &in);
+    CHECK(fabsf(glm_vec3_norm(t->position) - 4.0f) < 1e-3f);
+
+    // The view never flips over the top; sensitivity and invert_look_y scale the turn.
+    in = (player_input){ .look_y = -500.0f };
+    player_controller_tick(&w, 0.016f, &in);
+    CHECK(t->rotation_deg[0] == 89.0f);
+    t->rotation_deg[0] = 0.0f;
+    pc->look_sensitivity = 0.5f;
+    pc->invert_look_y    = true;
+    in = (player_input){ .look_x = 20.0f, .look_y = 20.0f };
+    player_controller_tick(&w, 0.016f, &in);
+    CHECK(fabsf(t->rotation_deg[1] + 10.0f) < 1e-4f && fabsf(t->rotation_deg[0] - 10.0f) < 1e-4f);
+
+    // Yaw stays inside Transform's +-360.
+    in = (player_input){ .look_x = -1000.0f };
+    player_controller_tick(&w, 0.016f, &in);
+    CHECK(fabsf(t->rotation_deg[1]) <= 360.0f);
+
+    world_shutdown(&w);
+}
+
+// SceneTransition: walking into a trigger fades out, asks for its scene once,
+// puts the player at the spawn after the load and fades back in.
+static void
+test_scene_transition(asset_cache* assets)
+{
+    world w;
+    world_init(&w, assets);
+
+    entity_id player = world_create(&w, "player");
+    world_add_player_controller(&w, player, PLAYER_WALK);
+    entity_id door = world_create(&w, "door");
+    world_transform(&w, door)->position[2] = -5.0f;
+    c_scene_trigger* st = world_add_scene_trigger(&w, door, (vec3){ 1.0f, 2.0f, 1.0f });
+    CHECK(st && st->fade_seconds == 0.5f && st->scene[0] == '\0' && st->spawn[0] == '\0');
+    entity_id empty_door = world_create(&w, "empty_door");
+    world_transform(&w, empty_door)->position[0] = 5.0f;
+    world_add_scene_trigger(&w, empty_door, (vec3){ 1.0f, 2.0f, 1.0f });
+    snprintf(st->scene, sizeof(st->scene), "level_2");
+    snprintf(st->spawn, sizeof(st->spawn), "arrival");
+
+    world_update(&w);
+    scene_transition t;
+    scene_transition_reset(&t, &w);
+    CHECK(!scene_transition_busy(&t) && scene_transition_fade(&t) == 0.0f);
+    CHECK(scene_transition_update(&t, &w, 0.1f) == NULL && !scene_transition_busy(&t));
+
+    // A trigger without a scene does nothing.
+    world_transform(&w, player)->position[0] = 5.0f;
+    world_update(&w);
+    CHECK(scene_trigger_holding_player(&w) == empty_door);
+    CHECK(scene_transition_update(&t, &w, 0.1f) == NULL && !scene_transition_busy(&t));
+
+    // Into the door: the fade starts, and the scene is asked for once it's dark.
+    glm_vec3_copy((vec3){ 0.5f, 0.0f, -4.5f }, world_transform(&w, player)->position);
+    world_update(&w);
+    CHECK(scene_trigger_holding_player(&w) == door);
+    CHECK(scene_transition_update(&t, &w, 0.1f) == NULL && scene_transition_busy(&t));
+    CHECK(scene_transition_fade(&t) == 0.0f);
+    CHECK(scene_transition_update(&t, &w, 0.25f) == NULL && fabsf(scene_transition_fade(&t) - 0.5f) < 1e-4f);
+    const char* next = scene_transition_update(&t, &w, 0.25f);
+    CHECK(next && strcmp(next, "level_2") == 0 && scene_transition_fade(&t) == 1.0f);
+    CHECK(scene_transition_update(&t, &w, 0.1f) == NULL);   // asked once; waits for the load
+
+    // "level_2" loads: its own player, a spawn turned to face +X, and a door
+    // back right where the spawn is.
+    world_clear(&w);
+    player = world_create(&w, "player2");
+    world_add_player_controller(&w, player, PLAYER_WALK);
+    entity_id arrival = world_create(&w, "arrival");
+    glm_vec3_copy((vec3){ 10.0f, 1.7f, 3.0f }, world_transform(&w, arrival)->position);
+    world_transform(&w, arrival)->rotation_deg[1] = -90.0f;
+    entity_id back = world_create(&w, "back");
+    glm_vec3_copy((vec3){ 10.0f, 1.0f, 3.0f }, world_transform(&w, back)->position);
+    st = world_add_scene_trigger(&w, back, (vec3){ 1.0f, 2.0f, 1.0f });
+    snprintf(st->scene, sizeof(st->scene), "main");
+
+    scene_transition_loaded(&t, &w, true);
+    const c_transform* pt = world_transform(&w, player);
+    CHECK(fabsf(pt->position[0] - 10.0f) < 1e-4f && fabsf(pt->position[1] - 1.7f) < 1e-4f
+          && fabsf(pt->position[2] - 3.0f) < 1e-4f);
+    CHECK(pt->rotation_deg[1] == -90.0f);
+    CHECK(fabsf(scene_transition_fade(&t) - 1.0f) < 1e-4f && scene_transition_busy(&t));
+
+    // Fading in; arriving inside the door back doesn't send the player back.
+    CHECK(scene_transition_update(&t, &w, 0.25f) == NULL && fabsf(scene_transition_fade(&t) - 0.5f) < 1e-4f);
+    CHECK(scene_transition_update(&t, &w, 0.25f) == NULL && !scene_transition_busy(&t));
+    CHECK(scene_transition_update(&t, &w, 0.1f) == NULL && !scene_transition_busy(&t));
+
+    // Out of it and back in: now it does -- and with a 0 s fade, at once.
+    st->fade_seconds = 0.0f;
+    world_transform(&w, player)->position[0] = 0.0f;
+    world_update(&w);
+    CHECK(scene_transition_update(&t, &w, 0.1f) == NULL);
+    world_transform(&w, player)->position[0] = 10.0f;
+    world_update(&w);
+    next = scene_transition_update(&t, &w, 0.016f);
+    CHECK(next && strcmp(next, "main") == 0 && scene_transition_fade(&t) == 1.0f);
+
+    // A scene that doesn't load: the player stays put and the view comes back.
+    scene_transition_loaded(&t, &w, false);
+    CHECK(fabsf(world_transform(&w, player)->position[0] - 10.0f) < 1e-4f);
+    CHECK(scene_transition_fade(&t) == 0.0f);
+    scene_transition_update(&t, &w, 0.016f);
+    CHECK(!scene_transition_busy(&t));
+
+    world_shutdown(&w);
+}
+
 // Play mode support: world_copy() gives an independent copy with the same
 // IDs, holding its own references to the models it uses.
 static void
@@ -627,6 +825,8 @@ main(void)
     test_gather_lights(&assets);
     test_reflection(&assets);
     test_tick(&assets);
+    test_player_controller(&assets);
+    test_scene_transition(&assets);
     test_pick(&assets);
     test_framing_bounds(&assets);
     test_copy(&assets);

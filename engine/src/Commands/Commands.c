@@ -1463,13 +1463,13 @@ static const cmd_arg ARGS_UPDATE[] = {
 
 static const cmd_arg ARGS_COMPONENT_SET[] = {
     { "entity",    "entity",    true, "Name or id of the entity" },
-    { "component", "component", true, "Transform, MeshRenderer, Light, Camera, Spin or ReflectionProbe; added if missing" },
+    { "component", "component", true, "Transform, MeshRenderer, Light, Camera, Spin, ReflectionProbe, PlayerController or SceneTrigger; added if missing" },
     { "fields",    "object",    true, "Only the fields to change, e.g. {\"intensity\": 5}" },
 };
 
 static const cmd_arg ARGS_COMPONENT_REMOVE[] = {
     { "entity",    "entity",    true, "Name or id of the entity" },
-    { "component", "component", true, "MeshRenderer, Light, Camera, Spin or ReflectionProbe" },
+    { "component", "component", true, "MeshRenderer, Light, Camera, Spin, ReflectionProbe, PlayerController or SceneTrigger" },
 };
 
 #define PLACEMENT_ARGS \

@@ -285,6 +285,8 @@ project_starter_scene(const project_settings* settings)
     cJSON_AddNumberToObject(cam, "fov_degrees", 45);
     cJSON_AddNumberToObject(cam, "near_plane", 0.1);
     cJSON_AddNumberToObject(cam, "far_plane", 200);
+    cJSON* player = cJSON_AddObjectToObject(camera, "PlayerController");   // walk around in the game
+    cJSON_AddStringToObject(player, "mode", "walk");
 
     scene_environment env = scene_environment_default();
     if (settings && settings->default_hdri[0])

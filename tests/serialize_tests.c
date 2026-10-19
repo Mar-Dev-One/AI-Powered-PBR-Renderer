@@ -306,6 +306,47 @@ test_code_built_world_round_trips(asset_cache* assets)
     world_shutdown(&w);
 }
 
+// SceneTrigger's text fields: empty is allowed (no scene yet / no spawn),
+// too long isn't, and they come back from a scene file as written.
+static void
+test_scene_trigger_strings(asset_cache* assets)
+{
+    world w;
+    world_init(&w, assets);
+    entity_id e = world_create(&w, "door");
+
+    CHECK(set(&w, e, COMPONENT_SCENE_TRIGGER, "{\"scene\": \"level_2\"}"));
+    c_scene_trigger* st = world_scene_trigger(&w, e);
+    CHECK(st && strcmp(st->scene, "level_2") == 0 && st->spawn[0] == '\0' && st->extents[1] == 1.5f);
+
+    CHECK(set(&w, e, COMPONENT_SCENE_TRIGGER, "{\"spawn\": \"arrival\", \"fade_seconds\": 1}"));
+    CHECK(strcmp(st->spawn, "arrival") == 0 && st->fade_seconds == 1.0f);
+    CHECK(set(&w, e, COMPONENT_SCENE_TRIGGER, "{\"spawn\": \"\"}"));
+    CHECK(st->spawn[0] == '\0');
+
+    CHECK(!set(&w, e, COMPONENT_SCENE_TRIGGER, "{\"scene\": 3}"));
+    CHECK(!set(&w, e, COMPONENT_SCENE_TRIGGER,
+               "{\"scene\": \"a_scene_name_that_is_far_too_long_to_fit_into_the_sixty_four_bytes\"}"));
+    CHECK(strcmp(st->scene, "level_2") == 0);
+
+    // A shorter name over a longer one leaves no tail behind (states compare bytes).
+    CHECK(set(&w, e, COMPONENT_SCENE_TRIGGER, "{\"scene\": \"l3\"}"));
+    CHECK(st->scene[3] == '\0' && st->scene[5] == '\0');
+
+    cJSON* scene = serialize_world(&w);
+    cJSON_AddStringToObject(scene, "format", SCENE_FORMAT);
+    world back;
+    world_init(&back, assets);
+    CHECK(deserialize_scene(&back, scene, NULL, NULL, g_error, sizeof(g_error)));
+    const c_scene_trigger* got = world_scene_trigger(&back, world_find(&back, "door"));
+    CHECK(got && strcmp(got->scene, "l3") == 0 && got->spawn[0] == '\0' && got->fade_seconds == 1.0f);
+    CHECK(memcmp(got, st, sizeof(*got)) == 0);
+
+    cJSON_Delete(scene);
+    world_shutdown(&back);
+    world_shutdown(&w);
+}
+
 // Scene environment: round trip, partial updates, null HDRI, and
 // all-or-nothing validation (ranges, types, paths outside assets/).
 static void
@@ -372,6 +413,7 @@ main(void)
     test_world_order(&assets);
     test_environment();
     test_code_built_world_round_trips(&assets);
+    test_scene_trigger_strings(&assets);
 
     assets_shutdown(&assets);
 

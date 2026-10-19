@@ -11,12 +11,13 @@
 // through this. Owned here so applications never touch GLFW callbacks.
 static App* g_app = NULL;
 
+// A locked cursor means the app has the player's hands (mouse-look and
+// walking): keys and mouse are its, whatever the UI has focused or is under it.
 static b8 ui_claims_keyboard(void)
 {
-    return g_app && g_app->ui && g_app->ui->wants_keyboard();
+    return g_app && g_app->ui && input_cursor_mode() != WINDOW_CURSOR_LOCKED && g_app->ui->wants_keyboard();
 }
 
-// A locked cursor belongs to the app (mouse-look), whatever is under it.
 static b8 ui_claims_mouse(void)
 {
     return g_app && g_app->ui && input_cursor_mode() != WINDOW_CURSOR_LOCKED && g_app->ui->wants_mouse();

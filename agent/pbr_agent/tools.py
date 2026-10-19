@@ -71,7 +71,8 @@ MATERIAL = {
     "additionalProperties": False,
 }
 
-COMPONENT = {"type": "string", "enum": ["Transform", "MeshRenderer", "Light", "Camera", "Spin", "ReflectionProbe"]}
+COMPONENT = {"type": "string", "enum": ["Transform", "MeshRenderer", "Light", "Camera", "Spin", "ReflectionProbe",
+                                         "PlayerController", "SceneTrigger"]}
 
 
 def _schema(properties: dict, required: list[str] | None = None) -> dict:
@@ -219,8 +220,11 @@ TOOLS: list[Tool] = [
         "create_entity",
         "Creates an entity from raw components (see describe_components) -- for anything "
         "place_model and add_light don't cover: an empty parent to group things under, a Camera "
-        "(what the exported game looks through), or a ReflectionProbe (a box, e.g. a room, whose "
-        "shiny surfaces then reflect the room instead of the distant sky; at most 8).",
+        "(what the exported game looks through; give it a PlayerController so the player can walk "
+        "or fly it around with the input actions), a ReflectionProbe (a box, e.g. a room, whose "
+        "shiny surfaces then reflect the room instead of the distant sky; at most 8), or a "
+        "SceneTrigger (a box, e.g. a doorway, that takes the player to another saved scene -- "
+        "optionally arriving at a named entity there -- with a fade).",
         _schema({
             "name": {"type": "string"},
             "parent": NULLABLE_ENTITY,
@@ -251,9 +255,11 @@ TOOLS: list[Tool] = [
     ),
     Tool(
         "remove_component",
-        "Removes a MeshRenderer, Light, Camera, Spin or ReflectionProbe from an entity (the entity stays).",
+        "Removes a MeshRenderer, Light, Camera, Spin, ReflectionProbe, PlayerController or "
+        "SceneTrigger from an entity (the entity stays).",
         _schema({"entity": ENTITY, "component": {"type": "string",
-                                                  "enum": ["MeshRenderer", "Light", "Camera", "Spin", "ReflectionProbe"]}},
+                                                  "enum": ["MeshRenderer", "Light", "Camera", "Spin", "ReflectionProbe",
+                                                           "PlayerController", "SceneTrigger"]}},
                 ["entity", "component"]),
         "component.remove", example={"entity": "desk_lamp", "component": "Light"},
     ),

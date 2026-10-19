@@ -3,6 +3,7 @@
 #include "Commands/Commands.h"
 #include "Core/Defines.h"
 #include "World/Environment.h"
+#include "World/SceneTransition.h"
 #include "World/World.h"
 
 #include "SceneDocument.h"
@@ -31,6 +32,7 @@ typedef struct play_session
     scene_environment saved_env;   // the document's, as of Play
     f32               time;        // game seconds since Play
     b8                step;        // advance one step next frame (while paused)
+    scene_transition  transition;  // SceneTriggers: Play can walk on into other scenes (Viewport.c)
 } play_session;
 
 static inline b8 play_active(const play_session* play) { return play->mode != PLAY_STOPPED; }

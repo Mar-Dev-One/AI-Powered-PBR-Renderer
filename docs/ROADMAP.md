@@ -36,8 +36,11 @@ building the export.
    `scene.load`, whoever runs it; the editor follows a load through undo and redo
    (`doc_follow_history()`), and the `*` now notices every environment field.
 7. **Phase 6** of the AI track: asset catalog, verify loop, `fetch_asset`.
-8. **Export, later:** zip it, cache baked IBL maps so the game doesn't bake at startup, scene
-   switching in the game, a pixel comparison in the export check.
+8. **Export, later:** zip it, cache baked IBL maps so the game doesn't bake at startup, a pixel
+   comparison in the export check. ~~Scene switching in the game~~: done with the `SceneTrigger`
+   component (`World/SceneTransition.h`): a box that fades the player over to another saved
+   scene, arriving at a named spawn entity; in the game and in the editor's Play (Scene > Add >
+   Scene Trigger, an orange box with its destination in the view).
 
 ## Done
 
@@ -385,9 +388,10 @@ Export dialog runs it in the background and shows the picture. Toolbar Export, F
 Game, `project.export` / `project.export_status` commands and tools.
 Not done: the runtime library split (the game still links ImGui, the command layer and the
 server code, unused: the Release game is 1.7 MB); a pixel comparison against saved golden
-images (the check only proves the scene loads and renders); scene switching in the game.
+images (the check only proves the scene loads and renders). Scene switching came later: the
+`SceneTrigger` component (below).
 - [ ] Later: zip the export; cache baked IBL maps in the export so the game doesn't bake at
-      startup; scene switching in the game (a component or a startup list)
+      startup; ~~scene switching in the game~~ (done: `SceneTrigger`)
 
 ## Engine roadmap
 
@@ -445,8 +449,14 @@ Smallest and most useful first.
 
 ### 6. Game runtime (only if this should become a game engine)
 
-- 6.1 Input actions: named actions mapped to keys and gamepad buttons.
-- 6.2 A first-person / fly camera controller, so a player can walk through the scene.
+- ~~6.1 Input actions: named actions mapped to keys and gamepad buttons.~~ Done:
+  `Platform/Input.h` (keys, mouse, gamepads, cursor lock) and `Platform/InputActions.h` (named
+  buttons and axes, with walk/fly/look defaults), saved in project.json's `"input"`; edited in
+  Project Settings (press to bind) and by `input.get` / `input.set`.
+- ~~6.2 A first-person / fly camera controller, so a player can walk through the scene.~~ Done:
+  the `PlayerController` component (`World/PlayerController.h`), walk or fly, on the starter
+  scene's camera. The game locks the mouse to it; in the editor, Play through the game camera
+  and click the view. Walking keeps its height until there's physics (6.4), so no jumping yet.
 - 6.3 Audio with miniaudio (a single-file C library): an `AudioSource` component.
 - 6.4 Physics with Jolt through its C wrapper (JoltC): rigid bodies, colliders, raycasts.
 - 6.5 Scripting, most likely Lua, for behaviours beyond `Spin`.

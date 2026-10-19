@@ -35,6 +35,8 @@ typedef enum component_type
     COMPONENT_CAMERA,
     COMPONENT_SPIN,
     COMPONENT_REFLECTION_PROBE,
+    COMPONENT_PLAYER_CONTROLLER,
+    COMPONENT_SCENE_TRIGGER,
     COMPONENT_TYPE_COUNT
 } component_type;
 
@@ -100,3 +102,36 @@ typedef struct c_reflection_probe
 {
     vec3 extents;   // half the box's size along x, y, z, in meters
 } c_reflection_probe;
+
+typedef enum player_mode
+{
+    PLAYER_WALK,   // along the ground: looking up or down doesn't change the height
+    PLAYER_FLY,    // where it looks, and up and down (the up_down action)
+} player_mode;
+
+// Lets the player move the entity -- a Camera, to walk or fly through the
+// scene -- with the project's input actions (Platform/InputActions.h:
+// move_x, move_y, up_down, look_x, look_y, sprint), while the game runs
+// (World/PlayerController.h). Looking turns Transform.rotation_deg (yaw and
+// pitch); walking keeps the height it starts at until there's physics.
+typedef struct c_player_controller
+{
+    player_mode mode;
+    f32         move_speed;          // meters per second
+    f32         sprint_multiplier;   // move_speed times this while sprint is held
+    f32         look_sensitivity;    // look_x / look_y times this
+    b8          invert_look_y;
+} c_player_controller;
+
+// A box -- the entity's position +- extents, along the world axes -- that
+// takes the player to another scene: when a PlayerController entity walks
+// in, the view fades out, `scene` loads, the player is put at the entity
+// called `spawn` there (if given) and the view fades back in
+// (World/SceneTransition.h). In the game and the editor's Play.
+typedef struct c_scene_trigger
+{
+    vec3 extents;                  // half the box's size along x, y, z, in meters
+    f32  fade_seconds;             // each way, out and back in; 0 cuts straight over
+    char scene[ENTITY_NAME_MAX];   // a scene name ("level_2"); "" = does nothing yet
+    char spawn[ENTITY_NAME_MAX];   // an entity in that scene to arrive at; "" = where its player starts
+} c_scene_trigger;

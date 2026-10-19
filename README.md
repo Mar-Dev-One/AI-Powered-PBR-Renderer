@@ -142,7 +142,7 @@ quits when nothing is selected), and clicking empty space deselects.
 **Editing:** the **Inspector** shows the selected entity's name, parent and every component as
 editing fields — drags for numbers and vectors (within each field's range), color pickers,
 checkboxes, dropdowns for enums and models, and a checkbox per material override. **Add
-component...** adds a MeshRenderer, Light, Camera, Spin or ReflectionProbe; the **X** on a
+component...** adds a MeshRenderer, Light, Camera, Spin, ReflectionProbe, PlayerController or SceneTrigger; the **X** on a
 component's header removes it; **Delete** removes the entity. **Edit** (and the shortcuts below)
 also undoes and redoes (naming the step), duplicates the selection with its children beside it
 (**Ctrl+D**), deletes it (**Delete**), unparents it and selects its parent. Every edit runs as a

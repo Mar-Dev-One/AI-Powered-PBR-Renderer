@@ -281,7 +281,8 @@ input_set_cursor_mode(window* wind, window_cursor_mode mode)
     if (mode == input.cursor_mode)
         return;
 
-    window_set_cursor_mode(wind, mode);
+    if (wind)
+        window_set_cursor_mode(wind, mode);
     input.cursor_mode = mode;
     input.has_cursor  = false;
 }

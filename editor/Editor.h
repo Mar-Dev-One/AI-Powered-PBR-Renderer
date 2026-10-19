@@ -84,6 +84,7 @@ typedef struct overlay_settings
     b8 lights;    // a marker per light; the selected one's range / cone / direction
     b8 cameras;   // each Camera entity's view frustum
     b8 probes;    // each ReflectionProbe's box
+    b8 triggers;  // each SceneTrigger's box and where it leads
 } overlay_settings;
 
 // Which panels are open (View menu).
@@ -396,6 +397,7 @@ void add_model(editor_state* state, const char* key);
 void add_light(editor_state* state, const char* type);   // "point", "spot", "directional"
 void add_camera(editor_state* state);
 void add_reflection_probe(editor_state* state);
+void add_scene_trigger(editor_state* state);
 void add_empty(editor_state* state);
 
 // "PBR Editor - Racing Game - main*"
@@ -407,6 +409,13 @@ void update_title(editor_state* state);
 // entity being looked through. Call once a frame before drawing.
 void update_view_camera(editor_state* state);
 void draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt);
+
+// Playing through the game camera with a PlayerController in the scene, a
+// click in the view hands the player the keys and mouse (the cursor locks,
+// the panels stop reacting); Esc, Stop or turning the game camera off hands
+// them back.
+b8   play_has_control(void);
+void play_release_control(void);
 // Ends the gizmo's drag group, if one is open.
 void gizmo_finish_edit(editor_state* state, command_context* ctx);
 

@@ -189,6 +189,7 @@ draw_add_menu(editor_state* state)
     igSeparator();
     if (igMenuItem_Bool("Camera (this view)", NULL, false, true)) add_camera(state);
     if (igMenuItem_Bool("Reflection Probe", NULL, false, true))   add_reflection_probe(state);
+    if (igMenuItem_Bool("Scene Trigger", NULL, false, true))      add_scene_trigger(state);
     if (igMenuItem_Bool("Empty", NULL, false, true))              add_empty(state);
     igSeparator();
     igTextDisabled("At the view's centre, %.2f m (Scene panel)", (double)state->add_size);
@@ -233,6 +234,7 @@ draw_view_menu(editor_state* state)
         igMenuItem_BoolPtr("Lights", NULL, &state->overlays.lights, true);
         igMenuItem_BoolPtr("Cameras", NULL, &state->overlays.cameras, true);
         igMenuItem_BoolPtr("Reflection probes", NULL, &state->overlays.probes, true);
+        igMenuItem_BoolPtr("Scene triggers", NULL, &state->overlays.triggers, true);
         igMenuItem_BoolPtr("Ground grid", NULL, &state->overlays.grid, true);
         igEndMenu();
     }

@@ -9,7 +9,11 @@
 
 #include "Editor.h"
 
+#include "Platform/Input.h"
 #include "Platform/Window.h"
+#include "Renderer/Renderer.h"
+#include "World/PlayerController.h"
+#include "World/SceneTransition.h"
 
 #include <float.h>
 #include <math.h>
@@ -24,6 +28,7 @@ const char* const DEBUG_VIEW_LABELS[SCENE_VIEW_COUNT] = {
 #define COLOR_SELECTION 0xFF00AAFFu   // orange (ABGR)
 #define COLOR_CAMERA    0xC0E0E0E0u
 #define COLOR_PROBE     0xB0FFD040u   // cyan-ish
+#define COLOR_TRIGGER   0xC040A0FFu   // orange
 #define COLOR_GRID      0x30FFFFFFu
 #define COLOR_AXIS_X    0x806060FFu
 #define COLOR_AXIS_Z    0x80FF7060u
@@ -64,6 +69,105 @@ update_view_camera(editor_state* state)
     state->view_cam_entity = ENTITY_NULL;
 }
 
+// --- The player's control -----------------------------------------------------------
+
+// Something to control: playing, through the game camera, with a PlayerController.
+static b8
+play_can_control(editor_state* state)
+{
+    return play_active(&state->play) && state->play_game_camera
+        && world_next(&state->play.copy, ENTITY_NULL, COMPONENT_BIT(COMPONENT_PLAYER_CONTROLLER));
+}
+
+b8
+play_has_control(void)
+{
+    return input_cursor_mode() == WINDOW_CURSOR_LOCKED;
+}
+
+static void
+play_take_control(void)
+{
+    input_set_cursor_mode(get_renderer()->drawing_window, WINDOW_CURSOR_LOCKED);
+    igGetIO_Nil()->ConfigFlags |= ImGuiConfigFlags_NoMouse;   // the hidden cursor's virtual position hovers nothing
+}
+
+void
+play_release_control(void)
+{
+    if (!play_has_control())
+        return;
+    input_set_cursor_mode(get_renderer()->drawing_window, WINDOW_CURSOR_NORMAL);
+    igGetIO_Nil()->ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+}
+
+// Before the copy ticks: lets go when there's nothing to control any more,
+// and moves the player while it has control (not while paused: a step is
+// game time, not the player's).
+static void
+play_update_control(editor_state* state, f32 dt)
+{
+    if (!play_has_control())
+        return;
+    if (!play_can_control(state) || input_key_pressed(INPUT_KEY_ESCAPE))
+    {
+        play_release_control();
+        return;
+    }
+    if (state->play.mode == PLAY_RUNNING && !scene_transition_busy(&state->play.transition))
+    {
+        player_input input = player_input_from_actions();
+        player_controller_tick(&state->play.copy, fminf(dt, 0.1f), &input);
+    }
+}
+
+// Loads the saved scene `name` into Play's copy (with its environment, which
+// Stop puts back), as a SceneTrigger asks. The edited scene and its file stay
+// as they are. False, said in the console, if it can't.
+static b8
+play_load_scene(editor_state* state, const char* name)
+{
+    command_context ctx = state->play.commands;
+    ctx.on_scene_file   = NULL;   // the document keeps its own scene: this is Play's
+
+    cJSON* request = cJSON_CreateObject();
+    cJSON_AddStringToObject(request, "cmd", "scene.load");
+    cJSON* args = cJSON_AddObjectToObject(request, "args");
+    cJSON_AddStringToObject(args, "name", name);
+    cJSON_AddBoolToObject(args, "replace", true);
+
+    cJSON* response = cmd_execute(&ctx, request);
+    b8     ok       = cJSON_IsTrue(cJSON_GetObjectItem(response, "ok"));
+
+    const char* why = cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(response, "error"), "message"));
+    char        line[512];
+    if (ok)
+        snprintf(line, sizeof(line), "Play: on to the scene '%s' (Stop goes back to the one you're editing).", name);
+    else
+        snprintf(line, sizeof(line), "Play: a SceneTrigger can't go to '%s': %s", name, why ? why : "it didn't load");
+    console_info(&state->console, line);
+
+    cJSON_Delete(response);
+    cJSON_Delete(request);
+    return ok;
+}
+
+// After the copy ticks: SceneTriggers fading over to other scenes.
+static void
+play_update_transition(editor_state* state, f32 dt)
+{
+    if (state->play.mode != PLAY_RUNNING)
+        return;
+
+    world_update(&state->play.copy);
+    const char* next = scene_transition_update(&state->play.transition, &state->play.copy, fminf(dt, 0.1f));
+    if (next)
+    {
+        b8 loaded = play_load_scene(state, next);
+        scene_transition_loaded(&state->play.transition, &state->play.copy, loaded);
+    }
+}
+
 // --- Input ------------------------------------------------------------------------
 
 // A click in the view at (x, y) pixels from its top-left corner: selects
@@ -88,6 +192,14 @@ static void
 view_input(editor_state* state)
 {
     const ImGuiIO* io = igGetIO_Nil();
+
+    // A click hands the player control instead of selecting.
+    if (play_can_control(state))
+    {
+        if (igIsItemActivated())
+            play_take_control();
+        return;
+    }
 
     if (igIsItemActivated())
     {
@@ -402,6 +514,32 @@ draw_probe_overlays(const editor_state* state, const world* w, const overlay* o)
         ImVec2_c p;
         if (overlay_point(o, center, &p))
             ImDrawList_AddCircle(o->draw, p, 5.0f, COLOR_PROBE, 12, 1.5f);
+    }
+}
+
+// Each SceneTrigger's box, labelled with the scene it leads to.
+static void
+draw_trigger_overlays(const editor_state* state, const world* w, const overlay* o)
+{
+    const uint32 mask = COMPONENT_BIT(COMPONENT_SCENE_TRIGGER);
+    for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+    {
+        const c_scene_trigger* trigger = world_scene_trigger(w, e);
+        b8   selected = e == state->selected;
+        vec3 center, lo, hi;
+        entity_position(w, e, center);
+        glm_vec3_sub(center, (f32*)trigger->extents, lo);
+        glm_vec3_add(center, (f32*)trigger->extents, hi);
+        overlay_box(o, lo, hi, selected ? COLOR_SELECTION : COLOR_TRIGGER, selected ? 2.0f : 1.0f);
+
+        char     label[ENTITY_NAME_MAX * 2 + 16];
+        ImVec2_c p;
+        if (trigger->spawn[0])
+            snprintf(label, sizeof(label), "-> %s (%s)", trigger->scene[0] ? trigger->scene : "?", trigger->spawn);
+        else
+            snprintf(label, sizeof(label), "-> %s", trigger->scene[0] ? trigger->scene : "? (no scene)");
+        if (overlay_point(o, center, &p))
+            ImDrawList_AddText_Vec2(o->draw, (ImVec2_c){ p.x + 6.0f, p.y - 6.0f }, COLOR_TRIGGER | 0xFF000000u, label, NULL);
     }
 }
 
@@ -732,6 +870,7 @@ draw_toolbar(editor_state* state)
         igCheckbox("Lights", &state->overlays.lights);
         igCheckbox("Cameras", &state->overlays.cameras);
         igCheckbox("Reflection probes", &state->overlays.probes);
+        igCheckbox("Scene triggers", &state->overlays.triggers);
         igCheckbox("Ground grid", &state->overlays.grid);
         igEndPopup();
     }
@@ -755,6 +894,14 @@ draw_play_frame(editor_state* state, ImDrawList* draw)
     ImDrawList_AddRect(draw, (ImVec2_c){ state->view_x + 1.0f, state->view_y + 1.0f },
                        (ImVec2_c){ state->view_x + state->view_width - 1.0f, state->view_y + state->view_height - 1.0f },
                        color, 0.0f, 3.0f, 0);
+
+    if (!play_can_control(state))
+        return;
+    const char* hint = play_has_control() ? "Esc: give back the mouse" : "Click to play (WASD, mouse, gamepad)";
+    ImVec2_c    size = igCalcTextSize(hint, NULL, false, -1.0f);
+    ImDrawList_AddText_Vec2(draw, (ImVec2_c){ state->view_x + (state->view_width - size.x) * 0.5f,
+                                              state->view_y + state->view_height - size.y - 10.0f },
+                            0xFFE0E0E0u, hint, NULL);
 }
 
 // "Camera: front_cam" in the corner while looking through a Camera entity.
@@ -876,7 +1023,9 @@ draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt)
     igPopStyleVar(1);
 
     // The game keeps running even when the panel is hidden behind a tab.
+    play_update_control(state, dt);
     play_advance(&state->play, dt);
+    play_update_transition(state, dt);
 
     if (open)
     {
@@ -929,6 +1078,8 @@ draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt)
 
     scene_render_settings settings = build_render_settings(state);
     settings.delta_time            = dt;     // auto-exposure adapts at the eye's pace
+    if (play_active(&state->play))
+        settings.exposure *= 1.0f - scene_transition_fade(&state->play.transition);
     scene_renderer_draw_to(&state->renderer, shown, &state->view_cam, &settings, state->view_target);
 
     // GL's rows run bottom-up: flip V.
@@ -945,6 +1096,8 @@ draw_viewport(editor_state* state, ImGuiID dockspace, f32 dt)
         draw_grid(state, &o);
     if (state->overlays.probes)
         draw_probe_overlays(state, shown, &o);
+    if (state->overlays.triggers)
+        draw_trigger_overlays(state, shown, &o);
     if (state->overlays.cameras)
         draw_camera_overlays(state, shown, &o);
     if (state->overlays.lights)

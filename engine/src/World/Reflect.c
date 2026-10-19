@@ -98,6 +98,36 @@ static const field_desc REFLECTION_PROBE_FIELDS[] = {
       .doc = "Half the size of the probe's box along x, y, z in meters: shiny surfaces inside it reflect what the probe sees, lined up with the box's walls" },
 };
 
+static const char* const PLAYER_MODE_NAMES[] = { "walk", "fly" };
+_Static_assert(sizeof(player_mode) == sizeof(int), "player_mode must be int-sized for FIELD_ENUM");
+
+static const field_desc PLAYER_CONTROLLER_FIELDS[] = {
+    { .name = "mode", .type = FIELD_ENUM, .offset = offsetof(c_player_controller, mode),
+      .enum_names = PLAYER_MODE_NAMES, .enum_count = COUNT_OF(PLAYER_MODE_NAMES),
+      .doc = "walk (along the ground, at the height it starts at) or fly (where it looks, plus up and down)" },
+    { .name = "move_speed", .type = FIELD_F32, .offset = offsetof(c_player_controller, move_speed),
+      .min = 0.0f, .max = 1000.0f, .doc = "Meters per second; about 1.4 is a stroll, 4 a jog" },
+    { .name = "sprint_multiplier", .type = FIELD_F32, .offset = offsetof(c_player_controller, sprint_multiplier),
+      .min = 1.0f, .max = 20.0f, .doc = "move_speed times this while the sprint action is held" },
+    { .name = "look_sensitivity", .type = FIELD_F32, .offset = offsetof(c_player_controller, look_sensitivity),
+      .min = 0.01f, .max = 10.0f, .doc = "How fast the mouse and right stick turn the view, times the input actions' own rates" },
+    { .name = "invert_look_y", .type = FIELD_BOOL, .offset = offsetof(c_player_controller, invert_look_y),
+      .doc = "Pushing the mouse or stick up looks down" },
+};
+
+static const field_desc SCENE_TRIGGER_FIELDS[] = {
+    { .name = "scene", .type = FIELD_STRING, .offset = offsetof(c_scene_trigger, scene), .may_be_empty = true,
+      .doc = "The scene to go to, by name (scene.list), e.g. \"level_2\"; empty: the trigger does nothing" },
+    { .name = "spawn", .type = FIELD_STRING, .offset = offsetof(c_scene_trigger, spawn), .may_be_empty = true,
+      .doc = "An entity in that scene where the player arrives, facing its way (an empty entity works); "
+             "empty: where that scene's player starts" },
+    { .name = "extents", .type = FIELD_VEC3, .offset = offsetof(c_scene_trigger, extents),
+      .min = 0.05f, .max = 500.0f,
+      .doc = "Half the size of the box along x, y, z in meters, around the entity's position: walking into it changes scene" },
+    { .name = "fade_seconds", .type = FIELD_F32, .offset = offsetof(c_scene_trigger, fade_seconds),
+      .min = 0.0f, .max = 5.0f, .doc = "How long the view takes to fade out, and again to fade in; 0 cuts straight over" },
+};
+
 static const component_desc COMPONENTS[COMPONENT_TYPE_COUNT] = {
     [COMPONENT_NAME]          = { "Name",         COMPONENT_NAME,          sizeof(c_name),          NAME_FIELDS,          COUNT_OF(NAME_FIELDS) },
     [COMPONENT_TRANSFORM]     = { "Transform",    COMPONENT_TRANSFORM,     sizeof(c_transform),     TRANSFORM_FIELDS,     COUNT_OF(TRANSFORM_FIELDS) },
@@ -108,6 +138,10 @@ static const component_desc COMPONENTS[COMPONENT_TYPE_COUNT] = {
     [COMPONENT_SPIN]          = { "Spin",         COMPONENT_SPIN,          sizeof(c_spin),          SPIN_FIELDS,          COUNT_OF(SPIN_FIELDS) },
     [COMPONENT_REFLECTION_PROBE] = { "ReflectionProbe", COMPONENT_REFLECTION_PROBE, sizeof(c_reflection_probe),
                                      REFLECTION_PROBE_FIELDS, COUNT_OF(REFLECTION_PROBE_FIELDS) },
+    [COMPONENT_PLAYER_CONTROLLER] = { "PlayerController", COMPONENT_PLAYER_CONTROLLER, sizeof(c_player_controller),
+                                      PLAYER_CONTROLLER_FIELDS, COUNT_OF(PLAYER_CONTROLLER_FIELDS) },
+    [COMPONENT_SCENE_TRIGGER] = { "SceneTrigger", COMPONENT_SCENE_TRIGGER, sizeof(c_scene_trigger),
+                                  SCENE_TRIGGER_FIELDS, COUNT_OF(SCENE_TRIGGER_FIELDS) },
 };
 
 const component_desc*
@@ -163,6 +197,8 @@ reflect_component_data(const world* w, entity_id e, component_type type)
         case COMPONENT_CAMERA:        return &w->cameras[index];
         case COMPONENT_SPIN:          return &w->spins[index];
         case COMPONENT_REFLECTION_PROBE: return &w->reflection_probes[index];
+        case COMPONENT_PLAYER_CONTROLLER: return &w->player_controllers[index];
+        case COMPONENT_SCENE_TRIGGER:     return &w->scene_triggers[index];
         default:                      return NULL;
     }
 }

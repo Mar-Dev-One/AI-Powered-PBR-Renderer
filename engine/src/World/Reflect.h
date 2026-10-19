@@ -24,7 +24,7 @@ typedef enum field_type
     FIELD_VEC3,     // 3 x f32
     FIELD_COLOR3,   // 3 x f32, linear RGB
     FIELD_ENUM,     // stored as a C enum (int-sized); see enum_names
-    FIELD_STRING,   // char[ENTITY_NAME_MAX]
+    FIELD_STRING,   // char[ENTITY_NAME_MAX]; written in place unless via_setter
     FIELD_ASSET,    // asset_id
     FIELD_ENTITY,   // entity_id
     FIELD_FLAGS     // uint32 bitmask
@@ -40,6 +40,7 @@ typedef struct field_desc
     uint32             enum_count;
     b8                 via_setter;
     b8                 nonzero;       // FIELD_VEC3: must not be (0, 0, 0) -- e.g. a direction
+    b8                 may_be_empty;  // FIELD_STRING: "" is allowed (meaning "none")
     uint32             override_bit;
     const char*        doc;
 } field_desc;

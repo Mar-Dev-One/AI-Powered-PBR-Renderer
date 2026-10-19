@@ -376,6 +376,7 @@ play_stop(editor_state* state)
     if (chat_busy(&state->chat) && state->chat.turn_ctx == &state->play.commands)
         chat_stop(&state->chat);   // a turn started while playing; its world is going away
 
+    play_release_control();
     play_end(&state->play, &state->doc);   // the IBL re-bakes if Play changed the HDRI
     // The selection stays if it names something in the edited scene
     // (validate_selection() drops one made while playing).
@@ -716,6 +717,19 @@ add_reflection_probe(editor_state* state)
     cJSON* probe = cJSON_CreateObject();
     cJSON_AddItemToObject(probe, "extents", cJSON_CreateFloatArray(extents, 3));
     add_entity(state, "reflection_probe", position, NULL, "ReflectionProbe", probe);
+}
+
+// A doorway-sized box standing on the ground; its scene is chosen in the Inspector.
+void
+add_scene_trigger(editor_state* state)
+{
+    const f32 extents[3] = { 1.0f, 1.5f, 1.0f };
+    vec3      position;
+    add_position(state, extents[1], position);
+
+    cJSON* trigger = cJSON_CreateObject();
+    cJSON_AddItemToObject(trigger, "extents", cJSON_CreateFloatArray(extents, 3));
+    add_entity(state, "scene_trigger", position, NULL, "SceneTrigger", trigger);
 }
 
 void

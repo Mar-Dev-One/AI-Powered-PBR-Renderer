@@ -155,7 +155,8 @@ int input_raw_mouse_pressed(void);
 // Locked hides the cursor and keeps it in the window, for mouse-look; it uses
 // raw (unaccelerated) motion where the system has it. Go through this rather
 // than the window, so the jump the cursor makes on a mode change isn't read as
-// movement.
+// movement. Mouse-motion action bindings only read while it's locked. `wind`
+// NULL changes only what Input believes (tests).
 void               input_set_cursor_mode(window* wind, window_cursor_mode mode);
 window_cursor_mode input_cursor_mode(void);
 

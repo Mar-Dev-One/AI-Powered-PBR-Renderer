@@ -273,7 +273,17 @@ edit_field(inspector* ins, command_context* ctx, entity_id e, const component_de
             edit_asset(ins, ctx, e, component, field, *(const asset_id*)stored);
             break;
 
+        // Applied on Enter: ImGui keeps what's being typed until then.
         case FIELD_STRING:
+            if (!field->via_setter)
+            {
+                char text[ENTITY_NAME_MAX];
+                snprintf(text, sizeof(text), "%s", (const char*)stored);
+                if (igInputText(field->name, text, sizeof(text), ImGuiInputTextFlags_EnterReturnsTrue, NULL, NULL))
+                    set_field(ins, ctx, e, component, field, cJSON_CreateString(text));
+                break;
+            }
+            // fall through: the name has its own editor at the top
         case FIELD_ENTITY:
         case FIELD_FLAGS:
         default:

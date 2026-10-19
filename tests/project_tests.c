@@ -147,6 +147,8 @@ test_create(asset_cache* assets)
     CHECK(world_has(&w, world_find(&w, "sun"), COMPONENT_LIGHT));
     CHECK(world_has(&w, world_find(&w, "cube"), COMPONENT_MESH_RENDERER));
     CHECK(world_has(&w, world_find(&w, "camera"), COMPONENT_CAMERA));
+    const c_player_controller* player = world_player_controller(&w, world_find(&w, "camera"));
+    CHECK(player && player->mode == PLAYER_WALK && player->move_speed == 4.0f);
     CHECK(world_light(&w, world_find(&w, "sun"))->type == LIGHT_DIRECTIONAL);
 
     scene_environment env = scene_environment_default();

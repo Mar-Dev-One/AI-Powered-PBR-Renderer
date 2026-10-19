@@ -360,7 +360,13 @@ test_action_look(void)
     input_action look_x = input_action_find("look_x");
     input_action look_y = input_action_find("look_y");
 
-    // Mouse: 0.1 degree a pixel, whatever the frame time.
+    // A free cursor doesn't look around.
+    FRAME(0.016f, input_on_cursor(100.0, 100.0, true));
+    FRAME(0.016f, input_on_cursor(150.0, 100.0, true));
+    CHECK(input_action_value(look_x) == 0.0f);
+
+    // Locked, the mouse looks: 0.1 degree a pixel, whatever the frame time.
+    input_set_cursor_mode(NULL, WINDOW_CURSOR_LOCKED);
     FRAME(0.016f, input_on_cursor(100.0, 100.0, true));
     FRAME(0.5f,   input_on_cursor(130.0, 90.0, true));
     CHECK(near(input_action_value(look_x), 3.0f) && near(input_action_value(look_y), -1.0f));

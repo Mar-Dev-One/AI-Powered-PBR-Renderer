@@ -512,6 +512,10 @@ binding_pressed(const input_binding* b)
 static f32
 mouse_motion(const input_binding* b)
 {
+    // A free cursor is pointing at things, not looking around.
+    if (input_cursor_mode() != WINDOW_CURSOR_LOCKED)
+        return 0.0f;
+
     f32 dx, dy;
     input_mouse_delta(&dx, &dy);
     return (b->code == 0 ? dx : dy) * b->scale;

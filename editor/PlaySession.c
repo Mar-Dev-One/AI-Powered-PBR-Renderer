@@ -25,6 +25,9 @@ play_begin(play_session* play, scene_document* doc)
     play->time      = 0.0f;
     play->step      = false;
     play->mode      = PLAY_RUNNING;   // same IDs in the copy: a selection carries over
+
+    world_update(&play->copy);
+    scene_transition_reset(&play->transition, &play->copy);
 }
 
 void

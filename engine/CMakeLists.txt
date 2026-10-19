@@ -61,6 +61,8 @@ add_library(PBR_Runtime STATIC
     src/World/Reflect.c
     src/World/Serialize.c
     src/World/Environment.c
+    src/World/PlayerController.c
+    src/World/SceneTransition.c
     src/Project/Project.c
     deps/cjson/cJSON.c
 )

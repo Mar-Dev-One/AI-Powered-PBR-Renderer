@@ -124,7 +124,8 @@ on_init(App* app)
     state->shadows              = defaults.shadows;
     state->cascade_split_lambda = defaults.cascade_split_lambda;
     state->antialiasing         = SCENE_AA_FXAA;
-    state->overlays             = (overlay_settings){ .grid = false, .lights = true, .cameras = true, .probes = true };
+    state->overlays             = (overlay_settings){ .grid = false, .lights = true, .cameras = true, .probes = true,
+                                                      .triggers = true };
     state->show                 = (panel_visibility){ .scene = true, .entities = true, .inspector = true,
                                                       .renderer = true, .assets = true, .history = true,
                                                       .console = true, .chat = true };
@@ -226,6 +227,9 @@ handle_shortcuts(editor_state* state)
 {
     const ImGuiIO* io = igGetIO_Nil();
     if (io->WantTextInput || igIsPopupOpen_Str(NULL, ImGuiPopupFlags_AnyPopup))
+        return;
+    // W, E, Esc... are the player's now (Esc gives control back: Viewport.c).
+    if (play_has_control())
         return;
 
     const b8 ctrl  = io->KeyCtrl;

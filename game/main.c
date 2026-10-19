@@ -43,7 +43,14 @@
 // watches.
 //
 // The game runs the scene's behaviours (World/World.h world_tick(): Spin
-// components turn their entities), as the editor's Play mode does.
+// components turn their entities), as the editor's Play mode does, and lets
+// the player move PlayerController entities (World/PlayerController.h) with
+// the project's input actions: keys and a gamepad at once, the mouse while
+// the cursor is locked -- from the start when there's a controller, again
+// by clicking. Esc frees the cursor, and quits when it's already free.
+// Walking into a SceneTrigger fades over to the scene it names
+// (World/SceneTransition.h); one that doesn't load leaves the player where
+// they were.
 //
 // The scene file's "environment" (World/Environment.h) sets the HDRI,
 // exposure, ambient strength and skybox, as they were in the editor when it
@@ -51,8 +58,8 @@
 // (which an export copies), or DEFAULT_HDRI without a project.json.
 //
 // The view comes from the scene's first Camera entity. A scene without one
-// gets an orbit camera framing everything in it: left-drag to orbit, scroll
-// to zoom. Esc quits.
+// gets an orbit camera framing everything in it: left-drag (or the right
+// stick) to orbit, scroll (or the triggers) to zoom.
 
 #include "App.h"
 #include "Assets/AssetCache.h"
@@ -71,6 +78,8 @@
 #include "Scene/Camera.h"
 #include "Scene/OrbitCamera.h"
 #include "World/Environment.h"
+#include "World/PlayerController.h"
+#include "World/SceneTransition.h"
 #include "World/Serialize.h"
 #include "World/World.h"
 
@@ -120,6 +129,9 @@ typedef struct game_state
     entity_id scene_camera;
     camera    cam;
     f32       aspect;
+
+    b8 lock_on_start;   // lock the cursor next frame: a scene with a PlayerController has loaded
+    scene_transition transition;
 
     // Orbit camera, for scenes without a Camera entity.
     orbit_camera orbit;
@@ -333,6 +345,24 @@ on_init(App* app)
     ibl_cache_sync(&state->ibl, state->env.hdri);
 
     choose_camera(state);
+    scene_transition_reset(&state->transition, &state->world);
+    state->lock_on_start = true;   // the first frame locks it if there's a PlayerController
+}
+
+// A SceneTrigger's scene, mid-transition. False (logged) if it doesn't load:
+// the scene that was playing goes on.
+static b8
+enter_scene(game_state* state, const char* name)
+{
+    if (!load_scene(state, name))
+        return false;
+
+    world_update(&state->world);
+    if (state->hdri_arg)
+        snprintf(state->env.hdri, sizeof(state->env.hdri), "%s", state->hdri_arg);
+    ibl_cache_sync(&state->ibl, state->env.hdri);
+    choose_camera(state);
+    return true;
 }
 
 static void
@@ -384,14 +414,42 @@ on_frame(App* app, f32 dt)
 {
     game_state* state = (game_state*)app->user_data;
 
+    window* wind     = get_renderer()->drawing_window;
+    b8      controls = !state->check_path && world_next(&state->world, ENTITY_NULL,
+                                                         COMPONENT_BIT(COMPONENT_PLAYER_CONTROLLER));
+    b8      locked   = input_cursor_mode() == WINDOW_CURSOR_LOCKED;
+
+    // Esc frees the mouse first, then quits; a click takes it back.
     if (input_key_pressed(INPUT_KEY_ESCAPE))
-        app->should_close = true;
+    {
+        if (locked)
+            input_set_cursor_mode(wind, WINDOW_CURSOR_NORMAL);
+        else
+            app->should_close = true;
+    }
+    else if (controls && !locked && (input_mouse_pressed(INPUT_MOUSE_LEFT) || state->lock_on_start))
+        input_set_cursor_mode(wind, WINDOW_CURSOR_LOCKED);
+    state->lock_on_start = false;
 
     // A long stall (window dragged, breakpoint) shouldn't fling things around.
     // A check's picture is the scene as saved, whatever the frame times.
     if (!state->check_path)
+    {
+        // Held still while the view fades between scenes.
+        player_input input = { 0 };
+        if (!scene_transition_busy(&state->transition))
+            input = player_input_from_actions();
+        player_controller_tick(&state->world, fminf(dt, 0.1f), &input);
         world_tick(&state->world, fminf(dt, 0.1f));
+    }
     world_update(&state->world);
+
+    if (!state->check_path)
+    {
+        const char* next = scene_transition_update(&state->transition, &state->world, fminf(dt, 0.1f));
+        if (next)
+            scene_transition_loaded(&state->transition, &state->world, enter_scene(state, next));
+    }
 
     // The scene camera follows its entity (it may be animated or parented);
     // fall back to the orbit camera if the entity is gone.
@@ -411,6 +469,7 @@ on_frame(App* app, f32 dt)
     // Auto-exposure adapts by the frame time; a check's picture mustn't
     // depend on frame times, so it goes straight to the scene's level.
     settings.delta_time = state->check_path ? -1.0f : dt;
+    settings.exposure  *= 1.0f - scene_transition_fade(&state->transition);
 
     scene_renderer_draw(&state->renderer, &state->world, &state->cam, &settings);
 

@@ -16,8 +16,9 @@
 //   axis    a value, the binding pushed furthest:
 //             state  -1..1, where it's held now (move_x, move_y)
 //             delta  how much this frame (look_x, look_y): mouse movement
-//                    times its scale, plus key and stick rates times the
-//                    frame time, so a camera adds it as it is
+//                    times its scale (only while the cursor is locked: a
+//                    free one is pointing, not looking), plus key and stick
+//                    rates times the frame time, so a camera adds it as it is
 //
 // The actions are an input_action_map: plain data a project keeps
 // (Project/Project.h, project.json's "input") and loads into the live table

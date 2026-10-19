@@ -46,6 +46,8 @@ typedef struct world
     c_camera*        cameras;
     c_spin*          spins;
     c_reflection_probe* reflection_probes;
+    c_player_controller* player_controllers;
+    c_scene_trigger*     scene_triggers;
 
     // Derived by world_update().
     mat4*   world_matrices;
@@ -107,6 +109,8 @@ c_light*         world_light(const world* w, entity_id e);
 c_camera*        world_camera(const world* w, entity_id e);
 c_spin*          world_spin(const world* w, entity_id e);
 c_reflection_probe* world_reflection_probe(const world* w, entity_id e);
+c_player_controller* world_player_controller(const world* w, entity_id e);
+c_scene_trigger*     world_scene_trigger(const world* w, entity_id e);
 entity_id        world_parent(const world* w, entity_id e);   // ENTITY_NULL if unparented or stale
 
 // Add (or replace) a component and return it, NULL if `e` is stale.
@@ -117,6 +121,10 @@ c_light*         world_add_light(world* w, entity_id e, light l);
 c_camera*        world_add_camera(world* w, entity_id e, f32 fov_degrees, f32 near_plane, f32 far_plane);
 c_spin*          world_add_spin(world* w, entity_id e, const vec3 degrees_per_second);
 c_reflection_probe* world_add_reflection_probe(world* w, entity_id e, const vec3 extents);
+// Walking at 4 m/s, twice that sprinting, sensitivity 1.
+c_player_controller* world_add_player_controller(world* w, entity_id e, player_mode mode);
+// No scene yet (it does nothing until it has one), a half-second fade.
+c_scene_trigger*     world_add_scene_trigger(world* w, entity_id e, const vec3 extents);
 
 // Swaps a MeshRenderer's model, keeping reference counts right. False if
 // `e` is stale or has no MeshRenderer.
@@ -200,6 +208,8 @@ typedef struct entity_state
     c_camera        camera;
     c_spin          spin;
     c_reflection_probe reflection_probe;
+    c_player_controller player_controller;
+    c_scene_trigger     scene_trigger;
 } entity_state;
 
 // Number of slots world_capture_states() writes.

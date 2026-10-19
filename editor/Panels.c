@@ -78,6 +78,11 @@ draw_add_controls(editor_state* state)
     tooltip("A box whose shiny surfaces reflect the room around them instead of the distant sky\n"
             "(up to 8 per scene; resize it with its extents in the Inspector)");
     igSameLine(0.0f, -1.0f);
+    if (igButton("Scene trigger", (ImVec2_c){ 0, 0 }))
+        add_scene_trigger(state);
+    tooltip("A box that takes the player to another scene when they walk in\n"
+            "(set its scene, and where to arrive, in the Inspector; try it with Play)");
+    igSameLine(0.0f, -1.0f);
     if (igButton("Empty", (ImVec2_c){ 0, 0 }))
         add_empty(state);
 }

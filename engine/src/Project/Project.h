@@ -74,7 +74,7 @@ b8 project_create(const char* directory, const char* name, char* error, size_t e
 // What a new project or "New Scene" starts with, as a scene file (load it
 // with deserialize_scene() / deserialize_environment()): a ground plane, a
 // sun, a 1 m cube on the ground and a camera looking at it (the game views
-// through it), in the default environment with the project's default HDRI.
+// through it, and its PlayerController walks it about), in the default environment with the project's default HDRI.
 // Built as JSON rather than in a World because built-in meshes need a GPU.
 // Caller owns the result (cJSON_Delete).
 cJSON* project_starter_scene(const project_settings* settings);
