@@ -28,6 +28,7 @@ add_library(PBR_Runtime STATIC
     src/Core/Process.c
     src/Platform/Window.c
     src/Platform/Input.c
+    src/Platform/InputActions.c
     src/Platform/Dialog.c
     src/RHI/RHI.c
     src/RHI/OpenGL/RHI_GL.c

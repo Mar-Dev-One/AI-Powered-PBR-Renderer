@@ -1,9 +1,10 @@
 // input_tests.c
 //
-// Headless tests for Platform/Input.h: events fed in by hand, as App.c's
+// Headless tests for Platform/Input.h and InputActions.h: events fed in by hand, as App.c's
 // window callbacks do, then read back frame by frame.
 
 #include "Platform/Input.h"
+#include "Platform/InputActions.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -251,9 +252,178 @@ test_pads(void)
     CHECK(input_pad_axis_value(3, INPUT_PAD_AXIS_COUNT) == 0.0f);
 }
 
+// --- Actions --------------------------------------------------------------------
+
+// One frame: the events run between begin and update, as in App.c.
+#define FRAME(dt, events)          \
+    do                             \
+    {                              \
+        input_begin_frame();       \
+        events;                    \
+        input_actions_update(dt);  \
+    } while (0)
+
+static void
+test_action_buttons(void)
+{
+    input_reset();
+    input_actions_set_defaults();
+    input_action jump = input_action_find("jump");
+    CHECK(jump != INPUT_ACTION_NONE);
+
+    FRAME(0.016f, input_on_key(INPUT_KEY_SPACE, true));
+    CHECK(input_action_down(jump) && input_action_pressed(jump) && input_action_value(jump) == 1.0f);
+
+    // A second binding going down while the first is held is no new press...
+    input_pad_raw pad = pad_at_rest();
+    pad.buttons[INPUT_PAD_A] = true;
+    FRAME(0.016f, input_on_pad(0, &pad));
+    CHECK(input_action_down(jump) && !input_action_pressed(jump));
+
+    // ...and letting go of one of them is no release.
+    FRAME(0.016f, input_on_key(INPUT_KEY_SPACE, false); input_on_pad(0, &pad));
+    CHECK(input_action_down(jump) && !input_action_released(jump));
+
+    pad.buttons[INPUT_PAD_A] = false;
+    FRAME(0.016f, input_on_pad(0, &pad));
+    CHECK(!input_action_down(jump) && input_action_released(jump) && input_action_value(jump) == 0.0f);
+
+    // A tap inside one frame: pressed and released together.
+    FRAME(0.016f, input_on_key(INPUT_KEY_SPACE, true); input_on_key(INPUT_KEY_SPACE, false); input_on_pad(0, &pad));
+    CHECK(input_action_pressed(jump) && input_action_released(jump) && !input_action_down(jump));
+    FRAME(0.016f, input_on_pad(0, &pad));
+    CHECK(!input_action_pressed(jump) && !input_action_released(jump));
+
+    // A trigger holds a button action from halfway.
+    input_action fire = input_action_add("fire", INPUT_ACTION_BUTTON);
+    CHECK(input_action_bind(fire, input_binding_pad_axis(INPUT_PAD_RIGHT_TRIGGER, 1.0f)));
+    pad.axes[INPUT_PAD_RIGHT_TRIGGER] = -0.2f;   // 40% pulled
+    FRAME(0.016f, input_on_pad(0, &pad));
+    CHECK(!input_action_down(fire));
+    pad.axes[INPUT_PAD_RIGHT_TRIGGER] = 0.5f;    // 75%
+    FRAME(0.016f, input_on_pad(0, &pad));
+    CHECK(input_action_pressed(fire));
+
+    // An unknown name is harmless.
+    CHECK(input_action_find("no_such_action") == INPUT_ACTION_NONE);
+    CHECK(!input_action_down(INPUT_ACTION_NONE) && input_action_value(INPUT_ACTION_NONE) == 0.0f);
+    CHECK(input_action_name(INPUT_ACTION_NONE)[0] == '\0');
+}
+
+static void
+test_action_axes(void)
+{
+    input_reset();
+    input_actions_set_defaults();
+    input_action move_x = input_action_find("move_x");
+    input_action move_y = input_action_find("move_y");
+    input_action up     = input_action_find("up_down");
+
+    // Keys: W forward, A left, both A and D cancel out.
+    FRAME(0.016f, input_on_key(INPUT_KEY_W, true); input_on_key(INPUT_KEY_A, true));
+    CHECK(input_action_value(move_y) == 1.0f && input_action_value(move_x) == -1.0f);
+    FRAME(0.016f, input_on_key(INPUT_KEY_D, true));
+    CHECK(input_action_value(move_x) == 0.0f);
+    FRAME(0.016f, input_on_key(INPUT_KEY_A, false); input_on_key(INPUT_KEY_D, false); input_on_key(INPUT_KEY_W, false));
+
+    // The stick: pushed up is forward. With a key held too, the one pushed further wins.
+    input_pad_raw pad = pad_at_rest();
+    pad.axes[INPUT_PAD_LEFT_Y] = -1.0f;
+    FRAME(0.016f, input_on_pad(0, &pad));
+    CHECK(near(input_action_value(move_y), 1.0f));
+    pad.axes[INPUT_PAD_LEFT_Y] = 0.6f;   // half back
+    FRAME(0.016f, input_on_pad(0, &pad); input_on_key(INPUT_KEY_W, true));
+    CHECK(input_action_value(move_y) == 1.0f);
+    FRAME(0.016f, input_on_pad(0, &pad); input_on_key(INPUT_KEY_W, false));
+    CHECK(near(input_action_value(move_y), -0.5f));   // (0.6 - 0.2) / 0.8, flipped
+
+    // Bumpers fly up and down.
+    pad = pad_at_rest();
+    pad.buttons[INPUT_PAD_LEFT_BUMPER] = true;
+    FRAME(0.016f, input_on_pad(0, &pad));
+    CHECK(input_action_value(up) == -1.0f);
+    pad.buttons[INPUT_PAD_LEFT_BUMPER] = false;
+    FRAME(0.016f, input_on_pad(0, &pad); input_on_key(INPUT_KEY_E, true));
+    CHECK(input_action_value(up) == 1.0f);
+}
+
+static void
+test_action_look(void)
+{
+    input_reset();
+    input_actions_set_defaults();
+    input_action look_x = input_action_find("look_x");
+    input_action look_y = input_action_find("look_y");
+
+    // Mouse: 0.1 degree a pixel, whatever the frame time.
+    FRAME(0.016f, input_on_cursor(100.0, 100.0, true));
+    FRAME(0.5f,   input_on_cursor(130.0, 90.0, true));
+    CHECK(near(input_action_value(look_x), 3.0f) && near(input_action_value(look_y), -1.0f));
+    FRAME(0.016f, (void)0);
+    CHECK(input_action_value(look_x) == 0.0f);
+
+    // Stick: 150 degrees a second, times the frame.
+    input_pad_raw pad = pad_at_rest();
+    pad.axes[INPUT_PAD_RIGHT_X] = 1.0f;
+    FRAME(0.02f, input_on_pad(0, &pad));
+    CHECK(near(input_action_value(look_x), 3.0f));
+
+    // Both at once add up.
+    FRAME(0.02f, input_on_pad(0, &pad); input_on_cursor(140.0, 90.0, true));
+    CHECK(near(input_action_value(look_x), 4.0f));
+
+    // A long stall counts as 0.1 s.
+    FRAME(2.0f, input_on_pad(0, &pad));
+    CHECK(near(input_action_value(look_x), 15.0f));
+}
+
+static void
+test_action_setup(void)
+{
+    input_actions_clear();
+    CHECK(input_action_count() == 0);
+
+    input_action a = input_action_add("walk", INPUT_ACTION_AXIS);
+    CHECK(a != INPUT_ACTION_NONE && input_action_count() == 1);
+    CHECK(input_action_add("walk", INPUT_ACTION_AXIS) == a && input_action_count() == 1);   // same one again
+    CHECK(input_action_add("", INPUT_ACTION_BUTTON) == INPUT_ACTION_NONE);
+    CHECK(input_action_add("a_name_far_too_long_for_an_action_slot", INPUT_ACTION_BUTTON) == INPUT_ACTION_NONE);
+
+    // Mouse motion only fits a delta axis.
+    CHECK(!input_action_bind(a, input_binding_mouse_motion(0, 1.0f)));
+    CHECK(!input_action_bind(INPUT_ACTION_NONE, input_binding_key(INPUT_KEY_W)));
+
+    for (int i = 0; i < INPUT_ACTION_MAX_BINDINGS; ++i)
+        CHECK(input_action_bind(a, input_binding_key(INPUT_KEY_W)));
+    CHECK(!input_action_bind(a, input_binding_key(INPUT_KEY_W)));   // full
+
+    int count = 0;
+    const input_binding* bindings = input_action_bindings(a, &count);
+    CHECK(count == INPUT_ACTION_MAX_BINDINGS && bindings[0].kind == INPUT_BINDING_KEY && bindings[0].code == INPUT_KEY_W);
+    input_action_unbind_all(a);
+    input_action_bindings(a, &count);
+    CHECK(count == 0);
+
+    for (int i = 1; i < INPUT_ACTION_MAX; ++i)
+    {
+        char name[16];
+        snprintf(name, sizeof(name), "action_%d", i);
+        CHECK(input_action_add(name, INPUT_ACTION_BUTTON) != INPUT_ACTION_NONE);
+    }
+    CHECK(input_action_add("one_too_many", INPUT_ACTION_BUTTON) == INPUT_ACTION_NONE);
+
+    input_actions_set_defaults();
+    CHECK(input_action_count() == 7 && input_action_find("action_1") == INPUT_ACTION_NONE);
+    CHECK(input_action_get_kind(input_action_find("look_y")) == INPUT_ACTION_AXIS_DELTA);
+}
+
 int
 main(void)
 {
+    test_action_buttons();
+    test_action_axes();
+    test_action_look();
+    test_action_setup();
     test_key_edges();
     test_mouse_buttons_and_focus();
     test_mouse_movement();

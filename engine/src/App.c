@@ -1,6 +1,7 @@
 #include "App.h"
 
 #include "Platform/Input.h"
+#include "Platform/InputActions.h"
 #include "Renderer/Renderer.h"
 
 #include <GLFW/glfw3.h>
@@ -111,6 +112,7 @@ void run(App* app)
     window_set_cursor_pos_callback(rend->drawing_window, glfw_cursor_pos_cb);
     window_set_focus_callback(rend->drawing_window, glfw_focus_cb);
     input_reset();
+    input_actions_set_defaults();   // before on_init, which may replace them
 
     // The UI needs a live GL context + window, so it can only be set up
     // after init_renderer() above has created both.
@@ -138,6 +140,7 @@ void run(App* app)
         input_begin_frame();
         renderer_begin_frame();
         input_poll_pads();
+        input_actions_update(dt);
 
         renderer_clear(0.4f, 0.1f, 0.12f, 1.0f);
 
