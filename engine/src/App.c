@@ -1,5 +1,6 @@
 #include "App.h"
 
+#include "Platform/Input.h"
 #include "Renderer/Renderer.h"
 
 #include <GLFW/glfw3.h>
@@ -9,29 +10,61 @@
 // through this. Owned here so applications never touch GLFW callbacks.
 static App* g_app = NULL;
 
+static b8 ui_claims_keyboard(void)
+{
+    return g_app && g_app->ui && g_app->ui->wants_keyboard();
+}
+
+// A locked cursor belongs to the app (mouse-look), whatever is under it.
+static b8 ui_claims_mouse(void)
+{
+    return g_app && g_app->ui && input_cursor_mode() != WINDOW_CURSOR_LOCKED && g_app->ui->wants_mouse();
+}
+
 static void glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (!g_app || !g_app->on_key)
-        return;
-
     // Always forward releases: if the UI grabbed focus between press and
     // release, swallowing the release would leave the app thinking the key
     // is still held.
-    if (action != GLFW_RELEASE && g_app->ui && g_app->ui->wants_keyboard())
+    if (action != GLFW_RELEASE && ui_claims_keyboard())
         return;
 
-    g_app->on_key(g_app, key, action, mods);
+    if (action != GLFW_REPEAT)
+        input_on_key(key, action == GLFW_PRESS);
+
+    if (g_app && g_app->on_key)
+        g_app->on_key(g_app, key, action, mods);
+}
+
+static void glfw_mouse_button_cb(GLFWwindow* window, int button, int action, int mods)
+{
+    if (action != GLFW_RELEASE && ui_claims_mouse())
+        return;
+
+    input_on_mouse_button(button, action == GLFW_PRESS);
+}
+
+// The position is always kept, so moving off a panel doesn't read as a jump;
+// only the movement over the UI is dropped.
+static void glfw_cursor_pos_cb(GLFWwindow* window, double x, double y)
+{
+    input_on_cursor(x, y, !ui_claims_mouse());
+}
+
+static void glfw_focus_cb(GLFWwindow* window, int focused)
+{
+    input_on_focus(focused == GLFW_TRUE);
 }
 
 static void glfw_scroll_cb(GLFWwindow* window, double xoffset, double yoffset)
 {
-    if (!g_app || !g_app->on_scroll)
+    if (ui_claims_mouse())
         return;
 
-    if (g_app->ui && g_app->ui->wants_mouse())
-        return;
+    input_on_scroll(xoffset, yoffset);
 
-    g_app->on_scroll(g_app, xoffset, yoffset);
+    if (g_app && g_app->on_scroll)
+        g_app->on_scroll(g_app, xoffset, yoffset);
 }
 
 static void glfw_resize_cb(GLFWwindow* window, int width, int height)
@@ -74,6 +107,10 @@ void run(App* app)
     window_set_key_callback(rend->drawing_window, glfw_key_cb);
     window_set_scroll_callback(rend->drawing_window, glfw_scroll_cb);
     window_set_resize_callback(rend->drawing_window, glfw_resize_cb);
+    window_set_mouse_button_callback(rend->drawing_window, glfw_mouse_button_cb);
+    window_set_cursor_pos_callback(rend->drawing_window, glfw_cursor_pos_cb);
+    window_set_focus_callback(rend->drawing_window, glfw_focus_cb);
+    input_reset();
 
     // The UI needs a live GL context + window, so it can only be set up
     // after init_renderer() above has created both.
@@ -97,6 +134,8 @@ void run(App* app)
         f32 dt = (f32)(now - last_time);
         last_time = now;
 
+        // This frame's input is what renderer_begin_frame()'s event poll brings.
+        input_begin_frame();
         renderer_begin_frame();
 
         renderer_clear(0.4f, 0.1f, 0.12f, 1.0f);

@@ -8,7 +8,8 @@ struct App;
 // All hooks are optional (may be NULL). With a UI layer (App.ui), input
 // hooks only fire for events the UI did not claim (typing in a text box,
 // scrolling a panel), so an app never has to check its capture flags
-// itself. Key and mouse codes are GLFW's for now.
+// itself. Key and mouse codes are GLFW's (the same numbers as
+// Platform/Input.h, which is the simpler way to read input from on_frame).
 
 // Once, after the window, GL context, RHI and ImGui exist -- create GPU
 // resources here.

@@ -1,133 +1,148 @@
 {
 	"entities":	[{
-			"id":	2097152,
-			"name":	"bulky_knight",
+			"id":	1048576,
+			"name":	"dock_crate_3",
 			"parent":	null,
 			"components":	{
 				"Transform":	{
-					"position":	[0, 0.0230125, 12.7773],
+					"position":	[5.4, 1.3, 11.4],
 					"rotation_deg":	[0, 0, 0],
-					"scale":	[13.7602, 13.7602, 13.7602]
+					"scale":	[0.55, 0.55, 0.55]
 				},
 				"MeshRenderer":	{
-					"model":	"models/bulky_knight.glb",
+					"model":	"models/BoxTextured.glb",
 					"visible":	true,
-					"cast_shadows":	true
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.8, 0.8],
+					"material.metallic":	0.1,
+					"material.roughness":	0.8
 				}
 			}
 		}, {
-			"id":	2097153,
-			"name":	"lord_krishna_statue_3d_model_free_2",
+			"id":	1048577,
+			"name":	"dock_crate_2",
 			"parent":	null,
 			"components":	{
 				"Transform":	{
-					"position":	[-2.30125, 0.500526, 12.7773],
+					"position":	[5.4, 0.7, 11.8],
 					"rotation_deg":	[0, 0, 0],
-					"scale":	[0.52667, 0.52667, 0.52667]
+					"scale":	[0.6, 0.6, 0.6]
 				},
 				"MeshRenderer":	{
-					"model":	"models/lord_krishna_statue_3d_model_free.glb",
+					"model":	"models/BoxTextured.glb",
 					"visible":	true,
-					"cast_shadows":	true
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.8, 0.8],
+					"material.metallic":	0.1,
+					"material.roughness":	0.8
 				}
 			}
 		}, {
-			"id":	2097154,
-			"name":	"sphere",
+			"id":	1048578,
+			"name":	"dock_crate_1",
 			"parent":	null,
 			"components":	{
 				"Transform":	{
-					"position":	[-4.90017, 0.5, 12.7773],
+					"position":	[5.4, 0.7, 11],
 					"rotation_deg":	[0, 0, 0],
-					"scale":	[0.5, 0.5, 0.5]
+					"scale":	[0.7, 0.7, 0.7]
 				},
 				"MeshRenderer":	{
-					"model":	"models/sphere.obj",
+					"model":	"models/BoxTextured.glb",
 					"visible":	true,
-					"cast_shadows":	true
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.8, 0.8],
+					"material.metallic":	0.1,
+					"material.roughness":	0.8
 				}
 			}
 		}, {
-			"id":	2097155,
-			"name":	"avocado",
+			"id":	1048579,
+			"name":	"pier_crane_arm",
 			"parent":	null,
 			"components":	{
 				"Transform":	{
-					"position":	[0, 0.00075901, 16.2491],
-					"rotation_deg":	[0, 0, 0],
-					"scale":	[15.8993, 15.8993, 15.8993]
-				},
-				"MeshRenderer":	{
-					"model":	"models/Avocado.glb",
-					"visible":	true,
-					"cast_shadows":	true
-				}
-			}
-		}, {
-			"id":	2097156,
-			"name":	"cube_2",
-			"parent":	null,
-			"components":	{
-				"Transform":	{
-					"position":	[0, 0.5, 39.8853],
-					"rotation_deg":	[0, 0, 0],
-					"scale":	[17.8952, 8.94431, 17.3384]
+					"position":	[6.2, 2.5, 17],
+					"rotation_deg":	[35, 0, 0],
+					"scale":	[0.18, 2.2, 0.18]
 				},
 				"MeshRenderer":	{
 					"model":	"builtin:cube",
 					"visible":	true,
-					"cast_shadows":	true
-				},
-				"Spin":	{
-					"degrees_per_second":	[0, 30, 0]
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.18, 0.12],
+					"material.roughness":	0.8
 				}
 			}
 		}, {
-			"id":	2097157,
-			"name":	"lord_krishna_statue_3d_model_free",
+			"id":	1048580,
+			"name":	"dock_crate_4",
 			"parent":	null,
 			"components":	{
 				"Transform":	{
-					"position":	[0, 0.500526, 2.9],
+					"position":	[6.6, 0.7, 9.5],
 					"rotation_deg":	[0, 0, 0],
-					"scale":	[0.52667, 0.52667, 0.52667]
+					"scale":	[0.65, 0.65, 0.65]
 				},
 				"MeshRenderer":	{
-					"model":	"models/lord_krishna_statue_3d_model_free.glb",
+					"model":	"models/BoxTextured.glb",
 					"visible":	true,
-					"cast_shadows":	true
+					"cast_shadows":	true,
+					"material.base_color":	[0.8, 0.8, 0.8],
+					"material.metallic":	0.1,
+					"material.roughness":	0.8
 				}
 			}
 		}, {
-			"id":	2097158,
-			"name":	"cube",
+			"id":	1048581,
+			"name":	"promenade_curb",
 			"parent":	null,
 			"components":	{
 				"Transform":	{
-					"position":	[0, 0.5, 5],
+					"position":	[0, 0.65, 3],
 					"rotation_deg":	[0, 0, 0],
-					"scale":	[1, 1, 1]
+					"scale":	[36, 0.3, 0.3]
 				},
 				"MeshRenderer":	{
 					"model":	"builtin:cube",
 					"visible":	true,
-					"cast_shadows":	true
+					"cast_shadows":	true,
+					"material.base_color":	[0.4, 0.38, 0.35],
+					"material.roughness":	0.85
 				}
 			}
 		}, {
-			"id":	2097159,
+			"id":	1048582,
+			"name":	"pier_crane_base",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6.8, 1.2, 16.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 1.2, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.25, 0.18, 0.12],
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	1048583,
 			"name":	"sun",
 			"parent":	null,
 			"components":	{
 				"Transform":	{
-					"position":	[0, 0, 0],
+					"position":	[-8.34669, 54.9639, 29.3127],
 					"rotation_deg":	[0, 0, 0],
 					"scale":	[1, 1, 1]
 				},
 				"Light":	{
 					"type":	"directional",
 					"color":	[1, 0.62, 0.4],
-					"intensity":	1.4,
+					"intensity":	0.9,
 					"direction":	[0.6, -0.3, -0.75],
 					"range":	0,
 					"inner_cone_degrees":	20,
@@ -136,7 +151,7 @@
 				}
 			}
 		}, {
-			"id":	2097164,
+			"id":	1048584,
 			"name":	"gull_flock_b",
 			"parent":	null,
 			"components":	{
@@ -150,7 +165,7 @@
 				}
 			}
 		}, {
-			"id":	2097160,
+			"id":	1048585,
 			"name":	"gull_5_wings",
 			"parent":	"gull_flock_b",
 			"components":	{
@@ -168,7 +183,7 @@
 				}
 			}
 		}, {
-			"id":	2097161,
+			"id":	1048586,
 			"name":	"gull_5_body",
 			"parent":	"gull_flock_b",
 			"components":	{
@@ -186,7 +201,7 @@
 				}
 			}
 		}, {
-			"id":	2097162,
+			"id":	1048587,
 			"name":	"gull_4_wings",
 			"parent":	"gull_flock_b",
 			"components":	{
@@ -204,7 +219,7 @@
 				}
 			}
 		}, {
-			"id":	2097163,
+			"id":	1048588,
 			"name":	"gull_4_body",
 			"parent":	"gull_flock_b",
 			"components":	{
@@ -222,7 +237,7 @@
 				}
 			}
 		}, {
-			"id":	2097171,
+			"id":	1048589,
 			"name":	"gull_flock_a",
 			"parent":	null,
 			"components":	{
@@ -236,7 +251,7 @@
 				}
 			}
 		}, {
-			"id":	2097165,
+			"id":	1048590,
 			"name":	"gull_3_wings",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -254,7 +269,7 @@
 				}
 			}
 		}, {
-			"id":	2097166,
+			"id":	1048591,
 			"name":	"gull_3_body",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -272,7 +287,7 @@
 				}
 			}
 		}, {
-			"id":	2097167,
+			"id":	1048592,
 			"name":	"gull_2_wings",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -290,7 +305,7 @@
 				}
 			}
 		}, {
-			"id":	2097168,
+			"id":	1048593,
 			"name":	"gull_2_body",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -308,7 +323,7 @@
 				}
 			}
 		}, {
-			"id":	2097169,
+			"id":	1048594,
 			"name":	"gull_1_wings",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -326,7 +341,7 @@
 				}
 			}
 		}, {
-			"id":	2097170,
+			"id":	1048595,
 			"name":	"gull_1_body",
 			"parent":	"gull_flock_a",
 			"components":	{
@@ -344,7 +359,7 @@
 				}
 			}
 		}, {
-			"id":	2097177,
+			"id":	1048596,
 			"name":	"bay_route",
 			"parent":	null,
 			"components":	{
@@ -358,7 +373,7 @@
 				}
 			}
 		}, {
-			"id":	2097172,
+			"id":	1048597,
 			"name":	"cruising_boat_light",
 			"parent":	"bay_route",
 			"components":	{
@@ -379,7 +394,7 @@
 				}
 			}
 		}, {
-			"id":	2097173,
+			"id":	1048598,
 			"name":	"cruising_boat_lamp",
 			"parent":	"bay_route",
 			"components":	{
@@ -397,7 +412,7 @@
 				}
 			}
 		}, {
-			"id":	2097174,
+			"id":	1048599,
 			"name":	"cruising_boat_cabin",
 			"parent":	"bay_route",
 			"components":	{
@@ -415,7 +430,7 @@
 				}
 			}
 		}, {
-			"id":	2097175,
+			"id":	1048600,
 			"name":	"cruising_boat_bow",
 			"parent":	"bay_route",
 			"components":	{
@@ -433,7 +448,7 @@
 				}
 			}
 		}, {
-			"id":	2097176,
+			"id":	1048601,
 			"name":	"cruising_boat_hull",
 			"parent":	"bay_route",
 			"components":	{
@@ -451,7 +466,7 @@
 				}
 			}
 		}, {
-			"id":	2097181,
+			"id":	1048602,
 			"name":	"windmill_rotor",
 			"parent":	null,
 			"components":	{
@@ -465,7 +480,7 @@
 				}
 			}
 		}, {
-			"id":	2097178,
+			"id":	1048603,
 			"name":	"windmill_blades_h",
 			"parent":	"windmill_rotor",
 			"components":	{
@@ -483,7 +498,7 @@
 				}
 			}
 		}, {
-			"id":	2097179,
+			"id":	1048604,
 			"name":	"windmill_blades_v",
 			"parent":	"windmill_rotor",
 			"components":	{
@@ -501,7 +516,7 @@
 				}
 			}
 		}, {
-			"id":	2097180,
+			"id":	1048605,
 			"name":	"windmill_hub",
 			"parent":	"windmill_rotor",
 			"components":	{
@@ -520,7 +535,7 @@
 				}
 			}
 		}, {
-			"id":	2097182,
+			"id":	1048606,
 			"name":	"windmill_door",
 			"parent":	null,
 			"components":	{
@@ -538,7 +553,7 @@
 				}
 			}
 		}, {
-			"id":	2097183,
+			"id":	1048607,
 			"name":	"windmill_cap",
 			"parent":	null,
 			"components":	{
@@ -556,7 +571,7 @@
 				}
 			}
 		}, {
-			"id":	2097184,
+			"id":	1048608,
 			"name":	"windmill_tower_b",
 			"parent":	null,
 			"components":	{
@@ -574,7 +589,7 @@
 				}
 			}
 		}, {
-			"id":	2097185,
+			"id":	1048609,
 			"name":	"windmill_tower_a",
 			"parent":	null,
 			"components":	{
@@ -592,7 +607,7 @@
 				}
 			}
 		}, {
-			"id":	2097186,
+			"id":	1048610,
 			"name":	"hill",
 			"parent":	null,
 			"components":	{
@@ -610,7 +625,7 @@
 				}
 			}
 		}, {
-			"id":	2097187,
+			"id":	1048611,
 			"name":	"street_lamp_4_post",
 			"parent":	null,
 			"components":	{
@@ -629,7 +644,7 @@
 				}
 			}
 		}, {
-			"id":	2097188,
+			"id":	1048612,
 			"name":	"street_lamp_4_light",
 			"parent":	null,
 			"components":	{
@@ -650,7 +665,7 @@
 				}
 			}
 		}, {
-			"id":	2097189,
+			"id":	1048613,
 			"name":	"street_lamp_4",
 			"parent":	null,
 			"components":	{
@@ -668,7 +683,7 @@
 				}
 			}
 		}, {
-			"id":	2097190,
+			"id":	1048614,
 			"name":	"street_lamp_3_light",
 			"parent":	null,
 			"components":	{
@@ -689,7 +704,7 @@
 				}
 			}
 		}, {
-			"id":	2097191,
+			"id":	1048615,
 			"name":	"street_lamp_3",
 			"parent":	null,
 			"components":	{
@@ -707,7 +722,7 @@
 				}
 			}
 		}, {
-			"id":	2097192,
+			"id":	1048616,
 			"name":	"street_lamp_3_post",
 			"parent":	null,
 			"components":	{
@@ -726,7 +741,7 @@
 				}
 			}
 		}, {
-			"id":	2097193,
+			"id":	1048617,
 			"name":	"street_lamp_2_light",
 			"parent":	null,
 			"components":	{
@@ -747,7 +762,7 @@
 				}
 			}
 		}, {
-			"id":	2097194,
+			"id":	1048618,
 			"name":	"street_lamp_2",
 			"parent":	null,
 			"components":	{
@@ -765,7 +780,7 @@
 				}
 			}
 		}, {
-			"id":	2097195,
+			"id":	1048619,
 			"name":	"street_lamp_2_post",
 			"parent":	null,
 			"components":	{
@@ -784,7 +799,7 @@
 				}
 			}
 		}, {
-			"id":	2097196,
+			"id":	1048620,
 			"name":	"street_lamp_1_light",
 			"parent":	null,
 			"components":	{
@@ -805,7 +820,7 @@
 				}
 			}
 		}, {
-			"id":	2097197,
+			"id":	1048621,
 			"name":	"street_lamp_1",
 			"parent":	null,
 			"components":	{
@@ -823,7 +838,7 @@
 				}
 			}
 		}, {
-			"id":	2097198,
+			"id":	1048622,
 			"name":	"street_lamp_1_post",
 			"parent":	null,
 			"components":	{
@@ -842,7 +857,7 @@
 				}
 			}
 		}, {
-			"id":	2097199,
+			"id":	1048623,
 			"name":	"tree_8_crown",
 			"parent":	null,
 			"components":	{
@@ -860,7 +875,7 @@
 				}
 			}
 		}, {
-			"id":	2097200,
+			"id":	1048624,
 			"name":	"tree_8_trunk",
 			"parent":	null,
 			"components":	{
@@ -878,7 +893,7 @@
 				}
 			}
 		}, {
-			"id":	2097201,
+			"id":	1048625,
 			"name":	"tree_7_crown",
 			"parent":	null,
 			"components":	{
@@ -896,7 +911,7 @@
 				}
 			}
 		}, {
-			"id":	2097202,
+			"id":	1048626,
 			"name":	"tree_7_trunk",
 			"parent":	null,
 			"components":	{
@@ -914,7 +929,7 @@
 				}
 			}
 		}, {
-			"id":	2097203,
+			"id":	1048627,
 			"name":	"tree_6_crown",
 			"parent":	null,
 			"components":	{
@@ -932,7 +947,7 @@
 				}
 			}
 		}, {
-			"id":	2097204,
+			"id":	1048628,
 			"name":	"tree_6_trunk",
 			"parent":	null,
 			"components":	{
@@ -950,7 +965,7 @@
 				}
 			}
 		}, {
-			"id":	2097205,
+			"id":	1048629,
 			"name":	"tree_5_crown",
 			"parent":	null,
 			"components":	{
@@ -968,7 +983,7 @@
 				}
 			}
 		}, {
-			"id":	2097206,
+			"id":	1048630,
 			"name":	"tree_5_trunk",
 			"parent":	null,
 			"components":	{
@@ -986,7 +1001,7 @@
 				}
 			}
 		}, {
-			"id":	2097207,
+			"id":	1048631,
 			"name":	"tree_4_crown",
 			"parent":	null,
 			"components":	{
@@ -1004,7 +1019,7 @@
 				}
 			}
 		}, {
-			"id":	2097208,
+			"id":	1048632,
 			"name":	"tree_4_trunk",
 			"parent":	null,
 			"components":	{
@@ -1022,7 +1037,7 @@
 				}
 			}
 		}, {
-			"id":	2097209,
+			"id":	1048633,
 			"name":	"tree_3_crown",
 			"parent":	null,
 			"components":	{
@@ -1040,7 +1055,7 @@
 				}
 			}
 		}, {
-			"id":	2097210,
+			"id":	1048634,
 			"name":	"tree_3_trunk",
 			"parent":	null,
 			"components":	{
@@ -1058,7 +1073,7 @@
 				}
 			}
 		}, {
-			"id":	2097211,
+			"id":	1048635,
 			"name":	"tree_2_crown",
 			"parent":	null,
 			"components":	{
@@ -1076,7 +1091,7 @@
 				}
 			}
 		}, {
-			"id":	2097212,
+			"id":	1048636,
 			"name":	"tree_2_trunk",
 			"parent":	null,
 			"components":	{
@@ -1094,7 +1109,7 @@
 				}
 			}
 		}, {
-			"id":	2097213,
+			"id":	1048637,
 			"name":	"tree_1_crown",
 			"parent":	null,
 			"components":	{
@@ -1112,7 +1127,7 @@
 				}
 			}
 		}, {
-			"id":	2097214,
+			"id":	1048638,
 			"name":	"tree_1_trunk",
 			"parent":	null,
 			"components":	{
@@ -1130,7 +1145,7 @@
 				}
 			}
 		}, {
-			"id":	2097215,
+			"id":	1048639,
 			"name":	"house_6_window",
 			"parent":	null,
 			"components":	{
@@ -1148,7 +1163,7 @@
 				}
 			}
 		}, {
-			"id":	2097216,
+			"id":	1048640,
 			"name":	"house_6_roof",
 			"parent":	null,
 			"components":	{
@@ -1166,7 +1181,7 @@
 				}
 			}
 		}, {
-			"id":	2097217,
+			"id":	1048641,
 			"name":	"house_6",
 			"parent":	null,
 			"components":	{
@@ -1184,7 +1199,7 @@
 				}
 			}
 		}, {
-			"id":	2097218,
+			"id":	1048642,
 			"name":	"house_5_window_upper",
 			"parent":	null,
 			"components":	{
@@ -1202,7 +1217,7 @@
 				}
 			}
 		}, {
-			"id":	2097219,
+			"id":	1048643,
 			"name":	"house_5_roof",
 			"parent":	null,
 			"components":	{
@@ -1220,7 +1235,7 @@
 				}
 			}
 		}, {
-			"id":	2097220,
+			"id":	1048644,
 			"name":	"house_5",
 			"parent":	null,
 			"components":	{
@@ -1238,7 +1253,7 @@
 				}
 			}
 		}, {
-			"id":	2097221,
+			"id":	1048645,
 			"name":	"house_4_window",
 			"parent":	null,
 			"components":	{
@@ -1256,7 +1271,7 @@
 				}
 			}
 		}, {
-			"id":	2097222,
+			"id":	1048646,
 			"name":	"house_4_roof",
 			"parent":	null,
 			"components":	{
@@ -1274,7 +1289,7 @@
 				}
 			}
 		}, {
-			"id":	2097223,
+			"id":	1048647,
 			"name":	"house_4",
 			"parent":	null,
 			"components":	{
@@ -1292,7 +1307,7 @@
 				}
 			}
 		}, {
-			"id":	2097224,
+			"id":	1048648,
 			"name":	"house_3_window_r",
 			"parent":	null,
 			"components":	{
@@ -1310,7 +1325,7 @@
 				}
 			}
 		}, {
-			"id":	2097225,
+			"id":	1048649,
 			"name":	"house_3_window_l",
 			"parent":	null,
 			"components":	{
@@ -1328,7 +1343,7 @@
 				}
 			}
 		}, {
-			"id":	2097226,
+			"id":	1048650,
 			"name":	"house_3_roof",
 			"parent":	null,
 			"components":	{
@@ -1346,7 +1361,7 @@
 				}
 			}
 		}, {
-			"id":	2097227,
+			"id":	1048651,
 			"name":	"house_3",
 			"parent":	null,
 			"components":	{
@@ -1364,7 +1379,7 @@
 				}
 			}
 		}, {
-			"id":	2097228,
+			"id":	1048652,
 			"name":	"house_2_window_r",
 			"parent":	null,
 			"components":	{
@@ -1382,7 +1397,7 @@
 				}
 			}
 		}, {
-			"id":	2097229,
+			"id":	1048653,
 			"name":	"house_2_window_l",
 			"parent":	null,
 			"components":	{
@@ -1400,7 +1415,7 @@
 				}
 			}
 		}, {
-			"id":	2097230,
+			"id":	1048654,
 			"name":	"house_2_roof",
 			"parent":	null,
 			"components":	{
@@ -1418,7 +1433,7 @@
 				}
 			}
 		}, {
-			"id":	2097231,
+			"id":	1048655,
 			"name":	"house_2",
 			"parent":	null,
 			"components":	{
@@ -1436,7 +1451,7 @@
 				}
 			}
 		}, {
-			"id":	2097232,
+			"id":	1048656,
 			"name":	"house_1_window_r",
 			"parent":	null,
 			"components":	{
@@ -1454,7 +1469,7 @@
 				}
 			}
 		}, {
-			"id":	2097233,
+			"id":	1048657,
 			"name":	"house_1_window_l",
 			"parent":	null,
 			"components":	{
@@ -1472,7 +1487,7 @@
 				}
 			}
 		}, {
-			"id":	2097234,
+			"id":	1048658,
 			"name":	"house_1_roof",
 			"parent":	null,
 			"components":	{
@@ -1490,7 +1505,7 @@
 				}
 			}
 		}, {
-			"id":	2097235,
+			"id":	1048659,
 			"name":	"house_1",
 			"parent":	null,
 			"components":	{
@@ -1508,7 +1523,7 @@
 				}
 			}
 		}, {
-			"id":	2097238,
+			"id":	1048660,
 			"name":	"beam_pivot",
 			"parent":	null,
 			"components":	{
@@ -1522,7 +1537,7 @@
 				}
 			}
 		}, {
-			"id":	2097236,
+			"id":	1048661,
 			"name":	"beam_spot_b",
 			"parent":	"beam_pivot",
 			"components":	{
@@ -1543,7 +1558,7 @@
 				}
 			}
 		}, {
-			"id":	2097237,
+			"id":	1048662,
 			"name":	"beam_spot_a",
 			"parent":	"beam_pivot",
 			"components":	{
@@ -1564,7 +1579,7 @@
 				}
 			}
 		}, {
-			"id":	2097239,
+			"id":	1048663,
 			"name":	"lighthouse_glow",
 			"parent":	null,
 			"components":	{
@@ -1585,7 +1600,7 @@
 				}
 			}
 		}, {
-			"id":	2097240,
+			"id":	1048664,
 			"name":	"lighthouse_tip",
 			"parent":	null,
 			"components":	{
@@ -1604,7 +1619,7 @@
 				}
 			}
 		}, {
-			"id":	2097241,
+			"id":	1048665,
 			"name":	"lighthouse_roof",
 			"parent":	null,
 			"components":	{
@@ -1622,7 +1637,7 @@
 				}
 			}
 		}, {
-			"id":	2097242,
+			"id":	1048666,
 			"name":	"lighthouse_lantern",
 			"parent":	null,
 			"components":	{
@@ -1640,7 +1655,7 @@
 				}
 			}
 		}, {
-			"id":	2097243,
+			"id":	1048667,
 			"name":	"lighthouse_gallery",
 			"parent":	null,
 			"components":	{
@@ -1659,7 +1674,7 @@
 				}
 			}
 		}, {
-			"id":	2097244,
+			"id":	1048668,
 			"name":	"lighthouse_tier2_a",
 			"parent":	null,
 			"components":	{
@@ -1677,7 +1692,7 @@
 				}
 			}
 		}, {
-			"id":	2097245,
+			"id":	1048669,
 			"name":	"lighthouse_tier3_b",
 			"parent":	null,
 			"components":	{
@@ -1695,7 +1710,7 @@
 				}
 			}
 		}, {
-			"id":	2097246,
+			"id":	1048670,
 			"name":	"lighthouse_tier3_a",
 			"parent":	null,
 			"components":	{
@@ -1713,7 +1728,7 @@
 				}
 			}
 		}, {
-			"id":	2097247,
+			"id":	1048671,
 			"name":	"lighthouse_tier2_b",
 			"parent":	null,
 			"components":	{
@@ -1731,7 +1746,7 @@
 				}
 			}
 		}, {
-			"id":	2097248,
+			"id":	1048672,
 			"name":	"sailboat_sail",
 			"parent":	null,
 			"components":	{
@@ -1749,7 +1764,7 @@
 				}
 			}
 		}, {
-			"id":	2097249,
+			"id":	1048673,
 			"name":	"lighthouse_tier1_b",
 			"parent":	null,
 			"components":	{
@@ -1767,7 +1782,7 @@
 				}
 			}
 		}, {
-			"id":	2097250,
+			"id":	1048674,
 			"name":	"lighthouse_tier1_a",
 			"parent":	null,
 			"components":	{
@@ -1785,7 +1800,7 @@
 				}
 			}
 		}, {
-			"id":	2097251,
+			"id":	1048675,
 			"name":	"rock_2",
 			"parent":	null,
 			"components":	{
@@ -1803,7 +1818,7 @@
 				}
 			}
 		}, {
-			"id":	2097252,
+			"id":	1048676,
 			"name":	"rock_1",
 			"parent":	null,
 			"components":	{
@@ -1821,7 +1836,7 @@
 				}
 			}
 		}, {
-			"id":	2097253,
+			"id":	1048677,
 			"name":	"headland_rock",
 			"parent":	null,
 			"components":	{
@@ -1839,7 +1854,7 @@
 				}
 			}
 		}, {
-			"id":	2097254,
+			"id":	1048678,
 			"name":	"sea",
 			"parent":	null,
 			"components":	{
@@ -1858,7 +1873,7 @@
 				}
 			}
 		}, {
-			"id":	2097255,
+			"id":	1048679,
 			"name":	"sailboat_mast",
 			"parent":	null,
 			"components":	{
@@ -1876,7 +1891,7 @@
 				}
 			}
 		}, {
-			"id":	2097256,
+			"id":	1048680,
 			"name":	"sailboat_bow",
 			"parent":	null,
 			"components":	{
@@ -1894,7 +1909,7 @@
 				}
 			}
 		}, {
-			"id":	2097257,
+			"id":	1048681,
 			"name":	"sailboat_hull",
 			"parent":	null,
 			"components":	{
@@ -1912,7 +1927,7 @@
 				}
 			}
 		}, {
-			"id":	2097258,
+			"id":	1048682,
 			"name":	"moored_boat_cabin",
 			"parent":	null,
 			"components":	{
@@ -1930,7 +1945,7 @@
 				}
 			}
 		}, {
-			"id":	2097259,
+			"id":	1048683,
 			"name":	"moored_boat_bow",
 			"parent":	null,
 			"components":	{
@@ -1948,7 +1963,7 @@
 				}
 			}
 		}, {
-			"id":	2097260,
+			"id":	1048684,
 			"name":	"moored_boat_hull",
 			"parent":	null,
 			"components":	{
@@ -1966,7 +1981,7 @@
 				}
 			}
 		}, {
-			"id":	2097261,
+			"id":	1048685,
 			"name":	"dock_post_1",
 			"parent":	null,
 			"components":	{
@@ -1984,7 +1999,7 @@
 				}
 			}
 		}, {
-			"id":	2097262,
+			"id":	1048686,
 			"name":	"island",
 			"parent":	null,
 			"components":	{
@@ -2002,7 +2017,7 @@
 				}
 			}
 		}, {
-			"id":	2097263,
+			"id":	1048687,
 			"name":	"beach",
 			"parent":	null,
 			"components":	{
@@ -2020,7 +2035,7 @@
 				}
 			}
 		}, {
-			"id":	2097264,
+			"id":	1048688,
 			"name":	"promenade",
 			"parent":	null,
 			"components":	{
@@ -2038,7 +2053,7 @@
 				}
 			}
 		}, {
-			"id":	2097265,
+			"id":	1048689,
 			"name":	"dock_deck",
 			"parent":	null,
 			"components":	{
@@ -2056,7 +2071,7 @@
 				}
 			}
 		}, {
-			"id":	2097266,
+			"id":	1048690,
 			"name":	"dock_post_2",
 			"parent":	null,
 			"components":	{
@@ -2074,7 +2089,7 @@
 				}
 			}
 		}, {
-			"id":	2097267,
+			"id":	1048691,
 			"name":	"dock_post_3",
 			"parent":	null,
 			"components":	{
@@ -2092,7 +2107,7 @@
 				}
 			}
 		}, {
-			"id":	2097268,
+			"id":	1048692,
 			"name":	"dock_post_4",
 			"parent":	null,
 			"components":	{
@@ -2110,7 +2125,7 @@
 				}
 			}
 		}, {
-			"id":	2097269,
+			"id":	1048693,
 			"name":	"dock_post_5",
 			"parent":	null,
 			"components":	{
@@ -2128,7 +2143,7 @@
 				}
 			}
 		}, {
-			"id":	2097270,
+			"id":	1048694,
 			"name":	"dock_post_6",
 			"parent":	null,
 			"components":	{
@@ -2146,7 +2161,7 @@
 				}
 			}
 		}, {
-			"id":	2097271,
+			"id":	1048695,
 			"name":	"dock_lamp_post",
 			"parent":	null,
 			"components":	{
@@ -2165,7 +2180,7 @@
 				}
 			}
 		}, {
-			"id":	2097272,
+			"id":	1048696,
 			"name":	"dock_lamp",
 			"parent":	null,
 			"components":	{
@@ -2183,7 +2198,7 @@
 				}
 			}
 		}, {
-			"id":	2097273,
+			"id":	1048697,
 			"name":	"dock_lamp_light",
 			"parent":	null,
 			"components":	{
@@ -2194,12 +2209,389 @@
 				},
 				"Light":	{
 					"type":	"point",
-					"color":	[1, 0.7, 0.4],
+					"color":	[1, 0.75, 0.4],
 					"intensity":	8,
 					"direction":	[0, -1, 0],
 					"range":	8,
 					"inner_cone_degrees":	20,
 					"outer_cone_degrees":	30,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048698,
+			"name":	"barrel_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6.6, 0.95, 10.3],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.45, 0.65, 0.45]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.32, 0.22, 0.14],
+					"material.roughness":	0.7
+				}
+			}
+		}, {
+			"id":	1048699,
+			"name":	"barrel_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6.6, 0.95, 11],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.45, 0.65, 0.45]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.32, 0.22, 0.14],
+					"material.roughness":	0.7
+				}
+			}
+		}, {
+			"id":	1048700,
+			"name":	"bollard_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.9, 0.85, 15],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.35, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.15, 0.15],
+					"material.metallic":	0.8,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	1048701,
+			"name":	"bollard_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[7.1, 0.85, 15],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.15, 0.35, 0.15]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.15, 0.15],
+					"material.metallic":	0.8,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	1048702,
+			"name":	"rowboat_hull",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1, 0.25, 8],
+					"rotation_deg":	[0, 25, 0],
+					"scale":	[0.9, 0.4, 2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.4, 0.25, 0.15],
+					"material.roughness":	0.7
+				}
+			}
+		}, {
+			"id":	1048703,
+			"name":	"rowboat_seat",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1, 0.38, 8],
+					"rotation_deg":	[0, 25, 0],
+					"scale":	[0.8, 0.08, 0.35]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.38, 0.22],
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	1048704,
+			"name":	"plaza_stone",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.5, 0.52, 0.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[15, 0.06, 2.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.62, 0.6, 0.56],
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	1048705,
+			"name":	"fountain_basin",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.5, 0.7, 0.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[2.2, 0.3, 2.2]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.43, 0.4],
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	1048706,
+			"name":	"fountain_water",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.5, 0.8, 0.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.8, 0.15, 1.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.08, 0.35, 0.48],
+					"material.roughness":	0.1
+				}
+			}
+		}, {
+			"id":	1048707,
+			"name":	"fountain_pedestal",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.5, 1.05, 0.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.5, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.4, 0.38, 0.35],
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	1048708,
+			"name":	"fountain_statue",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.5, 1.3, 0.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.421336, 0.421336, 0.421336]
+				},
+				"MeshRenderer":	{
+					"model":	"models/lord_krishna_statue_3d_model_free.glb",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 0.24, 0.18],
+					"material.metallic":	0.9,
+					"material.roughness":	0.3
+				}
+			}
+		}, {
+			"id":	1048709,
+			"name":	"stall_1_table",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-6, 0.85, 0.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.5, 0.65, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.4, 0.28, 0.16],
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	1048710,
+			"name":	"stall_1_roof",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-6, 2.05, 0.6],
+					"rotation_deg":	[12, 0, 0],
+					"scale":	[1.6, 0.08, 1.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.2, 0.15],
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	1048711,
+			"name":	"stall_2_table",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1, 0.85, 0.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.5, 0.65, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.4, 0.28, 0.16],
+					"material.roughness":	0.8
+				}
+			}
+		}, {
+			"id":	1048712,
+			"name":	"stall_2_roof",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1, 2.05, 0.6],
+					"rotation_deg":	[12, 0, 0],
+					"scale":	[1.6, 0.08, 1.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.4, 0.75],
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	1048713,
+			"name":	"cafe_table",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.8, 0.8, 0.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.8, 0.55, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.5, 0.35, 0.2],
+					"material.roughness":	0.7
+				}
+			}
+		}, {
+			"id":	1048714,
+			"name":	"cafe_parasol",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.8, 2, 0.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.5, 0.25, 1.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.95, 0.9, 0.78],
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	1048715,
+			"name":	"bench_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.5, 0.75, 2.4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 0.45, 0.45]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.35, 0.22, 0.12],
+					"material.roughness":	0.7
+				}
+			}
+		}, {
+			"id":	1048716,
+			"name":	"bench_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.2, 0.75, 2.4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.3, 0.45, 0.45]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.35, 0.22, 0.12],
+					"material.roughness":	0.7
+				}
+			}
+		}, {
+			"id":	1048717,
+			"name":	"avocado",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-34.0259, 21, 2.9],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[15.8993, 15.8993, 15.8993]
+				},
+				"MeshRenderer":	{
+					"model":	"models/Avocado.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048718,
+			"name":	"boxtextured",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-34.2241, 23.0393, 2.9],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"MeshRenderer":	{
+					"model":	"models/BoxTextured.glb",
+					"visible":	true,
 					"cast_shadows":	true
 				}
 			}

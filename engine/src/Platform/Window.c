@@ -164,6 +164,33 @@ void window_set_scroll_callback(window* wind, scroll_callback callback)
     glfwSetScrollCallback(wind->handle, callback);
 }
 
+void window_set_mouse_button_callback(window* wind, mouse_button_callback callback)
+{
+    glfwSetMouseButtonCallback(wind->handle, callback);
+}
+
+void window_set_cursor_pos_callback(window* wind, cursor_pos_callback callback)
+{
+    glfwSetCursorPosCallback(wind->handle, callback);
+}
+
+void window_set_focus_callback(window* wind, focus_callback callback)
+{
+    glfwSetWindowFocusCallback(wind->handle, callback);
+}
+
+void window_set_cursor_mode(window* wind, window_cursor_mode mode)
+{
+    int glfw_mode = mode == WINDOW_CURSOR_LOCKED ? GLFW_CURSOR_DISABLED
+                  : mode == WINDOW_CURSOR_HIDDEN ? GLFW_CURSOR_HIDDEN
+                  : GLFW_CURSOR_NORMAL;
+    glfwSetInputMode(wind->handle, GLFW_CURSOR, glfw_mode);
+
+    // Mouse-look wants the mouse's own movement, without the desktop's acceleration.
+    if (glfwRawMouseMotionSupported())
+        glfwSetInputMode(wind->handle, GLFW_RAW_MOUSE_MOTION, mode == WINDOW_CURSOR_LOCKED ? GLFW_TRUE : GLFW_FALSE);
+}
+
 void window_get_cursor_pos(window* wind, f64* out_x, f64* out_y)
 {
     glfwGetCursorPos(wind->handle, out_x, out_y);

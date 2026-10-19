@@ -61,6 +61,7 @@
 #include "Core/Image.h"
 #include "Core/Paths.h"
 #include "Platform/Dialog.h"
+#include "Platform/Input.h"
 #include "Platform/Window.h"
 #include "Project/Project.h"
 #include "Renderer/IBL.h"
@@ -77,7 +78,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <GLFW/glfw3.h>
 
 #define DEFAULT_SCENE "orrery_plaza"   // for a project folder without a project.json
 #define DEFAULT_HDRI  "hdri/citrus_orchard_road_puresky_4k.hdr"
@@ -121,9 +121,6 @@ typedef struct game_state
 
     // Orbit camera, for scenes without a Camera entity.
     orbit_camera orbit;
-    f64 last_cursor_x;
-    f64 last_cursor_y;
-    b8  dragging;
 } game_state;
 
 // --- Telling the player ----------------------------------------------------------
@@ -261,27 +258,21 @@ frame_scene(game_state* state)
     orbit_apply(&state->orbit, &state->cam);
 }
 
-// Left-drag orbits. Only for the orbit camera; a scene camera stays put.
+// Left-drag orbits, the wheel zooms. Only for the orbit camera; a scene camera stays put.
 static void
-orbit_camera_update(game_state* state, window* wind)
+orbit_camera_update(game_state* state)
 {
-    f64 cursor_x, cursor_y;
-    window_get_cursor_pos(wind, &cursor_x, &cursor_y);
-
-    if (window_is_mouse_button_down(wind, GLFW_MOUSE_BUTTON_LEFT))
+    f32 dx, dy;
+    if (input_mouse_down(INPUT_MOUSE_LEFT))
     {
-        if (state->dragging)
-            orbit_drag(&state->orbit, &state->cam, (f32)(cursor_x - state->last_cursor_x),
-                       (f32)(cursor_y - state->last_cursor_y));
-        state->dragging = true;
-    }
-    else
-    {
-        state->dragging = false;
+        input_mouse_delta(&dx, &dy);
+        if (dx != 0.0f || dy != 0.0f)
+            orbit_drag(&state->orbit, &state->cam, dx, dy);
     }
 
-    state->last_cursor_x = cursor_x;
-    state->last_cursor_y = cursor_y;
+    input_scroll(&dx, &dy);
+    if (dy != 0.0f)
+        orbit_zoom(&state->orbit, &state->cam, dy);
 }
 
 // Picks the view once the scene has loaded: its first Camera entity, else
@@ -346,27 +337,6 @@ on_resize(App* app, uint16 width, uint16 height)
     scene_renderer_resize(&state->renderer, width, height);
 }
 
-static void
-on_key(App* app, int key, int action, int mods)
-{
-    (void)mods;
-
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        app->should_close = true;
-}
-
-static void
-on_scroll(App* app, f64 dx, f64 dy)
-{
-    (void)dx;
-
-    game_state* state = (game_state*)app->user_data;
-    if (state->scene_camera)
-        return;
-
-    orbit_zoom(&state->orbit, &state->cam, (f32)dy);
-}
-
 // --check: the frame as a PNG at check_path. False (logged) if it can't be
 // rendered or written.
 static b8
@@ -402,6 +372,9 @@ on_frame(App* app, f32 dt)
 {
     game_state* state = (game_state*)app->user_data;
 
+    if (input_key_pressed(INPUT_KEY_ESCAPE))
+        app->should_close = true;
+
     // A long stall (window dragged, breakpoint) shouldn't fling things around.
     // A check's picture is the scene as saved, whatever the frame times.
     if (!state->check_path)
@@ -416,7 +389,7 @@ on_frame(App* app, f32 dt)
         frame_scene(state);
     }
     if (!state->scene_camera)
-        orbit_camera_update(state, get_renderer()->drawing_window);
+        orbit_camera_update(state);
 
     scene_render_settings settings = scene_render_settings_default();
     scene_render_settings_apply_environment(&settings, &state->env, ibl_cache_maps(&state->ibl));
@@ -647,8 +620,6 @@ int main(int argc, char** argv)
         .on_init     = on_init,
         .on_frame    = on_frame,
         .on_shutdown = on_shutdown,
-        .on_key      = on_key,
-        .on_scroll   = on_scroll,
         .on_resize   = on_resize,
         .user_data   = &state,
         .ui          = NULL
