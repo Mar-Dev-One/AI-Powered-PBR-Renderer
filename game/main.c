@@ -258,21 +258,28 @@ frame_scene(game_state* state)
     orbit_apply(&state->orbit, &state->cam);
 }
 
-// Left-drag orbits, the wheel zooms. Only for the orbit camera; a scene camera stays put.
+// Left-drag or a pad's right stick orbits; the wheel or the triggers zoom.
+// Only for the orbit camera; a scene camera stays put.
 static void
-orbit_camera_update(game_state* state)
+orbit_camera_update(game_state* state, f32 dt)
 {
-    f32 dx, dy;
-    if (input_mouse_down(INPUT_MOUSE_LEFT))
-    {
-        input_mouse_delta(&dx, &dy);
-        if (dx != 0.0f || dy != 0.0f)
-            orbit_drag(&state->orbit, &state->cam, dx, dy);
-    }
+    const f32 stick_pixels_per_second = 600.0f;   // a full push turns like a fast drag
+    const f32 trigger_notches_per_second = 3.0f;
 
-    input_scroll(&dx, &dy);
-    if (dy != 0.0f)
-        orbit_zoom(&state->orbit, &state->cam, dy);
+    f32 dx = 0.0f, dy = 0.0f;
+    if (input_mouse_down(INPUT_MOUSE_LEFT))
+        input_mouse_delta(&dx, &dy);
+    dx += input_pad_axis_value(INPUT_PAD_ANY, INPUT_PAD_RIGHT_X) * stick_pixels_per_second * dt;
+    dy += input_pad_axis_value(INPUT_PAD_ANY, INPUT_PAD_RIGHT_Y) * stick_pixels_per_second * dt;
+    if (dx != 0.0f || dy != 0.0f)
+        orbit_drag(&state->orbit, &state->cam, dx, dy);
+
+    f32 wheel_x, wheel;
+    input_scroll(&wheel_x, &wheel);
+    wheel += (input_pad_axis_value(INPUT_PAD_ANY, INPUT_PAD_RIGHT_TRIGGER) -
+              input_pad_axis_value(INPUT_PAD_ANY, INPUT_PAD_LEFT_TRIGGER)) * trigger_notches_per_second * dt;
+    if (wheel != 0.0f)
+        orbit_zoom(&state->orbit, &state->cam, wheel);
 }
 
 // Picks the view once the scene has loaded: its first Camera entity, else
@@ -389,7 +396,7 @@ on_frame(App* app, f32 dt)
         frame_scene(state);
     }
     if (!state->scene_camera)
-        orbit_camera_update(state);
+        orbit_camera_update(state, fminf(dt, 0.1f));
 
     scene_render_settings settings = scene_render_settings_default();
     scene_render_settings_apply_environment(&settings, &state->env, ibl_cache_maps(&state->ibl));

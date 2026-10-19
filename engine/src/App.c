@@ -137,6 +137,7 @@ void run(App* app)
         // This frame's input is what renderer_begin_frame()'s event poll brings.
         input_begin_frame();
         renderer_begin_frame();
+        input_poll_pads();
 
         renderer_clear(0.4f, 0.1f, 0.12f, 1.0f);
 

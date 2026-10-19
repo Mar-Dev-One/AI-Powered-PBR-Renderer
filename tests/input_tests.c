@@ -5,7 +5,9 @@
 
 #include "Platform/Input.h"
 
+#include <math.h>
 #include <stdio.h>
+#include <string.h>
 
 static int g_failures = 0;
 static int g_checks   = 0;
@@ -143,12 +145,119 @@ test_mouse_movement(void)
     CHECK(input_cursor_mode() == WINDOW_CURSOR_NORMAL);
 }
 
+// A pad at rest, as GLFW reports it: triggers -1.
+static input_pad_raw
+pad_at_rest(void)
+{
+    input_pad_raw raw = { .name = "Test Pad" };
+    raw.axes[INPUT_PAD_LEFT_TRIGGER] = raw.axes[INPUT_PAD_RIGHT_TRIGGER] = -1.0f;
+    return raw;
+}
+
+static b8
+near(f32 a, f32 b)
+{
+    return fabsf(a - b) < 1e-4f;
+}
+
+static void
+test_pads(void)
+{
+    input_reset();
+
+    CHECK(!input_pad_connected(0) && !input_pad_connected(INPUT_PAD_ANY));
+    CHECK(!input_pad_down(0, INPUT_PAD_A) && input_pad_axis_value(0, INPUT_PAD_LEFT_X) == 0.0f);
+    CHECK(input_pad_name(0)[0] == '\0');
+
+    // Connect pad 1 with A held: pressed on the first frame, down after.
+    input_pad_raw raw = pad_at_rest();
+    raw.buttons[INPUT_PAD_A] = true;
+    input_begin_frame();
+    input_on_pad(1, &raw);
+    CHECK(input_pad_connected(1) && input_pad_connected(INPUT_PAD_ANY) && !input_pad_connected(0));
+    CHECK(strcmp(input_pad_name(1), "Test Pad") == 0);
+    CHECK(input_pad_pressed(1, INPUT_PAD_A) && input_pad_pressed(INPUT_PAD_ANY, INPUT_PAD_A));
+    CHECK(!input_pad_down(0, INPUT_PAD_A) && !input_pad_down(1, INPUT_PAD_B));
+
+    input_begin_frame();
+    input_on_pad(1, &raw);
+    CHECK(input_pad_down(1, INPUT_PAD_A) && !input_pad_pressed(1, INPUT_PAD_A));
+
+    // Triggers at rest read 0, fully pulled 1.
+    CHECK(input_pad_axis_value(1, INPUT_PAD_LEFT_TRIGGER) == 0.0f);
+    raw.axes[INPUT_PAD_RIGHT_TRIGGER] = 1.0f;
+    input_on_pad(1, &raw);
+    CHECK(near(input_pad_axis_value(1, INPUT_PAD_RIGHT_TRIGGER), 1.0f));
+
+    // Sticks: drift inside the dead zone is nothing...
+    raw.axes[INPUT_PAD_LEFT_X] = 0.1f;
+    raw.axes[INPUT_PAD_LEFT_Y] = -0.1f;
+    input_on_pad(1, &raw);
+    CHECK(input_pad_axis_value(1, INPUT_PAD_LEFT_X) == 0.0f && input_pad_axis_value(1, INPUT_PAD_LEFT_Y) == 0.0f);
+
+    // ...just past it is a little, not a jump to 0.2...
+    raw.axes[INPUT_PAD_LEFT_X] = 0.3f;
+    raw.axes[INPUT_PAD_LEFT_Y] = 0.0f;
+    input_on_pad(1, &raw);
+    CHECK(near(input_pad_axis_value(1, INPUT_PAD_LEFT_X), 0.125f));   // (0.3 - 0.2) / 0.8
+
+    // ...a full push is 1, and a diagonal keeps its direction.
+    raw.axes[INPUT_PAD_LEFT_X] = 1.0f;
+    input_on_pad(1, &raw);
+    CHECK(near(input_pad_axis_value(1, INPUT_PAD_LEFT_X), 1.0f));
+    raw.axes[INPUT_PAD_LEFT_X] = raw.axes[INPUT_PAD_LEFT_Y] = 0.6f;
+    input_on_pad(1, &raw);
+    CHECK(near(input_pad_axis_value(1, INPUT_PAD_LEFT_X), input_pad_axis_value(1, INPUT_PAD_LEFT_Y)));
+    CHECK(input_pad_axis_value(1, INPUT_PAD_LEFT_X) > 0.5f);
+
+    // A wider dead zone swallows more.
+    input_set_stick_dead_zone(0.5f);
+    raw.axes[INPUT_PAD_LEFT_X] = 0.45f;
+    raw.axes[INPUT_PAD_LEFT_Y] = 0.0f;
+    input_on_pad(1, &raw);
+    CHECK(input_pad_axis_value(1, INPUT_PAD_LEFT_X) == 0.0f);
+    input_set_stick_dead_zone(0.2f);
+
+    // Any pad: the one pushing furthest, either way.
+    input_pad_raw other = pad_at_rest();
+    other.axes[INPUT_PAD_RIGHT_X] = -0.9f;
+    raw.axes[INPUT_PAD_RIGHT_X]   = 0.5f;
+    input_on_pad(1, &raw);
+    input_on_pad(3, &other);
+    CHECK(input_pad_axis_value(INPUT_PAD_ANY, INPUT_PAD_RIGHT_X) == input_pad_axis_value(3, INPUT_PAD_RIGHT_X));
+    CHECK(input_pad_axis_value(INPUT_PAD_ANY, INPUT_PAD_RIGHT_X) < 0.0f);
+
+    // In the background the pad reads as let go, though still connected.
+    input_begin_frame();
+    input_on_focus(false);
+    input_on_pad(1, &raw);
+    CHECK(input_pad_connected(1) && !input_pad_down(1, INPUT_PAD_A) && input_pad_released(1, INPUT_PAD_A));
+    CHECK(input_pad_axis_value(1, INPUT_PAD_RIGHT_TRIGGER) == 0.0f);
+    input_begin_frame();
+    input_on_focus(true);
+    input_on_pad(1, &raw);
+    CHECK(input_pad_pressed(1, INPUT_PAD_A));
+
+    // Unplugged with A held: released, and gone.
+    input_begin_frame();
+    input_on_pad(1, NULL);
+    CHECK(!input_pad_connected(1) && !input_pad_down(1, INPUT_PAD_A));
+    CHECK(input_pad_connected(INPUT_PAD_ANY));   // pad 3 still is
+    CHECK(input_pad_released(INPUT_PAD_ANY, INPUT_PAD_A) == false);   // pad 1 no longer counts towards "any"
+
+    // Out-of-range pads and codes are ignored.
+    input_on_pad(INPUT_MAX_PADS, &raw);
+    CHECK(!input_pad_connected(INPUT_MAX_PADS) && !input_pad_down(3, INPUT_PAD_BUTTON_COUNT));
+    CHECK(input_pad_axis_value(3, INPUT_PAD_AXIS_COUNT) == 0.0f);
+}
+
 int
 main(void)
 {
     test_key_edges();
     test_mouse_buttons_and_focus();
     test_mouse_movement();
+    test_pads();
 
     printf("input_tests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures ? 1 : 0;

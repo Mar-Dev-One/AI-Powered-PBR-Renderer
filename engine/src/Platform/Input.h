@@ -3,10 +3,11 @@
 #include "../Core/Defines.h"
 #include "Window.h"
 
-// Keyboard and mouse state, one snapshot per frame.
+// Keyboard, mouse and gamepad state, one snapshot per frame.
 //
-// App.c feeds it from the window's events and calls input_begin_frame() before
-// each frame's events are polled, so from App.on_frame on:
+// App.c feeds it from the window's events, calls input_begin_frame() before
+// each frame's events are polled and input_poll_pads() after, so from
+// App.on_frame on (keys, mouse buttons and pad buttons alike):
 //   down      the key/button is held now
 //   pressed   it went down during this frame (a tap shorter than a frame
 //             still counts, along with `released`)
@@ -14,7 +15,7 @@
 //
 // With a UI layer, presses the UI claims (App.ui->wants_keyboard/wants_mouse)
 // never arrive, the same rule as App.on_key; releases always do, so nothing
-// stays held. Losing window focus releases everything.
+// stays held. Losing window focus releases everything, pads included.
 //
 // One instance for the process: the engine draws one window.
 
@@ -68,6 +69,32 @@ typedef enum input_mouse_button
     INPUT_MOUSE_BUTTON_COUNT = 8   // 3-7: extra side buttons
 } input_mouse_button;
 
+// Gamepads: anything GLFW has a mapping for (Xbox, PlayStation, Switch Pro and
+// most others), laid out as an Xbox pad. A pad's number is its GLFW joystick
+// slot, so it keeps it while connected; INPUT_PAD_ANY reads all of them.
+#define INPUT_MAX_PADS 16
+#define INPUT_PAD_ANY  (-1)
+
+// GLFW_GAMEPAD_BUTTON_* values. A/B/X/Y by position: A is Cross on a PlayStation pad.
+typedef enum input_pad_button
+{
+    INPUT_PAD_A, INPUT_PAD_B, INPUT_PAD_X, INPUT_PAD_Y,
+    INPUT_PAD_LEFT_BUMPER, INPUT_PAD_RIGHT_BUMPER,
+    INPUT_PAD_BACK, INPUT_PAD_START, INPUT_PAD_GUIDE,
+    INPUT_PAD_LEFT_THUMB, INPUT_PAD_RIGHT_THUMB,   // the sticks, clicked
+    INPUT_PAD_DPAD_UP, INPUT_PAD_DPAD_RIGHT, INPUT_PAD_DPAD_DOWN, INPUT_PAD_DPAD_LEFT,
+    INPUT_PAD_BUTTON_COUNT
+} input_pad_button;
+
+// GLFW_GAMEPAD_AXIS_* values.
+typedef enum input_pad_axis
+{
+    INPUT_PAD_LEFT_X, INPUT_PAD_LEFT_Y,
+    INPUT_PAD_RIGHT_X, INPUT_PAD_RIGHT_Y,
+    INPUT_PAD_LEFT_TRIGGER, INPUT_PAD_RIGHT_TRIGGER,
+    INPUT_PAD_AXIS_COUNT
+} input_pad_axis;
+
 // --- Reading (from App.on_frame) ---------------------------------------------------
 
 // Unknown codes (GLFW's -1, anything out of range) read as never down.
@@ -86,6 +113,22 @@ void input_mouse_delta(f32* out_dx, f32* out_dy);
 
 // Wheel movement this frame: y > 0 away from the user.
 void input_scroll(f32* out_dx, f32* out_dy);
+
+// A pad number out of range, or one not connected, reads as nothing pressed.
+b8          input_pad_connected(int pad);    // INPUT_PAD_ANY: is any
+const char* input_pad_name(int pad);         // "" if not connected
+b8          input_pad_down(int pad, input_pad_button button);
+b8          input_pad_pressed(int pad, input_pad_button button);
+b8          input_pad_released(int pad, input_pad_button button);
+
+// Sticks -1..1, past a round dead zone and rescaled so they still start from 0
+// at its edge; y is +1 pushed down (toward the player), as GLFW reports it.
+// Triggers 0 (at rest) .. 1. INPUT_PAD_ANY: the pad pushing that axis furthest.
+f32 input_pad_axis_value(int pad, input_pad_axis axis);
+
+// How far a stick moves before it counts, 0..0.9 of its travel (default 0.2;
+// worn sticks drift more). Triggers use a fixed 0.05.
+void input_set_stick_dead_zone(f32 dead_zone);
 
 // --- Cursor ----------------------------------------------------------------------
 
@@ -106,7 +149,22 @@ void input_on_key(int key, b8 down);
 void input_on_mouse_button(int button, b8 down);
 void input_on_cursor(f64 x, f64 y, b8 counts_as_movement);   // false: moved over the UI
 void input_on_scroll(f64 dx, f64 dy);
-void input_on_focus(b8 focused);   // losing it releases every key and button
+void input_on_focus(b8 focused);   // losing it releases every key and button, and pads read as at rest
+
+// After the frame's events are polled: reads every pad from GLFW into input_on_pad().
+void input_poll_pads(void);
+
+// One pad's raw state, as GLFW reports it: triggers -1 at rest .. 1.
+typedef struct input_pad_raw
+{
+    const char* name;
+    b8          buttons[INPUT_PAD_BUTTON_COUNT];
+    f32         axes[INPUT_PAD_AXIS_COUNT];
+} input_pad_raw;
+
+// NULL: not connected. Connecting and disconnecting are logged; a pad that
+// disconnects releases its buttons.
+void input_on_pad(int pad, const input_pad_raw* raw);
 
 // Everything up, no movement, cursor mode back to normal (without touching a window).
 void input_reset(void);
