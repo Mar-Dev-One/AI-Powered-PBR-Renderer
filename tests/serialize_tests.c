@@ -2,7 +2,7 @@
 //
 // Headless tests for World/Serialize.h: JSON output shape and rounding,
 // partial updates, all-or-nothing validation, error messages, enums,
-// material overrides, names, parents, asset keys that never reach the GPU
+// material overrides (glass fields too), names, parents, asset keys that never reach the GPU
 // (null and unknown built-ins), and the scene environment.
 
 #include "World/Environment.h"
@@ -204,6 +204,74 @@ test_material_overrides(asset_cache* assets)
     CHECK(!set(&w, e, COMPONENT_MESH_RENDERER, "{\"model\": 42}"));
     CHECK(error_mentions("asset key"));
 
+    world_shutdown(&w);
+}
+
+// Glass fields (transmission, ior, thickness, attenuation): set, read,
+// saved, loaded back, applied over a material. A mesh renderer that doesn't
+// set them saves exactly as it did before they existed.
+static void
+test_transmission_overrides(asset_cache* assets)
+{
+    world w;
+    world_init(&w, assets);
+    entity_id plain = world_create(&w, "plain");
+    entity_id glass = world_create(&w, "glass");
+
+    CHECK(set(&w, plain, COMPONENT_MESH_RENDERER, "{\"model\": null, \"material.roughness\": 0.4}"));
+    cJSON* json = serialize_component(&w, plain, COMPONENT_MESH_RENDERER);
+    CHECK(cJSON_GetArraySize(json) == 4);   // model, visible, cast_shadows, material.roughness
+    CHECK(cJSON_GetObjectItem(json, "material.transmission") == NULL);
+    CHECK(cJSON_GetObjectItem(json, "material.ior") == NULL);
+    cJSON_Delete(json);
+
+    CHECK(set(&w, glass, COMPONENT_MESH_RENDERER,
+              "{\"model\": null, \"material.transmission\": 1, \"material.ior\": 1.33, "
+              "\"material.thickness\": 0.05, \"material.attenuation_color\": [0.2, 0.6, 0.9], "
+              "\"material.attenuation_distance\": 0.3}"));
+    c_mesh_renderer* mr = world_mesh_renderer(&w, glass);
+    CHECK(mr->material.fields == (MATERIAL_OVERRIDE_TRANSMISSION | MATERIAL_OVERRIDE_IOR | MATERIAL_OVERRIDE_THICKNESS
+                                  | MATERIAL_OVERRIDE_ATTENUATION_COLOR | MATERIAL_OVERRIDE_ATTENUATION_DISTANCE));
+    CHECK(mr->material.transmission == 1.0f && mr->material.ior == 1.33f && mr->material.thickness == 0.05f);
+    CHECK(mr->material.attenuation_color[1] == 0.6f && mr->material.attenuation_distance == 0.3f);
+
+    CHECK(!set(&w, glass, COMPONENT_MESH_RENDERER, "{\"material.ior\": 0.5}"));
+    CHECK(error_mentions("material.ior"));
+    CHECK(!set(&w, glass, COMPONENT_MESH_RENDERER, "{\"material.transmission\": 2}"));
+    CHECK(mr->material.ior == 1.33f && mr->material.transmission == 1.0f);   // a failed set changes nothing
+
+    // Saved and loaded back.
+    cJSON* scene = serialize_world(&w);
+    cJSON_AddStringToObject(scene, "format", SCENE_FORMAT);
+    world back;
+    world_init(&back, assets);
+    g_error[0] = '\0';
+    CHECK(deserialize_scene(&back, scene, NULL, NULL, g_error, sizeof(g_error)));
+    if (g_error[0])
+        fprintf(stderr, "  %s\n", g_error);
+    cJSON_Delete(scene);
+
+    const c_mesh_renderer* plain_back = world_mesh_renderer(&back, world_find(&back, "plain"));
+    const c_mesh_renderer* glass_back = world_mesh_renderer(&back, world_find(&back, "glass"));
+    CHECK(plain_back && plain_back->material.fields == MATERIAL_OVERRIDE_ROUGHNESS);
+    CHECK(glass_back && memcmp(&glass_back->material, &mr->material, sizeof(mr->material)) == 0);
+
+    // Over a material: the defaults are "not glass", the override replaces them.
+    material m;
+    material_init_default(&m);
+    CHECK(m.transmission == 0.0f && m.ior == 1.5f && m.thickness == 0.0f && m.attenuation_distance == 0.0f);
+    CHECK(m.attenuation_color[0] == 1.0f && m.attenuation_color[1] == 1.0f && m.attenuation_color[2] == 1.0f);
+    material_apply_override(&m, &plain_back->material);
+    CHECK(m.transmission == 0.0f && m.ior == 1.5f);
+    material_apply_override(&m, &glass_back->material);
+    CHECK(m.transmission == 1.0f && m.ior == 1.33f && m.thickness == 0.05f && m.attenuation_distance == 0.3f);
+    CHECK(m.attenuation_color[0] == 0.2f && m.attenuation_color[2] == 0.9f);
+
+    // Cleared again: back to the model's own values.
+    CHECK(set(&w, glass, COMPONENT_MESH_RENDERER, "{\"material.transmission\": null, \"material.ior\": null}"));
+    CHECK(!(mr->material.fields & (MATERIAL_OVERRIDE_TRANSMISSION | MATERIAL_OVERRIDE_IOR)));
+
+    world_shutdown(&back);
     world_shutdown(&w);
 }
 
@@ -409,6 +477,7 @@ main(void)
     test_partial_update_and_atomicity(&assets);
     test_lights_and_enums(&assets);
     test_material_overrides(&assets);
+    test_transmission_overrides(&assets);
     test_names_and_parents(&assets);
     test_world_order(&assets);
     test_environment();

@@ -130,6 +130,16 @@ tests/             headless C tests and end-to-end server tests
 docs/              roadmap
 ```
 
+## Rendering features in progress
+
+Glass, depth of field, clearcoat and specular, built step by step on the branch
+`features/glass-and-focus` as planned in [docs/RENDERING_FEATURES_ROADMAP.md](docs/RENDERING_FEATURES_ROADMAP.md).
+Every new field defaults to off, so existing scenes render as before.
+
+| Feature | Step | Commit |
+|---|---|---|
+| 1. Transmission (glass) | 1a: material fields `transmission`, `ior`, `thickness`, `attenuation_color`, `attenuation_distance`, as MeshRenderer overrides and in scene files | Transmission 1a: glass material fields |
+
 ## Tests
 
 ```sh

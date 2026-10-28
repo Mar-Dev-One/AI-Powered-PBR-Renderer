@@ -51,6 +51,15 @@ typedef struct material
     f32   alpha_cutoff;               // only used by MATERIAL_ALPHA_MASK
     b8    double_sided;               // true = no back-face culling, back faces get a flipped normal
 
+    // Glass and clear liquids (glTF KHR_materials_transmission, _volume, _ior).
+    // transmission 0 = an ordinary surface; every material made before these
+    // fields existed renders exactly as it did.
+    f32   transmission;               // 0..1: share of the diffuse light replaced by light passing through
+    f32   ior;                        // index of refraction (1.5 = glass, 1.33 = water)
+    f32   thickness;                  // meters of volume light crosses; 0 = a thin sheet, no refraction
+    f32   attenuation_color[3];       // linear RGB light keeps after attenuation_distance inside the volume
+    f32   attenuation_distance;       // meters; 0 = no absorption (glTF's "infinite")
+
     // Borrowed from the owning model's texture pool (Model.h) -- the
     // material never frees these. NULL = "no texture, use the factor alone".
     rhi_texture textures[MATERIAL_SLOT_COUNT];
@@ -63,10 +72,15 @@ typedef struct material
 // RGB and keeps the material's alpha. Textures still multiply as usual.
 typedef enum material_override_field
 {
-    MATERIAL_OVERRIDE_BASE_COLOR = 1 << 0,
-    MATERIAL_OVERRIDE_METALLIC   = 1 << 1,
-    MATERIAL_OVERRIDE_ROUGHNESS  = 1 << 2,
-    MATERIAL_OVERRIDE_EMISSIVE   = 1 << 3
+    MATERIAL_OVERRIDE_BASE_COLOR           = 1 << 0,
+    MATERIAL_OVERRIDE_METALLIC             = 1 << 1,
+    MATERIAL_OVERRIDE_ROUGHNESS            = 1 << 2,
+    MATERIAL_OVERRIDE_EMISSIVE             = 1 << 3,
+    MATERIAL_OVERRIDE_TRANSMISSION         = 1 << 4,
+    MATERIAL_OVERRIDE_IOR                  = 1 << 5,
+    MATERIAL_OVERRIDE_THICKNESS            = 1 << 6,
+    MATERIAL_OVERRIDE_ATTENUATION_COLOR    = 1 << 7,
+    MATERIAL_OVERRIDE_ATTENUATION_DISTANCE = 1 << 8
 } material_override_field;
 
 typedef struct material_override
@@ -76,13 +90,18 @@ typedef struct material_override
     f32    metallic;
     f32    roughness;
     f32    emissive[3];     // linear RGB
+    f32    transmission;
+    f32    ior;
+    f32    thickness;
+    f32    attenuation_color[3];   // linear RGB
+    f32    attenuation_distance;
 } material_override;
 
 // Writes the fields `o` enables into `m`. NULL or fields == 0 is a no-op.
 void material_apply_override(material* m, const material_override* o);
 
-// White, fully rough dielectric, no textures. What a mesh with no material
-// at all gets drawn with.
+// White dielectric of roughness 0.5, not transmissive, no textures. What a
+// mesh with no material at all gets drawn with.
 void material_init_default(material* m);
 
 // Uploads this material's factors as uniforms, binds its textures to

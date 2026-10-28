@@ -14,6 +14,12 @@ void material_init_default(material* m)
     m->alpha_mode         = MATERIAL_ALPHA_OPAQUE;
     m->alpha_cutoff       = 0.5f;
     m->double_sided       = false;
+
+    m->transmission         = 0.0f;
+    m->ior                  = 1.5f;
+    m->thickness            = 0.0f;
+    m->attenuation_color[0] = m->attenuation_color[1] = m->attenuation_color[2] = 1.0f;
+    m->attenuation_distance = 0.0f;
 }
 
 void material_bind(const material* m, rhi_shader shader, b8 flip_winding)
@@ -76,6 +82,20 @@ void material_apply_override(material* m, const material_override* o)
         m->emissive[1] = o->emissive[1];
         m->emissive[2] = o->emissive[2];
     }
+    if (o->fields & MATERIAL_OVERRIDE_TRANSMISSION)
+        m->transmission = o->transmission;
+    if (o->fields & MATERIAL_OVERRIDE_IOR)
+        m->ior = o->ior;
+    if (o->fields & MATERIAL_OVERRIDE_THICKNESS)
+        m->thickness = o->thickness;
+    if (o->fields & MATERIAL_OVERRIDE_ATTENUATION_COLOR)
+    {
+        m->attenuation_color[0] = o->attenuation_color[0];
+        m->attenuation_color[1] = o->attenuation_color[1];
+        m->attenuation_color[2] = o->attenuation_color[2];
+    }
+    if (o->fields & MATERIAL_OVERRIDE_ATTENUATION_DISTANCE)
+        m->attenuation_distance = o->attenuation_distance;
 }
 
 void material_destroy(material* m)

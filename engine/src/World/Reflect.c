@@ -49,6 +49,21 @@ static const field_desc MESH_RENDERER_FIELDS[] = {
     { .name = "material.emissive", .type = FIELD_COLOR3, .offset = MATERIAL_OFFSET(emissive),
       .min = 0.0f, .max = 100.0f, .override_bit = MATERIAL_OVERRIDE_EMISSIVE,
       .doc = "Override of emitted light, linear RGB (can exceed 1 for glowing surfaces)" },
+    { .name = "material.transmission", .type = FIELD_F32, .offset = MATERIAL_OFFSET(transmission),
+      .min = 0.0f, .max = 1.0f, .override_bit = MATERIAL_OVERRIDE_TRANSMISSION,
+      .doc = "Override: 0 = solid, 1 = glass or clear liquid that shows what's behind it" },
+    { .name = "material.ior", .type = FIELD_F32, .offset = MATERIAL_OFFSET(ior),
+      .min = 1.0f, .max = 3.0f, .override_bit = MATERIAL_OVERRIDE_IOR,
+      .doc = "Override: index of refraction, how much light bends going in (1.33 water, 1.5 glass, 2.4 diamond)" },
+    { .name = "material.thickness", .type = FIELD_F32, .offset = MATERIAL_OFFSET(thickness),
+      .min = 0.0f, .max = 10.0f, .override_bit = MATERIAL_OVERRIDE_THICKNESS,
+      .doc = "Override: meters of glass or liquid light crosses; 0 = a thin sheet that doesn't bend what's behind" },
+    { .name = "material.attenuation_color", .type = FIELD_COLOR3, .offset = MATERIAL_OFFSET(attenuation_color),
+      .min = 0.0f, .max = 1.0f, .override_bit = MATERIAL_OVERRIDE_ATTENUATION_COLOR,
+      .doc = "Override: tint of the glass or liquid, the linear RGB light keeps after attenuation_distance inside it" },
+    { .name = "material.attenuation_distance", .type = FIELD_F32, .offset = MATERIAL_OFFSET(attenuation_distance),
+      .min = 0.0f, .max = 10000.0f, .override_bit = MATERIAL_OVERRIDE_ATTENUATION_DISTANCE,
+      .doc = "Override: meters inside the volume after which light has attenuation_color; 0 = no tint" },
 };
 
 static const char* const LIGHT_TYPE_NAMES[] = { "directional", "point", "spot" };

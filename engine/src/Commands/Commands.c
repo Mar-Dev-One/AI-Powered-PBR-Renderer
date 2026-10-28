@@ -1488,7 +1488,9 @@ static const cmd_arg ARGS_PLACE_MODEL[] = {
     { "rotation_deg", "vec3",   false, "Yaw in degrees (a number), or [pitch, yaw, roll]" },
     PLACEMENT_ARGS,
     { "material",     "object", false, "Overrides of the model's own material: base_color [r, g, b] (linear 0-1), "
-                                       "metallic 0-1, roughness 0-1, emissive [r, g, b]" },
+                                       "metallic 0-1, roughness 0-1, emissive [r, g, b], "
+                                       "glass: transmission 0-1, ior 1-3, thickness (m), attenuation_color [r, g, b], "
+                                       "attenuation_distance (m)" },
 };
 
 static const cmd_arg ARGS_ENTITY_PLACE[] = {
