@@ -139,6 +139,7 @@ Every new field defaults to off, so existing scenes render as before.
 | Feature | Step | Commit |
 |---|---|---|
 | 1. Transmission (glass) | 1a: material fields `transmission`, `ior`, `thickness`, `attenuation_color`, `attenuation_distance`, as MeshRenderer overrides and in scene files | Transmission 1a: glass material fields |
+| | 1b: glTF loading of `KHR_materials_transmission`, `_ior` and `_volume` (factors; textures later) | Transmission 1b: read glass from glTF |
 
 ## Tests
 

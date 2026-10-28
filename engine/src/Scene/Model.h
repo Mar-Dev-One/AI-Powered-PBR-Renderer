@@ -72,12 +72,19 @@ model model_load_obj(const char* path);
 // hierarchies (node transforms are baked into submeshes), multiple
 // primitives per mesh, shared meshes, all five standard material textures,
 // embedded and external images, sampler wrap/filter modes, alpha
-// mask/blend, double-sided materials and emissive strength.
+// mask/blend, double-sided materials, emissive strength, and glass
+// (KHR_materials_transmission, _ior and _volume: factors, not textures).
 // Not supported (loaded as static geometry / ignored): skinning and
 // animation (models appear in their bind pose), morph targets, sparse
 // accessors beyond what cgltf unpacks, Draco/meshopt compression,
 // KHR_texture_transform, and second UV sets.
 model model_load_gltf(const char* path);
+
+// Reads only the materials of a .gltf/.glb, as model_load_gltf() would make
+// them but without textures: no GPU needed (tests, tools). Fills up to
+// `max_count` of `out`, in the file's order, and returns how many the file
+// has (0 if it can't be read). The caller material_destroy()s each one filled.
+uint32 model_read_gltf_materials(const char* path, material* out, uint32 max_count);
 
 // Uniform-scale + translation that centres the model's bounds on the
 // origin and scales its largest dimension to `target_size`. Real-world

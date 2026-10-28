@@ -1,5 +1,6 @@
 #include "ModelInternal.h"
 
+#include <float.h>
 #include <math.h>
 #include <string.h>
 
@@ -158,6 +159,77 @@ get_texture(gltf_context* ctx, const cgltf_texture_view* view, b8 srgb)
 // Materials
 // ---------------------------------------------------------------------------
 
+// Everything about a glTF material except its textures: no GPU work, so
+// model_read_gltf_materials() can use it headless too.
+static void
+convert_material_factors(const cgltf_material* src, material* out)
+{
+    material_init_default(out);
+    out->name = model_duplicate_string(src->name ? src->name : "unnamed");
+
+    if (src->has_pbr_metallic_roughness)
+    {
+        const cgltf_pbr_metallic_roughness* pbr = &src->pbr_metallic_roughness;
+
+        memcpy(out->base_color, pbr->base_color_factor, sizeof(out->base_color));
+        out->metallic  = pbr->metallic_factor;
+        out->roughness = pbr->roughness_factor;
+    }
+    else if (src->has_pbr_specular_glossiness)
+    {
+        // KHR_materials_pbrSpecularGlossiness is deprecated. Approximate it as
+        // a dielectric: diffuse color -> base color, glossiness -> roughness.
+        const cgltf_pbr_specular_glossiness* sg = &src->pbr_specular_glossiness;
+
+        LOG_WARN("model_load_gltf: material '%s' uses specular-glossiness; approximated as metallic-roughness\n", out->name);
+
+        memcpy(out->base_color, sg->diffuse_factor, sizeof(out->base_color));
+        out->metallic  = 0.0f;
+        out->roughness = 1.0f - sg->glossiness_factor;
+    }
+    else
+    {
+        // No pbrMetallicRoughness block at all: glTF's defaults are 1/1/1.
+        out->metallic  = 1.0f;
+        out->roughness = 1.0f;
+    }
+
+    f32 emissive_strength = src->has_emissive_strength ? src->emissive_strength.emissive_strength : 1.0f;
+    for (int i = 0; i < 3; ++i)
+        out->emissive[i] = src->emissive_factor[i] * emissive_strength;
+
+    switch (src->alpha_mode)
+    {
+        case cgltf_alpha_mode_mask:  out->alpha_mode = MATERIAL_ALPHA_MASK;  break;
+        case cgltf_alpha_mode_blend: out->alpha_mode = MATERIAL_ALPHA_BLEND; break;
+        default:                     out->alpha_mode = MATERIAL_ALPHA_OPAQUE; break;
+    }
+
+    out->alpha_cutoff = src->alpha_cutoff;
+    out->double_sided = src->double_sided ? true : false;
+
+    // Glass: KHR_materials_transmission, _ior and _volume. Factors only; the
+    // transmission and thickness textures aren't read yet.
+    if (src->has_transmission)
+        out->transmission = src->transmission.transmission_factor;
+    if (src->has_ior)
+        out->ior = src->ior.ior;
+    if (src->has_volume)
+    {
+        // In the mesh's own units (glTF scales it with the node), taken as meters.
+        out->thickness = src->volume.thickness_factor;
+        memcpy(out->attenuation_color, src->volume.attenuation_color, sizeof(out->attenuation_color));
+
+        // glTF's default is +infinity, "no absorption"; ours is 0.
+        f32 distance = src->volume.attenuation_distance;
+        out->attenuation_distance = (isfinite(distance) && distance < FLT_MAX) ? distance : 0.0f;
+    }
+
+    if (src->transmission.transmission_texture.texture || src->volume.thickness_texture.texture)
+        LOG_WARN("model_load_gltf: material '%s' has transmission or thickness textures; only the factors are used\n",
+                 out->name);
+}
+
 static int32
 get_material(gltf_context* ctx, const cgltf_material* src)
 {
@@ -169,39 +241,18 @@ get_material(gltf_context* ctx, const cgltf_material* src)
         return ctx->material_of[src_index];
 
     material out;
-    material_init_default(&out);
-    out.name = model_duplicate_string(src->name ? src->name : "unnamed");
+    convert_material_factors(src, &out);
 
     if (src->has_pbr_metallic_roughness)
     {
         const cgltf_pbr_metallic_roughness* pbr = &src->pbr_metallic_roughness;
-
-        memcpy(out.base_color, pbr->base_color_factor, sizeof(out.base_color));
-        out.metallic  = pbr->metallic_factor;
-        out.roughness = pbr->roughness_factor;
 
         out.textures[MATERIAL_SLOT_BASE_COLOR]         = get_texture(ctx, &pbr->base_color_texture, true);
         out.textures[MATERIAL_SLOT_METALLIC_ROUGHNESS] = get_texture(ctx, &pbr->metallic_roughness_texture, false);
     }
     else if (src->has_pbr_specular_glossiness)
     {
-        // KHR_materials_pbrSpecularGlossiness is deprecated. Approximate it as
-        // a dielectric: diffuse color -> base color, glossiness -> roughness.
-        const cgltf_pbr_specular_glossiness* sg = &src->pbr_specular_glossiness;
-
-        LOG_WARN("model_load_gltf: material '%s' uses specular-glossiness; approximated as metallic-roughness\n", out.name);
-
-        memcpy(out.base_color, sg->diffuse_factor, sizeof(out.base_color));
-        out.metallic  = 0.0f;
-        out.roughness = 1.0f - sg->glossiness_factor;
-
-        out.textures[MATERIAL_SLOT_BASE_COLOR] = get_texture(ctx, &sg->diffuse_texture, true);
-    }
-    else
-    {
-        // No pbrMetallicRoughness block at all: glTF's defaults are 1/1/1.
-        out.metallic  = 1.0f;
-        out.roughness = 1.0f;
+        out.textures[MATERIAL_SLOT_BASE_COLOR] = get_texture(ctx, &src->pbr_specular_glossiness.diffuse_texture, true);
     }
 
     out.textures[MATERIAL_SLOT_NORMAL]    = get_texture(ctx, &src->normal_texture, false);
@@ -210,20 +261,6 @@ get_material(gltf_context* ctx, const cgltf_material* src)
 
     out.normal_scale       = out.textures[MATERIAL_SLOT_NORMAL]    ? src->normal_texture.scale    : 1.0f;
     out.occlusion_strength = out.textures[MATERIAL_SLOT_OCCLUSION] ? src->occlusion_texture.scale : 1.0f;
-
-    f32 emissive_strength = src->has_emissive_strength ? src->emissive_strength.emissive_strength : 1.0f;
-    for (int i = 0; i < 3; ++i)
-        out.emissive[i] = src->emissive_factor[i] * emissive_strength;
-
-    switch (src->alpha_mode)
-    {
-        case cgltf_alpha_mode_mask:  out.alpha_mode = MATERIAL_ALPHA_MASK;  break;
-        case cgltf_alpha_mode_blend: out.alpha_mode = MATERIAL_ALPHA_BLEND; break;
-        default:                     out.alpha_mode = MATERIAL_ALPHA_OPAQUE; break;
-    }
-
-    out.alpha_cutoff = src->alpha_cutoff;
-    out.double_sided = src->double_sided ? true : false;
 
     int32 index = (int32)model_add_material(ctx->result, &out);
     ctx->material_of[src_index] = index;
@@ -641,4 +678,24 @@ model model_load_gltf(const char* path)
              result.vertex_count, result.triangle_count);
 
     return result;
+}
+
+uint32 model_read_gltf_materials(const char* path, material* out, uint32 max_count)
+{
+    cgltf_options options = { 0 };
+    cgltf_data*   data    = NULL;
+
+    // Materials live in the JSON; no buffers needed.
+    if (cgltf_parse_file(&options, path, &data) != cgltf_result_success)
+    {
+        LOG_ERROR("model_read_gltf_materials: failed to parse '%s'\n", path);
+        return 0;
+    }
+
+    uint32 count = (uint32)data->materials_count;
+    for (uint32 i = 0; i < count && i < max_count; ++i)
+        convert_material_factors(&data->materials[i], &out[i]);
+
+    cgltf_free(data);
+    return count;
 }
