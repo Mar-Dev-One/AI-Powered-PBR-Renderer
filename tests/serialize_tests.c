@@ -275,6 +275,100 @@ test_transmission_overrides(asset_cache* assets)
     world_shutdown(&w);
 }
 
+// Clear coat and specular overrides: set, saved, loaded back, applied over
+// a material whose defaults leave both as they were (no coat, specular 1).
+static void
+test_coat_and_specular_overrides(asset_cache* assets)
+{
+    world w;
+    world_init(&w, assets);
+    entity_id e = world_create(&w, "lacquer");
+
+    CHECK(set(&w, e, COMPONENT_MESH_RENDERER,
+              "{\"model\": null, \"material.clearcoat\": 1, \"material.clearcoat_roughness\": 0.05, "
+              "\"material.specular\": 0.5, \"material.specular_color\": [1, 0.5, 0.25]}"));
+    c_mesh_renderer* mr = world_mesh_renderer(&w, e);
+    CHECK(mr->material.fields == (MATERIAL_OVERRIDE_CLEARCOAT | MATERIAL_OVERRIDE_CLEARCOAT_ROUGHNESS
+                                  | MATERIAL_OVERRIDE_SPECULAR | MATERIAL_OVERRIDE_SPECULAR_COLOR));
+    CHECK(!set(&w, e, COMPONENT_MESH_RENDERER, "{\"material.clearcoat\": 1.5}"));
+    CHECK(error_mentions("material.clearcoat"));
+
+    cJSON* scene = serialize_world(&w);
+    cJSON_AddStringToObject(scene, "format", SCENE_FORMAT);
+    world back;
+    world_init(&back, assets);
+    g_error[0] = '\0';
+    CHECK(deserialize_scene(&back, scene, NULL, NULL, g_error, sizeof(g_error)));
+    cJSON_Delete(scene);
+    const c_mesh_renderer* mr_back = world_mesh_renderer(&back, world_find(&back, "lacquer"));
+    CHECK(mr_back && memcmp(&mr_back->material, &mr->material, sizeof(mr->material)) == 0);
+
+    material m;
+    material_init_default(&m);
+    CHECK(m.clearcoat == 0.0f && m.clearcoat_roughness == 0.0f && m.specular == 1.0f);
+    CHECK(m.specular_color[0] == 1.0f && m.specular_color[1] == 1.0f && m.specular_color[2] == 1.0f);
+    material_apply_override(&m, &mr->material);
+    CHECK(m.clearcoat == 1.0f && m.clearcoat_roughness == 0.05f && m.specular == 0.5f);
+    CHECK(m.specular_color[1] == 0.5f && m.specular_color[2] == 0.25f);
+
+    world_shutdown(&back);
+    world_shutdown(&w);
+}
+
+// Depth of field on the camera: set, saved, loaded back, and an old scene
+// without the fields loads with the aperture at 0 (off). The thin-lens blur
+// is 0 at the focus, negative in front, positive behind.
+static void
+test_camera_focus(asset_cache* assets)
+{
+    world w;
+    world_init(&w, assets);
+    entity_id old  = world_create(&w, "old_camera");
+    entity_id lens = world_create(&w, "lens");
+
+    CHECK(set(&w, old, COMPONENT_CAMERA, "{\"fov_degrees\": 50}"));
+    CHECK(world_camera(&w, old)->aperture == 0.0f);
+    CHECK(world_camera(&w, old)->focus_distance == CAMERA_DEFAULT_FOCUS_DISTANCE);
+
+    CHECK(set(&w, lens, COMPONENT_CAMERA, "{\"focus_distance\": 2.5, \"aperture\": 2}"));
+    CHECK(world_camera(&w, lens)->focus_distance == 2.5f && world_camera(&w, lens)->aperture == 2.0f);
+    CHECK(!set(&w, lens, COMPONENT_CAMERA, "{\"aperture\": -1}"));
+    CHECK(!set(&w, lens, COMPONENT_CAMERA, "{\"focus_distance\": 0}"));
+    CHECK(error_mentions("focus_distance"));
+
+    cJSON* scene = serialize_world(&w);
+    cJSON_AddStringToObject(scene, "format", SCENE_FORMAT);
+    world back;
+    world_init(&back, assets);
+    g_error[0] = '\0';
+    CHECK(deserialize_scene(&back, scene, NULL, NULL, g_error, sizeof(g_error)));
+    cJSON_Delete(scene);
+
+    const c_camera* lens_back = world_camera(&back, world_find(&back, "lens"));
+    const c_camera* old_back  = world_camera(&back, world_find(&back, "old_camera"));
+    CHECK(lens_back && lens_back->focus_distance == 2.5f && lens_back->aperture == 2.0f);
+    CHECK(old_back && old_back->aperture == 0.0f);
+
+    // world_camera_view() hands them to the renderer's camera.
+    world_update(&back);
+    camera cam;
+    CHECK(world_camera_view(&back, world_find(&back, "lens"), 1.5f, &cam));
+    CHECK(cam.focus_distance == 2.5f && cam.aperture == 2.0f);
+
+    CHECK(fabsf(camera_circle_of_confusion(&cam, 2.5f, 1080.0f)) < 1e-4f);
+    CHECK(camera_circle_of_confusion(&cam, 1.0f, 1080.0f) < 0.0f);
+    CHECK(camera_circle_of_confusion(&cam, 50.0f, 1080.0f) > 0.0f);
+    // Smaller f-number, more blur; aperture 0, none.
+    f32 at_f2 = camera_circle_of_confusion(&cam, 50.0f, 1080.0f);
+    cam.aperture = 8.0f;
+    CHECK(camera_circle_of_confusion(&cam, 50.0f, 1080.0f) < at_f2);
+    cam.aperture = 0.0f;
+    CHECK(camera_circle_of_confusion(&cam, 50.0f, 1080.0f) == 0.0f);
+
+    world_shutdown(&back);
+    world_shutdown(&w);
+}
+
 static void
 test_names_and_parents(asset_cache* assets)
 {
@@ -478,6 +572,8 @@ main(void)
     test_lights_and_enums(&assets);
     test_material_overrides(&assets);
     test_transmission_overrides(&assets);
+    test_camera_focus(&assets);
+    test_coat_and_specular_overrides(&assets);
     test_names_and_parents(&assets);
     test_world_order(&assets);
     test_environment();

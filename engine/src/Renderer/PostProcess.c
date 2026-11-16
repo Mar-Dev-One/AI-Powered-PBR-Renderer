@@ -76,12 +76,27 @@ create_float_target(uint16 width, uint16 height)
 }
 
 // The scene's color as it stands: TAA's result once post_taa() has run this
-// frame, else the scene target.
+// frame, else depth of field's once post_depth_of_field() has (TAA reads
+// that), else the scene target.
 static rhi_texture
 scene_color(const post_process* post)
 {
-    return post->taa_ready ? rhi_framebuffer_get_color_texture(post->taa_history[post->taa_current], 0)
+    if (post->taa_ready)
+        return rhi_framebuffer_get_color_texture(post->taa_history[post->taa_current], 0);
+    return post->dof_ready ? rhi_framebuffer_get_color_texture(post->dof_target, 0)
                            : rhi_framebuffer_get_color_texture(post->scene_target, 0);
+}
+
+static void
+destroy_dof_targets(post_process* post)
+{
+    if (post->dof_half)
+        rhi_framebuffer_destroy(post->dof_half);
+    if (post->dof_blurred)
+        rhi_framebuffer_destroy(post->dof_blurred);
+    if (post->dof_target)
+        rhi_framebuffer_destroy(post->dof_target);
+    post->dof_half = post->dof_blurred = post->dof_target = NULL;
 }
 
 static rhi_shader
@@ -147,9 +162,13 @@ post_create(post_process* post, uint16 width, uint16 height)
     post->ssao_shader       = load_shader(POST_VERTEX_PATH, POST_SSAO_PATH);
     post->ssao_blur_shader  = load_shader(POST_VERTEX_PATH, POST_SSAO_BLUR_PATH);
     post->taa_shader        = load_shader(POST_VERTEX_PATH, POST_TAA_PATH);
+    post->dof_prepare_shader   = load_shader(POST_VERTEX_PATH, POST_DOF_PREPARE_PATH);
+    post->dof_blur_shader      = load_shader(POST_VERTEX_PATH, POST_DOF_BLUR_PATH);
+    post->dof_composite_shader = load_shader(POST_VERTEX_PATH, POST_DOF_COMPOSITE_PATH);
     if (!post->tonemap_shader || !post->bloom_down_shader || !post->bloom_up_shader || !post->fxaa_shader
         || !post->luminance_shader || !post->reduce_shader || !post->adapt_shader || !post->ssao_shader
-        || !post->ssao_blur_shader || !post->taa_shader)
+        || !post->ssao_blur_shader || !post->taa_shader || !post->dof_prepare_shader || !post->dof_blur_shader
+        || !post->dof_composite_shader)
         return false;
 
     // The meter and the adapted value don't depend on the window's size.
@@ -195,6 +214,9 @@ post_resize(post_process* post, uint16 width, uint16 height)
     rhi_framebuffer_destroy(post->taa_history[0]);
     rhi_framebuffer_destroy(post->taa_history[1]);
     destroy_bloom_chain(post);
+    rhi_texture_destroy(post->behind_glass);   // made again at the new size when next needed
+    post->behind_glass = NULL;
+    destroy_dof_targets(post);                  // likewise
 
     post->width        = width;
     post->height       = height;
@@ -222,6 +244,7 @@ post_begin_scene(post_process* post, f32 r, f32 g, f32 b)
     post->bloom_ready = false;
     post->ssao_ready  = false;
     post->taa_ready   = false;
+    post->dof_ready   = false;
     rhi_framebuffer_bind(post->scene_target);
     rhi_clear(r, g, b, 1.0f);
 }
@@ -283,6 +306,28 @@ post_ssao_texture(const post_process* post)
     return post->ssao_ready ? rhi_framebuffer_get_color_texture(post->ssao_target, 0) : NULL;
 }
 
+rhi_texture
+post_copy_scene_behind_glass(post_process* post)
+{
+    if (!post->scene_target)
+        return NULL;
+
+    // Full size: a clear glass ball magnifies what's behind it like a lens,
+    // so a smaller copy shows as blur.
+    if (!post->behind_glass)
+        post->behind_glass = rhi_texture_create((rhi_texture_desc){
+            .width            = post->width,
+            .height           = post->height,
+            .format           = RHI_FORMAT_RGBA16F,
+            .filter           = RHI_FILTER_LINEAR,
+            .wrap             = RHI_WRAP_CLAMP_TO_EDGE,
+            .generate_mipmaps = true
+        });
+
+    rhi_texture_copy_from_framebuffer(post->behind_glass, post->scene_target);
+    return post->behind_glass;
+}
+
 void
 post_taa(post_process* post, const f32* reprojection)
 {
@@ -302,7 +347,7 @@ post_taa(post_process* post, const f32* reprojection)
     rhi_shader_set_int(shader, "u_depth", POST_SLOT_ADAPTED);
     rhi_shader_set_mat4(shader, "u_reprojection", reprojection);
     rhi_shader_set_float(shader, "u_blend", post->taa_valid ? TAA_BLEND : 1.0f);
-    rhi_texture_bind(rhi_framebuffer_get_color_texture(post->scene_target, 0), POST_SLOT_SCENE);
+    rhi_texture_bind(scene_color(post), POST_SLOT_SCENE);   // the scene, or depth of field's result
     rhi_texture_bind(rhi_framebuffer_get_color_texture(post->taa_history[post->taa_current], 0), POST_SLOT_BLOOM);
     rhi_texture_bind(rhi_framebuffer_get_depth_texture(post->scene_target), POST_SLOT_ADAPTED);
     draw_triangle(post);
@@ -311,6 +356,73 @@ post_taa(post_process* post, const f32* reprojection)
     post->taa_current = next;
     post->taa_valid   = true;
     post->taa_ready   = true;
+}
+
+void
+post_depth_of_field(post_process* post, const post_dof* dof)
+{
+    if (!post->scene_target)
+        return;
+
+    uint16 half_width  = (uint16)(post->width > 1 ? post->width / 2 : 1);
+    uint16 half_height = (uint16)(post->height > 1 ? post->height / 2 : 1);
+    if (!post->dof_target)
+    {
+        post->dof_half    = create_float_target(half_width, half_height);
+        post->dof_blurred = create_float_target(half_width, half_height);
+        post->dof_target  = create_float_target(post->width, post->height);
+    }
+
+    rhi_render_state state = rhi_render_state_default();
+    state.depth_write = false;
+    rhi_set_render_state(state);
+
+    rhi_texture source = scene_color(post);
+    rhi_texture depth  = rhi_framebuffer_get_depth_texture(post->scene_target);
+
+    // The scene at half size, with each spot's blur...
+    rhi_shader shader = post->dof_prepare_shader;
+    rhi_framebuffer_bind(post->dof_half);
+    rhi_shader_bind(shader);
+    rhi_shader_set_int(shader, "u_scene", POST_SLOT_SCENE);
+    rhi_shader_set_int(shader, "u_depth", POST_SLOT_BLOOM);
+    rhi_shader_set_vec2(shader, "u_planes", dof->near_plane, dof->far_plane);
+    rhi_shader_set_float(shader, "u_coc_scale", dof->coc_scale);
+    rhi_shader_set_float(shader, "u_focus", dof->focus);
+    rhi_shader_set_float(shader, "u_max_coc", dof->max_coc);
+    rhi_texture_bind(source, POST_SLOT_SCENE);
+    rhi_texture_bind(depth, POST_SLOT_BLOOM);
+    draw_triangle(post);
+
+    // ...gathered over a disc...
+    shader = post->dof_blur_shader;
+    rhi_framebuffer_bind(post->dof_blurred);
+    rhi_shader_bind(shader);
+    rhi_shader_set_int(shader, "u_source", POST_SLOT_SCENE);
+    rhi_shader_set_int(shader, "u_taps", dof->taps);
+    rhi_shader_set_float(shader, "u_max_coc", dof->max_coc * 0.5f);
+    rhi_texture_bind(rhi_framebuffer_get_color_texture(post->dof_half, 0), POST_SLOT_SCENE);
+    draw_triangle(post);
+
+    // ...and mixed back into the full-size scene.
+    shader = post->dof_composite_shader;
+    rhi_framebuffer_bind(post->dof_target);
+    rhi_shader_bind(shader);
+    rhi_shader_set_int(shader, "u_scene", POST_SLOT_SCENE);
+    rhi_shader_set_int(shader, "u_depth", POST_SLOT_BLOOM);
+    rhi_shader_set_int(shader, "u_blurred", POST_SLOT_ADAPTED);
+    rhi_shader_set_vec2(shader, "u_planes", dof->near_plane, dof->far_plane);
+    rhi_shader_set_float(shader, "u_coc_scale", dof->coc_scale);
+    rhi_shader_set_float(shader, "u_focus", dof->focus);
+    rhi_shader_set_float(shader, "u_max_coc", dof->max_coc);
+    rhi_shader_set_int(shader, "u_show_focus", dof->show_focus);
+    rhi_texture_bind(source, POST_SLOT_SCENE);
+    rhi_texture_bind(depth, POST_SLOT_BLOOM);
+    rhi_texture_bind(rhi_framebuffer_get_color_texture(post->dof_blurred, 0), POST_SLOT_ADAPTED);
+    draw_triangle(post);
+
+    rhi_set_render_state(rhi_render_state_default());
+    post->dof_ready = true;
 }
 
 void
@@ -496,6 +608,15 @@ post_destroy(post_process* post)
         rhi_framebuffer_destroy(post->scene_target);
     if (post->ldr_target)
         rhi_framebuffer_destroy(post->ldr_target);
+    if (post->behind_glass)
+        rhi_texture_destroy(post->behind_glass);
+    destroy_dof_targets(post);
+    if (post->dof_prepare_shader)
+        rhi_shader_destroy(post->dof_prepare_shader);
+    if (post->dof_blur_shader)
+        rhi_shader_destroy(post->dof_blur_shader);
+    if (post->dof_composite_shader)
+        rhi_shader_destroy(post->dof_composite_shader);
     for (uint32 i = 0; i < 2; ++i)
         if (post->taa_history[i])
             rhi_framebuffer_destroy(post->taa_history[i]);

@@ -215,14 +215,38 @@ void model_draw(const model* m, rhi_shader shader, const mat4 world)
     model_draw_ex(m, shader, world, NULL, MODEL_PASS_ALL);
 }
 
+model_draw_pass model_material_pass(const material* m)
+{
+    if (m->transmission > 0.0f)
+        return MODEL_PASS_TRANSMISSION;
+    return m->alpha_mode == MATERIAL_ALPHA_BLEND ? MODEL_PASS_BLEND : MODEL_PASS_OPAQUE;
+}
+
+b8 model_uses_pass(const model* m, const material_override* override, model_draw_pass pass)
+{
+    for (uint32 i = 0; i < m->submesh_count; ++i)
+    {
+        const model_submesh* sub = &m->submeshes[i];
+        material mat = sub->material_index >= 0 ? m->materials[sub->material_index] : m->default_material;
+        if (override && override->fields)
+            material_apply_override(&mat, override);
+        if (model_material_pass(&mat) == pass)
+            return true;
+    }
+    return false;
+}
+
 void model_draw_ex(const model* m, rhi_shader shader, const mat4 world,
                    const material_override* override, model_draw_pass passes)
 {
-    // Pass 0: opaque + alpha-masked. Pass 1: blended, after everything
-    // solid is in the depth buffer so it composites over it correctly.
-    for (int pass = 0; pass < 2; ++pass)
+    // Opaque + alpha-masked first; then glass, which will show what's
+    // behind it; then blended, after everything solid is in the depth
+    // buffer so it composites over it correctly.
+    const model_draw_pass order[3] = { MODEL_PASS_OPAQUE, MODEL_PASS_TRANSMISSION, MODEL_PASS_BLEND };
+
+    for (int pass = 0; pass < 3; ++pass)
     {
-        if (!(passes & (pass == 0 ? MODEL_PASS_OPAQUE : MODEL_PASS_BLEND)))
+        if (!(passes & order[pass]))
             continue;
 
         for (uint32 i = 0; i < m->submesh_count; ++i)
@@ -232,12 +256,9 @@ void model_draw_ex(const model* m, rhi_shader shader, const mat4 world,
                 ? &m->materials[sub->material_index]
                 : &m->default_material;
 
-            b8 is_blend = (mat->alpha_mode == MATERIAL_ALPHA_BLEND);
-            if ((pass == 1) != is_blend)
-                continue;
-
             // A shallow copy is enough: material_bind() only reads it, and
-            // the borrowed texture pointers stay the model's.
+            // the borrowed texture pointers stay the model's. Applied before
+            // picking the pass: an override can turn a surface into glass.
             material overridden;
             if (override && override->fields)
             {
@@ -245,6 +266,9 @@ void model_draw_ex(const model* m, rhi_shader shader, const mat4 world,
                 material_apply_override(&overridden, override);
                 mat = &overridden;
             }
+
+            if (model_material_pass(mat) != order[pass])
+                continue;
 
             mat4 model_matrix;
             glm_mat4_mul((vec4*)world, (vec4*)sub->transform, model_matrix);
@@ -269,6 +293,12 @@ void model_draw_ex(const model* m, rhi_shader shader, const mat4 world,
 
 void model_draw_depth(const model* m, rhi_shader shader, const mat4 world, const mat4 light_view_projection)
 {
+    model_draw_depth_ex(m, shader, world, light_view_projection, NULL);
+}
+
+void model_draw_depth_ex(const model* m, rhi_shader shader, const mat4 world, const mat4 light_view_projection,
+                         const material_override* override)
+{
     for (uint32 i = 0; i < m->submesh_count; ++i)
     {
         const model_submesh* sub = &m->submeshes[i];
@@ -276,7 +306,16 @@ void model_draw_depth(const model* m, rhi_shader shader, const mat4 world, const
             ? &m->materials[sub->material_index]
             : &m->default_material;
 
-        if (mat->alpha_mode == MATERIAL_ALPHA_BLEND)
+        material overridden;
+        if (override && override->fields)
+        {
+            overridden = *mat;
+            material_apply_override(&overridden, override);
+            mat = &overridden;
+        }
+
+        // Blended and glass submeshes cast nothing.
+        if (model_material_pass(mat) != MODEL_PASS_OPAQUE)
             continue;
 
         mat4 model_matrix;

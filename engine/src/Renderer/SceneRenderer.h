@@ -27,18 +27,37 @@
 //
 // Two ways to drive it:
 //   - scene_renderer_draw(): the whole frame.
-//   - scene_renderer_begin() / scene_renderer_draw_world() /
+//   - scene_renderer_begin() / scene_renderer_draw_scene() /
 //     scene_renderer_end(): the same frame in pieces, for an app that also
 //     draws geometry that isn't in the World. begin() hands back the bound
 //     PBR shader; such draws only set u_model / u_normal_matrix and a
 //     material. They aren't in the depth pre-pass, so they get no SSAO of
 //     their own (they read what's behind them).
 //
+// Glass (materials with transmission > 0, Scene/Material.h) draws after
+// every opaque surface, from a copy of the frame so far: it shows the sky
+// and the opaque scene behind it, bent by its ior over its thickness, tinted
+// by its attenuation and blurred by its roughness, with ordinary reflections
+// on top. It's screen space, so:
+//   - glass seen through glass shows only the opaque scene behind both;
+//   - only what's on screen can be seen through it -- a window looking out
+//     of the frame shows the frame's edge instead;
+//   - it isn't in the depth pre-pass (no SSAO of its own) and casts no
+//     shadow (a depth-only shadow map can't hold a lighter, tinted one);
+//   - light from a lamp behind the glass arrives only as the lit surfaces
+//     it shows, not as a highlight through it.
+// TAA treats it like any surface: it writes depth, so it reprojects.
+//
 // Each frame's passes are timed on the GPU ("Shadows", "Spot shadows", "Point shadows", "Probe bake", "Depth", "SSAO", "Sky",
-// "Scene", "TAA", "Bloom", "Exposure", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
+// "Scene", "Glass copy" and "Glass" (only in frames that draw glass; inside "Scene"), "Depth of field" (only
+// with an aperture), "TAA", "Bloom", "Exposure", "Post"; scene_renderer.profiler.timings). "Scene" runs from the end of
 // begin() to end(), so it includes whatever the app draws in between.
 //
-// Its shaders are hot-reloaded -- PBR, depth pre-pass, SSAO, TAA, tone
+// Depth of field (Scene/Camera.h's focus_distance and aperture) runs on the
+// HDR scene before TAA, bloom and auto-exposure: PostProcess.h's
+// post_depth_of_field().
+//
+// Its shaders are hot-reloaded -- PBR, depth pre-pass, SSAO, TAA, depth of field, tone
 // mapping, bloom, FXAA, auto-exposure and shadow depth:
 // scene_renderer_poll_hot_reload() rebuilds one when its files change on
 // disk, keeping the old program if the new source fails to compile. (The
@@ -61,6 +80,11 @@ typedef enum scene_debug_view
     SCENE_VIEW_LIGHTING,
     SCENE_VIEW_WIREFRAME,
     SCENE_VIEW_LIGHTS,      // how many lights each pixel shades (Renderer/Lighting.h's clusters): a heatmap
+    SCENE_VIEW_TRANSMISSION,// glass (MODEL_PASS_TRANSMISSION) in cyan, brighter with more transmission; the rest dark
+    SCENE_VIEW_BEHIND_GLASS,// the lit scene, but glass shows the copy of the scene behind it at its own pixel
+                            // and the mip its roughness picks: no bending, tint or reflection
+    SCENE_VIEW_FOCUS,       // depth of field's blur per pixel: black at the focus, orange in front, blue behind,
+                            // brighter the blurrier (the camera's aperture must be set)
     SCENE_VIEW_COUNT
 } scene_debug_view;
 
@@ -108,11 +132,13 @@ typedef struct scene_render_settings
     b8  debug_show_cascades;      // tint shading by cascade, see pbr.frag
     scene_debug_view debug_view;  // SCENE_VIEW_LIT for the real thing
     b8  debug_unclustered;        // every light everywhere: the reference the clustered lighting must match
+    int dof_taps;                 // depth of field's samples per pixel (quality), 8..128; 0 = off. The camera's
+                                  // aperture turns it on (Scene/Camera.h)
     vec3 clear_color;             // linear HDR background where nothing is drawn
 } scene_render_settings;
 
 // Sensible defaults: no IBL, skybox on, ambient 0.5, exposure 1, bloom 0.04,
-// FXAA, SSAO on (0.5 m), shadows on.
+// FXAA, SSAO on (0.5 m), shadows on, 32 depth-of-field taps.
 scene_render_settings scene_render_settings_default(void);
 
 // Copies a scene's environment into `settings`: the lighting values, and
@@ -140,6 +166,10 @@ typedef struct scene_renderer
     reflection_probes probes;
     uint32       scene_scope;    // "Scene": from begin() to end()
 
+    // Depth of field, from begin()'s camera, for end().
+    post_dof     dof;
+    b8           dof_active;
+
     // TAA: this frame's step in the jitter sequence, and the camera's
     // un-jittered view-projection, kept for the next frame's reprojection.
     uint32       taa_frame;
@@ -156,6 +186,7 @@ typedef struct scene_renderer
     file_watch bloom_files;
     file_watch fxaa_files;
     file_watch taa_files;
+    file_watch dof_files;
     file_watch exposure_files;
     file_watch shadow_files;
 } scene_renderer;
@@ -176,9 +207,16 @@ rhi_shader scene_renderer_begin(scene_renderer* r, const world* w, const camera*
                                 const scene_render_settings* settings);
 
 // Draws every visible MeshRenderer in `w` through `shader` (from begin()):
-// all opaque submeshes first, then all blended ones, so one entity's
-// transparency never gets drawn before another entity's opaque surfaces.
+// all opaque submeshes first, then all glass, then all blended ones, so one
+// entity's glass or transparency never gets drawn before another entity's
+// opaque surfaces.
 void scene_renderer_draw_world(const world* w, rhi_shader shader);
+
+// scene_renderer_draw_world(), and glass shows the scene behind it: between
+// the opaque submeshes and the glass, the scene so far is copied for the
+// glass to sample (post_copy_scene_behind_glass(), only if something
+// visible is glass). Without it, glass shows the environment instead.
+void scene_renderer_draw_scene(scene_renderer* r, const world* w, rhi_shader shader);
 
 // Tone-maps the HDR target onto the default framebuffer.
 void scene_renderer_end(scene_renderer* r, const scene_render_settings* settings);
@@ -198,7 +236,7 @@ void scene_renderer_draw_to(scene_renderer* r, const world* w, const camera* cam
 uint8* scene_renderer_capture(scene_renderer* r, const world* w, const camera* cam,
                               const scene_render_settings* settings, uint16* out_width, uint16* out_height);
 
-// begin() + scene_renderer_draw_world() + end().
+// begin() + scene_renderer_draw_scene() + end().
 void scene_renderer_draw(scene_renderer* r, const world* w, const camera* cam,
                          const scene_render_settings* settings);
 

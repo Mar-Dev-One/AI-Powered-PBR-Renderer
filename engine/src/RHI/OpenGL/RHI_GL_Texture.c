@@ -121,7 +121,8 @@ rhi_texture gl_texture_create(rhi_texture_desc desc)
                  desc.width, desc.height, 0,
                  upload_format, upload_type, desc.pixels);
 
-    b8 mipmaps = desc.pixels && desc.generate_mipmaps;
+    // Without pixels, glGenerateMipmap() below just allocates the levels.
+    b8 mipmaps = desc.generate_mipmaps;
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)gl_filter_to_gl(desc.filter, mipmaps));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)gl_filter_to_gl(desc.filter, false));
@@ -257,6 +258,20 @@ void gl_texture_copy_to_cubemap_face(rhi_texture source, rhi_texture cubemap, ui
     glCopyImageSubData(source->handle, GL_TEXTURE_2D, 0, 0, 0, 0,
                        cubemap->handle, GL_TEXTURE_CUBE_MAP, 0, 0, 0, (GLint)face,
                        source->width, source->height, 1);
+}
+
+void gl_texture_copy_from_framebuffer(rhi_texture texture, rhi_framebuffer source)
+{
+    rhi_texture color = source->color_texture_count ? source->color_textures[0] : NULL;
+    ASSERT(color && texture->target == GL_TEXTURE_2D);
+    ASSERT(color->width == texture->width && color->height == texture->height);
+
+    glCopyImageSubData(color->handle, GL_TEXTURE_2D, 0, 0, 0, 0,
+                       texture->handle, GL_TEXTURE_2D, 0, 0, 0, 0,
+                       texture->width, texture->height, 1);
+
+    // Direct state access: no texture unit's binding changes mid-frame.
+    glGenerateTextureMipmap(texture->handle);
 }
 
 void gl_cubemap_generate_mipmaps(rhi_texture cubemap)

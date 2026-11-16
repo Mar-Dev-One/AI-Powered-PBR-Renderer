@@ -13,7 +13,7 @@
 // SceneRenderer owns one and times its own passes (shadows, sky, scene,
 // post); see scene_renderer.profiler.
 
-#define GPU_PROFILER_MAX_SCOPES 8
+#define GPU_PROFILER_MAX_SCOPES 16
 #define GPU_PROFILER_LATENCY    4   // frames in flight before a frame's times are read back
 
 typedef struct gpu_timing

@@ -99,7 +99,7 @@ extension:
 
 | Format | Loader | Notes |
 |---|---|---|
-| `.gltf` / `.glb` | [cgltf](https://github.com/jkuhlmann/cgltf) | Scene hierarchy, multiple meshes and materials, embedded or external textures, PBR metallic-roughness (base color, metal/rough, normal, occlusion, emissive), alpha mask/blend, double-sided. |
+| `.gltf` / `.glb` | [cgltf](https://github.com/jkuhlmann/cgltf) | Scene hierarchy, multiple meshes and materials, embedded or external textures, PBR metallic-roughness (base color, metal/rough, normal, occlusion, emissive), alpha mask/blend, double-sided; glass (`KHR_materials_transmission`, `_ior`, `_volume`), clear coat (`KHR_materials_clearcoat`) and specular (`KHR_materials_specular`), their factors. |
 | `.obj` (+ `.mtl`) | [fast_obj](https://github.com/thisistherk/fast_obj) | Vertices are welded; `Kd`/`Ke`/`Ns`/`d` and `map_Kd`/`map_Ke` become a PBR material. |
 
 Both are converted to the same `model` / `material` / `mesh` types and drawn with
@@ -134,12 +134,31 @@ docs/              roadmap
 
 Glass, depth of field, clearcoat and specular, built step by step on the branch
 `features/glass-and-focus` as planned in [docs/RENDERING_FEATURES_ROADMAP.md](docs/RENDERING_FEATURES_ROADMAP.md).
-Every new field defaults to off, so existing scenes render as before.
+Every new field defaults to off, so existing scenes render as before. The testbed shows each one:
+`--scene glass`, `--scene focus`, `--scene coat`, with `--view transmission`, `behind_glass` or `focus`
+and `--timings N` for the GPU cost.
 
 | Feature | Step | Commit |
 |---|---|---|
 | 1. Transmission (glass) | 1a: material fields `transmission`, `ior`, `thickness`, `attenuation_color`, `attenuation_distance`, as MeshRenderer overrides and in scene files | Transmission 1a: glass material fields |
 | | 1b: glTF loading of `KHR_materials_transmission`, `_ior` and `_volume` (factors; textures later) | Transmission 1b: read glass from glTF |
+| | 1c: its own draw pass (opaque → glass → blend), the `transmission` debug view, the testbed's `--scene glass` | Transmission 1c: glass draws in its own pass |
+| | 1d: a mipmapped copy of the scene behind the glass, only in frames with glass ("Glass copy" timing, `behind_glass` debug view) | Transmission 1d: copy the scene behind glass |
+| | 1e: the shading: refraction by `ior` over `thickness`, blur by roughness, Beer–Lambert tint, Fresnel-weighted | Transmission 1e: glass shows what's behind it |
+| | 1f: no SSAO on glass, no shadows from glass, TAA checked with a turning camera (`--aa taa --turn 1`) | Transmission 1f: glass with SSAO, shadows and TAA |
+| | 1g: limits written down in `SceneRenderer.h` (glass behind glass, off-screen); an amber bottle behind the green one | Transmission 1g: glass behind glass |
+| | 1h: cost, with `--timings N --size 1920x1080`: no glass passes in a scene without glass | Transmission 1h: glass timings |
+| 2. Depth of field | 2a: `Camera.focus_distance` and `aperture` (f-number, 0 = off), a 24 mm sensor, `dof_taps` in the render settings | Depth of field 2a: camera focus and aperture |
+| | 2b: circle of confusion per pixel from depth, the `focus` debug view | Depth of field 2b: circle of confusion |
+| | 2c: the half-size gather blur, near and far kept apart; the testbed's `--scene focus` | Depth of field 2c: the blur |
+| | 2d: before bloom, so bright spots blur into discs | Depth of field 2d: bokeh |
+| | 2e: before TAA, which smooths in-focus edges (`--aa taa`, a still camera) | Depth of field 2e: stable with TAA |
+| | 2f: cost ("Depth of field" timing); nothing at aperture 0 | Depth of field 2f: timings |
+| 3. Clearcoat | 3a: material fields `clearcoat`, `clearcoat_roughness`, overrides, scene files, glTF loading | Clearcoat 3a: clear coat material fields |
+| | 3b: a second GGX lobe from the lights and the environment, the base dimmed by the coat's Fresnel; the testbed's `--scene coat` | Clearcoat 3b: clear coat shading |
+| | 3c: cost: skipped by a branch when `clearcoat` is 0 | Clearcoat 3c: no cost without a coat |
+| 4. Specular | 4a: material fields `specular`, `specular_color`, overrides, scene files, glTF loading | Specular 4a: specular material fields |
+| | 4b: a dielectric's F0 from `ior` × `specular_color`, its strength by `specular`; defaults render as before | Specular 4b: specular shading |
 
 ## Tests
 

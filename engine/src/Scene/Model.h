@@ -72,8 +72,10 @@ model model_load_obj(const char* path);
 // hierarchies (node transforms are baked into submeshes), multiple
 // primitives per mesh, shared meshes, all five standard material textures,
 // embedded and external images, sampler wrap/filter modes, alpha
-// mask/blend, double-sided materials, emissive strength, and glass
-// (KHR_materials_transmission, _ior and _volume: factors, not textures).
+// mask/blend, double-sided materials, emissive strength, glass
+// (KHR_materials_transmission, _ior and _volume), clear coats
+// (KHR_materials_clearcoat) and specular (KHR_materials_specular) -- of
+// those four, the factors, not the textures.
 // Not supported (loaded as static geometry / ignored): skinning and
 // animation (models appear in their bind pose), morph targets, sparse
 // accessors beyond what cgltf unpacks, Draco/meshopt compression,
@@ -104,19 +106,27 @@ model model_from_mesh(mesh msh, const mat4 transform);
 // and its inverse-transpose, set here per submesh). `world` is the whole
 // model's transform. The caller sets view-projection and lighting
 // uniforms and binds the shader first. Opaque and alpha-masked submeshes
-// draw first, blended ones after (not depth-sorted). Restores the default
+// draw first, then glass, then blended ones (not depth-sorted). Restores the default
 // render state when done.
 void model_draw(const model* m, rhi_shader shader, const mat4 world);
 
 // Which submeshes model_draw_ex() draws. A renderer drawing many models
-// draws every model's MODEL_PASS_OPAQUE first, then every MODEL_PASS_BLEND,
-// so no model's transparent parts are drawn before another's opaque ones.
+// draws every model's MODEL_PASS_OPAQUE first, then every
+// MODEL_PASS_TRANSMISSION, then every MODEL_PASS_BLEND, so no model's glass
+// or transparent parts are drawn before another's opaque ones.
 typedef enum model_draw_pass
 {
-    MODEL_PASS_OPAQUE = 1 << 0,   // opaque + alpha-masked
-    MODEL_PASS_BLEND  = 1 << 1,
-    MODEL_PASS_ALL    = MODEL_PASS_OPAQUE | MODEL_PASS_BLEND
+    MODEL_PASS_OPAQUE       = 1 << 0,   // opaque + alpha-masked
+    MODEL_PASS_BLEND        = 1 << 1,
+    MODEL_PASS_TRANSMISSION = 1 << 2,   // glass: transmission > 0, whatever its alpha mode
+    MODEL_PASS_ALL          = MODEL_PASS_OPAQUE | MODEL_PASS_TRANSMISSION | MODEL_PASS_BLEND
 } model_draw_pass;
+
+// The one pass a material draws in.
+model_draw_pass model_material_pass(const material* m);
+
+// Whether model_draw_ex() with this override would draw anything in `pass`.
+b8 model_uses_pass(const model* m, const material_override* override, model_draw_pass pass);
 
 // model_draw() with a per-instance material override (see Material.h;
 // NULL = none) applied to every submesh, limited to `passes`.
@@ -124,7 +134,7 @@ void model_draw_ex(const model* m, rhi_shader shader, const mat4 world,
                    const material_override* override, model_draw_pass passes);
 
 // Depth-only pass for shadow mapping: draws every opaque/alpha-masked
-// submesh (blended ones are skipped, same as model_draw()'s first pass --
+// submesh (blended and glass ones are skipped, same as model_draw()'s first pass --
 // casting a shadow from something translucent would need its alpha, which
 // this simple pass doesn't sample) into whatever depth-only framebuffer is
 // currently bound, from the light's point of view. `shader` only needs to
@@ -133,6 +143,13 @@ void model_draw_ex(const model* m, rhi_shader shader, const mat4 world,
 // binds `shader` and the target framebuffer first. Restores the default
 // render state when done.
 void model_draw_depth(const model* m, rhi_shader shader, const mat4 world, const mat4 light_view_projection);
+
+// model_draw_depth() with a per-instance material override (NULL = none),
+// which decides what casts: only MODEL_PASS_OPAQUE submeshes do. Glass
+// casts no shadow -- a depth-only map can't hold a lighter, tinted one, and
+// none at all is closer to clear glass than a solid black one.
+void model_draw_depth_ex(const model* m, rhi_shader shader, const mat4 world, const mat4 light_view_projection,
+                         const material_override* override);
 
 // Frees every GPU resource and all CPU-side bookkeeping. Safe to call on a
 // zero-initialized/failed-load model.

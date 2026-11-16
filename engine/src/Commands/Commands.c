@@ -1489,8 +1489,9 @@ static const cmd_arg ARGS_PLACE_MODEL[] = {
     PLACEMENT_ARGS,
     { "material",     "object", false, "Overrides of the model's own material: base_color [r, g, b] (linear 0-1), "
                                        "metallic 0-1, roughness 0-1, emissive [r, g, b], "
-                                       "glass: transmission 0-1, ior 1-3, thickness (m), attenuation_color [r, g, b], "
-                                       "attenuation_distance (m)" },
+                                       "glass: transmission 0-1, ior 1-3, thickness (model units), attenuation_color [r, g, b], "
+                                       "attenuation_distance (m); clearcoat 0-1, clearcoat_roughness 0-1; "
+                                       "specular 0-1, specular_color [r, g, b]" },
 };
 
 static const cmd_arg ARGS_ENTITY_PLACE[] = {

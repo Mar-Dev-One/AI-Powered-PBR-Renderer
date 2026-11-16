@@ -84,6 +84,11 @@ typedef struct c_camera
     f32 fov_degrees;   // vertical
     f32 near_plane;
     f32 far_plane;
+
+    // Depth of field (Scene/Camera.h): a thin lens focused focus_distance
+    // meters ahead, opened to f-number `aperture`; 0 = everything sharp.
+    f32 focus_distance;
+    f32 aperture;
 } c_camera;
 
 // Turns the entity's Transform.rotation_deg at a steady rate while the game

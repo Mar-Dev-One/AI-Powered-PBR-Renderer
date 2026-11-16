@@ -19,7 +19,32 @@ typedef struct camera
     f32 aspect;        // width / height
     f32 near_plane;
     f32 far_plane;
+
+    // Depth of field: a thin lens on a full-frame sensor (24 mm tall), its
+    // focal length set by fov_degrees, so f/2 blurs like f/2 on a real
+    // camera with that field of view. What's focus_distance meters ahead
+    // (along the view) is sharp; aperture is the f-number -- smaller is
+    // blurrier -- and 0 turns it off (camera_init()'s default).
+    f32 focus_distance;
+    f32 aperture;
 } camera;
+
+#define CAMERA_SENSOR_HEIGHT          0.024f   // meters
+#define CAMERA_DEFAULT_FOCUS_DISTANCE 10.0f
+
+// The lens's focal length in meters: what makes fov_degrees on a
+// CAMERA_SENSOR_HEIGHT sensor.
+f32 camera_focal_length(const camera* cam);
+
+// How wide a point at view depth `depth` (meters along the view) is blurred
+// to, in pixels of a `height_pixels`-tall picture: negative in front of the
+// focus, positive behind, 0 at it or with the aperture at 0. It's
+// camera_coc_scale() * (1 - focus_distance / depth).
+f32 camera_circle_of_confusion(const camera* cam, f32 depth, f32 height_pixels);
+
+// The blur of a point infinitely far behind the focus, in pixels of a
+// `height_pixels`-tall picture (0 with the aperture at 0).
+f32 camera_coc_scale(const camera* cam, f32 height_pixels);
 
 void camera_init(camera* cam,
                   vec3 position,

@@ -216,7 +216,7 @@ convert_material_factors(const cgltf_material* src, material* out)
         out->ior = src->ior.ior;
     if (src->has_volume)
     {
-        // In the mesh's own units (glTF scales it with the node), taken as meters.
+        // In the mesh's own units; pbr.frag scales it with the model, as glTF says.
         out->thickness = src->volume.thickness_factor;
         memcpy(out->attenuation_color, src->volume.attenuation_color, sizeof(out->attenuation_color));
 
@@ -228,6 +228,23 @@ convert_material_factors(const cgltf_material* src, material* out)
     if (src->transmission.transmission_texture.texture || src->volume.thickness_texture.texture)
         LOG_WARN("model_load_gltf: material '%s' has transmission or thickness textures; only the factors are used\n",
                  out->name);
+
+    // KHR_materials_clearcoat and _specular: factors only, as above.
+    if (src->has_clearcoat)
+    {
+        out->clearcoat           = src->clearcoat.clearcoat_factor;
+        out->clearcoat_roughness = src->clearcoat.clearcoat_roughness_factor;
+        if (src->clearcoat.clearcoat_texture.texture || src->clearcoat.clearcoat_roughness_texture.texture
+            || src->clearcoat.clearcoat_normal_texture.texture)
+            LOG_WARN("model_load_gltf: material '%s' has clearcoat textures; only the factors are used\n", out->name);
+    }
+    if (src->has_specular)
+    {
+        out->specular = src->specular.specular_factor;
+        memcpy(out->specular_color, src->specular.specular_color_factor, sizeof(out->specular_color));
+        if (src->specular.specular_texture.texture || src->specular.specular_color_texture.texture)
+            LOG_WARN("model_load_gltf: material '%s' has specular textures; only the factors are used\n", out->name);
+    }
 }
 
 static int32

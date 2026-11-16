@@ -56,9 +56,21 @@ typedef struct material
     // fields existed renders exactly as it did.
     f32   transmission;               // 0..1: share of the diffuse light replaced by light passing through
     f32   ior;                        // index of refraction (1.5 = glass, 1.33 = water)
-    f32   thickness;                  // meters of volume light crosses; 0 = a thin sheet, no refraction
+    f32   thickness;                  // how far light goes through the volume, in the model's own units
+                                      // (scaled with it, as glTF says); 0 = a thin sheet, no refraction
     f32   attenuation_color[3];       // linear RGB light keeps after attenuation_distance inside the volume
     f32   attenuation_distance;       // meters; 0 = no absorption (glTF's "infinite")
+
+    // A clear coat (glTF KHR_materials_clearcoat): a thin glossy layer over
+    // the surface -- lacquer, car paint, coated plastic. 0 = none.
+    f32   clearcoat;                  // 0..1: how much of the coat there is
+    f32   clearcoat_roughness;        // the coat's own roughness, 0 = mirror-smooth
+
+    // How strongly a dielectric reflects (glTF KHR_materials_specular): its
+    // reflectance at normal incidence is the one `ior` gives (0.04 at 1.5),
+    // times specular_color, times specular. Metals ignore both.
+    f32   specular;                   // 0..1; 1 = as ior says
+    f32   specular_color[3];          // linear RGB tint of that reflectance
 
     // Borrowed from the owning model's texture pool (Model.h) -- the
     // material never frees these. NULL = "no texture, use the factor alone".
@@ -80,7 +92,11 @@ typedef enum material_override_field
     MATERIAL_OVERRIDE_IOR                  = 1 << 5,
     MATERIAL_OVERRIDE_THICKNESS            = 1 << 6,
     MATERIAL_OVERRIDE_ATTENUATION_COLOR    = 1 << 7,
-    MATERIAL_OVERRIDE_ATTENUATION_DISTANCE = 1 << 8
+    MATERIAL_OVERRIDE_ATTENUATION_DISTANCE = 1 << 8,
+    MATERIAL_OVERRIDE_CLEARCOAT            = 1 << 9,
+    MATERIAL_OVERRIDE_CLEARCOAT_ROUGHNESS  = 1 << 10,
+    MATERIAL_OVERRIDE_SPECULAR             = 1 << 11,
+    MATERIAL_OVERRIDE_SPECULAR_COLOR       = 1 << 12
 } material_override_field;
 
 typedef struct material_override
@@ -95,13 +111,18 @@ typedef struct material_override
     f32    thickness;
     f32    attenuation_color[3];   // linear RGB
     f32    attenuation_distance;
+    f32    clearcoat;
+    f32    clearcoat_roughness;
+    f32    specular;
+    f32    specular_color[3];      // linear RGB
 } material_override;
 
 // Writes the fields `o` enables into `m`. NULL or fields == 0 is a no-op.
 void material_apply_override(material* m, const material_override* o);
 
-// White dielectric of roughness 0.5, not transmissive, no textures. What a
-// mesh with no material at all gets drawn with.
+// White dielectric of roughness 0.5, not transmissive, no clear coat, glTF's
+// default specular, no textures. What a mesh with no material at all gets
+// drawn with.
 void material_init_default(material* m);
 
 // Uploads this material's factors as uniforms, binds its textures to
@@ -111,7 +132,9 @@ void material_init_default(material* m);
 //
 // Uniform contract (see engine/shaders/pbr.frag): u_base_color, u_metallic,
 // u_roughness, u_emissive, u_normal_scale, u_occlusion_strength,
-// u_alpha_mode, u_alpha_cutoff, u_texture_mask (bit N set = slot N has a
+// u_alpha_mode, u_alpha_cutoff, u_transmission, u_ior, u_thickness,
+// u_attenuation_color, u_attenuation_distance, u_clearcoat,
+// u_clearcoat_roughness, u_specular, u_specular_color, u_texture_mask (bit N set = slot N has a
 // texture) and the five sampler2Ds u_base_color_tex ... u_emissive_tex.
 void material_bind(const material* m, rhi_shader shader, b8 flip_winding);
 

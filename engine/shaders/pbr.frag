@@ -15,7 +15,7 @@
 //   CSM_MAX_CASCADES                            Renderer/Shadow.h
 //   CLUSTER_X / CLUSTER_Y / CLUSTER_Z           Renderer/Lighting.h's cluster grid
 //   LIGHT_DIRECTIONAL / LIGHT_POINT / LIGHT_SPOT  Scene/Light.h's light_type values
-//   DEBUG_VIEW_LIT ... DEBUG_VIEW_WIREFRAME     SceneRenderer.h's scene_debug_view values
+//   DEBUG_VIEW_LIT ... DEBUG_VIEW_TRANSMISSION  SceneRenderer.h's scene_debug_view values
 //   SPOT_SHADOW_MAX                             Renderer/SpotShadow.h
 //   POINT_SHADOW_MAX                            Renderer/PointShadow.h
 //   PROBE_MAX / PROBE_MIPS                      Renderer/ReflectionProbes.h
@@ -41,6 +41,15 @@ uniform float u_normal_scale;
 uniform float u_occlusion_strength;
 uniform int   u_alpha_mode;        // 0 opaque, 1 mask, 2 blend
 uniform float u_alpha_cutoff;
+uniform float u_transmission;      // 0..1; > 0 = glass, drawn in MODEL_PASS_TRANSMISSION
+uniform float u_ior;
+uniform float u_thickness;         // in the model's own units: u_model scales it
+uniform vec3  u_attenuation_color;
+uniform float u_attenuation_distance;   // 0 = no absorption
+uniform float u_clearcoat;             // 0..1; 0 = no coat
+uniform float u_clearcoat_roughness;
+uniform float u_specular;              // KHR_materials_specular: 1 = as the ior says
+uniform vec3  u_specular_color;
 uniform int   u_texture_mask;      // bit N set = material slot N has a texture
 
 uniform sampler2D u_base_color_tex;          // slot 0, sRGB
@@ -160,6 +169,20 @@ uniform sampler2D   u_brdf_lut;             // slot 12, split-sum BRDF: (N.V, ro
 // occlusion texture.
 uniform int       u_use_ssao;
 uniform sampler2D u_ssao;                     // slot 13
+
+// --- Glass (SceneRenderer.h's scene_renderer_draw_scene()) ---------------------
+// The scene drawn so far -- sky and opaque geometry -- copied just before
+// the glass pass, with mips that blur it further at each level
+// (PostProcess.h's post_copy_scene_behind_glass()). u_has_scene_behind is 0
+// outside that pass and where nothing copied it (probe captures,
+// scene_renderer_draw_world()): glass then shows the environment instead.
+uniform int       u_has_scene_behind;
+uniform sampler2D u_scene_behind;   // slot 16
+
+// pbr.vert's matrices, read here too: glass projects where the light it
+// shows comes from back onto the screen, and scales its thickness with the model.
+uniform mat4 u_model;
+uniform mat4 u_view_projection;
 
 // --- Reflection probes (Renderer/ReflectionProbes.h) ---------------------------
 // Probe p's captured surroundings are layer p of u_probe_maps, prefiltered
@@ -443,8 +466,8 @@ float spot_attenuation(vec3 L, scene_light light)
 // `energy_compensation` scales specular back up for the energy single-scatter
 // GGX loses on rough surfaces (light that bounces between microfacets more
 // than once before leaving) -- see main().
-vec3 shade_light(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 diffuse_color, vec3 f0, float alpha, float NoV,
-                 vec3 energy_compensation)
+vec3 shade_light(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 diffuse_color, vec3 f0, float specular_weight,
+                 float alpha, float NoV, vec3 energy_compensation)
 {
     float NoL = max(dot(N, L), 0.0);
     if (NoL <= 0.0)
@@ -454,11 +477,27 @@ vec3 shade_light(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 diffuse_color, vec3
     float NoH = max(dot(N, H), 0.0);
     float VoH = max(dot(V, H), 0.0);
 
-    vec3 F = fresnel_schlick(VoH, f0);
+    vec3 F = fresnel_schlick(VoH, f0) * specular_weight;
     vec3 specular = distribution_ggx(NoH, alpha) * visibility_smith_ggx(NoV, NoL, alpha) * F * energy_compensation;
     vec3 diffuse  = (1.0 - F) * diffuse_color / PI;
 
     return (diffuse + specular) * radiance * NoL;
+}
+
+// A clear coat's highlight from one light (KHR_materials_clearcoat): a
+// second GGX lobe on the coat's own normal, a dielectric of ior 1.5 (F0 0.04).
+vec3 shade_clearcoat(vec3 Nc, vec3 V, vec3 L, vec3 radiance, float alpha, float NcoV)
+{
+    float NcoL = max(dot(Nc, L), 0.0);
+    if (NcoL <= 0.0)
+        return vec3(0.0);
+
+    vec3  H    = normalize(V + L);
+    float NcoH = max(dot(Nc, H), 0.0);
+    float VoH  = max(dot(V, H), 0.0);
+
+    vec3 F = fresnel_schlick(VoH, vec3(0.04));
+    return distribution_ggx(NcoH, alpha) * visibility_smith_ggx(NcoV, NcoL, alpha) * F * radiance * NcoL;
 }
 
 // Box projection ("parallax correction"): where a ray from `pos` along `dir`
@@ -538,6 +577,48 @@ vec3 hemisphere(vec3 dir)
     return mix(ground, sky, dir.y * 0.5 + 0.5);
 }
 
+// Glass's roughness for the light passing through: none at ior 1 (no
+// bending, no blur), all of it from ior 1.5 up -- as Khronos's glTF viewer.
+float transmission_roughness(float roughness)
+{
+    return roughness * clamp(u_ior * 2.0 - 2.0, 0.0, 1.0);
+}
+
+// The light coming through glass towards the eye (KHR_materials_transmission
+// + _volume): the view ray bent into the surface by u_ior, followed for
+// u_thickness, and the scene behind looked up where it comes out -- blurred
+// by roughness through the copy's mips -- then absorbed along the way
+// (Beer-Lambert: u_attenuation_color is what's left after
+// u_attenuation_distance). Screen space: only what's on screen can show.
+vec3 transmitted_light(vec3 N, vec3 V, float roughness)
+{
+    vec3 refracted = refract(-V, N, 1.0 / u_ior);
+    if (dot(refracted, refracted) < 1e-6)
+        refracted = -V;   // no refraction possible (total internal reflection): straight through
+    refracted = normalize(refracted);
+
+    vec3 model_scale = vec3(length(u_model[0].xyz), length(u_model[1].xyz), length(u_model[2].xyz));
+    vec3 through     = refracted * u_thickness * model_scale;
+    float rough      = transmission_roughness(roughness);
+
+    vec3 light;
+    if (u_has_scene_behind != 0)
+    {
+        vec4 clip = u_view_projection * vec4(v_world_pos + through, 1.0);
+        vec2 uv   = clip.xy / clip.w * 0.5 + 0.5;
+        float lod = log2(float(textureSize(u_scene_behind, 0).x)) * rough;
+        light = textureLod(u_scene_behind, uv, lod).rgb;
+    }
+    else if (u_use_ibl != 0)
+        light = textureLod(u_prefiltered_map, refracted, rough * u_prefiltered_max_lod).rgb * u_ambient_strength;
+    else
+        light = hemisphere(refracted);
+
+    if (u_attenuation_distance > 0.0)
+        light *= pow(max(u_attenuation_color, vec3(1e-4)), vec3(length(through) / u_attenuation_distance));
+    return light;
+}
+
 void main()
 {
     // --- Surface inputs ------------------------------------------------------
@@ -556,6 +637,7 @@ void main()
         roughness *= mr.g;
         metallic  *= mr.b;
     }
+    float surface_roughness = roughness;        // as authored: glass at 0 shows what's behind it sharp
     roughness = clamp(roughness, 0.045, 1.0);   // a perfect mirror makes the highlight vanish
     metallic  = clamp(metallic, 0.0, 1.0);
 
@@ -563,9 +645,9 @@ void main()
     if (has_texture(3))
         occlusion = 1.0 + u_occlusion_strength * (texture(u_occlusion_tex, v_uv).r - 1.0);
 
-    // Blended surfaces aren't in the depth pre-pass: the AO there is what's
-    // behind them.
-    if (u_use_ssao != 0 && u_alpha_mode != 2)
+    // Blended surfaces and glass aren't in the depth pre-pass: the AO there
+    // is what's behind them.
+    if (u_use_ssao != 0 && u_alpha_mode != 2 && u_transmission <= 0.0)
         occlusion *= texelFetch(u_ssao, ivec2(gl_FragCoord.xy), 0).r;
 
     vec3 emissive = u_emissive;
@@ -603,8 +685,28 @@ void main()
     float NoV = max(dot(N, V), 1e-4);
 
     vec3 diffuse_color = base.rgb * (1.0 - metallic);
-    vec3 f0 = mix(vec3(0.04), base.rgb, metallic);
+
+    // Glass: light passing through replaces that much of the diffuse.
+    float transmission = clamp(u_transmission, 0.0, 1.0);
+    vec3  lit_diffuse  = diffuse_color * (1.0 - transmission);
+    // A dielectric's reflectance at normal incidence from its ior -- 0.04 at
+    // 1.5, exactly as before KHR_materials_ior; 0 (never set) reads as 1.5 --
+    // tinted by KHR_materials_specular's color, and its strength scaled by
+    // its factor (specular_weight: Schlick's F0 and F90 both). Metals reflect
+    // their base color at full strength.
+    float ior    = u_ior < 1.0 ? 1.5 : u_ior;
+    float ior_f0 = ior == 1.5 ? 0.04 : pow((ior - 1.0) / (ior + 1.0), 2.0);
+    vec3  f0     = mix(min(ior_f0 * u_specular_color, vec3(1.0)), base.rgb, metallic);
+    float specular_weight = mix(clamp(u_specular, 0.0, 1.0), 1.0, metallic);
     float alpha = roughness * roughness;
+
+    // A clear coat on the surface's own normal, before normal mapping (the
+    // coat has none of its own: glTF's clearcoatNormalTexture isn't read).
+    float clearcoat   = clamp(u_clearcoat, 0.0, 1.0);
+    vec3  Nc          = geometric_normal;
+    float NcoV        = max(dot(Nc, V), 1e-4);
+    float coat_rough  = clamp(u_clearcoat_roughness, 0.045, 1.0);
+    vec3  coat_direct = vec3(0.0);
 
     // Split-sum directional albedo: dfg.x scales F0, dfg.y is a bias, and
     // dfg.x + dfg.y (Ess) is the fraction of energy single-scatter GGX keeps
@@ -690,7 +792,9 @@ void main()
         }
 
         vec3 radiance = light.color * light.intensity * attenuation;
-        direct += shade_light(N, V, L, radiance, diffuse_color, f0, alpha, NoV, energy_compensation);
+        direct += shade_light(N, V, L, radiance, lit_diffuse, f0, specular_weight, alpha, NoV, energy_compensation);
+        if (clearcoat > 0.0)
+            coat_direct += shade_clearcoat(Nc, V, L, radiance, coat_rough * coat_rough, NcoV);
     }
 
     // --- Ambient --------------------------------------------------------------------
@@ -717,11 +821,11 @@ void main()
     // took.
     vec3  Fr     = max(vec3(1.0 - roughness), f0) - f0;
     vec3  k_s    = f0 + Fr * pow(1.0 - NoV, 5.0);
-    vec3  FssEss = k_s * dfg.x + dfg.y;
+    vec3  FssEss = specular_weight * (k_s * dfg.x + dfg.y);
     float ems    = 1.0 - ess;
-    vec3  F_avg  = f0 + (1.0 - f0) / 21.0;
+    vec3  F_avg  = specular_weight * (f0 + (1.0 - f0) / 21.0);
     vec3  FmsEms = ems * FssEss * F_avg / (1.0 - F_avg * ems);
-    vec3  k_d    = diffuse_color * max(1.0 - FssEss - FmsEms, 0.0);
+    vec3  k_d    = lit_diffuse * max(1.0 - FssEss - FmsEms, 0.0);
 
     float specular_ao = specular_occlusion(NoV, occlusion, roughness);
 
@@ -747,6 +851,39 @@ void main()
 
     vec3 color = direct + ambient + emissive;
 
+    // What comes through glass, tinted by its color, less what its surface
+    // reflects (the same split-sum terms as the ambient specular above).
+    if (transmission > 0.0)
+        color += transmission * diffuse_color * max(1.0 - FssEss - FmsEms, 0.0)
+               * transmitted_light(N, V, surface_roughness);
+
+    // The clear coat on top of all of it: what it reflects (the lights above,
+    // and the environment the same way as the surface's own reflection), and
+    // everything under it dimmed by the share the coat's Fresnel takes.
+    if (clearcoat > 0.0)
+    {
+        vec3 Rc       = reflect(-V, Nc);
+        vec2 coat_dfg = u_use_ibl != 0 ? texture(u_brdf_lut, vec2(NcoV, coat_rough)).rg
+                                       : env_brdf_approx(coat_rough, NcoV);
+        float coat_FssEss = 0.04 * coat_dfg.x + coat_dfg.y;
+
+        vec3 coat_reflection = u_use_ibl != 0
+            ? textureLod(u_prefiltered_map, Rc, coat_rough * u_prefiltered_max_lod).rgb
+            : mix(hemisphere(Rc), hemisphere(Nc), coat_rough);
+        vec3 coat_ambient = coat_FssEss * coat_reflection * specular_occlusion(NcoV, occlusion, coat_rough)
+                          * u_ambient_strength;
+        if (probe >= 0)
+        {
+            vec3 lo    = u_probe_box_min[probe], hi = u_probe_box_max[probe];
+            vec3 dir   = box_project(clamp(v_world_pos, lo, hi), Rc, lo, hi, u_probe_position[probe]);
+            vec3 local = textureLod(u_probe_maps, vec4(dir, float(probe)), coat_rough * float(PROBE_MIPS - 1)).rgb;
+            coat_ambient = mix(coat_ambient, coat_FssEss * local, probe_weight);
+        }
+
+        float coat_fresnel = fresnel_schlick(NcoV, vec3(0.04)).x;
+        color = color * (1.0 - clearcoat * coat_fresnel) + clearcoat * (coat_direct + coat_ambient);
+    }
+
     // Debug: overlay a per-cascade tint (red -> green -> blue -> yellow,
     // CSM_MAX_CASCADES == 4) so a cascade fit/split problem shows up as a
     // wrong-looking color band instead of having to guess from shadow
@@ -769,6 +906,21 @@ void main()
         case DEBUG_VIEW_SHADOW:    color = as_display(vec3(shadow_visibility)); break;
         case DEBUG_VIEW_WIREFRAME: color = as_display(vec3(0.85));       break;
         case DEBUG_VIEW_LIGHTS:    color = as_display(light_count_heat(light_total)); break;
+        case DEBUG_VIEW_BEHIND_GLASS:
+            // The copy at this very pixel, at the mip this glass's roughness picks.
+            // Lit like any other view (not a data view), so the copy holds the real scene.
+            if (u_transmission > 0.0 && u_has_scene_behind != 0)
+            {
+                vec2  size = vec2(textureSize(u_scene_behind, 0));
+                float lod  = log2(size.x) * transmission_roughness(surface_roughness);
+                color = textureLod(u_scene_behind, gl_FragCoord.xy / size, lod).rgb;
+            }
+            break;
+        case DEBUG_VIEW_TRANSMISSION:
+            // Glass in cyan (brighter with more transmission), everything else a dim grey.
+            color = as_display(u_transmission > 0.0 ? vec3(0.0, 0.4, 0.5) + vec3(0.0, 0.6, 0.5) * u_transmission
+                                                    : vec3(0.08));
+            break;
     }
 
     frag_color = vec4(color, u_alpha_mode == 2 ? base.a : 1.0);

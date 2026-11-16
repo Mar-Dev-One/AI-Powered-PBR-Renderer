@@ -20,6 +20,11 @@ void material_init_default(material* m)
     m->thickness            = 0.0f;
     m->attenuation_color[0] = m->attenuation_color[1] = m->attenuation_color[2] = 1.0f;
     m->attenuation_distance = 0.0f;
+
+    m->clearcoat           = 0.0f;
+    m->clearcoat_roughness = 0.0f;
+    m->specular            = 1.0f;
+    m->specular_color[0] = m->specular_color[1] = m->specular_color[2] = 1.0f;
 }
 
 void material_bind(const material* m, rhi_shader shader, b8 flip_winding)
@@ -52,6 +57,16 @@ void material_bind(const material* m, rhi_shader shader, b8 flip_winding)
     rhi_shader_set_float(shader, "u_occlusion_strength", m->occlusion_strength);
     rhi_shader_set_int  (shader, "u_alpha_mode", (int32)m->alpha_mode);
     rhi_shader_set_float(shader, "u_alpha_cutoff", m->alpha_cutoff);
+    rhi_shader_set_float(shader, "u_transmission", m->transmission);
+    rhi_shader_set_float(shader, "u_ior", m->ior);
+    rhi_shader_set_float(shader, "u_thickness", m->thickness);
+    rhi_shader_set_vec3 (shader, "u_attenuation_color", m->attenuation_color[0], m->attenuation_color[1],
+                         m->attenuation_color[2]);
+    rhi_shader_set_float(shader, "u_attenuation_distance", m->attenuation_distance);
+    rhi_shader_set_float(shader, "u_clearcoat", m->clearcoat);
+    rhi_shader_set_float(shader, "u_clearcoat_roughness", m->clearcoat_roughness);
+    rhi_shader_set_float(shader, "u_specular", m->specular);
+    rhi_shader_set_vec3 (shader, "u_specular_color", m->specular_color[0], m->specular_color[1], m->specular_color[2]);
 
     rhi_render_state state = rhi_render_state_default();
     state.cull_back_faces = !m->double_sided;
@@ -96,6 +111,18 @@ void material_apply_override(material* m, const material_override* o)
     }
     if (o->fields & MATERIAL_OVERRIDE_ATTENUATION_DISTANCE)
         m->attenuation_distance = o->attenuation_distance;
+    if (o->fields & MATERIAL_OVERRIDE_CLEARCOAT)
+        m->clearcoat = o->clearcoat;
+    if (o->fields & MATERIAL_OVERRIDE_CLEARCOAT_ROUGHNESS)
+        m->clearcoat_roughness = o->clearcoat_roughness;
+    if (o->fields & MATERIAL_OVERRIDE_SPECULAR)
+        m->specular = o->specular;
+    if (o->fields & MATERIAL_OVERRIDE_SPECULAR_COLOR)
+    {
+        m->specular_color[0] = o->specular_color[0];
+        m->specular_color[1] = o->specular_color[1];
+        m->specular_color[2] = o->specular_color[2];
+    }
 }
 
 void material_destroy(material* m)

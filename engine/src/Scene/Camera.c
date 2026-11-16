@@ -1,5 +1,7 @@
 #include "Camera.h"
 
+#include <math.h>
+
 void camera_init(camera* cam,
                   vec3 position,
                   vec3 target,
@@ -16,6 +18,34 @@ void camera_init(camera* cam,
     cam->aspect      = aspect;
     cam->near_plane  = near_plane;
     cam->far_plane   = far_plane;
+
+    cam->focus_distance = CAMERA_DEFAULT_FOCUS_DISTANCE;
+    cam->aperture       = 0.0f;
+}
+
+f32 camera_focal_length(const camera* cam)
+{
+    return CAMERA_SENSOR_HEIGHT * 0.5f / tanf(glm_rad(cam->fov_degrees) * 0.5f);
+}
+
+f32 camera_coc_scale(const camera* cam, f32 height_pixels)
+{
+    if (cam->aperture <= 0.0f)
+        return 0.0f;
+
+    // Thin lens: c = A f (d - s) / (d (s - f)) = A f / (s - f) * (1 - s / d),
+    // with the aperture's diameter A = f / N, on the sensor -- then scaled
+    // from its height to the picture's.
+    f32 f = camera_focal_length(cam);
+    f32 s = fmaxf(cam->focus_distance, f * 1.01f);
+    return (f / cam->aperture) * f / (s - f) / CAMERA_SENSOR_HEIGHT * height_pixels;
+}
+
+f32 camera_circle_of_confusion(const camera* cam, f32 depth, f32 height_pixels)
+{
+    if (depth <= 0.0f)
+        return 0.0f;
+    return camera_coc_scale(cam, height_pixels) * (1.0f - cam->focus_distance / depth);
 }
 
 void camera_set_aspect(camera* cam, f32 aspect)

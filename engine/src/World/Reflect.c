@@ -57,13 +57,26 @@ static const field_desc MESH_RENDERER_FIELDS[] = {
       .doc = "Override: index of refraction, how much light bends going in (1.33 water, 1.5 glass, 2.4 diamond)" },
     { .name = "material.thickness", .type = FIELD_F32, .offset = MATERIAL_OFFSET(thickness),
       .min = 0.0f, .max = 10.0f, .override_bit = MATERIAL_OVERRIDE_THICKNESS,
-      .doc = "Override: meters of glass or liquid light crosses; 0 = a thin sheet that doesn't bend what's behind" },
+      .doc = "Override: how far light goes through the glass or liquid, in the model's own units (scaled with "
+             "the entity; 1 = a built-in sphere's diameter); 0 = a thin sheet that doesn't bend what's behind" },
     { .name = "material.attenuation_color", .type = FIELD_COLOR3, .offset = MATERIAL_OFFSET(attenuation_color),
       .min = 0.0f, .max = 1.0f, .override_bit = MATERIAL_OVERRIDE_ATTENUATION_COLOR,
       .doc = "Override: tint of the glass or liquid, the linear RGB light keeps after attenuation_distance inside it" },
     { .name = "material.attenuation_distance", .type = FIELD_F32, .offset = MATERIAL_OFFSET(attenuation_distance),
       .min = 0.0f, .max = 10000.0f, .override_bit = MATERIAL_OVERRIDE_ATTENUATION_DISTANCE,
       .doc = "Override: meters inside the volume after which light has attenuation_color; 0 = no tint" },
+    { .name = "material.clearcoat", .type = FIELD_F32, .offset = MATERIAL_OFFSET(clearcoat),
+      .min = 0.0f, .max = 1.0f, .override_bit = MATERIAL_OVERRIDE_CLEARCOAT,
+      .doc = "Override: a clear glossy coat over the surface (lacquer, car paint); 0 = none, 1 = full" },
+    { .name = "material.clearcoat_roughness", .type = FIELD_F32, .offset = MATERIAL_OFFSET(clearcoat_roughness),
+      .min = 0.0f, .max = 1.0f, .override_bit = MATERIAL_OVERRIDE_CLEARCOAT_ROUGHNESS,
+      .doc = "Override: the coat's own roughness, 0 = mirror-smooth" },
+    { .name = "material.specular", .type = FIELD_F32, .offset = MATERIAL_OFFSET(specular),
+      .min = 0.0f, .max = 1.0f, .override_bit = MATERIAL_OVERRIDE_SPECULAR,
+      .doc = "Override: how strongly a non-metal reflects, 1 = as its ior says, 0 = no reflection at all" },
+    { .name = "material.specular_color", .type = FIELD_COLOR3, .offset = MATERIAL_OFFSET(specular_color),
+      .min = 0.0f, .max = 1.0f, .override_bit = MATERIAL_OVERRIDE_SPECULAR_COLOR,
+      .doc = "Override: tint of a non-metal's reflection, linear RGB (white = untinted)" },
 };
 
 static const char* const LIGHT_TYPE_NAMES[] = { "directional", "point", "spot" };
@@ -99,6 +112,13 @@ static const field_desc CAMERA_FIELDS[] = {
       .min = 0.001f, .max = 100.0f, .doc = "Closest visible distance" },
     { .name = "far_plane", .type = FIELD_F32, .offset = offsetof(c_camera, far_plane),
       .min = 0.01f, .max = 100000.0f, .doc = "Farthest visible distance" },
+    { .name = "focus_distance", .type = FIELD_F32, .offset = offsetof(c_camera, focus_distance),
+      .min = 0.05f, .max = 100000.0f,
+      .doc = "Depth of field: meters ahead that are in focus (animate it for a focus pull)" },
+    { .name = "aperture", .type = FIELD_F32, .offset = offsetof(c_camera, aperture),
+      .min = 0.0f, .max = 64.0f,
+      .doc = "Depth of field: the f-number, as on a real camera of this field of view (f/1.4 very blurry, "
+             "f/16 nearly all sharp); 0 = off, everything sharp" },
 };
 
 static const field_desc SPIN_FIELDS[] = {

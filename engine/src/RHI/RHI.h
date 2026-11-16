@@ -80,7 +80,8 @@ typedef struct rhi_texture_desc
     rhi_texture_filter  filter;            // magnification/minification filter
     rhi_texture_wrap    wrap;              // applied to both S and T
     const void*         pixels;            // pixel data matching `format`, or NULL for an empty/render-target texture
-    b8                  generate_mipmaps;  // ignored if pixels is NULL
+    b8                  generate_mipmaps;  // with pixels: built from them. Without: storage for the whole
+                                           // chain, filled by rhi_texture_copy_from_framebuffer()
 } rhi_texture_desc;
 
 typedef struct rhi_framebuffer_attachment
@@ -211,6 +212,12 @@ rhi_texture rhi_texture_create_from_file(const char* path,
                                           b8 generate_mipmaps);
 
 void        rhi_texture_bind(rhi_texture texture, uint32 slot);
+
+// Copies color attachment 0 of `source` into mip 0 of `texture` (same size
+// and format; an empty texture created with generate_mipmaps), then rebuilds
+// the rest of its mip chain from that (a box filter): a picture of the
+// scene, sharp at mip 0 and blurrier at each level after. Glass reads it.
+void        rhi_texture_copy_from_framebuffer(rhi_texture texture, rhi_framebuffer source);
 // The backend's own name for the texture (an OpenGL texture object), for
 // handing it to code that draws with the backend directly -- Dear ImGui's
 // renderer, to show a render target in a panel. 0 for NULL.

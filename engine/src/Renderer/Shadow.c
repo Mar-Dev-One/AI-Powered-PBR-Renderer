@@ -243,7 +243,8 @@ csm_render(csm_state* csm, const world* w)
             if (!m || !mr->visible || !mr->cast_shadows)
                 continue;
 
-            model_draw_depth(m, csm->depth_shader, world_matrix(w, e), csm->cascades[i].view_projection);
+            model_draw_depth_ex(m, csm->depth_shader, world_matrix(w, e), csm->cascades[i].view_projection,
+                                &mr->material);
         }
     }
 

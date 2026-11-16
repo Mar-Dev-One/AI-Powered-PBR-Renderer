@@ -33,6 +33,23 @@
 // target with each pixel's luma in alpha instead, and fxaa.frag smooths its
 // edges into the final picture.
 //
+// Depth of field (post_depth_of_field(), before TAA): a thin-lens blur from
+// the depth buffer (Scene/Camera.h). Half-size: the scene with each spot's
+// circle of confusion (dof_prepare.frag), a gather over a disc that keeps a
+// sharp subject and a blurred background apart (dof_blur.frag), then mixed
+// back into the full-size scene by each pixel's own blur (dof_composite.frag).
+// TAA then smooths it like any other part of the frame -- an in-focus edge,
+// where the jittered depth puts a pixel on the sharp side one frame and the
+// blurred side the next, would shimmer otherwise -- and bloom, auto-exposure
+// and tone mapping read the result, so bright spots blur into round bokeh
+// before they glow. Its targets are allocated the first time it runs.
+//
+// Glass (post_copy_scene_behind_glass(), mid-scene): a copy of the scene
+// target as it stands -- the opaque scene and the sky -- with a mip chain,
+// which pbr.frag samples to show what's behind a glass surface, blurrier at
+// each mip for rougher glass. Made only in frames that draw glass, into a
+// texture allocated the first time one does.
+//
 // Bloom (post_bloom(), between the two): the scene is halved down a chain
 // of up to POST_BLOOM_MAX_MIPS targets (bloom_downsample.frag) and blurred
 // back up it (bloom_upsample.frag), then mixed into the picture by its
@@ -52,9 +69,16 @@
 #define POST_SSAO_PATH            "shaders/ssao.frag"
 #define POST_SSAO_BLUR_PATH       "shaders/ssao_blur.frag"
 #define POST_TAA_PATH             "shaders/taa.frag"
+#define POST_DOF_PREPARE_PATH     "shaders/dof_prepare.frag"
+#define POST_DOF_BLUR_PATH        "shaders/dof_blur.frag"
+#define POST_DOF_COMPOSITE_PATH   "shaders/dof_composite.frag"
 
 // The texture unit pbr.frag reads the AO from: after IBL.h's units (9..12).
 #define POST_SSAO_SLOT 13
+
+// ...and the scene behind glass: after PointShadow.h's unit (15). Every GL
+// 4.6 driver on desktop hardware offers at least 32 per stage.
+#define POST_BEHIND_GLASS_SLOT 16
 
 // Auto-exposure measures the scene at this size (a power of two), then
 // halves it down to 1 x 1.
@@ -103,7 +127,31 @@ typedef struct post_process
     uint32          taa_current;    // taa_history[taa_current] holds the last result
     b8              taa_valid;      // ...and it's from the frame just before this one
     b8              taa_ready;      // post_taa() ran since post_begin_scene()
+
+    rhi_texture     behind_glass;   // RGBA16F with mips, window-sized; NULL until a frame draws glass
+
+    rhi_shader      dof_prepare_shader;
+    rhi_shader      dof_blur_shader;
+    rhi_shader      dof_composite_shader;
+    rhi_framebuffer dof_half;       // RGBA16F, half size: color + signed blur; NULL until first used
+    rhi_framebuffer dof_blurred;    // RGBA16F, half size: blurred color + foreground cover
+    rhi_framebuffer dof_target;     // RGBA16F, window-sized: the result
+    b8              dof_ready;      // post_depth_of_field() ran since post_begin_scene()
 } post_process;
+
+// What post_depth_of_field() needs from the camera (Scene/Camera.h): a
+// point at view depth d is blurred to coc_scale * (1 - focus / d) pixels,
+// clamped to +-max_coc.
+typedef struct post_dof
+{
+    f32 coc_scale;    // full-size pixels: camera_coc_scale()
+    f32 focus;        // meters
+    f32 max_coc;      // full-size pixels
+    f32 near_plane;
+    f32 far_plane;
+    int taps;         // samples per pixel of the blur
+    b8  show_focus;   // draw the blur's size instead (the "focus" debug view)
+} post_dof;
 
 // How post_end_scene() turns the scene into the picture.
 typedef struct post_settings
@@ -144,6 +192,11 @@ void post_ssao(post_process* post, const f32* projection, const f32* inverse_pro
 // This frame's AO (one texel per pixel), or NULL if post_ssao() hasn't run.
 rhi_texture post_ssao_texture(const post_process* post);
 
+// Copies the scene target's color as it stands into the behind-glass
+// texture and builds its mips; returns it (NULL without a scene target).
+// Nothing is bound or drawn, so the scene pass carries on as it was.
+rhi_texture post_copy_scene_behind_glass(post_process* post);
+
 // Temporal anti-aliasing: blends the finished scene (rendered with this
 // frame's jitter) into the history. `reprojection` (a column-major mat4)
 // takes this frame's NDC to last frame's clip space. The first frame, and
@@ -151,6 +204,12 @@ rhi_texture post_ssao_texture(const post_process* post);
 // before post_bloom() / post_meter_exposure(), which then read the result.
 // Leaves a history target bound.
 void post_taa(post_process* post, const f32* reprojection);
+
+// Depth of field over the finished scene, from the scene target's depth.
+// Call before post_taa(), which then reads the result (as bloom,
+// auto-exposure and tone mapping do without TAA). Leaves a depth-of-field
+// target bound.
+void post_depth_of_field(post_process* post, const post_dof* dof);
 
 // Blurs the finished scene down and back up the bloom chain, for
 // post_end_scene() to mix in. Only worth calling when settings.bloom > 0.

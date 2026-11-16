@@ -274,6 +274,11 @@ rhi_texture rhi_cubemap_array_create(uint16 size, uint32 layers, uint32 mip_coun
     return backend.cubemap_array_create(size, layers, mip_count, format);
 }
 
+void rhi_texture_copy_from_framebuffer(rhi_texture texture, rhi_framebuffer source)
+{
+    backend.texture_copy_from_framebuffer(texture, source);
+}
+
 void rhi_texture_copy_to_cubemap_face(rhi_texture source, rhi_texture cubemap, uint32 face)
 {
     backend.texture_copy_to_cubemap_face(source, cubemap, face);

@@ -31,12 +31,14 @@ scene_render_settings_default(void)
         .cascade_split_lambda = 0.5f,
         .debug_show_cascades  = false,
         .debug_view           = SCENE_VIEW_LIT,
-        .clear_color          = { 0.0f, 0.0f, 0.0f }
+        .clear_color          = { 0.0f, 0.0f, 0.0f },
+        .dof_taps             = 32
     };
 }
 
 static const char* const DEBUG_VIEW_NAMES[SCENE_VIEW_COUNT] = {
-    "lit", "albedo", "normals", "roughness", "metallic", "ao", "shadow", "lighting", "wireframe", "lights"
+    "lit", "albedo", "normals", "roughness", "metallic", "ao", "shadow", "lighting", "wireframe", "lights",
+    "transmission", "behind_glass", "focus"
 };
 
 const char*
@@ -103,7 +105,7 @@ halton(uint32 index, uint32 base)
 static b8
 debug_view_is_data(scene_debug_view view)
 {
-    return view != SCENE_VIEW_LIT && view != SCENE_VIEW_LIGHTING;
+    return view != SCENE_VIEW_LIT && view != SCENE_VIEW_LIGHTING && view != SCENE_VIEW_BEHIND_GLASS;
 }
 
 void
@@ -146,6 +148,8 @@ scene_renderer_shader_defines(char* out, size_t size)
              "#define DEBUG_VIEW_LIGHTING %d\n"
              "#define DEBUG_VIEW_WIREFRAME %d\n"
              "#define DEBUG_VIEW_LIGHTS %d\n"
+             "#define DEBUG_VIEW_TRANSMISSION %d\n"
+             "#define DEBUG_VIEW_BEHIND_GLASS %d\n"
              "#define SPOT_SHADOW_MAX %d\n"
              "#define POINT_SHADOW_MAX %d\n"
              "#define PROBE_MAX %d\n"
@@ -154,8 +158,9 @@ scene_renderer_shader_defines(char* out, size_t size)
              (int)LIGHT_DIRECTIONAL, (int)LIGHT_POINT, (int)LIGHT_SPOT,
              (int)SCENE_VIEW_LIT, (int)SCENE_VIEW_ALBEDO, (int)SCENE_VIEW_NORMALS, (int)SCENE_VIEW_ROUGHNESS,
              (int)SCENE_VIEW_METALLIC, (int)SCENE_VIEW_AO, (int)SCENE_VIEW_SHADOW, (int)SCENE_VIEW_LIGHTING,
-             (int)SCENE_VIEW_WIREFRAME, (int)SCENE_VIEW_LIGHTS, SPOT_SHADOW_MAX, POINT_SHADOW_MAX, PROBE_MAX,
-             PROBE_MIPS);
+             (int)SCENE_VIEW_WIREFRAME, (int)SCENE_VIEW_LIGHTS, (int)SCENE_VIEW_TRANSMISSION, (int)SCENE_VIEW_BEHIND_GLASS,
+             SPOT_SHADOW_MAX,
+             POINT_SHADOW_MAX, PROBE_MAX, PROBE_MIPS);
 }
 
 // pbr.vert with `fragment` (pbr.frag, or the depth pre-pass's).
@@ -189,6 +194,8 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     static const char* const bloom_files[]  = { POST_VERTEX_PATH, POST_BLOOM_DOWN_PATH, POST_BLOOM_UP_PATH };
     static const char* const fxaa_files[]   = { POST_VERTEX_PATH, POST_FXAA_PATH };
     static const char* const taa_files[]    = { POST_VERTEX_PATH, POST_TAA_PATH };
+    static const char* const dof_files[]    = { POST_VERTEX_PATH, POST_DOF_PREPARE_PATH, POST_DOF_BLUR_PATH,
+                                                POST_DOF_COMPOSITE_PATH };
     static const char* const exposure_files[] = { POST_VERTEX_PATH, POST_LUMINANCE_PATH, POST_REDUCE_PATH,
                                                   POST_ADAPT_PATH };
     static const char* const shadow_files[] = { CSM_VERTEX_PATH, CSM_FRAGMENT_PATH };
@@ -199,6 +206,7 @@ scene_renderer_create(scene_renderer* r, uint16 width, uint16 height,
     file_watch_init(&r->bloom_files, bloom_files, 3);
     file_watch_init(&r->fxaa_files, fxaa_files, 2);
     file_watch_init(&r->taa_files, taa_files, 2);
+    file_watch_init(&r->dof_files, dof_files, 4);
     file_watch_init(&r->exposure_files, exposure_files, 4);
     file_watch_init(&r->shadow_files, shadow_files, 2);
 
@@ -309,6 +317,11 @@ bind_lit_shader(scene_renderer* r, const scene_render_settings* settings, const 
     if (ao)
         rhi_texture_bind(ao, POST_SSAO_SLOT);
 
+    // The scene behind glass: only once scene_renderer_draw_scene() has
+    // copied it, between the opaque and the glass passes.
+    rhi_shader_set_int(shader, "u_scene_behind", POST_BEHIND_GLASS_SLOT);
+    rhi_shader_set_int(shader, "u_has_scene_behind", 0);
+
     // The lights, by cluster.
     light_clusters_bind(&r->clusters, shader);
 
@@ -349,7 +362,7 @@ bake_probes(scene_renderer* r, const world* w, const scene_render_settings* sett
 
     mat4 projection;
     glm_perspective(glm_rad(90.0f), 1.0f, 0.05f, 500.0f, projection);
-    const model_draw_pass passes[2] = { MODEL_PASS_OPAQUE, MODEL_PASS_BLEND };
+    const model_draw_pass passes[3] = { MODEL_PASS_OPAQUE, MODEL_PASS_TRANSMISSION, MODEL_PASS_BLEND };
 
     // Nothing to reflect yet on the first bounce: bind_lit_shader() leaves
     // the probes off while baked_signature is 0.
@@ -374,7 +387,7 @@ bake_probes(scene_renderer* r, const world* w, const scene_render_settings* sett
 
             rhi_shader shader = bind_lit_shader(r, settings, main_view, view_projection, rp->position[p],
                                                 SCENE_VIEW_LIT, NULL, bounce > 0);
-            draw_entities(w, shader, passes, 2);
+            draw_entities(w, shader, passes, 3);
 
             rhi_texture_copy_to_cubemap_face(rhi_framebuffer_get_color_texture(rp->capture, 0), rp->capture_cube, face);
         }
@@ -519,6 +532,23 @@ scene_renderer_begin(scene_renderer* r, const world* w, const camera* cam,
         r->has_previous = true;
     }
 
+    // --- Depth of field, for finish_frame() -----------------------------------------
+    // The circle of confusion is capped at 2% of the picture's height: past
+    // that the gather's taps spread too thin to hold a smooth disc.
+    b8 show_focus = settings->debug_view == SCENE_VIEW_FOCUS;
+    f32 height    = (f32)r->post.height;
+    r->dof = (post_dof){
+        .coc_scale  = camera_coc_scale(cam, height),
+        .focus      = cam->focus_distance,
+        .max_coc    = height * 0.02f,
+        .near_plane = cam->near_plane,
+        .far_plane  = cam->far_plane,
+        .taps       = settings->dof_taps < 8 ? 8 : settings->dof_taps > 128 ? 128 : settings->dof_taps,
+        .show_focus = show_focus,
+    };
+    r->dof_active = show_focus
+                 || (cam->aperture > 0.0f && settings->dof_taps > 0 && !debug_view_is_data(settings->debug_view));
+
     // --- Depth pre-pass + ambient occlusion --------------------------------------
     // Not in the wireframe view: the pre-pass's solid depth would hide the
     // edges behind the front faces.
@@ -572,6 +602,16 @@ finish_frame(scene_renderer* r, const scene_render_settings* settings, rhi_frame
     gpu_profiler_end(&r->profiler, r->scene_scope);
     rhi_set_wireframe(false);
 
+    // On the HDR scene, before TAA (which smooths its in-focus edges, where
+    // the jitter moves a pixel between sharp and blurred) and bloom (bright
+    // spots blur into round bokeh, then glow).
+    if (r->dof_active)
+    {
+        uint32 scope = gpu_profiler_begin(&r->profiler, "Depth of field");
+        post_depth_of_field(&r->post, &r->dof);
+        gpu_profiler_end(&r->profiler, scope);
+    }
+
     if (r->taa_active)
     {
         uint32 scope = gpu_profiler_begin(&r->profiler, "TAA");
@@ -616,8 +656,50 @@ scene_renderer_end(scene_renderer* r, const scene_render_settings* settings)
 void
 scene_renderer_draw_world(const world* w, rhi_shader shader)
 {
-    const model_draw_pass passes[2] = { MODEL_PASS_OPAQUE, MODEL_PASS_BLEND };
-    draw_entities(w, shader, passes, 2);
+    const model_draw_pass passes[3] = { MODEL_PASS_OPAQUE, MODEL_PASS_TRANSMISSION, MODEL_PASS_BLEND };
+    draw_entities(w, shader, passes, 3);
+}
+
+// Whether any visible MeshRenderer draws glass.
+static b8
+world_has_glass(const world* w)
+{
+    const uint32 mask = COMPONENT_BIT(COMPONENT_MESH_RENDERER);
+    for (entity_id e = world_next(w, ENTITY_NULL, mask); e; e = world_next(w, e, mask))
+    {
+        const c_mesh_renderer* mr = world_mesh_renderer(w, e);
+        const model*           m  = assets_model(w->assets, mr->model);
+        if (m && mr->visible && model_uses_pass(m, &mr->material, MODEL_PASS_TRANSMISSION))
+            return true;
+    }
+    return false;
+}
+
+void
+scene_renderer_draw_scene(scene_renderer* r, const world* w, rhi_shader shader)
+{
+    const model_draw_pass opaque = MODEL_PASS_OPAQUE;
+    draw_entities(w, shader, &opaque, 1);
+
+    if (world_has_glass(w))
+    {
+        // The sky and the opaque scene, for the glass to show.
+        uint32      scope  = gpu_profiler_begin(&r->profiler, "Glass copy");
+        rhi_texture behind = post_copy_scene_behind_glass(&r->post);
+        gpu_profiler_end(&r->profiler, scope);
+
+        rhi_texture_bind(behind, POST_BEHIND_GLASS_SLOT);
+        rhi_shader_set_int(shader, "u_has_scene_behind", behind != NULL);
+
+        const model_draw_pass glass = MODEL_PASS_TRANSMISSION;
+        scope = gpu_profiler_begin(&r->profiler, "Glass");
+        draw_entities(w, shader, &glass, 1);
+        gpu_profiler_end(&r->profiler, scope);
+        rhi_shader_set_int(shader, "u_has_scene_behind", 0);
+    }
+
+    const model_draw_pass blend = MODEL_PASS_BLEND;
+    draw_entities(w, shader, &blend, 1);
 }
 
 void
@@ -625,7 +707,7 @@ scene_renderer_draw(scene_renderer* r, const world* w, const camera* cam,
                     const scene_render_settings* settings)
 {
     rhi_shader shader = scene_renderer_begin(r, w, cam, settings);
-    scene_renderer_draw_world(w, shader);
+    scene_renderer_draw_scene(r, w, shader);
     scene_renderer_end(r, settings);
 }
 
@@ -634,7 +716,7 @@ scene_renderer_draw_to(scene_renderer* r, const world* w, const camera* cam,
                        const scene_render_settings* settings, rhi_framebuffer target)
 {
     rhi_shader shader = scene_renderer_begin(r, w, cam, settings);
-    scene_renderer_draw_world(w, shader);
+    scene_renderer_draw_scene(r, w, shader);
     finish_frame(r, settings, target);
     rhi_framebuffer_bind_default();
 }
@@ -658,7 +740,7 @@ scene_renderer_capture(scene_renderer* r, const world* w, const camera* cam,
     });
 
     rhi_shader shader = scene_renderer_begin(r, w, cam, settings);
-    scene_renderer_draw_world(w, shader);
+    scene_renderer_draw_scene(r, w, shader);
     finish_frame(r, settings, target);   // leaves `target` bound, to read
 
     uint8* pixels = malloc((size_t)width * height * 4);
@@ -708,6 +790,15 @@ reload_prepass(scene_renderer* r)
 }
 
 static b8
+reload_dof(scene_renderer* r)
+{
+    b8 prepare   = shader_rebuild(&r->post.dof_prepare_shader, POST_VERTEX_PATH, POST_DOF_PREPARE_PATH, NULL);
+    b8 blur      = shader_rebuild(&r->post.dof_blur_shader, POST_VERTEX_PATH, POST_DOF_BLUR_PATH, NULL);
+    b8 composite = shader_rebuild(&r->post.dof_composite_shader, POST_VERTEX_PATH, POST_DOF_COMPOSITE_PATH, NULL);
+    return prepare && blur && composite;
+}
+
+static b8
 reload_ssao(scene_renderer* r)
 {
     b8 ssao = shader_rebuild(&r->post.ssao_shader, POST_VERTEX_PATH, POST_SSAO_PATH, NULL);
@@ -732,7 +823,8 @@ scene_renderer_reload_shaders(scene_renderer* r)
     b8 exposure = reload_exposure(r);
     b8 prepass  = reload_prepass(r);
     b8 ssao     = reload_ssao(r);
-    return pbr && post && shadow && bloom && fxaa && exposure && prepass && ssao;
+    b8 dof      = reload_dof(r);
+    return pbr && post && shadow && bloom && fxaa && exposure && prepass && ssao && dof;
 }
 
 void
@@ -742,6 +834,8 @@ scene_renderer_poll_hot_reload(scene_renderer* r)
         reload_prepass(r);
     if (file_watch_changed(&r->ssao_files))
         reload_ssao(r);
+    if (file_watch_changed(&r->dof_files))
+        reload_dof(r);
     if (file_watch_changed(&r->pbr_files))
         reload_pbr(r);
     if (file_watch_changed(&r->post_files))

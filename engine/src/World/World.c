@@ -423,7 +423,7 @@ world_add_camera(world* w, entity_id e, f32 fov_degrees, f32 near_plane, f32 far
     if (index == UINT32_MAX)
         return NULL;
 
-    w->cameras[index] = (c_camera){ fov_degrees, near_plane, far_plane };
+    w->cameras[index] = (c_camera){ fov_degrees, near_plane, far_plane, CAMERA_DEFAULT_FOCUS_DISTANCE, 0.0f };
     w->masks[index] |= COMPONENT_BIT(COMPONENT_CAMERA);
     return &w->cameras[index];
 }
@@ -860,6 +860,8 @@ world_camera_view(const world* w, entity_id e, f32 aspect, camera* out)
 
     camera_init(out, position, target, c->fov_degrees, aspect, c->near_plane, c->far_plane);
     glm_vec3_copy(up, out->up);
+    out->focus_distance = c->focus_distance;
+    out->aperture       = c->aperture;
     return true;
 }
 

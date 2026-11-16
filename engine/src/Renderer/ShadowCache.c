@@ -60,11 +60,15 @@ shadow_signature_casters(uint64 hash, const world* w, const vec4* planes, const 
             continue;
 
         // The ID covers a caster replaced by another; the model ID (with its
-        // generation) a model swapped; the matrix any move, turn or scale.
+        // generation) a model swapped; the matrix any move, turn or scale;
+        // the transmission override a surface turned into glass (which
+        // casts nothing) or back.
         const c_mesh_renderer* mr = world_mesh_renderer(w, e);
         hash = shadow_signature_bytes(hash, &e, sizeof(e));
         hash = shadow_signature_bytes(hash, &mr->model, sizeof(mr->model));
         hash = shadow_signature_bytes(hash, world_matrix(w, e), sizeof(mat4));
+        if (mr->material.fields & MATERIAL_OVERRIDE_TRANSMISSION)
+            hash = shadow_signature_bytes(hash, &mr->material.transmission, sizeof(mr->material.transmission));
         ++count;
     }
     if (out_count)
@@ -81,7 +85,8 @@ shadow_draw_casters(const world* w, rhi_shader depth_shader, const mat4 view_pro
     {
         const model* m = caster_model(w, e, planes, NULL, which);
         if (m)
-            model_draw_depth(m, depth_shader, world_matrix(w, e), (vec4*)view_projection);
+            model_draw_depth_ex(m, depth_shader, world_matrix(w, e), (vec4*)view_projection,
+                                &world_mesh_renderer(w, e)->material);
     }
 }
 

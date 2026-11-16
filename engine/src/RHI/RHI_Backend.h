@@ -42,6 +42,7 @@ typedef struct rhi_backend_api
     uint64 (*texture_native_handle)(rhi_texture texture);
     rhi_texture (*texture_create)(rhi_texture_desc desc);
     void        (*texture_destroy)(rhi_texture texture);
+    void        (*texture_copy_from_framebuffer)(rhi_texture texture, rhi_framebuffer source);
 
     rhi_texture (*cubemap_create)(rhi_cubemap_desc desc);
     void        (*cubemap_generate_mipmaps)(rhi_texture cubemap);

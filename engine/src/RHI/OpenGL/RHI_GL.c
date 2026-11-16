@@ -186,6 +186,7 @@ void rhi_gl_get_backend(rhi_backend_api* out_api)
     out_api->texture_native_handle = gl_texture_native_handle;
     out_api->texture_create = gl_texture_create;
     out_api->texture_destroy = gl_texture_destroy;
+    out_api->texture_copy_from_framebuffer = gl_texture_copy_from_framebuffer;
 
     out_api->cubemap_create = gl_cubemap_create;
     out_api->cubemap_generate_mipmaps = gl_cubemap_generate_mipmaps;
