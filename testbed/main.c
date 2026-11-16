@@ -21,6 +21,9 @@
 //     --turn DEG    orbit the camera DEG degrees every frame (TAA under motion)
 //     --check PNG   render a few frames in a hidden window, save the picture
 //                   to PNG and exit (0 if it was written)
+//     --save        write the scene to the project's scenes/<scene name>.json
+//                   (scene.save, entities and environment: what the editor
+//                   opens -- Editor --scene <scene name>) and exit
 //     --view NAME   a debug view instead of the lit scene: albedo, normals,
 //                   roughness, metallic, ao, shadow, lighting, wireframe,
 //                   lights, transmission, behind_glass, focus
@@ -40,6 +43,7 @@
 
 #include "App.h"
 #include "Assets/AssetCache.h"
+#include "Commands/Commands.h"
 #include "Core/Defines.h"
 #include "Core/Image.h"
 #include "Platform/Input.h"
@@ -101,6 +105,7 @@ typedef struct testbed_state
     uint32           timing_frames;   // --timings N: frames to draw before printing the GPU timings
     uint16           width, height;   // --size; 0 = the default
     b8               check_passed;
+    b8               save;            // --save: write the scene file and exit
     scene_debug_view debug_view;
     testbed_scene    scene;         // --scene
     f32              aperture;      // --aperture; < 0 = the scene's own (f/2 for focus, else off)
@@ -982,6 +987,34 @@ enter_scene_named(testbed_state* state, const char* name)
     return false;
 }
 
+// --save: the world and environment as scenes/<name>.json in the project,
+// through the command layer's scene.save -- the same file the editor writes.
+static b8
+save_scene_file(testbed_state* state)
+{
+    command_context ctx;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.w           = &state->world;
+    ctx.environment = &state->env;
+
+    cJSON* request = cJSON_CreateObject();
+    cJSON_AddStringToObject(request, "cmd", "scene.save");
+    cJSON_AddStringToObject(cJSON_AddObjectToObject(request, "args"), "name", TESTBED_SCENE_NAMES[state->scene]);
+
+    cJSON* response = cmd_execute(&ctx, request);
+    b8     ok       = cJSON_IsTrue(cJSON_GetObjectItem(response, "ok"));
+    if (ok)
+        LOG_INFO("testbed: saved '%s' -- open it with: Editor --scene %s\n", TESTBED_SCENE_NAMES[state->scene],
+                 TESTBED_SCENE_NAMES[state->scene]);
+    else
+        LOG_ERROR("testbed: couldn't save '%s': %s\n", TESTBED_SCENE_NAMES[state->scene],
+                  cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(response, "error"), "message")));
+
+    cJSON_Delete(response);
+    cJSON_Delete(request);
+    return ok;
+}
+
 // --- App hooks -------------------------------------------------------------------
 
 static void
@@ -998,6 +1031,12 @@ on_init(App* app)
     world_init(&state->world, &state->assets);
     load_testbed_scene(state, state->scene);
     scene_transition_reset(&state->transition, &state->world);
+
+    if (state->save)
+    {
+        state->check_passed = save_scene_file(state);
+        app->should_close   = true;
+    }
 }
 
 static void
@@ -1175,6 +1214,7 @@ print_usage(void)
            "  --aa     anti-aliasing: off, fxaa (the default) or taa\n"
            "  --turn   orbit the camera this many degrees every frame\n"
            "  --check  render the scene once, hidden, into PNG and exit (0 = it was written)\n"
+           "  --save   write the scene to the project's scenes/<scene name>.json and exit (Editor --scene NAME opens it)\n"
            "  --view   a debug view: albedo, normals, roughness, metallic, ao, shadow, lighting, wireframe, lights,\n"
            "           transmission, behind_glass, focus\n");
 }
@@ -1186,7 +1226,9 @@ int main(int argc, char** argv)
     for (int i = 1; i < argc; ++i)
     {
         const char* arg = argv[i];
-        if (strcmp(arg, "--check") == 0)
+        if (strcmp(arg, "--save") == 0)
+            state.save = true;
+        else if (strcmp(arg, "--check") == 0)
         {
             state.check_path = i + 1 < argc ? argv[++i] : NULL;
             if (!state.check_path)
@@ -1297,7 +1339,7 @@ int main(int argc, char** argv)
 
     App app = {
         .name        = "PBR Testbed",
-        .hidden      = state.check_path != NULL || state.timing_frames != 0,
+        .hidden      = state.check_path != NULL || state.timing_frames != 0 || state.save,
         .width       = state.width ? state.width : state.check_path ? 960 : 1600,
         .height      = state.height ? state.height : state.check_path ? 540 : 900,
         .on_init     = on_init,

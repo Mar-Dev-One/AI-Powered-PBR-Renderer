@@ -12,7 +12,8 @@
 // switches to another. The open project is the project root (Core/Paths.h):
 // every "models/..." and "hdri/..." in a scene, every scene.save / scene.load
 // / assets.list -- the agent's too -- works inside it. Without --project the
-// editor opens the sample project, the source tree's assets/.
+// editor opens the sample project, the source tree's assets/. It starts on
+// the project's startup scene, or --scene NAME's (one under scenes/).
 //
 // Scenes: File > New Scene / Open Scene / Save (Ctrl+S) / Save As. The
 // title bar shows "*" while the scene has changes that aren't saved; opening
@@ -104,6 +105,9 @@ dock_beside(const char* host)
 // --- App hooks -------------------------------------------------------------------------
 
 // Runs once from App.c's run(), after the GL context / RHI / ImGui exist.
+// --scene NAME (main()): the scene to open first; NULL = the project's startup scene.
+static const char* g_scene_arg = NULL;
+
 static void
 on_init(App* app)
 {
@@ -202,7 +206,7 @@ on_init(App* app)
              paths_engine_root());
     console_info(&state->console, line);
 
-    if (!open_scene(state, state->project.startup_scene))
+    if (!open_scene(state, g_scene_arg ? g_scene_arg : state->project.startup_scene))
         new_scene(state);
 }
 
@@ -426,6 +430,7 @@ main(int argc, char** argv)
 {
     // --project <dir>: the project to open (a folder with project.json).
     // Without it, the sample project: the source tree's assets/.
+    // --scene NAME: the scene to start on, instead of the startup scene.
     for (int i = 1; i < argc; ++i)
     {
         if (strcmp(argv[i], "--project") == 0 && i + 1 < argc)
@@ -436,9 +441,11 @@ main(int argc, char** argv)
                 return 1;
             }
         }
+        else if (strcmp(argv[i], "--scene") == 0 && i + 1 < argc)
+            g_scene_arg = argv[++i];
         else
         {
-            fprintf(stderr, "usage: Editor [--project <dir>]\n");
+            fprintf(stderr, "usage: Editor [--project <dir>] [--scene <name>]\n");
             return 1;
         }
     }

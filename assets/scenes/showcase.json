@@ -1,0 +1,1077 @@
+{
+	"entities":	[{
+			"id":	1048576,
+			"name":	"floor",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, -0.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[14, 1, 11]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:plane",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.08, 0.08, 0.09],
+					"material.metallic":	0,
+					"material.roughness":	0.22
+				}
+			}
+		}, {
+			"id":	1048577,
+			"name":	"back_wall",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2, -4.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[14, 4, 0.3]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.42, 0.33],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	1048578,
+			"name":	"left_wall",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-7, 2, -0.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.3, 4, 8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.45, 0.36, 0.3],
+					"material.metallic":	0,
+					"material.roughness":	0.85
+				}
+			}
+		}, {
+			"id":	1048579,
+			"name":	"panel_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5, 1.2, -4.3],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 2.4, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.12, 0.06, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048580,
+			"name":	"panel_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.5, 1.2, -4.3],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 2.4, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.12, 0.06, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048581,
+			"name":	"panel_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.2, -4.3],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 2.4, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.12, 0.06, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048582,
+			"name":	"panel_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.5, 1.2, -4.3],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 2.4, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.12, 0.06, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048583,
+			"name":	"panel_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5, 1.2, -4.3],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 2.4, 0.08]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.12, 0.06, 0.03],
+					"material.metallic":	0,
+					"material.roughness":	0.35
+				}
+			}
+		}, {
+			"id":	1048584,
+			"name":	"fairy_light_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-6, 3.1, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048585,
+			"name":	"fairy_light_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-5.4, 2.975, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048586,
+			"name":	"fairy_light_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.8, 2.88349, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048587,
+			"name":	"fairy_light_3",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.2, 2.85, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048588,
+			"name":	"fairy_light_4",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3.6, 2.88349, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048589,
+			"name":	"fairy_light_5",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3, 2.975, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048590,
+			"name":	"fairy_light_6",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.4, 3.1, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048591,
+			"name":	"fairy_light_7",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-1.8, 3.1, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048592,
+			"name":	"fairy_light_8",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-1.2, 2.975, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048593,
+			"name":	"fairy_light_9",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-0.6, 2.88349, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048594,
+			"name":	"fairy_light_10",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 2.85, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048595,
+			"name":	"fairy_light_11",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.6, 2.88349, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048596,
+			"name":	"fairy_light_12",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1.2, 2.975, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048597,
+			"name":	"fairy_light_13",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1.8, 3.1, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048598,
+			"name":	"fairy_light_14",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.4, 3.1, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048599,
+			"name":	"fairy_light_15",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3, 2.975, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048600,
+			"name":	"fairy_light_16",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.6, 2.88349, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048601,
+			"name":	"fairy_light_17",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.2, 2.85, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048602,
+			"name":	"fairy_light_18",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.8, 2.88349, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048603,
+			"name":	"fairy_light_19",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[5.4, 2.975, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048604,
+			"name":	"fairy_light_20",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[6, 3.1, -4.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.07, 0.07, 0.07]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 0.8, 0.5],
+					"material.emissive":	[40, 26, 10]
+				}
+			}
+		}, {
+			"id":	1048605,
+			"name":	"pedestal",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0.45, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.8, 0.9, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.92, 0.9, 0.86],
+					"material.metallic":	0,
+					"material.roughness":	0.35,
+					"material.clearcoat":	1,
+					"material.clearcoat_roughness":	0.05
+				}
+			}
+		}, {
+			"id":	1048606,
+			"name":	"glass_suzanne",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.581525, 0.78459, -1.99016],
+					"rotation_deg":	[0, 15, 0],
+					"scale":	[0.431746, 0.431746, 0.431746]
+				},
+				"MeshRenderer":	{
+					"model":	"models/suzanne.obj",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.metallic":	0,
+					"material.roughness":	0.02,
+					"material.transmission":	1,
+					"material.ior":	1.5,
+					"material.thickness":	0.5,
+					"material.attenuation_color":	[0.6, 0.8, 0.97],
+					"material.attenuation_distance":	1.5
+				},
+				"Spin":	{
+					"degrees_per_second":	[0, 20, 0]
+				}
+			}
+		}, {
+			"id":	1048607,
+			"name":	"plinth_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.6, 0.25, -1.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.5, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.15, 0.16],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	1048608,
+			"name":	"car_paint_0",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-4.6, 0.9, -1.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.8, 0.8, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.55, 0.02, 0.02],
+					"material.metallic":	0.4,
+					"material.roughness":	0.45,
+					"material.clearcoat":	1,
+					"material.clearcoat_roughness":	0.03
+				}
+			}
+		}, {
+			"id":	1048609,
+			"name":	"plinth_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3.45, 0.25, -0.7],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.5, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.15, 0.16],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	1048610,
+			"name":	"car_paint_1",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3.45, 0.9, -0.7],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.8, 0.8, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.02, 0.08, 0.45],
+					"material.metallic":	0.4,
+					"material.roughness":	0.45,
+					"material.clearcoat":	1,
+					"material.clearcoat_roughness":	0.03
+				}
+			}
+		}, {
+			"id":	1048611,
+			"name":	"plinth_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.3, 0.25, -0.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.6, 0.5, 0.6]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.15, 0.15, 0.16],
+					"material.metallic":	0,
+					"material.roughness":	0.6
+				}
+			}
+		}, {
+			"id":	1048612,
+			"name":	"car_paint_2",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.3, 0.9, -0.2],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.8, 0.8, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.02, 0.3, 0.12],
+					"material.metallic":	0.4,
+					"material.roughness":	0.45,
+					"material.clearcoat":	1,
+					"material.clearcoat_roughness":	0.03
+				}
+			}
+		}, {
+			"id":	1048613,
+			"name":	"knight_pedestal",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.6, 0.2, -1.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.1, 0.4, 1.1]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.2, 0.2, 0.22],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	1048614,
+			"name":	"knight",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.52308, 0.443724, -1.91708],
+					"rotation_deg":	[0, -25, 0],
+					"scale":	[26.1444, 26.1444, 26.1444]
+				},
+				"MeshRenderer":	{
+					"model":	"models/bulky_knight.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048615,
+			"name":	"bottle_table",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.4, 0.35, 1.6],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.6, 0.7, 0.8]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.3, 0.16, 0.08],
+					"material.metallic":	0,
+					"material.roughness":	0.4
+				}
+			}
+		}, {
+			"id":	1048616,
+			"name":	"green_bottle",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.85, 0.975, 1.65],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.176, 0.55, 0.176]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.metallic":	0,
+					"material.roughness":	0.02,
+					"material.transmission":	1,
+					"material.ior":	1.5,
+					"material.thickness":	1,
+					"material.attenuation_color":	[0.2, 0.7, 0.3],
+					"material.attenuation_distance":	0.25
+				}
+			}
+		}, {
+			"id":	1048617,
+			"name":	"amber_bottle",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.4, 1.05, 1.45],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.224, 0.7, 0.224]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.metallic":	0,
+					"material.roughness":	0.02,
+					"material.transmission":	1,
+					"material.ior":	1.5,
+					"material.thickness":	1,
+					"material.attenuation_color":	[0.9, 0.5, 0.12],
+					"material.attenuation_distance":	0.3
+				}
+			}
+		}, {
+			"id":	1048618,
+			"name":	"clear_bottle",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-1.95, 0.925, 1.75],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.144, 0.45, 0.144]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.metallic":	0,
+					"material.roughness":	0.02,
+					"material.transmission":	1,
+					"material.ior":	1.5,
+					"material.thickness":	1,
+					"material.attenuation_color":	[1, 1, 1],
+					"material.attenuation_distance":	0
+				}
+			}
+		}, {
+			"id":	1048619,
+			"name":	"frosted_pane",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-2.4, 1.15, 1.25],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.4, 0.9, 0.03]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[1, 1, 1],
+					"material.metallic":	0,
+					"material.roughness":	0.35,
+					"material.transmission":	1,
+					"material.ior":	1.5,
+					"material.thickness":	0,
+					"material.attenuation_color":	[1, 1, 1],
+					"material.attenuation_distance":	0
+				}
+			}
+		}, {
+			"id":	1048620,
+			"name":	"stand",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.4, 0.275, 1.7],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1.4, 0.55, 0.7]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:cube",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.85, 0.85, 0.82],
+					"material.metallic":	0,
+					"material.roughness":	0.5
+				}
+			}
+		}, {
+			"id":	1048621,
+			"name":	"avocado",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.1, 0.550243, 1.75],
+					"rotation_deg":	[0, 30, 0],
+					"scale":	[5.08778, 5.08778, 5.08778]
+				},
+				"MeshRenderer":	{
+					"model":	"models/Avocado.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048622,
+			"name":	"textured_box",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.75, 0.675, 1.6],
+					"rotation_deg":	[0, -20, 0],
+					"scale":	[0.25, 0.25, 0.25]
+				},
+				"MeshRenderer":	{
+					"model":	"models/BoxTextured.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048623,
+			"name":	"vase",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[1.2, 0.45, 1],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[0.5, 0.9, 0.5]
+				},
+				"MeshRenderer":	{
+					"model":	"builtin:sphere",
+					"visible":	true,
+					"cast_shadows":	true,
+					"material.base_color":	[0.02, 0.02, 0.02],
+					"material.metallic":	0,
+					"material.roughness":	0.12,
+					"material.specular_color":	[1, 0.75, 0.3]
+				}
+			}
+		}, {
+			"id":	1048624,
+			"name":	"sun",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 0, 0],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"directional",
+					"color":	[1, 0.62, 0.35],
+					"intensity":	2.2,
+					"direction":	[-0.815892, -0.38075, -0.435143],
+					"range":	0,
+					"inner_cone_degrees":	0,
+					"outer_cone_degrees":	0,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048625,
+			"name":	"cool_fill",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[4.5, 2.5, 3],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[0.55, 0.7, 1],
+					"intensity":	6,
+					"direction":	[0, -1, 0],
+					"range":	10,
+					"inner_cone_degrees":	0,
+					"outer_cone_degrees":	0,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048626,
+			"name":	"wall_lamp_left",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-3.75, 2.4, -3.9],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.7, 0.4],
+					"intensity":	5,
+					"direction":	[0, -1, 0],
+					"range":	5,
+					"inner_cone_degrees":	0,
+					"outer_cone_degrees":	0,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048627,
+			"name":	"wall_lamp_right",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[3.75, 2.4, -3.9],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"point",
+					"color":	[1, 0.7, 0.4],
+					"intensity":	5,
+					"direction":	[0, -1, 0],
+					"range":	5,
+					"inner_cone_degrees":	0,
+					"outer_cone_degrees":	0,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048628,
+			"name":	"suzanne_spot",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0.3, 3.8, 0.8],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"spot",
+					"color":	[1, 0.95, 0.85],
+					"intensity":	30,
+					"direction":	[-0.0778942, -0.973677, -0.214209],
+					"range":	12,
+					"inner_cone_degrees":	10,
+					"outer_cone_degrees":	20,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048629,
+			"name":	"knight_spot",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[2.2, 3.8, 0.4],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"Light":	{
+					"type":	"spot",
+					"color":	[0.85, 0.9, 1],
+					"intensity":	35,
+					"direction":	[0.36, -0.8, -0.48],
+					"range":	12,
+					"inner_cone_degrees":	12,
+					"outer_cone_degrees":	24,
+					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048630,
+			"name":	"room_probe",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[0, 1.6, -0.5],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[1, 1, 1]
+				},
+				"ReflectionProbe":	{
+					"extents":	[7, 2, 4.2]
+				}
+			}
+		}],
+	"format":	"pbr-scene",
+	"version":	1,
+	"environment":	{
+		"hdri":	"hdri/table_mountain_2_puresky_4k.hdr",
+		"use_ibl":	true,
+		"show_skybox":	true,
+		"sky_blur":	0,
+		"ambient_strength":	0.5,
+		"exposure":	1,
+		"auto_exposure":	false,
+		"bloom":	0.04,
+		"tonemap":	"aces",
+		"ssao":	true,
+		"ssao_radius":	0.5
+	}
+}
