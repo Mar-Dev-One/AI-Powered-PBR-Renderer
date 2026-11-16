@@ -516,7 +516,7 @@ test_action_json(void)
     }
     cJSON_Delete(json);
 
-    // What a person (or a script) writes.
+    // What a person (or an agent) writes.
     cJSON* written = cJSON_Parse("{\"actions\": {\"fire\": {\"type\": \"button\", \"bindings\": [\"mouse:left\", "
                                  "\"pad_axis:right_trigger\"]}, \"steer\": {\"type\": \"axis\"}}}");
     CHECK(input_action_map_from_json(written, &back, error, sizeof(error)));

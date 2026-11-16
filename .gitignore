@@ -70,9 +70,13 @@ imgui.ini
 
 #vscode
 .vs/
-# Python bytecode (tests/server_test.py)
+# Python bytecode (tests/server_test.py, agent/)
 __pycache__/
 *.pyc
+
+# Python virtual environment and build metadata for agent/
+agent/.venv/
+*.egg-info/
 
 # Local helper script
 commit.bat

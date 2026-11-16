@@ -1,0 +1,1387 @@
+{
+	"entities": [
+		{
+			"name": "sphere_r0_c0",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.86,
+						1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 1.0,
+					"material.roughness": 0.05
+				}
+			}
+		},
+		{
+			"name": "sphere_r0_c1",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.24,
+						1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 1.0,
+					"material.roughness": 0.208333
+				}
+			}
+		},
+		{
+			"name": "sphere_r0_c2",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.62,
+						1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 1.0,
+					"material.roughness": 0.366667
+				}
+			}
+		},
+		{
+			"name": "sphere_r0_c3",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.0,
+						1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 1.0,
+					"material.roughness": 0.525
+				}
+			}
+		},
+		{
+			"name": "sphere_r0_c4",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.62,
+						1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 1.0,
+					"material.roughness": 0.683333
+				}
+			}
+		},
+		{
+			"name": "sphere_r0_c5",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.24,
+						1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 1.0,
+					"material.roughness": 0.841667
+				}
+			}
+		},
+		{
+			"name": "sphere_r0_c6",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.86,
+						1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 1.0,
+					"material.roughness": 1.0
+				}
+			}
+		},
+		{
+			"name": "sphere_r1_c0",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.86,
+						0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.75,
+					"material.roughness": 0.05
+				}
+			}
+		},
+		{
+			"name": "sphere_r1_c1",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.24,
+						0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.75,
+					"material.roughness": 0.208333
+				}
+			}
+		},
+		{
+			"name": "sphere_r1_c2",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.62,
+						0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.75,
+					"material.roughness": 0.366667
+				}
+			}
+		},
+		{
+			"name": "sphere_r1_c3",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.0,
+						0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.75,
+					"material.roughness": 0.525
+				}
+			}
+		},
+		{
+			"name": "sphere_r1_c4",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.62,
+						0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.75,
+					"material.roughness": 0.683333
+				}
+			}
+		},
+		{
+			"name": "sphere_r1_c5",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.24,
+						0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.75,
+					"material.roughness": 0.841667
+				}
+			}
+		},
+		{
+			"name": "sphere_r1_c6",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.86,
+						0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.75,
+					"material.roughness": 1.0
+				}
+			}
+		},
+		{
+			"name": "sphere_r2_c0",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.86,
+						0.0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.5,
+					"material.roughness": 0.05
+				}
+			}
+		},
+		{
+			"name": "sphere_r2_c1",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.24,
+						0.0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.5,
+					"material.roughness": 0.208333
+				}
+			}
+		},
+		{
+			"name": "sphere_r2_c2",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.62,
+						0.0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.5,
+					"material.roughness": 0.366667
+				}
+			}
+		},
+		{
+			"name": "sphere_r2_c3",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.0,
+						0.0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.5,
+					"material.roughness": 0.525
+				}
+			}
+		},
+		{
+			"name": "sphere_r2_c4",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.62,
+						0.0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.5,
+					"material.roughness": 0.683333
+				}
+			}
+		},
+		{
+			"name": "sphere_r2_c5",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.24,
+						0.0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.5,
+					"material.roughness": 0.841667
+				}
+			}
+		},
+		{
+			"name": "sphere_r2_c6",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.86,
+						0.0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.5,
+					"material.roughness": 1.0
+				}
+			}
+		},
+		{
+			"name": "sphere_r3_c0",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.86,
+						-0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.25,
+					"material.roughness": 0.05
+				}
+			}
+		},
+		{
+			"name": "sphere_r3_c1",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.24,
+						-0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.25,
+					"material.roughness": 0.208333
+				}
+			}
+		},
+		{
+			"name": "sphere_r3_c2",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.62,
+						-0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.25,
+					"material.roughness": 0.366667
+				}
+			}
+		},
+		{
+			"name": "sphere_r3_c3",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.0,
+						-0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.25,
+					"material.roughness": 0.525
+				}
+			}
+		},
+		{
+			"name": "sphere_r3_c4",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.62,
+						-0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.25,
+					"material.roughness": 0.683333
+				}
+			}
+		},
+		{
+			"name": "sphere_r3_c5",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.24,
+						-0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.25,
+					"material.roughness": 0.841667
+				}
+			}
+		},
+		{
+			"name": "sphere_r3_c6",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.86,
+						-0.62,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.25,
+					"material.roughness": 1.0
+				}
+			}
+		},
+		{
+			"name": "sphere_r4_c0",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.86,
+						-1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.0,
+					"material.roughness": 0.05
+				}
+			}
+		},
+		{
+			"name": "sphere_r4_c1",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.24,
+						-1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.0,
+					"material.roughness": 0.208333
+				}
+			}
+		},
+		{
+			"name": "sphere_r4_c2",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.62,
+						-1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.0,
+					"material.roughness": 0.366667
+				}
+			}
+		},
+		{
+			"name": "sphere_r4_c3",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.0,
+						-1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.0,
+					"material.roughness": 0.525
+				}
+			}
+		},
+		{
+			"name": "sphere_r4_c4",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.62,
+						-1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.0,
+					"material.roughness": 0.683333
+				}
+			}
+		},
+		{
+			"name": "sphere_r4_c5",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.24,
+						-1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.0,
+					"material.roughness": 0.841667
+				}
+			}
+		},
+		{
+			"name": "sphere_r4_c6",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.86,
+						-1.24,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.54,
+						0.54,
+						0.54
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.79311,
+						0.79311,
+						0.79311
+					],
+					"material.metallic": 0.0,
+					"material.roughness": 1.0
+				}
+			}
+		},
+		{
+			"name": "key_light",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "directional",
+					"color": [
+						1,
+						0.98,
+						0.92
+					],
+					"intensity": 2.5,
+					"direction": [
+						-0.455842,
+						-0.683764,
+						-0.569803
+					],
+					"range": 0,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0
+				}
+			}
+		},
+		{
+			"name": "fill_light",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.5,
+						1,
+						1.5
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.55,
+						0.7,
+						1
+					],
+					"intensity": 3,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 8,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0
+				}
+			}
+		},
+		{
+			"name": "spot_light",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.5,
+						2.5,
+						1
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "spot",
+					"color": [
+						1,
+						0.75,
+						0.45
+					],
+					"intensity": 0,
+					"direction": [
+						0.486664,
+						-0.811107,
+						-0.324443
+					],
+					"range": 10,
+					"inner_cone_degrees": 12,
+					"outer_cone_degrees": 22
+				}
+			}
+		},
+		{
+			"name": "camera",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						0,
+						7.6
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Camera": {
+					"fov_degrees": 45,
+					"near_plane": 0.1,
+					"far_plane": 100
+				}
+			}
+		}
+	],
+	"format": "pbr-scene",
+	"version": 1,
+	"environment": {
+		"hdri": "hdri/citrus_orchard_road_puresky_4k.hdr",
+		"use_ibl": true,
+		"show_skybox": true,
+		"sky_blur": 0,
+		"ambient_strength": 0.5,
+		"exposure": 1
+	}
+}

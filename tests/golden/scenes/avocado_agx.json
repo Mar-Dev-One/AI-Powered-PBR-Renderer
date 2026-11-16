@@ -1,0 +1,227 @@
+{
+	"entities": [
+		{
+			"id": 1048576,
+			"name": "model_pivot",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				}
+			}
+		},
+		{
+			"id": 1048577,
+			"name": "model",
+			"parent": "model_pivot",
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						-0.998482,
+						1.48074e-08
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						31.7986,
+						31.7986,
+						31.7986
+					]
+				},
+				"MeshRenderer": {
+					"model": "models/Avocado.glb",
+					"visible": true,
+					"cast_shadows": true
+				}
+			}
+		},
+		{
+			"id": 1048578,
+			"name": "ground",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						-1,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						8,
+						1,
+						8
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:plane",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.18,
+						0.18,
+						0.18
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.9
+				}
+			}
+		},
+		{
+			"id": 1048579,
+			"name": "key_light",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "directional",
+					"color": [
+						1,
+						0.98,
+						0.92
+					],
+					"intensity": 2.5,
+					"direction": [
+						0.6,
+						-0.65,
+						0.466
+					],
+					"range": 0,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0
+				}
+			}
+		},
+		{
+			"id": 1048580,
+			"name": "fill_light",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						1.5,
+						1,
+						1.5
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "point",
+					"color": [
+						0.55,
+						0.7,
+						1
+					],
+					"intensity": 3,
+					"direction": [
+						0,
+						-1,
+						0
+					],
+					"range": 8,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0
+				}
+			}
+		},
+		{
+			"id": 1048581,
+			"name": "spot_light",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-1.5,
+						2.5,
+						1
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "spot",
+					"color": [
+						1,
+						0.75,
+						0.45
+					],
+					"intensity": 0,
+					"direction": [
+						0.486664,
+						-0.811107,
+						-0.324443
+					],
+					"range": 10,
+					"inner_cone_degrees": 12,
+					"outer_cone_degrees": 22
+				}
+			}
+		}
+	],
+	"format": "pbr-scene",
+	"version": 1,
+	"environment": {
+		"hdri": "hdri/citrus_orchard_road_puresky_4k.hdr",
+		"use_ibl": true,
+		"show_skybox": true,
+		"sky_blur": 0,
+		"ambient_strength": 0.5,
+		"exposure": 1,
+		"tonemap": "agx"
+	}
+}

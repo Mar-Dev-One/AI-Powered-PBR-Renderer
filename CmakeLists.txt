@@ -15,5 +15,7 @@ find_package(OpenGL REQUIRED)
 enable_testing()
 
 add_subdirectory(engine)
+add_subdirectory(game)      # before the editor, which ships it in an export
+add_subdirectory(editor)
 add_subdirectory(testbed)
 add_subdirectory(tests)

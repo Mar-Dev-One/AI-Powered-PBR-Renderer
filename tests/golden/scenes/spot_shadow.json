@@ -1,0 +1,101 @@
+{
+	"format": "pbr-scene",
+	"version": 1,
+	"entities": [
+		{
+			"name": "ground",
+			"parent": null,
+			"components": {
+				"Transform": { "position": [0, 0, 0], "rotation_deg": [0, 0, 0], "scale": [10, 1, 10] },
+				"MeshRenderer": {
+					"model": "builtin:plane",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [0.6, 0.6, 0.6],
+					"material.metallic": 0,
+					"material.roughness": 0.8
+				}
+			}
+		},
+		{
+			"name": "cube",
+			"parent": null,
+			"components": {
+				"Transform": { "position": [-0.7, 0.4, 0], "rotation_deg": [0, 25, 0], "scale": [0.8, 0.8, 0.8] },
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": true,
+					"material.base_color": [0.8, 0.8, 0.8],
+					"material.metallic": 0,
+					"material.roughness": 0.5
+				}
+			}
+		},
+		{
+			"name": "sphere",
+			"parent": null,
+			"components": {
+				"Transform": { "position": [0.9, 0.45, 0.3], "rotation_deg": [0, 0, 0], "scale": [0.45, 0.45, 0.45] },
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": true,
+					"material.base_color": [0.8, 0.8, 0.8],
+					"material.metallic": 0,
+					"material.roughness": 0.4
+				}
+			}
+		},
+		{
+			"name": "warm_spot",
+			"parent": null,
+			"components": {
+				"Transform": { "position": [-2.2, 3.0, 1.5], "rotation_deg": [0, 0, 0], "scale": [1, 1, 1] },
+				"Light": {
+					"type": "spot",
+					"color": [1, 0.8, 0.55],
+					"intensity": 30,
+					"direction": [0.55, -0.75, -0.37],
+					"range": 12,
+					"inner_cone_degrees": 25,
+					"outer_cone_degrees": 38,
+					"cast_shadows": true
+				}
+			}
+		},
+		{
+			"name": "cool_spot",
+			"parent": null,
+			"components": {
+				"Transform": { "position": [2.5, 2.6, 2.0], "rotation_deg": [0, 0, 0], "scale": [1, 1, 1] },
+				"Light": {
+					"type": "spot",
+					"color": [0.55, 0.7, 1],
+					"intensity": 25,
+					"direction": [-0.6, -0.65, -0.47],
+					"range": 12,
+					"inner_cone_degrees": 22,
+					"outer_cone_degrees": 34,
+					"cast_shadows": true
+				}
+			}
+		},
+		{
+			"name": "camera",
+			"parent": null,
+			"components": {
+				"Transform": { "position": [0, 2.4, 4.6], "rotation_deg": [-24, 0, 0], "scale": [1, 1, 1] },
+				"Camera": { "fov_degrees": 45, "near_plane": 0.1, "far_plane": 100 }
+			}
+		}
+	],
+	"environment": {
+		"hdri": null,
+		"use_ibl": false,
+		"show_skybox": false,
+		"sky_blur": 0,
+		"ambient_strength": 0.03,
+		"exposure": 1
+	}
+}

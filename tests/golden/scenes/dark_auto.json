@@ -1,0 +1,194 @@
+{
+	"format": "pbr-scene",
+	"version": 1,
+	"entities": [
+		{
+			"name": "ground",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						8,
+						1,
+						8
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:plane",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.18,
+						0.18,
+						0.18
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.8
+				}
+			}
+		},
+		{
+			"name": "glowing_sphere",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						-0.7,
+						0.5,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						0.5,
+						0.5,
+						0.5
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:sphere",
+					"visible": true,
+					"cast_shadows": false,
+					"material.base_color": [
+						0.05,
+						0.05,
+						0.05
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.5,
+					"material.emissive": [
+						24,
+						9,
+						2
+					]
+				}
+			}
+		},
+		{
+			"name": "cube",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0.8,
+						0.4,
+						0
+					],
+					"rotation_deg": [
+						0,
+						30,
+						0
+					],
+					"scale": [
+						0.8,
+						0.8,
+						0.8
+					]
+				},
+				"MeshRenderer": {
+					"model": "builtin:cube",
+					"visible": true,
+					"cast_shadows": true,
+					"material.base_color": [
+						0.6,
+						0.6,
+						0.65
+					],
+					"material.metallic": 0,
+					"material.roughness": 0.4
+				}
+			}
+		},
+		{
+			"name": "moon",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						0,
+						0
+					],
+					"rotation_deg": [
+						0,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Light": {
+					"type": "directional",
+					"color": [
+						0.6,
+						0.7,
+						1
+					],
+					"intensity": 0.4,
+					"direction": [
+						0.5,
+						-0.7,
+						-0.5
+					],
+					"range": 0,
+					"inner_cone_degrees": 0,
+					"outer_cone_degrees": 0
+				}
+			}
+		},
+		{
+			"name": "camera",
+			"parent": null,
+			"components": {
+				"Transform": {
+					"position": [
+						0,
+						1.6,
+						4.2
+					],
+					"rotation_deg": [
+						-18,
+						0,
+						0
+					],
+					"scale": [
+						1,
+						1,
+						1
+					]
+				},
+				"Camera": {
+					"fov_degrees": 45,
+					"near_plane": 0.1,
+					"far_plane": 100
+				}
+			}
+		}
+	],
+	"environment": {
+		"hdri": null,
+		"use_ibl": false,
+		"show_skybox": false,
+		"sky_blur": 0,
+		"ambient_strength": 0.05,
+		"exposure": 1,
+		"bloom": 0.1,
+		"auto_exposure": true
+	}
+}

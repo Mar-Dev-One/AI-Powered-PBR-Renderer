@@ -1,8 +1,9 @@
 # The engine, as one static library: PBR_Engine. Everything is in it -- the
 # runtime a game needs (window, RHI, renderer, models and assets, the World
 # and its scene files, project settings) and the tools on top (the command
-# layer and its undo history, the command server, the Dear ImGui panels).
-# testbed/ and tests/ link it.
+# layer and its undo history, the command server, the chat session with the
+# AI agent, the Dear ImGui panels). game/, editor/, testbed/ and tests/ link
+# it.
 #
 # A program that uses only the runtime carries none of the tools: a static
 # library only contributes the object files a program references, and
@@ -82,12 +83,14 @@ add_library(PBR_Engine STATIC
     src/Commands/History.c
     src/Commands/JsonRpc.c
     src/Net/CommandServer.c
+    src/Chat/ChatSession.c
     src/UI/ImGuiLayer.c
     src/UI/EntityPanel.c
     src/UI/Inspector.c
     src/UI/GizmoBridge.cpp
     src/UI/CommandConsole.c
     src/UI/LogPanel.c
+    src/UI/ChatPanel.c
 )
 
 # PUBLIC: consumers #include headers like "App.h", "RHI/RHI.h", "Core/Paths.h"

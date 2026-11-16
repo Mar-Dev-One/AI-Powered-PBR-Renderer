@@ -1,14 +1,22 @@
 # Roadmap
 
-The **engine** -- one static library, `PBR_Engine` -- with a testbed. On 2026-10-27 the AI
-scene-builder track (a Python agent, an MCP server and an in-app chat panel), the editor, the game
-runtime and its golden-image tests were removed, to keep this a pure engine; their sections below are kept as
-history. What they built for the engine stays: the World, projects and export
-(`project_export()`), the command layer with undo, the localhost command server, and the ImGui
-panels in `engine/src/UI/`.
+Two tracks: the **AI scene builder** (describe a scene in chat, from Claude Desktop/Code or from a
+chat panel inside the app, and have it built) and the **renderer/editor features** around it.
+The AI track drives the order; renderer features slot in where they help it.
 
-_Updated 2026-10-27._ Where things stand: `testbed/` builds a scene in code and draws it. The renderer
-work under "Engine roadmap" has phases 1-3 done; its follow-ups and phases 4-7 are saved for later.
+The engine is one static library, `PBR_Engine`, that the editor, the game runtime, the testbed and
+the tests link. On 2026-10-27 the AI track (agent, MCP server, chat), the editor, the game and the
+golden-image tests were removed to make the engine a library; on 2026-11-16 they came back on top
+of it, along with what was built in between (glass, depth of field, clear coat, specular, the SDK
+install). The editor's debug-view menu, `render.set` and the agent's `place_model` know the new
+material fields and debug views.
+
+_Updated 2026-11-16._ Where things stand: the AI scene builder (Phases 1-5) works from Claude
+Desktop/Code and from the in-app chat. The editor opens projects, edits their scenes in a Viewport
+panel, plays them in place, and exports a game a player can run (Stages 1-4 below). The testbed
+builds scenes in code, including `features`, every engine feature in one walkable plaza. The
+renderer work under "Engine roadmap" has phases 1-3 done; its follow-ups and phases 4-7 are saved
+for later.
 
 ## Next up
 
@@ -62,10 +70,7 @@ building the export.
 
 ---
 
-## AI scene builder (removed 2026-10-27)
-
-_History only: `agent/`, `Chat/` and the chat panel are gone. Phases 1-3 (World, commands,
-command server) are still the engine's core._
+## AI scene builder
 
 ### Architecture
 
