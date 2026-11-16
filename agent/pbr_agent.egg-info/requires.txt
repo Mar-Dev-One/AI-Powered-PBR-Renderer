@@ -1,0 +1,4 @@
+anthropic<2,>=1.13
+mcp<3,>=2.3
+openai<3,>=2
+websockets<18,>=17

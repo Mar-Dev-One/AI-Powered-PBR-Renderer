@@ -1,0 +1,3 @@
+[console_scripts]
+pbr-agent = pbr_agent.agent:main
+pbr-mcp = pbr_agent.mcp_server:main

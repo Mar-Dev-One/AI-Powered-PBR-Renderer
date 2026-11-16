@@ -944,6 +944,13 @@
 					"cast_shadows":	true,
 					"material.base_color":	[0.14, 0.33, 0.09],
 					"material.roughness":	0.85
+				},
+				"PlayerController":	{
+					"mode":	"walk",
+					"move_speed":	4,
+					"sprint_multiplier":	2,
+					"look_sensitivity":	1,
+					"invert_look_y":	false
 				}
 			}
 		}, {
@@ -1733,7 +1740,7 @@
 			"parent":	null,
 			"components":	{
 				"Transform":	{
-					"position":	[-14, 5.8, 11],
+					"position":	[-14, 24.848, 25.8302],
 					"rotation_deg":	[0, 45, 0],
 					"scale":	[2, 3, 2]
 				},
@@ -1868,8 +1875,8 @@
 					"visible":	true,
 					"cast_shadows":	false,
 					"material.base_color":	[0.04, 0.15, 0.24],
-					"material.metallic":	0,
-					"material.roughness":	0.12
+					"material.metallic":	0.549,
+					"material.roughness":	0.106
 				}
 			}
 		}, {
@@ -2593,6 +2600,31 @@
 					"model":	"models/BoxTextured.glb",
 					"visible":	true,
 					"cast_shadows":	true
+				}
+			}
+		}, {
+			"id":	1048719,
+			"name":	"bulky_knight",
+			"parent":	null,
+			"components":	{
+				"Transform":	{
+					"position":	[-13.7554, 0.0230121, -20.2925],
+					"rotation_deg":	[0, 0, 0],
+					"scale":	[301.583, 301.583, 301.583]
+				},
+				"MeshRenderer":	{
+					"model":	"models/bulky_knight.glb",
+					"visible":	true,
+					"cast_shadows":	true
+				},
+				"ReflectionProbe":	{
+					"extents":	[2, 2, 2]
+				},
+				"SceneTrigger":	{
+					"scene":	"",
+					"spawn":	"",
+					"extents":	[1, 1.5, 1],
+					"fade_seconds":	0.5
 				}
 			}
 		}],

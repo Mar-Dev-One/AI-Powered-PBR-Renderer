@@ -6,8 +6,10 @@
 //
 //   Testbed [--scene NAME] [--check PNG] [--view NAME]
 //     --scene NAME  materials (the default, below), glass (build_glass_scene()),
-//                   focus (build_focus_scene()), coat (build_coat_scene())
-//                   or showcase (build_showcase_scene(): all of it at once)
+//                   focus (build_focus_scene()), coat (build_coat_scene()),
+//                   showcase (build_showcase_scene(): the renderer at its
+//                   best) or features (build_features_scene(): every engine
+//                   feature, walked through)
 //     --aperture F  depth of field's f-number (0 = off; the focus scene's is 2,
 //                   the showcase's 2.8)
 //     --focus M     meters to focus at (default: the focus scene's subject)
@@ -30,7 +32,11 @@
 // casts shadows, a warm point light and a spot light; an HDRI sky. Models
 // and the HDRI come from the source tree's assets/ (Core/Paths.h).
 //
-// Left-drag orbits, the wheel zooms, Esc quits.
+// Left-drag orbits, the wheel zooms, Esc quits. A scene whose camera has a
+// PlayerController (features) is walked instead: click to take the mouse,
+// then WASD / the mouse or a gamepad (the default input actions,
+// Platform/InputActions.h); Esc gives the mouse back, and quits once it's
+// free. Its SceneTriggers fade over to the testbed scene they name.
 
 #include "App.h"
 #include "Assets/AssetCache.h"
@@ -45,6 +51,8 @@
 #include "Scene/Light.h"
 #include "Scene/OrbitCamera.h"
 #include "World/Environment.h"
+#include "World/PlayerController.h"
+#include "World/SceneTransition.h"
 #include "World/World.h"
 
 #include <math.h>
@@ -69,10 +77,14 @@ typedef enum testbed_scene
     TESTBED_SCENE_GLASS,       // build_glass_scene()
     TESTBED_SCENE_FOCUS,       // build_focus_scene()
     TESTBED_SCENE_COAT,        // build_coat_scene()
-    TESTBED_SCENE_SHOWCASE     // build_showcase_scene()
+    TESTBED_SCENE_SHOWCASE,    // build_showcase_scene()
+    TESTBED_SCENE_FEATURES,    // build_features_scene()
+    TESTBED_SCENE_COUNT
 } testbed_scene;
 
-static const char* const TESTBED_SCENE_NAMES[] = { "materials", "glass", "focus", "coat", "showcase" };
+// --scene's names, which SceneTriggers name too.
+static const char* const TESTBED_SCENE_NAMES[TESTBED_SCENE_COUNT] = { "materials", "glass", "focus", "coat",
+                                                                       "showcase", "features" };
 
 // --scene focus: where the camera is focused, the subject's middle.
 static const vec3 FOCUS_SUBJECT = { 0.0f, 0.8f, 0.0f };
@@ -107,6 +119,10 @@ typedef struct testbed_state
     camera       cam;
     orbit_camera orbit;
     f32          aspect;
+
+    // A scene walked rather than orbited: its PlayerController Camera.
+    entity_id        player;
+    scene_transition transition;      // its SceneTriggers
 } testbed_state;
 
 // --- Scene -----------------------------------------------------------------------
@@ -527,6 +543,250 @@ build_showcase_scene(world* w, asset_cache* assets)
     world_add_reflection_probe(w, probe, (vec3){ 7.0f, 2.0f, 4.2f });
 }
 
+// A light with no model: `l` at `position`.
+static entity_id
+add_light_at(world* w, const char* name, vec3 position, light l)
+{
+    entity_id e = world_create(w, name);
+    glm_vec3_copy(position, world_transform(w, e)->position);
+    world_add_light(w, e, l);
+    return e;
+}
+
+// An empty entity at `position` under `parent` (ENTITY_NULL: the root),
+// turning `spin` degrees a second about each axis (0: not at all).
+static entity_id
+add_pivot(world* w, const char* name, entity_id parent, vec3 position, vec3 spin)
+{
+    entity_id e = world_create(w, name);
+    if (parent)
+        world_set_parent(w, e, parent);
+    glm_vec3_copy(position, world_transform(w, e)->position);
+    if (spin[0] != 0.0f || spin[1] != 0.0f || spin[2] != 0.0f)
+        world_add_spin(w, e, spin);
+    return e;
+}
+
+static void
+set_emissive(world* w, entity_id e, vec3 color, f32 strength)
+{
+    material_override* m = &world_mesh_renderer(w, e)->material;
+    m->fields |= MATERIAL_OVERRIDE_EMISSIVE | MATERIAL_OVERRIDE_BASE_COLOR;
+    glm_vec3_copy(color, m->base_color);
+    glm_vec3_scale(color, strength, m->emissive);
+}
+
+// --scene features: every engine feature in one place -- an evening plaza
+// you walk through (its camera has a PlayerController: click, then WASD and
+// the mouse, or a gamepad). From where you start, looking ahead:
+//   - centre: an orrery. A glowing sun (emissive, blooming) holds a point
+//     light that casts shadows; a planet and its moon orbit it through a
+//     chain of parented, spinning entities (hierarchy, Spin)
+//   - left: the material grid, dielectric in front and metal behind, smooth
+//     to rough
+//   - right: glass and coatings before a checkerboard -- clear, tinted and
+//     frosted glass, a clear-coated car-paint ball, a gold-glazed vase
+//     (transmission, IOR, attenuation, clearcoat, specular color)
+//   - back left: the knight (glTF) under a spot light that casts shadows
+//   - back right: Suzanne (OBJ), polished and spinning, beside the avocado
+//     and the textured box (glTF textures)
+//   - front left: a light garden -- 49 small coloured point lights, which
+//     the clustered lighting shades only where each reaches
+//   - back centre: a glowing archway, a SceneTrigger into the showcase
+//   - around it all: columns casting the sun's cascaded shadows, a polished
+//     floor under a reflection probe, the HDRI sky
+// The environment (testbed_apply_environment()): auto-exposure, AgX tone
+// mapping, bloom, SSAO; TAA.
+static void
+build_features_scene(world* w, asset_cache* assets)
+{
+    asset_id plane  = assets_builtin(assets, BUILTIN_PLANE);
+    asset_id cube   = assets_builtin(assets, BUILTIN_CUBE);
+    asset_id sphere = assets_builtin(assets, BUILTIN_SPHERE);
+
+    // --- The player: walks the plaza from the front, looking in ---
+    entity_id player = world_create(w, "player");
+    c_transform* pt = world_transform(w, player);
+    glm_vec3_copy((vec3){ 0.0f, 1.7f, 11.0f }, pt->position);
+    pt->rotation_deg[0] = -6.0f;
+    world_add_camera(w, player, 60.0f, 0.1f, 200.0f);
+    world_add_player_controller(w, player, PLAYER_WALK);
+
+    // --- The plaza ---
+    entity_id floor = add_model(w, "floor", plane, (vec3){ 0.0f, 0.0f, 0.0f }, 1.0f);
+    glm_vec3_copy((vec3){ 34.0f, 1.0f, 34.0f }, world_transform(w, floor)->scale);
+    set_material(w, floor, (vec3){ 0.32f, 0.3f, 0.28f }, 0.0f, 0.28f);
+
+    // Columns all round: the low sun lays their shadows across the plaza,
+    // near and far (the cascades).
+    for (int i = 0; i < 24; ++i)
+    {
+        char name[32];
+        snprintf(name, sizeof(name), "column_%d", i);
+        int side = i / 6, k = i % 6;
+        f32 along = -12.5f + 5.0f * (f32)k;
+        f32 x = side == 0 ? along : side == 1 ? 15.0f : side == 2 ? -along : -15.0f;
+        f32 z = side == 0 ? -15.0f : side == 1 ? along : side == 2 ? 15.0f : -along;
+        add_block(w, name, cube, x, z, (vec3){ 0.6f, 5.0f, 0.6f }, (vec3){ 0.8f, 0.76f, 0.7f }, 0.0f, 0.6f);
+    }
+
+    // The room's own reflection for the polished floor, glass and metal.
+    entity_id probe = world_create(w, "plaza_probe");
+    glm_vec3_copy((vec3){ 0.0f, 2.5f, 0.0f }, world_transform(w, probe)->position);
+    world_add_reflection_probe(w, probe, (vec3){ 15.0f, 2.5f, 15.0f });
+
+    // --- Centre: the orrery ---
+    add_block(w, "dais", cube, 0.0f, 0.0f, (vec3){ 6.0f, 0.3f, 6.0f }, (vec3){ 0.15f, 0.16f, 0.2f }, 0.0f, 0.3f);
+    add_block(w, "sun_column", cube, 0.0f, 0.0f, (vec3){ 0.3f, 1.2f, 0.3f }, (vec3){ 0.7f, 0.55f, 0.3f }, 1.0f, 0.3f);
+
+    entity_id sun_ball = add_model(w, "orrery_sun", sphere, (vec3){ 0.0f, 1.6f, 0.0f }, 0.8f);
+    set_emissive(w, sun_ball, (vec3){ 1.0f, 0.75f, 0.35f }, 25.0f);
+    world_mesh_renderer(w, sun_ball)->cast_shadows = false;   // the light is inside it
+
+    light core;   // the first point light in the world: it gets a shadow map
+    light_init_point(&core, (vec3){ 1.0f, 0.8f, 0.55f }, 25.0f, 12.0f);
+    add_light_at(w, "orrery_light", (vec3){ 0.0f, 1.6f, 0.0f }, core);
+
+    // pivot (turns) -> planet_orbit (2.2 m out, turns) -> planet (sized), moon (0.7 m out)
+    entity_id pivot = add_pivot(w, "orrery_pivot", ENTITY_NULL, (vec3){ 0.0f, 1.6f, 0.0f }, (vec3){ 0.0f, 25.0f, 0.0f });
+    entity_id orbit = add_pivot(w, "planet_orbit", pivot, (vec3){ 2.2f, 0.0f, 0.0f }, (vec3){ 0.0f, 90.0f, 0.0f });
+    entity_id planet = add_model(w, "planet", sphere, (vec3){ 0.0f, 0.0f, 0.0f }, 0.55f);
+    world_set_parent(w, planet, orbit);
+    set_material(w, planet, (vec3){ 0.1f, 0.3f, 0.75f }, 0.0f, 0.45f);
+    entity_id moon = add_model(w, "moon", sphere, (vec3){ 0.7f, 0.1f, 0.0f }, 0.18f);
+    world_set_parent(w, moon, orbit);
+    set_material(w, moon, (vec3){ 0.75f, 0.75f, 0.72f }, 0.0f, 0.8f);
+
+    // --- Left: the material grid ---
+    add_block(w, "grid_plinth", cube, -8.0f, -0.6f, (vec3){ 6.6f, 0.4f, 2.6f }, (vec3){ 0.12f, 0.12f, 0.13f }, 0.0f,
+              0.7f);
+    add_block(w, "grid_step", cube, -8.0f, -1.2f, (vec3){ 6.6f, 0.9f, 1.2f }, (vec3){ 0.12f, 0.12f, 0.13f }, 0.0f,
+              0.7f);   // the metal row stands higher, over the front one
+    for (int row = 0; row < 2; ++row)
+    {
+        for (int column = 0; column < 5; ++column)
+        {
+            char name[32];
+            snprintf(name, sizeof(name), "%s_%d", row ? "metal" : "dielectric", column);
+            f32 roughness = 0.05f + 0.95f * (f32)column / 4.0f;
+            entity_id e = add_model(w, name, sphere,
+                                    (vec3){ -10.4f + 1.2f * (f32)column, row ? 1.35f : 0.85f, row ? -1.2f : 0.0f }, 0.9f);
+            if (row)
+                set_material(w, e, (vec3){ 0.95f, 0.64f, 0.54f }, 1.0f, roughness);   // copper
+            else
+                set_material(w, e, (vec3){ 0.1f, 0.5f, 0.2f }, 0.0f, roughness);
+        }
+    }
+
+    // --- Right: glass and coatings before a checkerboard ---
+    for (int row = 0; row < 6; ++row)
+        for (int column = 0; column < 10; ++column)
+        {
+            char name[32];
+            snprintf(name, sizeof(name), "tile_%d_%d", row, column);
+            entity_id e = add_model(w, name, cube, (vec3){ 5.5f + 0.4f * (f32)column, 0.2f + 0.4f * (f32)row, -2.2f },
+                                    1.0f);
+            glm_vec3_copy((vec3){ 0.4f, 0.4f, 0.05f }, world_transform(w, e)->scale);
+            b8 light_tile = (row + column) % 2 == 0;
+            set_material(w, e, light_tile ? (vec3){ 0.85f, 0.85f, 0.82f } : (vec3){ 0.05f, 0.05f, 0.06f }, 0.0f, 0.6f);
+        }
+
+    entity_id clear = add_model(w, "clear_glass", sphere, (vec3){ 6.0f, 0.5f, -0.5f }, 1.0f);
+    set_glass(w, clear, 0.0f, 1.5f, 1.0f, (vec3){ 1.0f, 1.0f, 1.0f }, 0.0f);
+
+    entity_id bottle = add_model(w, "tinted_bottle", sphere, (vec3){ 7.2f, 0.75f, -0.6f }, 1.0f);
+    glm_vec3_copy((vec3){ 0.5f, 1.5f, 0.5f }, world_transform(w, bottle)->scale);
+    set_glass(w, bottle, 0.02f, 1.5f, 1.0f, (vec3){ 0.9f, 0.5f, 0.12f }, 0.35f);
+
+    entity_id pane = add_model(w, "frosted_pane", cube, (vec3){ 8.5f, 0.75f, -0.9f }, 1.0f);
+    glm_vec3_copy((vec3){ 1.0f, 1.5f, 0.04f }, world_transform(w, pane)->scale);
+    set_glass(w, pane, 0.35f, 1.5f, 0.0f, (vec3){ 1.0f, 1.0f, 1.0f }, 0.0f);
+
+    entity_id paint = add_model(w, "car_paint", sphere, (vec3){ 6.4f, 0.45f, 1.2f }, 0.9f);
+    set_material(w, paint, (vec3){ 0.55f, 0.02f, 0.02f }, 0.4f, 0.45f);
+    material_override* coat = &world_mesh_renderer(w, paint)->material;
+    coat->fields |= MATERIAL_OVERRIDE_CLEARCOAT | MATERIAL_OVERRIDE_CLEARCOAT_ROUGHNESS;
+    coat->clearcoat           = 1.0f;
+    coat->clearcoat_roughness = 0.03f;
+
+    entity_id vase = add_model(w, "glazed_vase", sphere, (vec3){ 7.8f, 0.45f, 1.3f }, 1.0f);
+    glm_vec3_copy((vec3){ 0.5f, 0.9f, 0.5f }, world_transform(w, vase)->scale);
+    set_material(w, vase, (vec3){ 0.02f, 0.02f, 0.02f }, 0.0f, 0.12f);
+    material_override* glaze = &world_mesh_renderer(w, vase)->material;
+    glaze->fields |= MATERIAL_OVERRIDE_SPECULAR | MATERIAL_OVERRIDE_SPECULAR_COLOR;
+    glaze->specular = 1.0f;
+    glm_vec3_copy((vec3){ 1.0f, 0.75f, 0.3f }, glaze->specular_color);
+
+    // --- Back left: the knight under a spot ---
+    add_block(w, "knight_pedestal", cube, -7.0f, -8.0f, (vec3){ 1.4f, 0.4f, 1.4f }, (vec3){ 0.2f, 0.2f, 0.22f }, 0.0f,
+              0.5f);
+    add_model_sized(w, assets, "knight", "models/bulky_knight.glb", -7.0f, 0.4f, -8.0f, 2.0f, 20.0f);
+    add_spot_light(w, "knight_spot", (vec3){ -5.5f, 4.5f, -5.5f }, (vec3){ -0.4f, -1.0f, -0.65f },
+                   (vec3){ 0.85f, 0.9f, 1.0f }, 60.0f, 14.0f, 26.0f);
+
+    // --- Back right: Suzanne (OBJ), the avocado and the textured box (glTF) ---
+    add_block(w, "model_stand", cube, 7.0f, -8.0f, (vec3){ 3.0f, 0.8f, 1.2f }, (vec3){ 0.85f, 0.85f, 0.82f }, 0.0f, 0.5f);
+    entity_id suzanne = add_model_sized(w, assets, "suzanne", "models/suzanne.obj", 6.0f, 0.8f, -8.0f, 0.9f, 0.0f);
+    if (suzanne)
+    {
+        set_material(w, suzanne, (vec3){ 0.95f, 0.95f, 0.95f }, 1.0f, 0.1f);
+        world_add_spin(w, suzanne, (vec3){ 0.0f, 30.0f, 0.0f });
+    }
+    add_model_sized(w, assets, "avocado", "models/Avocado.glb", 7.4f, 0.8f, -8.0f, 0.45f, 30.0f);
+    add_model_sized(w, assets, "textured_box", "models/BoxTextured.glb", 8.2f, 0.8f, -8.0f, 0.4f, -20.0f);
+
+    // --- Front left: the light garden -- 49 lights, no shadows ---
+    add_block(w, "garden_bed", cube, -5.0f, 6.0f, (vec3){ 5.6f, 0.1f, 5.6f }, (vec3){ 0.04f, 0.04f, 0.05f }, 0.0f, 0.5f);
+    for (int i = 0; i < 49; ++i)
+    {
+        char name[32];
+        int  gx = i % 7, gz = i / 7;
+        f32  hue = (f32)i / 49.0f * 6.0f;
+        vec3 color = { fmaxf(0.0f, fabsf(hue - 3.0f) - 1.0f), fmaxf(0.0f, 2.0f - fabsf(hue - 2.0f)),
+                       fmaxf(0.0f, 2.0f - fabsf(hue - 4.0f)) };
+        for (int c = 0; c < 3; ++c)
+            color[c] = fminf(color[c], 1.0f);
+        vec3 at = { -7.4f + 0.8f * (f32)gx, 0.35f, 3.6f + 0.8f * (f32)gz };
+
+        snprintf(name, sizeof(name), "glow_%d", i);
+        entity_id bulb = add_model(w, name, sphere, at, 0.08f);
+        set_emissive(w, bulb, color, 12.0f);
+        world_mesh_renderer(w, bulb)->cast_shadows = false;
+
+        light l;
+        light_init_point(&l, color, 1.5f, 1.6f);
+        l.cast_shadows = false;
+        snprintf(name, sizeof(name), "glow_light_%d", i);
+        add_light_at(w, name, at, l);
+    }
+
+    // --- Back centre: the archway to the showcase ---
+    add_block(w, "arch_left", cube, -1.5f, -11.0f, (vec3){ 0.5f, 3.5f, 0.6f }, (vec3){ 0.8f, 0.76f, 0.7f }, 0.0f, 0.5f);
+    add_block(w, "arch_right", cube, 1.5f, -11.0f, (vec3){ 0.5f, 3.5f, 0.6f }, (vec3){ 0.8f, 0.76f, 0.7f }, 0.0f, 0.5f);
+    entity_id lintel = add_model(w, "arch_top", cube, (vec3){ 0.0f, 3.75f, -11.0f }, 1.0f);
+    glm_vec3_copy((vec3){ 3.5f, 0.5f, 0.6f }, world_transform(w, lintel)->scale);
+    set_material(w, lintel, (vec3){ 0.8f, 0.76f, 0.7f }, 0.0f, 0.5f);
+    const vec3 strips[3] = { { -1.22f, 1.75f, -10.68f }, { 1.22f, 1.75f, -10.68f }, { 0.0f, 3.47f, -10.68f } };
+    for (int i = 0; i < 3; ++i)
+    {
+        char name[32];
+        snprintf(name, sizeof(name), "arch_glow_%d", i);
+        entity_id e = add_model(w, name, cube, (vec3){ strips[i][0], strips[i][1], strips[i][2] }, 1.0f);
+        glm_vec3_copy(i < 2 ? (vec3){ 0.06f, 3.4f, 0.04f } : (vec3){ 2.5f, 0.06f, 0.04f }, world_transform(w, e)->scale);
+        set_emissive(w, e, (vec3){ 0.3f, 0.8f, 1.0f }, 15.0f);
+    }
+    entity_id door = world_create(w, "to_showcase");
+    glm_vec3_copy((vec3){ 0.0f, 1.5f, -11.0f }, world_transform(w, door)->position);
+    c_scene_trigger* trigger = world_add_scene_trigger(w, door, (vec3){ 1.2f, 1.5f, 0.4f });
+    snprintf(trigger->scene, sizeof(trigger->scene), "showcase");
+    trigger->fade_seconds = 0.6f;
+
+    // --- The sun: low and warm ---
+    light sun;
+    light_init_directional(&sun, (vec3){ -0.55f, -0.45f, -0.6f }, (vec3){ 1.0f, 0.75f, 0.5f }, 2.0f);
+    add_light_at(w, "sun", (vec3){ 0.0f, 10.0f, 0.0f }, sun);
+}
+
 static void
 build_scene(world* w, asset_cache* assets)
 {
@@ -662,6 +922,66 @@ frame_scene(testbed_state* state)
     state->cam.focus_distance = state->focus > 0.0f ? state->focus : glm_vec3_dot(forward, to_subject);
 }
 
+// The HDRI and the rest of the light the scene is seen in.
+static void
+apply_scene_environment(testbed_state* state)
+{
+    state->env = scene_environment_default();
+    snprintf(state->env.hdri, sizeof(state->env.hdri), "%s",
+             state->scene == TESTBED_SCENE_SHOWCASE || state->scene == TESTBED_SCENE_FEATURES ? SHOWCASE_HDRI : HDRI);
+
+    if (state->scene == TESTBED_SCENE_FEATURES)   // the environment's options, all on show
+    {
+        state->env.auto_exposure    = true;
+        state->env.tonemap          = SCENE_TONEMAP_AGX;
+        state->env.bloom            = 0.06f;
+        state->env.ssao             = true;
+        state->env.ssao_radius      = 0.6f;
+        state->env.ambient_strength = 0.6f;
+    }
+    ibl_cache_sync(&state->ibl, state->env.hdri);
+}
+
+// Replaces the world with `scene`, built, lit and framed.
+static void
+load_testbed_scene(testbed_state* state, testbed_scene scene)
+{
+    state->scene = scene;
+    world_clear(&state->world);
+    switch (scene)
+    {
+        case TESTBED_SCENE_GLASS:    build_glass_scene(&state->world, &state->assets);    break;
+        case TESTBED_SCENE_FOCUS:    build_focus_scene(&state->world, &state->assets);    break;
+        case TESTBED_SCENE_COAT:     build_coat_scene(&state->world, &state->assets);     break;
+        case TESTBED_SCENE_SHOWCASE: build_showcase_scene(&state->world, &state->assets); break;
+        case TESTBED_SCENE_FEATURES: build_features_scene(&state->world, &state->assets); break;
+        default:                     build_scene(&state->world, &state->assets);          break;
+    }
+    world_update(&state->world);
+    LOG_INFO("testbed: built '%s', %u entities\n", TESTBED_SCENE_NAMES[scene], world_count(&state->world));
+
+    apply_scene_environment(state);
+    frame_scene(state);
+
+    state->player = world_next(&state->world, ENTITY_NULL,
+                               COMPONENT_BIT(COMPONENT_CAMERA) | COMPONENT_BIT(COMPONENT_PLAYER_CONTROLLER));
+}
+
+// A SceneTrigger's scene, by its testbed name. False (logged) for a name
+// that isn't one: the scene that was showing stays.
+static b8
+enter_scene_named(testbed_state* state, const char* name)
+{
+    for (int s = 0; s < TESTBED_SCENE_COUNT; ++s)
+        if (strcmp(name, TESTBED_SCENE_NAMES[s]) == 0)
+        {
+            load_testbed_scene(state, (testbed_scene)s);
+            return true;
+        }
+    LOG_ERROR("testbed: a SceneTrigger names '%s', which isn't a testbed scene\n", name);
+    return false;
+}
+
 // --- App hooks -------------------------------------------------------------------
 
 static void
@@ -676,23 +996,8 @@ on_init(App* app)
 
     assets_init(&state->assets);
     world_init(&state->world, &state->assets);
-    switch (state->scene)
-    {
-        case TESTBED_SCENE_GLASS: build_glass_scene(&state->world, &state->assets); break;
-        case TESTBED_SCENE_FOCUS: build_focus_scene(&state->world, &state->assets); break;
-        case TESTBED_SCENE_COAT:  build_coat_scene(&state->world, &state->assets);  break;
-        case TESTBED_SCENE_SHOWCASE: build_showcase_scene(&state->world, &state->assets); break;
-        default:                  build_scene(&state->world, &state->assets);       break;
-    }
-    world_update(&state->world);
-    LOG_INFO("testbed: built %u entities\n", world_count(&state->world));
-
-    state->env = scene_environment_default();
-    snprintf(state->env.hdri, sizeof(state->env.hdri), "%s",
-             state->scene == TESTBED_SCENE_SHOWCASE ? SHOWCASE_HDRI : HDRI);
-    ibl_cache_sync(&state->ibl, state->env.hdri);
-
-    frame_scene(state);
+    load_testbed_scene(state, state->scene);
+    scene_transition_reset(&state->transition, &state->world);
 }
 
 static void
@@ -742,24 +1047,68 @@ on_frame(App* app, f32 dt)
 {
     testbed_state* state = (testbed_state*)app->user_data;
 
+    window* wind   = get_renderer()->drawing_window;
+    b8      locked = input_cursor_mode() == WINDOW_CURSOR_LOCKED;
+    b8      walk   = state->player && !state->check_path && !state->timing_frames;
+
+    // Esc gives the mouse back first, then quits; walking, a click takes it.
     if (input_key_pressed(INPUT_KEY_ESCAPE))
-        app->should_close = true;
+    {
+        if (locked)
+            input_set_cursor_mode(wind, WINDOW_CURSOR_NORMAL);
+        else
+            app->should_close = true;
+    }
+    else if (walk && !locked && input_mouse_pressed(INPUT_MOUSE_LEFT))
+        input_set_cursor_mode(wind, WINDOW_CURSOR_LOCKED);
+    else if (!walk && locked)
+        input_set_cursor_mode(wind, WINDOW_CURSOR_NORMAL);   // a trigger led to a scene that's orbited
 
     // A check's picture is the scene as built, whatever the frame times.
     if (!state->check_path)
+    {
+        if (walk)
+        {
+            player_input input = { 0 };   // held still while the view fades between scenes
+            if (!scene_transition_busy(&state->transition))
+                input = player_input_from_actions();
+            player_controller_tick(&state->world, fminf(dt, 0.1f), &input);
+        }
         world_tick(&state->world, fminf(dt, 0.1f));
+    }
     world_update(&state->world);
 
-    f32 dx = 0.0f, dy = 0.0f;
-    if (input_mouse_down(INPUT_MOUSE_LEFT))
-        input_mouse_delta(&dx, &dy);
-    if (dx != 0.0f || dy != 0.0f)
-        orbit_drag(&state->orbit, &state->cam, dx, dy);
+    // Not only while walking: a trigger may lead to an orbited scene, which
+    // still has to fade in.
+    if (!state->check_path && !state->timing_frames)
+    {
+        const char* next = scene_transition_update(&state->transition, &state->world, fminf(dt, 0.1f));
+        if (next)
+            scene_transition_loaded(&state->transition, &state->world, enter_scene_named(state, next));
+    }
 
-    f32 wheel_x, wheel;
-    input_scroll(&wheel_x, &wheel);
-    if (wheel != 0.0f)
-        orbit_zoom(&state->orbit, &state->cam, wheel);
+    // Walked: the view is the player's Camera. Orbited: drag and wheel.
+    if (state->player && world_camera_view(&state->world, state->player, state->aspect, &state->cam))
+    {
+        if (state->aperture > 0.0f)
+        {
+            state->cam.aperture       = state->aperture;
+            state->cam.focus_distance = state->focus > 0.0f ? state->focus : 5.0f;
+        }
+    }
+    else
+    {
+        f32 dx = 0.0f, dy = 0.0f;
+        if (input_mouse_down(INPUT_MOUSE_LEFT))
+            input_mouse_delta(&dx, &dy);
+        if (dx != 0.0f || dy != 0.0f)
+            orbit_drag(&state->orbit, &state->cam, dx, dy);
+
+        f32 wheel_x, wheel;
+        input_scroll(&wheel_x, &wheel);
+        if (wheel != 0.0f)
+            orbit_zoom(&state->orbit, &state->cam, wheel);
+    }
 
     scene_render_settings settings = scene_render_settings_default();
     scene_render_settings_apply_environment(&settings, &state->env, ibl_cache_maps(&state->ibl));
@@ -768,7 +1117,7 @@ on_frame(App* app, f32 dt)
         settings.dof_taps = state->dof_taps;
     if (state->antialiasing_set)
         settings.antialiasing = state->antialiasing;
-    else if (state->scene == TESTBED_SCENE_SHOWCASE)
+    else if (state->scene == TESTBED_SCENE_SHOWCASE || state->scene == TESTBED_SCENE_FEATURES)
         settings.antialiasing = SCENE_AA_TAA;   // smooths the glass and the depth of field's edges
 
     if (state->turn_degrees != 0.0f)
@@ -777,6 +1126,7 @@ on_frame(App* app, f32 dt)
         orbit_apply(&state->orbit, &state->cam);
     }
     settings.delta_time = state->check_path ? -1.0f : dt;
+    settings.exposure  *= 1.0f - scene_transition_fade(&state->transition);
 
     scene_renderer_draw(&state->renderer, &state->world, &state->cam, &settings);
 
@@ -816,7 +1166,7 @@ print_usage(void)
 {
     printf("usage: Testbed [--scene NAME] [--check PNG] [--view NAME] [--timings N] [--size WxH]\n"
            "               [--aa NAME] [--turn DEG] [--aperture F] [--focus M] [--dof-taps N]\n"
-           "  --scene  materials (the default), glass, focus, coat or showcase\n"
+           "  --scene  materials (the default), glass, focus, coat, showcase or features (walk: click, WASD, mouse)\n"
            "  --aperture  depth of field's f-number (0 = off; focus scene: 2, showcase: 2.8)\n"
            "  --focus  meters to focus at (default: the focus scene's subject)\n"
            "  --dof-taps  depth of field's samples per pixel, 8..128 (default 32)\n"
@@ -899,7 +1249,7 @@ int main(int argc, char** argv)
                     found = s;
             if (found < 0)
             {
-                fprintf(stderr, "--scene needs materials, glass, focus, coat or showcase\n");
+                fprintf(stderr, "--scene needs materials, glass, focus, coat, showcase or features\n");
                 print_usage();
                 return 1;
             }
